@@ -269,7 +269,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Lure Controller Server")
     parser.add_argument("--host", default="127.0.0.1", help="Host interface to bind to")
     parser.add_argument("--port", type=int, default=5000, help="Port to run server on")
+    parser.add_argument("--judge-model", default="mistral-nemo", help="Ollama model to use as validation judge")
     args = parser.parse_args()
 
-    print(f"Starting Lure Controller on http://{args.host}:{args.port}")
+    JUDGE_MODEL = args.judge_model
+    print(f"Starting Lure Controller on http://{args.host}:{args.port} using judge model '{JUDGE_MODEL}'")
     app.run(host=args.host, port=args.port, debug=False, threaded=True)
