@@ -7,9 +7,14 @@ import urllib.parse
 import argparse
 import socket
 
-# Add parent directory to path to allow importing db_mongo
+# Add current directory and parent directory to path to allow imports
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from scripts.lure_shared import clean_lure_text, validate_lure_text
+
+try:
+    from lure_shared import clean_lure_text, validate_lure_text
+except ImportError:
+    from scripts.lure_shared import clean_lure_text, validate_lure_text
 
 def run_ollama(ollama_url, model, prompt):
     url = f"{ollama_url.rstrip('/')}/api/generate"
@@ -19,7 +24,7 @@ def run_ollama(ollama_url, model, prompt):
         "stream": False,
         "keep_alive": "1h",
         "options": {
-            "temperature": 0.7
+            "temperature": 0.4
         }
     }
     
@@ -41,7 +46,7 @@ def post_json(url, payload):
         headers={"Content-Type": "application/json"},
         method="POST"
     )
-    with urllib.request.urlopen(req, timeout=10) as response:
+    with urllib.request.urlopen(req, timeout=120) as response:
         return json.loads(response.read().decode("utf-8"))
 
 def get_json(url):

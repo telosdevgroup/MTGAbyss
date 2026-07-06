@@ -2,6 +2,8 @@ import os
 import sys
 import datetime
 import argparse
+import urllib.request
+import json
 from flask import Flask, request, jsonify
 import pymongo
 from bson import ObjectId
@@ -15,6 +17,9 @@ app = Flask(__name__)
 db = None
 
 LOCK_TIMEOUT_SECONDS = 300  # 5 minutes
+
+OLLAMA_URL = "http://localhost:11434"
+JUDGE_MODEL = "mistral-nemo"
 
 def get_db():
     global db
@@ -181,6 +186,55 @@ def claim_job():
         print(f"Error claiming job: {e}")
         return jsonify({"job_id": None, "error": str(e)}), 500
 
+def validate_lure_with_ai(ollama_url, model, card_name, card_type, card_text, generated_lure):
+    url = f"{ollama_url.rstrip('/')}/api/generate"
+    
+    prompt = f"""Evaluate this generated short story/introduction text (Lure) for a Magic: The Gathering card named '{card_name}' ({card_type}).
+
+Card Text:
+{card_text}
+
+Generated Lure Text:
+"{generated_lure}"
+
+Verify if the Lure text is good. It should feel evocative, mystical, or strange, and avoid dry rules review tone.
+You must respond with a JSON object.
+
+Your JSON response must match this format exactly:
+{{
+  "status": "PASSED" | "FAILED"
+}}
+
+Do not include any other text, markdown, or explanation outside the JSON.
+Response:"""
+
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "stream": False,
+        "format": "json",
+        "options": {
+            "temperature": 0.0
+        }
+    }
+    
+    try:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=30) as response:
+            res_data = json.loads(response.read().decode("utf-8"))
+            raw_response = res_data.get("response", "").strip()
+            parsed = json.loads(raw_response)
+            status = parsed.get("status", "FAILED").upper()
+            return status == "PASSED"
+    except Exception as e:
+        print(f"Error calling Ollama judge: {e}")
+        return False
+
 @app.route("/jobs/<job_id>/complete", methods=["POST"])
 def complete_job(job_id):
     data = request.json or {}
@@ -196,27 +250,58 @@ def complete_job(job_id):
     now_str = now.isoformat() + "Z"
 
     try:
-        # Find the job in polymorphic generation_jobs
-        job = mongo_db["generation_jobs"].find_one_and_update(
-            {"_id": ObjectId(job_id), "status": "claimed"},
+        # Find the job
+        job = mongo_db["generation_jobs"].find_one({"_id": ObjectId(job_id), "status": "claimed"})
+        if not job:
+            return jsonify({"error": f"No claimed job found for job_id: {job_id}"}), 404
+
+        # Retrieve card facts to validate
+        oracle_id = job.get("oracle_id")
+        card = mongo_db["cards"].find_one({"oracle_id": oracle_id})
+        card_name = job.get("card_name")
+        card_type = card.get("type_line", "") if card else ""
+        card_text = card.get("oracle_text", "") if card else ""
+
+        # Validate with Ollama
+        print(f"Controller: Validating Lure for '{card_name}' using model '{JUDGE_MODEL}'...")
+        is_valid = validate_lure_with_ai(OLLAMA_URL, JUDGE_MODEL, card_name, card_type, card_text, text)
+
+        if not is_valid:
+            print(f"Controller: Validation failed for '{card_name}'!")
+            attempts = job.get("attempts", 0) + 1
+            max_attempts = job.get("max_attempts", 3)
+            new_status = "pending" if attempts < max_attempts else "failed"
+            
+            mongo_db["generation_jobs"].update_one(
+                {"_id": ObjectId(job_id)},
+                {
+                    "$set": {
+                        "status": new_status,
+                        "attempts": attempts,
+                        "error": "AI validation failed",
+                        "claimed_by": None,
+                        "claimed_at": None,
+                        "heartbeat_at": None,
+                        "updated_at": now
+                    }
+                }
+            )
+            return jsonify({"status": "validation_failed", "message": "AI validation failed. Reverted to pending."}), 422
+
+        print(f"Controller: Validation passed for '{card_name}'!")
+        # For generate_lure job type, store it in the abysses collection
+        mongo_db["generation_jobs"].update_one(
+            {"_id": ObjectId(job_id)},
             {
                 "$set": {
                     "status": "completed",
                     "error": None,
                     "updated_at": now
                 }
-            },
-            return_document=pymongo.ReturnDocument.AFTER
+            }
         )
 
-        if not job:
-            return jsonify({"error": f"No claimed job found for job_id: {job_id}"}), 404
-
-        # For generate_lure job type, store it in the abysses collection
-        oracle_id = job.get("oracle_id")
-        card_name = job.get("card_name")
         slug = job.get("card_slug")
-
         mongo_db["abysses"].update_one(
             {"entity_type": "commander", "oracle_id": oracle_id},
             {
@@ -322,7 +407,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Lure Controller Server")
     parser.add_argument("--host", default="127.0.0.1", help="Host interface to bind to")
     parser.add_argument("--port", type=int, default=5000, help="Port to run server on")
+    parser.add_argument("--ollama-url", default=os.environ.get("OLLAMA_URL", "http://localhost:11434"), help="Ollama API base URL")
+    parser.add_argument("--judge-model", default=os.environ.get("JUDGE_MODEL", "mistral-nemo"), help="Ollama model to use for validation")
     args = parser.parse_args()
 
+    OLLAMA_URL = args.ollama_url
+    JUDGE_MODEL = args.judge_model
+
     print(f"Starting Lure Controller on http://{args.host}:{args.port}")
+    print(f"Judge Model: {JUDGE_MODEL}")
+    print(f"Ollama URL:  {OLLAMA_URL}")
     app.run(host=args.host, port=args.port, debug=False)

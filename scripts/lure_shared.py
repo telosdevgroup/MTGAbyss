@@ -62,13 +62,11 @@ def build_lure_prompt(card):
         
     prompt = f"""Write an MTGAbyss Lure for this Magic commander.
 
+CRITICAL REQUIREMENT: You must write EXACTLY two (2) sentences. Do not write three sentences. Do not write a single sentence. The total length must be between 15 and 50 words.
+
 The Lure is the first short AI-written text on a visual commander archive page. It should pull the reader into the commander’s Abyss.
 
 Use the source facts, but do not mechanically list them.
-
-Length:
-2–4 sentences.
-40–90 words.
 
 Tone:
 mystical, human, strange, elegant, ominous, intimate.
@@ -103,15 +101,15 @@ def validate_lure_text(text, card_name):
         return False, "Lure text is empty."
     
     words = text.split()
-    if len(words) > 120:
-        return False, f"Lure is too long ({len(words)} words, max 120)."
-    if len(words) < 20:
-        return False, f"Lure is too short ({len(words)} words, min 20)."
+    if len(words) > 75:
+        return False, f"Lure is too long ({len(words)} words, max 75)."
+    if len(words) < 15:
+        return False, f"Lure is too short ({len(words)} words, min 15)."
         
     sentences = re.split(r'[.!?]+', text)
     sentences = [s.strip() for s in sentences if s.strip()]
-    if len(sentences) > 6:
-        return False, f"Lure has too many sentences ({len(sentences)}, max 6)."
+    if len(sentences) != 2:
+        return False, f"Lure must be exactly 2 sentences (found {len(sentences)})."
         
     if any(char in text for char in ["*", "#", "[", "]", "_", "`"]):
         return False, "Lure contains markdown styling."
