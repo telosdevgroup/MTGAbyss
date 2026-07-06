@@ -91,15 +91,15 @@ def claim_job():
     now = datetime.datetime.now(datetime.timezone.utc)
 
     try:
-        # Find oracle_ids that already have lures in abysses
+        # Find oracle_ids that already have lures or hooks in abysses
         # Unless force is True
         excluded_ids = []
         if not force:
             completed_lures = mongo_db["abysses"].find(
-                {"content.lure.text": {"$exists": True}},
+                {"$or": [{"content.lure": {"$exists": True}}, {"content.hook": {"$exists": True}}]},
                 {"oracle_id": 1}
             )
-            excluded_ids = [doc["oracle_id"] for doc in completed_lures]
+            excluded_ids = [doc["oracle_id"] for doc in completed_lures if "oracle_id" in doc]
 
         # Also exclude currently active claims
         active_claims = mongo_db["active_claims"].find({}, {"_id": 1})
@@ -132,8 +132,10 @@ def claim_job():
         # Build prompt using build_lure_prompt
         prompt, facts = build_lure_prompt(card)
 
-        # Calculate remaining cards without a lure dynamically
-        completed_count = mongo_db["abysses"].count_documents({"content.lure.text": {"$exists": True}})
+        # Calculate remaining cards without a lure or hook dynamically
+        completed_count = mongo_db["abysses"].count_documents(
+            {"$or": [{"content.lure": {"$exists": True}}, {"content.hook": {"$exists": True}}]}
+        )
         total_cards = mongo_db["cards"].count_documents({})
         remaining = max(0, total_cards - completed_count)
 
@@ -247,7 +249,9 @@ def get_stats():
     mongo_db = get_db()
 
     total_cards = mongo_db["cards"].count_documents({})
-    completed = mongo_db["abysses"].count_documents({"content.lure.text": {"$exists": True}})
+    completed = mongo_db["abysses"].count_documents(
+        {"$or": [{"content.lure": {"$exists": True}}, {"content.hook": {"$exists": True}}]}
+    )
     claimed = mongo_db["active_claims"].count_documents({})
     failed = 0
 
