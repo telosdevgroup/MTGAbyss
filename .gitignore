@@ -37,6 +37,7 @@ db_dumps/
 
 # Generated static pages/build output
 public/cards/
+public/card/
 public/dist/
 dist/
 
