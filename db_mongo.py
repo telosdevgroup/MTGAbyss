@@ -69,6 +69,7 @@ def ensure_indexes(db):
     abysses.create_index([("entity_type", pymongo.ASCENDING), ("oracle_id", pymongo.ASCENDING)], unique=True)
     abysses.create_index("slug")
     abysses.create_index("content.lure.status")
+    abysses.create_index("content.hook.status")
 
 
 
