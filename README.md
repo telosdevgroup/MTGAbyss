@@ -7,7 +7,7 @@ A static site compiler and AI generation pipeline for Magic: The Gathering card 
 We use a modularized, networked controller-worker architecture to generate Lures for commanders.
 
 ### 1. Start the Controller Server
-Run the controller on the host machine (Beast). By default, it binds to `127.0.0.1:5000` (localhost).
+Run the controller on the host machine. By default, it binds to `127.0.0.1:5000` (localhost).
 ```bash
 python scripts/lure_controller.py --host 127.0.0.1 --port 5000
 ```
@@ -15,6 +15,17 @@ To allow workers from other laptops on the local network (LAN) to connect, bind 
 ```bash
 python scripts/lure_controller.py --host 0.0.0.0 --port 5000
 ```
+
+#### Speed Up AI Validation (Optional)
+By default, the controller validates submissions using the `mistral-nemo` model. To speed up validation using a much lighter and faster model (e.g., Llama 3.2 3B):
+1. Pull the smaller model on the host:
+   ```bash
+   ollama pull llama3.2
+   ```
+2. Start the controller pointing to the validation model:
+   ```bash
+   python scripts/lure_controller.py --host 0.0.0.0 --port 5000 --judge-model llama3.2
+   ```
 
 ### 2. Start a Local Worker
 Run the worker on the host machine (Beast), pointing to the local controller and local Ollama instance:
