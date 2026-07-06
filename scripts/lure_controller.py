@@ -28,164 +28,6 @@ def get_db():
         ensure_indexes(db)
     return db
 
-def auto_scan_and_enqueue():
-    mongo_db = get_db()
-    now = datetime.datetime.now(datetime.timezone.utc)
-    
-    # Get all oracle_ids that already have a generated lure
-    generated_cursor = mongo_db["abysses"].find(
-        {
-            "entity_type": "commander",
-            "content.lure.status": "generated"
-        },
-        {"oracle_id": 1}
-    )
-    completed_oracle_ids = {doc["oracle_id"] for doc in generated_cursor if "oracle_id" in doc}
-    
-    # Query all legendary creatures
-    cards_cursor = mongo_db["cards"].find(
-        {"type_line": {"$regex": "Legendary.*Creature"}},
-        {"oracle_id": 1, "name": 1, "slug": 1}
-    )
-    
-    enqueued = 0
-    for card in cards_cursor:
-        oracle_id = card.get("oracle_id")
-        if not oracle_id or oracle_id in completed_oracle_ids:
-            continue
-            
-        # Check if a job already exists in generation_jobs
-        existing_job = mongo_db["generation_jobs"].find_one({
-            "oracle_id": oracle_id,
-            "job_type": "generate_lure"
-        })
-        
-        # If it doesn't exist, or if it was completed but we somehow don't have it in abysses (or want to force reset),
-        # we can enqueue it.
-        if not existing_job:
-            name = card.get("name")
-            slug = card.get("slug") or slugify(name)
-            job_doc = {
-                "job_type": "generate_lure",
-                "oracle_id": oracle_id,
-                "card_slug": slug,
-                "card_name": name,
-                "priority": 1,
-                "status": "pending",
-                "claimed_by": None,
-                "claimed_at": None,
-                "heartbeat_at": None,
-                "attempts": 0,
-                "max_attempts": 3,
-                "error": None,
-                "created_at": now,
-                "updated_at": now
-            }
-            mongo_db["generation_jobs"].replace_one(
-                {
-                    "oracle_id": oracle_id,
-                    "job_type": "generate_lure"
-                },
-                job_doc,
-                upsert=True
-            )
-            enqueued += 1
-            
-    if enqueued > 0:
-        print(f"Auto-scan enqueued {enqueued} new Lure generation jobs.")
-
-@app.route("/health", methods=["GET"])
-def health():
-    return jsonify({"status": "ok", "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()})
-
-@app.route("/jobs/claim", methods=["POST"])
-def claim_job():
-    data = request.json or {}
-    worker_id = data.get("worker_id", "unknown_worker")
-    force = data.get("force", False)
-
-    mongo_db = get_db()
-    now = datetime.datetime.now(datetime.timezone.utc)
-    expiry_time = now - datetime.timedelta(seconds=LOCK_TIMEOUT_SECONDS)
-
-    # Clean/Reset stale claimed lure jobs first if heartbeat older than threshold
-    mongo_db["generation_jobs"].update_many(
-        {
-            "job_type": "generate_lure",
-            "status": "claimed",
-            "heartbeat_at": {"$lt": expiry_time}
-        },
-        {
-            "$set": {
-                "status": "pending",
-                "claimed_by": None,
-                "claimed_at": None,
-                "heartbeat_at": None,
-                "updated_at": now
-            }
-        }
-    )
-
-    # Force auto-scan if force=True or if there are no pending/claimed lure jobs
-    pending_count = mongo_db["generation_jobs"].count_documents({
-        "job_type": "generate_lure",
-        "status": "pending"
-    })
-    
-    if pending_count == 0 or force:
-        auto_scan_and_enqueue()
-
-    # Find the next job to claim
-    query_filter = {
-        "job_type": "generate_lure",
-        "status": "pending"
-    }
-
-    try:
-        job = mongo_db["generation_jobs"].find_one_and_update(
-            query_filter,
-            {
-                "$set": {
-                    "status": "claimed",
-                    "claimed_by": worker_id,
-                    "claimed_at": now,
-                    "heartbeat_at": now,
-                    "updated_at": now
-                }
-            },
-            sort=[("priority", -1), ("created_at", 1)],
-            return_document=pymongo.ReturnDocument.AFTER
-        )
-
-        if not job:
-            return jsonify({"job_id": None, "message": "No jobs available"}), 200
-
-        # Retrieve card facts to build prompt
-        oracle_id = job.get("oracle_id")
-        card = mongo_db["cards"].find_one({"oracle_id": oracle_id})
-        if not card:
-            # Job exists but card missing? Fail job
-            mongo_db["generation_jobs"].update_one(
-                {"_id": job["_id"]},
-                {"$set": {"status": "failed", "error": "Card not found in cards collection", "updated_at": now}}
-            )
-            return jsonify({"job_id": None, "message": "Card missing, job failed"}), 400
-
-        prompt, facts = build_lure_prompt(card)
-
-        return jsonify({
-            "job_id": str(job["_id"]),
-            "oracle_id": oracle_id,
-            "card_name": job.get("card_name"),
-            "slug": job.get("card_slug"),
-            "prompt": prompt,
-            "facts": facts
-        })
-
-    except Exception as e:
-        print(f"Error claiming job: {e}")
-        return jsonify({"job_id": None, "error": str(e)}), 500
-
 def validate_lure_with_ai(ollama_url, model, card_name, card_type, card_text, generated_lure):
     url = f"{ollama_url.rstrip('/')}/api/generate"
     
@@ -235,8 +77,77 @@ Response:"""
         print(f"Error calling Ollama judge: {e}")
         return False
 
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok", "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()})
+
+@app.route("/jobs/claim", methods=["POST"])
+def claim_job():
+    data = request.json or {}
+    worker_id = data.get("worker_id", "unknown_worker")
+    force = data.get("force", False)
+
+    mongo_db = get_db()
+    now = datetime.datetime.now(datetime.timezone.utc)
+
+    try:
+        # Find oracle_ids that already have lures in abysses
+        # Unless force is True
+        excluded_ids = []
+        if not force:
+            completed_lures = mongo_db["abysses"].find(
+                {"content.lure.text": {"$exists": True}},
+                {"oracle_id": 1}
+            )
+            excluded_ids = [doc["oracle_id"] for doc in completed_lures]
+
+        # Also exclude currently active claims
+        active_claims = mongo_db["active_claims"].find({}, {"_id": 1})
+        locked_ids = [doc["_id"] for doc in active_claims]
+        excluded_ids.extend(locked_ids)
+
+        # Build pipeline to find a random card not in excluded_ids
+        pipeline = []
+        if excluded_ids:
+            pipeline.append({"$match": {"oracle_id": {"$nin": excluded_ids}}})
+        pipeline.append({"$sample": {"size": 1}})
+
+        cards = list(mongo_db["cards"].aggregate(pipeline))
+        if not cards:
+            return jsonify({"job_id": None, "message": "No cards available"}), 200
+
+        card = cards[0]
+        oracle_id = card["oracle_id"]
+
+        # Lock the card by inserting into active_claims
+        try:
+            mongo_db["active_claims"].insert_one({
+                "_id": oracle_id,
+                "claimed_by": worker_id,
+                "claimed_at": now
+            })
+        except pymongo.errors.DuplicateKeyError:
+            return jsonify({"job_id": None, "message": "Race condition on claim, retry"}), 200
+
+        # Build prompt using build_lure_prompt
+        prompt, facts = build_lure_prompt(card)
+
+        return jsonify({
+            "job_id": oracle_id,
+            "oracle_id": oracle_id,
+            "card_name": card.get("name"),
+            "slug": card.get("slug") or slugify(card.get("name")),
+            "prompt": prompt,
+            "facts": facts
+        })
+
+    except Exception as e:
+        print(f"Error claiming job: {e}")
+        return jsonify({"job_id": None, "error": str(e)}), 500
+
 @app.route("/jobs/<job_id>/complete", methods=["POST"])
 def complete_job(job_id):
+    # job_id is the oracle_id
     data = request.json or {}
     text = data.get("text")
     model = data.get("model", "unknown")
@@ -250,60 +161,36 @@ def complete_job(job_id):
     now_str = now.isoformat() + "Z"
 
     try:
-        # Find the job
-        job = mongo_db["generation_jobs"].find_one({"_id": ObjectId(job_id), "status": "claimed"})
-        if not job:
-            return jsonify({"error": f"No claimed job found for job_id: {job_id}"}), 404
+        # Verify the claim exists in active_claims
+        claim = mongo_db["active_claims"].find_one({"_id": job_id})
+        if not claim:
+            return jsonify({"error": f"No active claim found for card: {job_id}"}), 404
 
-        # Retrieve card facts to validate
-        oracle_id = job.get("oracle_id")
-        card = mongo_db["cards"].find_one({"oracle_id": oracle_id})
-        card_name = job.get("card_name")
-        card_type = card.get("type_line", "") if card else ""
-        card_text = card.get("oracle_text", "") if card else ""
+        # Retrieve card facts to validate and save
+        card = mongo_db["cards"].find_one({"oracle_id": job_id})
+        if not card:
+            return jsonify({"error": f"Card not found in database: {job_id}"}), 404
 
-        # Validate with Ollama
+        card_name = card.get("name")
+        card_type = card.get("type_line", "")
+        card_text = card.get("oracle_text", "")
+        slug = card.get("slug") or slugify(card_name)
+
+        # Validate with Ollama judge
         print(f"Controller: Validating Lure for '{card_name}' using model '{JUDGE_MODEL}'...")
         is_valid = validate_lure_with_ai(OLLAMA_URL, JUDGE_MODEL, card_name, card_type, card_text, text)
 
         if not is_valid:
             print(f"Controller: Validation failed for '{card_name}'!")
-            attempts = job.get("attempts", 0) + 1
-            max_attempts = job.get("max_attempts", 3)
-            new_status = "pending" if attempts < max_attempts else "failed"
-            
-            mongo_db["generation_jobs"].update_one(
-                {"_id": ObjectId(job_id)},
-                {
-                    "$set": {
-                        "status": new_status,
-                        "attempts": attempts,
-                        "error": "AI validation failed",
-                        "claimed_by": None,
-                        "claimed_at": None,
-                        "heartbeat_at": None,
-                        "updated_at": now
-                    }
-                }
-            )
-            return jsonify({"status": "validation_failed", "message": "AI validation failed. Reverted to pending."}), 422
+            # Release the lock so it can be retried
+            mongo_db["active_claims"].delete_one({"_id": job_id})
+            return jsonify({"status": "validation_failed", "message": "AI validation failed."}), 422
 
         print(f"Controller: Validation passed for '{card_name}'!")
-        # For generate_lure job type, store it in the abysses collection
-        mongo_db["generation_jobs"].update_one(
-            {"_id": ObjectId(job_id)},
-            {
-                "$set": {
-                    "status": "completed",
-                    "error": None,
-                    "updated_at": now
-                }
-            }
-        )
 
-        slug = job.get("card_slug")
+        # Write to abysses collection
         mongo_db["abysses"].update_one(
-            {"entity_type": "commander", "oracle_id": oracle_id},
+            {"entity_type": "commander", "oracle_id": job_id},
             {
                 "$set": {
                     "card_name": card_name,
@@ -315,7 +202,7 @@ def complete_job(job_id):
                         "model": model,
                         "worker_id": worker_id,
                         "prompt_version": "abyss_lure_v1",
-                        "temperature": 0.7,
+                        "temperature": 0.4,
                         "created_at": now_str,
                         "updated_at": now_str
                     },
@@ -326,7 +213,10 @@ def complete_job(job_id):
             upsert=True
         )
 
-        return jsonify({"status": "completed", "job_id": job_id, "oracle_id": oracle_id})
+        # Delete the active claim lock
+        mongo_db["active_claims"].delete_one({"_id": job_id})
+
+        return jsonify({"status": "completed", "job_id": job_id, "oracle_id": job_id})
 
     except Exception as e:
         print(f"Error completing job {job_id}: {e}")
@@ -334,39 +224,13 @@ def complete_job(job_id):
 
 @app.route("/jobs/<job_id>/fail", methods=["POST"])
 def fail_job(job_id):
-    data = request.json or {}
-    error_msg = data.get("error", "Unknown error")
-    worker_id = data.get("worker_id", "unknown")
-
+    # job_id is the oracle_id
     mongo_db = get_db()
-    now = datetime.datetime.now(datetime.timezone.utc)
 
     try:
-        # Find job to increment attempts
-        job = mongo_db["generation_jobs"].find_one({"_id": ObjectId(job_id)})
-        if not job:
-            return jsonify({"error": f"No job found for job_id: {job_id}"}), 404
-
-        attempts = job.get("attempts", 0) + 1
-        max_attempts = job.get("max_attempts", 3)
-        new_status = "pending" if attempts < max_attempts else "failed"
-
-        mongo_db["generation_jobs"].update_one(
-            {"_id": ObjectId(job_id)},
-            {
-                "$set": {
-                    "status": new_status,
-                    "attempts": attempts,
-                    "error": error_msg,
-                    "claimed_by": None,
-                    "claimed_at": None,
-                    "heartbeat_at": None,
-                    "updated_at": now
-                }
-            }
-        )
-
-        return jsonify({"status": "failed_recorded", "job_id": job_id, "new_status": new_status})
+        # Simply delete the active claim lock. Do not record failure in DB!
+        mongo_db["active_claims"].delete_one({"_id": job_id})
+        return jsonify({"status": "failed_recorded", "job_id": job_id, "new_status": "pending"})
 
     except Exception as e:
         print(f"Error failing job {job_id}: {e}")
@@ -376,27 +240,15 @@ def fail_job(job_id):
 def get_stats():
     mongo_db = get_db()
 
-    total_commanders = mongo_db["cards"].count_documents({"type_line": {"$regex": "Legendary.*Creature"}})
-    
-    completed = mongo_db["generation_jobs"].count_documents({
-        "job_type": "generate_lure",
-        "status": "completed"
-    })
-    
-    claimed = mongo_db["generation_jobs"].count_documents({
-        "job_type": "generate_lure",
-        "status": "claimed"
-    })
-    
-    failed = mongo_db["generation_jobs"].count_documents({
-        "job_type": "generate_lure",
-        "status": "failed"
-    })
+    total_cards = mongo_db["cards"].count_documents({})
+    completed = mongo_db["abysses"].count_documents({"content.lure.text": {"$exists": True}})
+    claimed = mongo_db["active_claims"].count_documents({})
+    failed = 0
 
-    remaining = max(0, total_commanders - completed)
+    remaining = max(0, total_cards - completed)
 
     return jsonify({
-        "total_commanders": total_commanders,
+        "total_commanders": total_cards,
         "completed": completed,
         "claimed": claimed,
         "failed": failed,
@@ -407,14 +259,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Lure Controller Server")
     parser.add_argument("--host", default="127.0.0.1", help="Host interface to bind to")
     parser.add_argument("--port", type=int, default=5000, help="Port to run server on")
-    parser.add_argument("--ollama-url", default=os.environ.get("OLLAMA_URL", "http://localhost:11434"), help="Ollama API base URL")
-    parser.add_argument("--judge-model", default=os.environ.get("JUDGE_MODEL", "mistral-nemo"), help="Ollama model to use for validation")
     args = parser.parse_args()
 
-    OLLAMA_URL = args.ollama_url
-    JUDGE_MODEL = args.judge_model
-
     print(f"Starting Lure Controller on http://{args.host}:{args.port}")
-    print(f"Judge Model: {JUDGE_MODEL}")
-    print(f"Ollama URL:  {OLLAMA_URL}")
     app.run(host=args.host, port=args.port, debug=False)
