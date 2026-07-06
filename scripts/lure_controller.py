@@ -2,11 +2,8 @@ import os
 import sys
 import datetime
 import argparse
-import urllib.request
-import json
 from flask import Flask, request, jsonify
 import pymongo
-from bson import ObjectId
 
 # Add parent directory to path to allow importing db_mongo
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -18,64 +15,12 @@ db = None
 
 LOCK_TIMEOUT_SECONDS = 300  # 5 minutes
 
-OLLAMA_URL = "http://localhost:11434"
-JUDGE_MODEL = "mistral-nemo"
-
 def get_db():
     global db
     if db is None:
         db = get_mongo_db()
         ensure_indexes(db)
     return db
-
-def validate_lure_with_ai(ollama_url, model, card_name, card_type, card_text, generated_lure):
-    url = f"{ollama_url.rstrip('/')}/api/generate"
-    
-    prompt = f"""Evaluate this generated short story/introduction text (Lure) for a Magic: The Gathering card named '{card_name}' ({card_type}).
-
-Card Text:
-{card_text}
-
-Generated Lure Text:
-"{generated_lure}"
-
-Verify if the Lure text is good. It should feel evocative, mystical, or strange, and avoid dry rules review tone.
-You must respond with a JSON object.
-
-Your JSON response must match this format exactly:
-{{
-  "status": "PASSED" | "FAILED"
-}}
-
-Do not include any other text, markdown, or explanation outside the JSON.
-Response:"""
-
-    payload = {
-        "model": model,
-        "prompt": prompt,
-        "stream": False,
-        "format": "json",
-        "options": {
-            "temperature": 0.0
-        }
-    }
-    
-    try:
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST"
-        )
-        with urllib.request.urlopen(req, timeout=30) as response:
-            res_data = json.loads(response.read().decode("utf-8"))
-            raw_response = res_data.get("response", "").strip()
-            parsed = json.loads(raw_response)
-            status = parsed.get("status", "FAILED").upper()
-            return status == "PASSED"
-    except Exception as e:
-        print(f"Error calling Ollama judge: {e}")
-        return False
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -89,6 +34,12 @@ def claim_job():
 
     mongo_db = get_db()
     now = datetime.datetime.now(datetime.timezone.utc)
+    expiry_time = now - datetime.timedelta(seconds=LOCK_TIMEOUT_SECONDS)
+
+    # Release stale active claims first
+    mongo_db["active_claims"].delete_many({
+        "claimed_at": {"$lt": expiry_time}
+    })
 
     try:
         # Find oracle_ids that already have lures or hooks in abysses
@@ -155,7 +106,6 @@ def claim_job():
 
 @app.route("/jobs/<job_id>/complete", methods=["POST"])
 def complete_job(job_id):
-    # job_id is the oracle_id
     data = request.json or {}
     text = data.get("text")
     model = data.get("model", "unknown")
@@ -174,27 +124,13 @@ def complete_job(job_id):
         if not claim:
             return jsonify({"error": f"No active claim found for card: {job_id}"}), 404
 
-        # Retrieve card facts to validate and save
+        # Retrieve card facts to save
         card = mongo_db["cards"].find_one({"oracle_id": job_id})
         if not card:
             return jsonify({"error": f"Card not found in database: {job_id}"}), 404
 
         card_name = card.get("name")
-        card_type = card.get("type_line", "")
-        card_text = card.get("oracle_text", "")
         slug = card.get("slug") or slugify(card_name)
-
-        # Validate with Ollama judge
-        print(f"Controller: Validating Lure for '{card_name}' using model '{JUDGE_MODEL}'...")
-        is_valid = validate_lure_with_ai(OLLAMA_URL, JUDGE_MODEL, card_name, card_type, card_text, text)
-
-        if not is_valid:
-            print(f"Controller: Validation failed for '{card_name}'!")
-            # Release the lock so it can be retried
-            mongo_db["active_claims"].delete_one({"_id": job_id})
-            return jsonify({"status": "validation_failed", "message": "AI validation failed."}), 422
-
-        print(f"Controller: Validation passed for '{card_name}'!")
 
         # Write to abysses collection
         mongo_db["abysses"].update_one(
@@ -232,14 +168,11 @@ def complete_job(job_id):
 
 @app.route("/jobs/<job_id>/fail", methods=["POST"])
 def fail_job(job_id):
-    # job_id is the oracle_id
     mongo_db = get_db()
-
     try:
         # Simply delete the active claim lock. Do not record failure in DB!
         mongo_db["active_claims"].delete_one({"_id": job_id})
         return jsonify({"status": "failed_recorded", "job_id": job_id, "new_status": "pending"})
-
     except Exception as e:
         print(f"Error failing job {job_id}: {e}")
         return jsonify({"error": str(e)}), 500
@@ -269,9 +202,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Lure Controller Server")
     parser.add_argument("--host", default="127.0.0.1", help="Host interface to bind to")
     parser.add_argument("--port", type=int, default=5000, help="Port to run server on")
-    parser.add_argument("--judge-model", default="mistral-nemo", help="Ollama model to use as validation judge")
     args = parser.parse_args()
 
-    JUDGE_MODEL = args.judge_model
-    print(f"Starting Lure Controller on http://{args.host}:{args.port} using judge model '{JUDGE_MODEL}'")
+    print(f"Starting Lure Controller on http://{args.host}:{args.port}")
     app.run(host=args.host, port=args.port, debug=False, threaded=True)

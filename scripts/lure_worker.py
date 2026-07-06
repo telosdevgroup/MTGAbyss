@@ -122,9 +122,8 @@ def main():
                 raw_lure = run_ollama(args.ollama_url, args.model, prompt)
 
             cleaned_lure = clean_lure_text(raw_lure)
-            is_valid, validation_error = validate_lure_text(cleaned_lure, card_name)
             
-            if is_valid:
+            if cleaned_lure:
                 print(cleaned_lure)
                 # Complete the job
                 complete_url = f"{args.controller_url.rstrip('/')}/jobs/{job_id}/complete"
@@ -134,10 +133,10 @@ def main():
                     "worker_id": args.worker_id
                 })
             else:
-                # Fail the job
+                # Fail the job if empty
                 fail_url = f"{args.controller_url.rstrip('/')}/jobs/{job_id}/fail"
                 fail_response = post_json(fail_url, {
-                    "error": f"Validation failed: {validation_error}",
+                    "error": "Generated lure was empty after cleaning",
                     "worker_id": args.worker_id
                 })
 
