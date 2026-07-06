@@ -146,7 +146,7 @@ def complete_job(job_id):
                         "model": model,
                         "worker_id": worker_id,
                         "prompt_version": "abyss_lure_v1",
-                        "temperature": 0.4,
+                        "temperature": data.get("temperature", 0.7),
                         "created_at": now_str,
                         "updated_at": now_str
                     },

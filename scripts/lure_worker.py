@@ -6,6 +6,7 @@ import urllib.request
 import urllib.parse
 import argparse
 import socket
+import random
 
 # Add current directory and parent directory to path to allow imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -16,7 +17,7 @@ try:
 except ImportError:
     from scripts.lure_shared import clean_lure_text, validate_lure_text
 
-def run_ollama(ollama_url, model, prompt):
+def run_ollama(ollama_url, model, prompt, temperature):
     url = f"{ollama_url.rstrip('/')}/api/generate"
     payload = {
         "model": model,
@@ -24,7 +25,7 @@ def run_ollama(ollama_url, model, prompt):
         "stream": False,
         "keep_alive": "1h",
         "options": {
-            "temperature": 0.4
+            "temperature": temperature
         }
     }
     
@@ -116,11 +117,12 @@ def main():
 
         # Generate Lure
         start_time = time.time()
+        temp = round(random.uniform(0.6, 0.8), 2)
         try:
             if args.dry_run:
                 raw_lure = f"Beneath the quiet boughs of the ancient forest, {card_name} watches. A myth told in whispers, it commands the respect of the land, drawing those who wander too deep into its timeless grasp. A silent witness to the passage of ages, it remains waiting."
             else:
-                raw_lure = run_ollama(args.ollama_url, args.model, prompt)
+                raw_lure = run_ollama(args.ollama_url, args.model, prompt, temp)
 
             elapsed = time.time() - start_time
             cleaned_lure = clean_lure_text(raw_lure)
@@ -133,7 +135,8 @@ def main():
                 complete_response = post_json(complete_url, {
                     "text": cleaned_lure,
                     "model": args.model,
-                    "worker_id": args.worker_id
+                    "worker_id": args.worker_id,
+                    "temperature": temp
                 })
             else:
                 # Fail the job if empty
