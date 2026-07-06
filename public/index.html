@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MTGAbyss — What do you seek?</title>
+  <meta name="description" content="MTGAbyss: Natural language card search. Find Magic: The Gathering cards.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-logo" href="index.html">MTGAbyss</a>
+    <nav>
+      <a href="cards/index.html">Cards</a>
+    </nav>
+  </header>
+
+  <div class="homepage-wrapper">
+    <div class="homepage-panel">
+      <div class="homepage-brand">MTGAbyss</div>
+      <div class="homepage-subtitle">What do you seek?</div>
+      
+      <form class="homepage-search-form" id="search-form" action="search.html" method="get">
+        <input 
+          type="text" 
+          name="q" 
+          id="search-input" 
+          class="homepage-search-input" 
+          placeholder="Black Lotus" 
+          required
+          autocomplete="off"
+        >
+        <button type="submit" class="homepage-search-btn">Search</button>
+      </form>
+      
+      <div class="homepage-examples">
+        <div class="homepage-examples-label" style="text-align: center; margin-top: 1.5rem;">Try searching for:</div>
+        <div class="homepage-examples-list" style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-top: 0.75rem;">
+          <button type="button" class="homepage-example-pill" data-query="Encroaching Dragonstorm" style="text-align: center;">Encroaching Dragonstorm</button>
+          <button type="button" class="homepage-example-pill" data-query="Blade Splicer" style="text-align: center;">Blade Splicer</button>
+          <button type="button" class="homepage-example-pill" data-query="Wild Colos" style="text-align: center;">Wild Colos</button>
+          <button type="button" class="homepage-example-pill" data-query="Sublime Exhalation" style="text-align: center;">Sublime Exhalation</button>
+          <button type="button" class="homepage-example-pill" data-query="Healer's Headdress" style="text-align: center;">Healer's Headdress</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchForm = document.getElementById('search-form');
+      const searchInput = document.getElementById('search-input');
+      const pills = document.querySelectorAll('.homepage-example-pill');
+
+      pills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          const query = pill.getAttribute('data-query');
+          searchInput.value = query;
+          searchForm.submit();
+        });
+      });
+    });
+  </script>
+</body>
+</html>

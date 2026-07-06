@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{card_name} — MTGAbyss Database</title>
+  <meta name="description" content="Oracle card details, rulings, legality, and all printings for {card_name} on MTGAbyss.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-logo" href="/">MTGAbyss</a>
+    <nav>
+      <a href="/cards/index.html">Cards</a>
+    </nav>
+  </header>
+
+  <div class="page-wrapper">
+    <div class="container">
+      <header>
+        <div class="header-main">
+          <h1>{card_name}</h1>
+          <div class="badges-row">
+            {badges}
+          </div>
+        </div>
+      </header>
+
+      <main class="panel oracle-card-grid">
+        <!-- Left side: Representative Images -->
+        <section class="card-image-panel">
+          {image_gallery_html}
+        </section>
+
+        <!-- Right side: Oracle rules text & card facts -->
+        <section class="card-faces-container">
+          {card_info_html}
+
+          <!-- Quick stats list -->
+          <div class="panel">
+            <h3 class="panel-title">Card Statistics</h3>
+            <div class="field-row">
+              <span class="field-label">Color Identity</span>
+              <span class="field-value">{color_identity}</span>
+            </div>
+            <div class="field-row">
+              <span class="field-label">Mana Value</span>
+              <span class="field-value">{mana_value}</span>
+            </div>
+            <div class="field-row">
+              <span class="field-label">Keywords</span>
+              <span class="field-value">{keywords}</span>
+            </div>
+            <div class="tags-container">
+              <span class="field-label" style="display: block; margin-bottom: 0.4rem;">Oracle Tags</span>
+              <div class="tags-list">
+                {tags_html}
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Legality Section -->
+      <section class="panel section-panel" style="margin-top: 1.25rem;">
+        <h2 class="panel-title">Format Legality</h2>
+        <div class="legality-grid">
+          {legality_grid_html}
+        </div>
+      </section>
+
+      <!-- Rulings Section -->
+      <section class="panel section-panel">
+        <h2 class="panel-title">Rulings</h2>
+        <div class="rulings-list">
+          {rulings_html}
+        </div>
+      </section>
+
+      <!-- Printings Section (Browsing Grid) -->
+      <section class="panel section-panel">
+        <h2 class="panel-title">All Printings / Variants ({printings_count})</h2>
+        <div class="variants-grid">
+          {printings_grid_html}
+        </div>
+      </section>
+
+      <footer>
+        <p>Card data compiled from local Scryfall bulk data files.</p>
+        <p><a href="{scryfall_canonical_link}" target="_blank" rel="noopener noreferrer">View Canonical on Scryfall &rarr;</a></p>
+      </footer>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <p>MTGAbyss &mdash; Not affiliated with Wizards of the Coast or Scryfall.</p>
+  </footer>
+</body>
+</html>

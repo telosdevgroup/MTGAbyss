@@ -1,0 +1,55 @@
+# Python caches & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.nosetests
+.egg-info/
+dist/
+build/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+
+# Environments (Virtualenvs)
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Data files, dumps, large datasets
+*.jsonl
+*.json
+*.csv
+*.tsv
+data/
+db_dumps/
+
+# Generated static pages/build output
+public/cards/
+public/dist/
+dist/
+
+# IDE and Editor configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*~
+
+# OS specific files
+.DS_Store
+Thumbs.db

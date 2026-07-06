@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Results | MTGAbyss</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-logo" href="index.html">MTGAbyss</a>
+  </header>
+
+  <div class="page-wrapper">
+    <div class="container">
+      <main class="search-results-panel">
+        <h1 style="margin-top: 0; font-family: 'Outfit', sans-serif;">Search Results</h1>
+        <p style="color: var(--abyss-muted);">This is a minimal placeholder for the natural-language card parser.</p>
+        
+        <div style="margin-top: 2rem;">
+          <div>Search query:</div>
+          <div class="search-query-display" id="search-query-display">...</div>
+        </div>
+
+        <div style="margin-top: 2.5rem;">
+          <a href="index.html" class="homepage-search-btn" style="text-decoration: none; display: inline-block;">&larr; Back to Search</a>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const query = params.get('q') || '';
+      document.getElementById('search-query-display').textContent = query;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{name} | MTGAbyss</title>
+  <meta name="description" content="Oracle card details, rulings, legality, and all printings for {name} on MTGAbyss.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-logo" href="/">MTGAbyss</a>
+    <nav>
+      <a href="/cards/index.html">Cards</a>
+    </nav>
+  </header>
+
+  <div class="page-wrapper">
+    <div class="container">
+      <!-- Hero Image Section -->
+      <section class="hero-image-section">
+        <div class="hero-image-large" id="hero-card-wrapper">
+          <img id="hero-card-image" src="{image_url}" alt="{name}">
+        </div>
+        <div class="hero-card-subtitle" id="hero-card-subtitle">
+          <!-- Populated by JavaScript -->
+        </div>
+        <div class="theater-controls">
+          <button class="theater-btn" id="theater-toggle-btn">
+            <span class="icon">&nbsp;&nbsp;&#9654;</span> <span>Theater Mode</span>
+          </button>
+          <!-- Commented out sorting toggle button
+          <button class="theater-btn" id="order-toggle-btn">
+            <span class="icon">&#8987;</span> <span id="order-label">Date Order</span>
+          </button>
+          -->
+        </div>
+      </section>
+
+      <!-- All Printings Carousel Section -->
+      <section class="carousel-section">
+        <h2 class="carousel-title">All Printings</h2>
+        <div class="carousel-container" id="carousel-container">
+          <!-- Populated by JavaScript -->
+        </div>
+      </section>
+
+      <script>
+        // Inject printings data
+        const initialPrintings = {printings_json};
+        let printings = [...initialPrintings]; // working copy
+        let currentIndex = 0;
+        let autoplayTimer = null;
+        let isAutoplayActive = false;
+        let isRandom = false;
+
+        const container = document.getElementById('carousel-container');
+        const heroImage = document.getElementById('hero-card-image');
+        const heroWrapper = document.getElementById('hero-card-wrapper');
+        const subtitle = document.getElementById('hero-card-subtitle');
+        const theaterBtn = document.getElementById('theater-toggle-btn');
+        // const orderBtn = document.getElementById('order-toggle-btn');
+        // const orderLabel = document.getElementById('order-label');
+
+        function updateCarousel(isClick = false) {{
+          if (printings.length === 0) return;
+
+          const activePrint = printings[currentIndex];
+
+          // Trigger transition effect on hero image and subtitle if changing via click/autoplay
+          if (isClick) {{
+            heroWrapper.classList.add('fade');
+            subtitle.classList.add('fade');
+          }}
+
+          setTimeout(() => {{
+            heroImage.src = activePrint.image;
+            
+            // Build creative metadata subtitle
+            subtitle.innerHTML = `
+              <span>Set: <span class="highlight">${{activePrint.set_name}}</span> (<span class="highlight">${{activePrint.set_code}}</span>)</span>
+              <span class="divider">/</span>
+              <span>Collector #: <span class="highlight">${{activePrint.collector_number}}</span></span>
+              <span class="divider">/</span>
+              <span>Released: <span class="highlight">${{activePrint.released_at}}</span></span>
+              <span class="divider">/</span>
+              <span>Artist: <span class="highlight">${{activePrint.artist}}</span></span>
+            `;
+
+            if (isClick) {{
+              heroWrapper.classList.remove('fade');
+              subtitle.classList.remove('fade');
+            }}
+          }}, isClick ? 150 : 0);
+
+          container.innerHTML = '';
+
+          // Helper to get relative item indices
+          const getIndex = (offset) => {{
+            return (currentIndex + offset + printings.length) % printings.length;
+          }};
+
+          // If only 1 printing exists
+          if (printings.length === 1) {{
+            const item = document.createElement('div');
+            item.className = 'carousel-item center';
+            item.innerHTML = `<img src="${{printings[0].image}}" alt="${{printings[0].set_name}}">`;
+            container.appendChild(item);
+            return;
+          }}
+
+          const indices = [getIndex(-1), currentIndex, getIndex(1)];
+
+          indices.forEach((idx, i) => {{
+            const item = document.createElement('div');
+            if (i === 1) {{
+              item.className = 'carousel-item center';
+            }} else {{
+              item.className = 'carousel-item side-peek';
+            }}
+            item.innerHTML = `<img src="${{printings[idx].image}}" alt="${{printings[idx].set_name}}" style="cursor: pointer;">`;
+            item.addEventListener('click', () => {{
+              if (currentIndex !== idx) {{
+                currentIndex = idx;
+                resetAutoplay();
+                updateCarousel(true);
+              }}
+            }});
+            container.appendChild(item);
+          }});
+        }}
+
+        // Theater autoplay mode setup
+        function startAutoplay() {{
+          autoplayTimer = setInterval(() => {{
+            currentIndex = (currentIndex + 1) % printings.length;
+            updateCarousel(true);
+          }}, 4000); // cycle every 4 seconds
+        }}
+
+        function stopAutoplay() {{
+          if (autoplayTimer) {{
+            clearInterval(autoplayTimer);
+            autoplayTimer = null;
+          }}
+        }}
+
+        function resetAutoplay() {{
+          if (isAutoplayActive) {{
+            stopAutoplay();
+            startAutoplay();
+          }}
+        }}
+
+        function deactivateTheater() {{
+          isAutoplayActive = false;
+          document.body.classList.remove('theater-mode');
+          theaterBtn.classList.remove('active');
+          theaterBtn.querySelector('.icon').innerHTML = '&nbsp;&nbsp;&#9654;'; // play symbol
+          stopAutoplay();
+        }}
+
+        theaterBtn.addEventListener('click', (e) => {{
+          e.stopPropagation(); // prevent immediate click-outside trigger
+          isAutoplayActive = !isAutoplayActive;
+          if (isAutoplayActive) {{
+            document.body.classList.add('theater-mode');
+            theaterBtn.classList.add('active');
+            theaterBtn.querySelector('.icon').innerHTML = '&nbsp;&nbsp;&#10074;&#10074;'; // pause symbol
+            startAutoplay();
+          }} else {{
+            deactivateTheater();
+          }}
+        }});
+
+        /* Commented out sort toggle action handler
+        orderBtn.addEventListener('click', (e) => {{
+          e.stopPropagation();
+          isRandom = !isRandom;
+          
+          const currentPrint = printings[currentIndex];
+          
+          if (isRandom) {{
+            orderBtn.classList.add('active');
+            orderLabel.textContent = 'Random Order';
+            
+            for (let i = printings.length - 1; i > 0; i--) {{
+              const j = Math.floor(Math.random() * (i + 1));
+              [printings[i], printings[j]] = [printings[j], printings[i]];
+            }}
+          }} else {{
+            orderBtn.classList.remove('active');
+            orderLabel.textContent = 'Date Order';
+            printings = [...initialPrintings];
+          }}
+          
+          currentIndex = printings.findIndex(p => p.image === currentPrint.image);
+          if (currentIndex === -1) currentIndex = 0;
+          
+          resetAutoplay();
+          updateCarousel(true);
+        }});
+        */
+
+        // Click outside active card image close trigger
+        document.addEventListener('click', (e) => {{
+          if (!isAutoplayActive) return;
+          const clickedHero = heroWrapper.contains(e.target);
+          const clickedCarousel = container.contains(e.target);
+          const clickedToggle = theaterBtn.contains(e.target);
+          // const clickedOrder = orderBtn ? orderBtn.contains(e.target) : false;
+          if (!clickedHero && !clickedCarousel && !clickedToggle) {{
+            deactivateTheater();
+          }}
+        }});
+
+        // Window scroll close trigger
+        window.addEventListener('scroll', () => {{
+          if (isAutoplayActive) {{
+            deactivateTheater();
+          }}
+        }}, {{ passive: true }});
+
+
+
+        // Initialize
+        updateCarousel(false);
+      </script>
+
+      <div class="old-page-details-wrapper" style="margin-top: 2rem;">
+        <header style="margin-top: 2rem;">
+          <div class="header-main">
+            <h1>{name}</h1>
+          </div>
+        </header>
+
+        <!-- Abyss Profile Pull Quote -->
+        <div class="profile-pull-quote">
+          {ai_profile_html}
+        </div>
+
+        <!-- Accordion wrapping all data/detail panels -->
+        <details class="old-page-accordion" id="old-page-accordion">
+          <summary>Old Page Info &amp; Database Fields</summary>
+          <div class="accordion-content">
+
+
+            <main class="database-layout">
+              <!-- Main Rules Panel -->
+              <section class="panel rules-panel">
+                <h2 class="panel-title">Rules &amp; Text</h2>
+                <div class="field-row">
+                  <span class="field-label">Mana Cost</span>
+                  <span class="field-value mana-cost">{mana_cost}</span>
+                </div>
+                <div class="field-row">
+                  <span class="field-label">Type Line</span>
+                  <span class="field-value type-line">{type_line}</span>
+                </div>
+                <div class="oracle-text-box">
+                  {oracle_text}
+                </div>
+                {power_toughness_loyalty}
+              </section>
+
+              <!-- Card Facts -->
+              <section class="panel facts-panel">
+                <h2 class="panel-title">Card Facts</h2>
+                <div class="field-row">
+                  <span class="field-label">Color Identity</span>
+                  <span class="field-value">{color_identity}</span>
+                </div>
+                <div class="field-row">
+                  <span class="field-label">Keywords</span>
+                  <span class="field-value">{keywords}</span>
+                </div>
+                <div class="field-row">
+                  <span class="field-label">Artist</span>
+                  <span class="field-value">{artist}</span>
+                </div>
+                <div class="field-row">
+                  <span class="field-label">First Released</span>
+                  <span class="field-value">{released_at}</span>
+                </div>
+                <div class="tags-container">
+                  <span class="field-label" style="display: block; margin-bottom: 0.4rem;">Oracle Tags</span>
+                  <div class="tags-list">
+                    {tags_html}
+                  </div>
+                </div>
+              </section>
+            </main>
+
+            <!-- Legality Section -->
+            <section class="panel section-panel" style="margin-top: 1.25rem;">
+              <h2 class="panel-title">Format Legality</h2>
+              <div class="legality-grid">
+                {legality_grid_html}
+              </div>
+            </section>
+
+            <!-- Printings Section -->
+            <section class="panel section-panel">
+              <h2 class="panel-title">Primary Printing Info</h2>
+              <div class="printings-container">
+                {printings_html}
+              </div>
+            </section>
+
+            <!-- Rulings Section -->
+            <section class="panel section-panel">
+              <h2 class="panel-title">Rulings</h2>
+              <div class="rulings-list">
+                {rulings_html}
+              </div>
+            </section>
+
+            <!-- Debug/Source Fields Section -->
+            <details class="debug-panel">
+              <summary>Source Fields (Debug)</summary>
+              <div class="source-fields-list">
+                {source_fields_html}
+              </div>
+            </details>
+            <footer>
+              <p>Card data compiled from local Scryfall bulk data files.</p>
+              <p><a href="{scryfall_uri}" target="_blank" rel="noopener noreferrer">View on Scryfall &rarr;</a></p>
+            </footer>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <p>MTGAbyss &mdash; Not affiliated with Wizards of the Coast or Scryfall.</p>
+  </footer>
+</body>
+</html>
