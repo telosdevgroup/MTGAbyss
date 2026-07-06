@@ -60,36 +60,30 @@ def build_lure_prompt(card):
     if facts['power'] is not None and facts['toughness'] is not None:
         facts_str += f"Power/Toughness: {facts['power']}/{facts['toughness']}\n"
         
-    prompt = f"""Write an MTGAbyss Lure for this Magic commander.
+    prompt = f"""Write one Abyss Lure for this Magic card. The Lure must be a single fully-developed, atmospheric paragraph (1–2 long, descriptive sentences) that invites a click rather than explaining the rules. It will also be used as the meta description. Make it concrete, strange, and card-specific. Output only the Lure.
 
-CRITICAL REQUIREMENT: You must write EXACTLY two (2) sentences. Do not write three sentences. Do not write a single sentence. The total length must be between 15 and 50 words.
+Shape:
+- Target length: 220–260 characters. Do NOT write a short, simple one-liner. Let the text develop into a rich, evocative paragraph.
+- Soft max: 300 characters.
+- Hard reject: 340+ characters.
+- 1–2 sentences max.
+- No line breaks.
+- No markdown.
+- No quotes wrapped around the whole output.
+- No explanations.
+- No “as an AI”.
+- Do not summarize the card’s rules text.
+- Do not say “this card”.
+- Do not write strategy advice.
+- Do not mention formats, decks, commanders, prices, legality, or gameplay tips.
+- Do not output JSON.
+- Do not output multiple candidates.
 
-The Lure is the first short AI-written text on a visual commander archive page. It should pull the reader into the commander’s Abyss.
-
-Use the source facts, but do not mechanically list them.
-
-Tone:
-mystical, human, strange, elegant, ominous, intimate.
-
-Voice:
-Write like a quiet myth, a witness account, or a strange archive entry.
-
-Do not:
-- mention Magic: The Gathering
-- mention EDHREC
-- mention Commander format
-- mention deckbuilding
-- mention popularity
-- mention rankings
-- sound like a card review
-- sound like a rules explanation
-- claim this is official lore
-- mechanically list abilities
-- use phrases like “powerful commander,” “strategic value,” “game-changing,” “iconic,” or “synergy”
-
-You may imply mechanics through imagery.
-You may use exact mechanic words only if they feel natural.
-Output only the Lure text.
+Style:
+- Atmospheric, concrete, strange, and card-specific.
+- It should feel like a small door into the card, or a fragment of an omen/myth that makes the reader curious enough to see where it leads.
+- Prefer physical imagery, object imagery, creature behavior, omen, texture, motion, cost, hunger, oath, bloom, ash, glass, roots, metal, blood, wings, stone, etc. when appropriate.
+- Avoid overusing vague fantasy filler like “void,” “shadow,” “whispers,” “ancient,” “forgotten,” “primordial,” unless it genuinely fits the card.
 
 Source facts:
 {facts_str}
@@ -100,19 +94,22 @@ def validate_lure_text(text, card_name):
     if not text or not text.strip():
         return False, "Lure text is empty."
     
-    words = text.split()
-    if len(words) > 75:
-        return False, f"Lure is too long ({len(words)} words, max 75)."
-    if len(words) < 15:
-        return False, f"Lure is too short ({len(words)} words, min 15)."
+    if "\n" in text or "\r" in text:
+        return False, "Lure contains line breaks."
         
-    sentences = re.split(r'[.!?]+', text)
-    sentences = [s.strip() for s in sentences if s.strip()]
-    if len(sentences) != 2:
-        return False, f"Lure must be exactly 2 sentences (found {len(sentences)})."
+    text_len = len(text)
+    if text_len >= 340:
+        return False, f"Lure is too long ({text_len} characters, hard reject limit is 340)."
+    if text_len < 80 or text_len > 320:
+        return False, f"Lure length ({text_len} characters) is outside the accepted 80–320 range."
         
-    if any(char in text for char in ["*", "#", "[", "]", "_", "`"]):
-        return False, "Lure contains markdown styling."
+    if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
+        return False, "Lure is entirely wrapped in quotes."
+        
+    lower_text = text.lower()
+    
+    if lower_text.startswith("lure:") or lower_text.startswith("meta description:"):
+        return False, "Lure starts with an unwanted label."
         
     if "as an ai" in text.lower():
         return False, "Lure contains 'as an AI' preamble."
@@ -120,12 +117,15 @@ def validate_lure_text(text, card_name):
     if "{" in text or "}" in text or "```" in text:
         return False, "Lure contains code/JSON structures."
         
-    if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
-        return False, "Lure is entirely wrapped in quotes."
+    if any(char in text for char in ["*", "#", "[", "]", "_", "`"]):
+        return False, "Lure contains markdown styling."
         
-    lower_text = text.lower()
+    sentences = re.split(r'[.!?]+', text)
+    sentences = [s.strip() for s in sentences if s.strip()]
+    if len(sentences) < 1 or len(sentences) > 2:
+        return False, f"Lure must be 1–2 sentences (found {len(sentences)})."
+        
     lower_name = card_name.lower()
-    
     clunky_patterns = [
         f"{lower_name} is a",
         f"{lower_name} is the",
@@ -134,10 +134,18 @@ def validate_lure_text(text, card_name):
         f"this is the lure for {lower_name}",
         "as a magic commander",
         "magic card",
-        "commander card"
+        "commander card",
+        "this card",
+        "commander deck",
+        "edhrec",
+        "deckbuilding",
+        "strategic value",
+        "synergy",
+        "combo with",
+        "rules text"
     ]
     for pattern in clunky_patterns:
         if pattern in lower_text:
-            return False, f"Lure contains clunky card reference pattern: '{pattern}'"
+            return False, f"Lure contains clunky card reference or strategy pattern: '{pattern}'"
             
     return True, ""
