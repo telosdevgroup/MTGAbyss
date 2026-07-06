@@ -132,13 +132,19 @@ def claim_job():
         # Build prompt using build_lure_prompt
         prompt, facts = build_lure_prompt(card)
 
+        # Calculate remaining cards without a lure dynamically
+        completed_count = mongo_db["abysses"].count_documents({"content.lure.text": {"$exists": True}})
+        total_cards = mongo_db["cards"].count_documents({})
+        remaining = max(0, total_cards - completed_count)
+
         return jsonify({
             "job_id": oracle_id,
             "oracle_id": oracle_id,
             "card_name": card.get("name"),
             "slug": card.get("slug") or slugify(card.get("name")),
             "prompt": prompt,
-            "facts": facts
+            "facts": facts,
+            "remaining": remaining
         })
 
     except Exception as e:

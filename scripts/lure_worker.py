@@ -111,19 +111,8 @@ def main():
 
         card_name = claim_response.get("card_name")
         prompt = claim_response.get("prompt")
-        
-        # Fetch stats to print progress inline
-        done = "?"
-        remaining = "?"
-        try:
-            stats_url = f"{args.controller_url.rstrip('/')}/stats"
-            stats = get_json(stats_url)
-            done = stats.get("completed", "?")
-            remaining = stats.get("remaining", "?")
-        except Exception:
-            pass
-            
-        print(f"({done} done/{remaining} remaining) '{card_name}'")
+        remaining = claim_response.get("remaining", "?")
+        print(f"({remaining} remaining) '{card_name}'")
 
         # Generate Lure
         try:
