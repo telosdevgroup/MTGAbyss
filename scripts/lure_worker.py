@@ -112,7 +112,7 @@ def main():
         card_name = claim_response.get("card_name")
         prompt = claim_response.get("prompt")
         remaining = claim_response.get("remaining", "?")
-        print(f"({remaining} remaining) '{card_name}'")
+        print(f"\n({remaining} remaining) '{card_name}'")
 
         # Generate Lure
         try:
