@@ -115,16 +115,19 @@ def main():
         print(f"\n({remaining} remaining) '{card_name}'")
 
         # Generate Lure
+        start_time = time.time()
         try:
             if args.dry_run:
                 raw_lure = f"Beneath the quiet boughs of the ancient forest, {card_name} watches. A myth told in whispers, it commands the respect of the land, drawing those who wander too deep into its timeless grasp. A silent witness to the passage of ages, it remains waiting."
             else:
                 raw_lure = run_ollama(args.ollama_url, args.model, prompt)
 
+            elapsed = time.time() - start_time
             cleaned_lure = clean_lure_text(raw_lure)
             
             if cleaned_lure:
                 print(cleaned_lure)
+                print(f"Generation time: {elapsed:.2f}s")
                 # Complete the job
                 complete_url = f"{args.controller_url.rstrip('/')}/jobs/{job_id}/complete"
                 complete_response = post_json(complete_url, {
