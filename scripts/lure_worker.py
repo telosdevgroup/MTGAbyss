@@ -112,19 +112,25 @@ def main():
         card_name = claim_response.get("card_name")
         prompt = claim_response.get("prompt")
         remaining = claim_response.get("remaining", "?")
-        print(f"({remaining} remaining) '{card_name}'")
+        print(f"\n[Claimed Job] Card Name: '{card_name}' (ID: {job_id}, {remaining} remaining)")
 
         # Generate Lure
+        start_time = time.time()
         try:
             if args.dry_run:
                 raw_lure = f"Beneath the quiet boughs of the ancient forest, {card_name} watches. A myth told in whispers, it commands the respect of the land, drawing those who wander too deep into its timeless grasp. A silent witness to the passage of ages, it remains waiting."
             else:
                 raw_lure = run_ollama(args.ollama_url, args.model, prompt)
 
+            elapsed = time.time() - start_time
+            print(f"Ollama generation completed in {elapsed:.2f} seconds.")
+
             cleaned_lure = clean_lure_text(raw_lure)
             is_valid, validation_error = validate_lure_text(cleaned_lure, card_name)
             
             if is_valid:
+                print("Lure text validation passed!")
+                print(f"Generated Lure:\n----------------------------------------\n{cleaned_lure}\n----------------------------------------")
                 # Complete the job
                 complete_url = f"{args.controller_url.rstrip('/')}/jobs/{job_id}/complete"
                 complete_response = post_json(complete_url, {
@@ -132,21 +138,27 @@ def main():
                     "model": args.model,
                     "worker_id": args.worker_id
                 })
+                print(f"Submitted success: {complete_response}")
             else:
+                print(f"Validation failed: {validation_error}")
+                print(f"Failed Lure text was:\n----------------------------------------\n{cleaned_lure}\n----------------------------------------")
                 # Fail the job
                 fail_url = f"{args.controller_url.rstrip('/')}/jobs/{job_id}/fail"
                 fail_response = post_json(fail_url, {
                     "error": f"Validation failed: {validation_error}",
                     "worker_id": args.worker_id
                 })
+                print(f"Submitted failure: {fail_response}")
 
         except Exception as e:
+            print(f"Error processing job for {card_name}: {e}")
             try:
                 fail_url = f"{args.controller_url.rstrip('/')}/jobs/{job_id}/fail"
                 fail_response = post_json(fail_url, {
                     "error": str(e),
                     "worker_id": args.worker_id
                 })
+                print(f"Submitted failure report: {fail_response}")
             except Exception:
                 pass
 
