@@ -182,30 +182,7 @@ def complete_job(job_id):
 
         # No active claim locks to release
 
-        # Trigger rendering of the card detail page via render service
-        # try:
-        #     import urllib.request
-        #     render_url = "http://127.0.0.1:5001/render/card"
-        #     payload = {"card_name": card_name}
-        #     req = urllib.request.Request(
-        #         render_url,
-        #         data=json.dumps(payload).encode("utf-8"),
-        #         headers={"Content-Type": "application/json"},
-        #         method="POST"
-        #     )
-        #     with urllib.request.urlopen(req, timeout=40) as response:
-        #         html_content = response.read().decode("utf-8")
-        #         
-        #     # Save the returned HTML content
-        #     output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "public", "card", slug)
-        #     os.makedirs(output_dir, exist_ok=True)
-        #     output_path = os.path.join(output_dir, "index.html")
-        #     with open(output_path, "w", encoding="utf-8") as f:
-        #         f.write(html_content)
-        #         
-        #     print(f"Rendered: '{card_name}' -> public/card/{slug}/index.html")
-        # except Exception as render_err:
-        #     print(f"Render Error: '{card_name}' failed: {render_err}")
+
 
         return jsonify({"status": "completed", "job_id": job_id, "oracle_id": job_id})
 
