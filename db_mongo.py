@@ -71,6 +71,12 @@ def ensure_indexes(db):
     abysses.create_index("content.lure.status")
     abysses.create_index("content.hook.status")
 
+    # Image metadata collection indexes
+    image_metadata = db["image_metadata"]
+    image_metadata.create_index([("scryfall_id", pymongo.ASCENDING), ("size", pymongo.ASCENDING), ("face_index", pymongo.ASCENDING)], unique=True)
+    image_metadata.create_index("oracle_id")
+
+
 
 
 

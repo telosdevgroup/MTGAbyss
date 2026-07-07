@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{name} | MTGAbyss</title>
-  <meta name="description" content="Oracle card details, rulings, legality, and all printings for {name} on MTGAbyss.">
+  {meta_tags}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -38,15 +38,19 @@
           </button>
           -->
         </div>
+        {mechanics_chips}
       </section>
 
-      <!-- All Printings Carousel Section -->
+      {lure_html}
+
+      <!-- All Printings Carousel Section
       <section class="carousel-section">
-        <h2 class="carousel-title">All Printings</h2>
+        <h2 class="carousel-title">{name} Art Throughout History</h2>
         <div class="carousel-container" id="carousel-container">
-          <!-- Populated by JavaScript -->
+          Populated by JavaScript
         </div>
       </section>
+      -->
 
       <script>
         // Inject printings data
@@ -66,6 +70,7 @@
         // const orderLabel = document.getElementById('order-label');
 
         function updateCarousel(isClick = false) {{
+          if (!container) return;
           if (printings.length === 0) return;
 
           const activePrint = printings[currentIndex];
@@ -230,108 +235,330 @@
         updateCarousel(false);
       </script>
 
+      <style>
+        .similar-cards-section {{
+          margin: 3rem 0;
+          text-align: center;
+        }}
+        .similar-cards-row {{
+          display: flex;
+          justify-content: space-between;
+          gap: 2rem;
+          margin-top: 1.5rem;
+          flex-wrap: nowrap;
+        }}
+        .similar-card-item {{
+          flex: 1;
+          cursor: pointer;
+          transition: transform 0.25s ease;
+          text-align: center;
+        }}
+        .similar-card-item:hover {{
+          transform: translateY(-6px);
+        }}
+        .similar-card-img {{
+          width: 100%;
+          aspect-ratio: 63 / 88;
+          object-fit: contain;
+          border-radius: 4.75% / 3.5%;
+          box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+          border: 1px solid var(--abyss-border);
+          transition: box-shadow 0.25s ease, border-color 0.25s ease;
+        }}
+        .similar-card-item:hover .similar-card-img {{
+          box-shadow: 0 10px 24px rgba(201,111,140,0.25);
+          border-color: var(--sakura);
+        }}
+        .similar-card-name {{
+          font-size: 0.9rem;
+          font-weight: 700;
+          margin-top: 0.6rem;
+          color: var(--abyss-text);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }}
+        .similar-card-blurb {{
+          font-size: 0.7rem;
+          font-weight: 600;
+          color: var(--abyss-muted);
+          margin-top: 0.4rem;
+          line-height: 1.4;
+          text-align: center;
+        }}
+        .similar-card-blurb span {{
+          display: inline-block;
+        }}
+        .similar-card-blurb .divider {{
+          color: var(--sakura);
+          margin: 0 0.3rem;
+          font-weight: normal;
+        }}
+        .similar-card-blurb .highlight {{
+          color: var(--sakura-deep);
+        }}
+
+        /* Embedding Comparison Layout */
+        .embedding-comparison-section {{
+          margin: 3rem 0;
+        }}
+        .comparison-container {{
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 2.5rem;
+          margin-top: 1.5rem;
+        }}
+        @media (max-width: 768px) {{
+          .comparison-container {{
+            flex-direction: column;
+            gap: 2rem;
+          }}
+          .comparison-connector {{
+            transform: rotate(90deg);
+            margin: 1rem 0;
+          }}
+        }}
+        .comparison-card-wrapper {{
+          flex: 0 1 260px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          background: var(--abyss-surface-raised);
+          border: 1px solid var(--abyss-border);
+          border-radius: 12px;
+          padding: 1.5rem;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+          position: relative;
+          transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        }}
+        .comparison-card-wrapper.match-card-wrapper:hover {{
+          transform: translateY(-6px);
+          border-color: var(--sakura);
+          box-shadow: 0 10px 24px rgba(201, 111, 140, 0.15);
+        }}
+        .card-badge {{
+          position: absolute;
+          top: -12px;
+          background: var(--abyss-header);
+          color: #fff;
+          font-size: 0.7rem;
+          font-weight: 700;
+          padding: 0.25rem 0.75rem;
+          border-radius: 20px;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        }}
+        .card-badge.match-badge {{
+          background: var(--sakura-deep);
+        }}
+        .comparison-card-img {{
+          width: 100%;
+          aspect-ratio: 63 / 88;
+          object-fit: contain;
+          border-radius: 4.75% / 3.5%;
+          box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+          border: 1px solid var(--abyss-border);
+          margin-bottom: 0.8rem;
+          transition: box-shadow 0.25s ease, border-color 0.25s ease;
+        }}
+        .comparison-card-wrapper.match-card-wrapper:hover .comparison-card-img {{
+          border-color: var(--sakura);
+          box-shadow: 0 10px 20px rgba(201, 111, 140, 0.2);
+        }}
+        .comparison-card-name {{
+          font-size: 1rem;
+          font-weight: 800;
+          color: var(--abyss-text);
+          text-align: center;
+          margin-bottom: 0.25rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          width: 100%;
+        }}
+        .comparison-card-meta {{
+          font-size: 0.75rem;
+          color: var(--abyss-muted);
+          text-align: center;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          width: 100%;
+        }}
+        .comparison-connector {{
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          width: 100px;
+        }}
+        .connector-line {{
+          width: 100%;
+          height: 2px;
+          background: repeating-linear-gradient(90deg, var(--abyss-border), var(--abyss-border) 4px, transparent 4px, transparent 8px);
+          position: absolute;
+          z-index: 1;
+        }}
+        .comparison-connector-badge {{
+          background: var(--sakura-soft);
+          color: var(--sakura-deep);
+          border: 1px solid var(--sakura);
+          padding: 0.4rem 0.8rem;
+          border-radius: 20px;
+          font-size: 0.8rem;
+          font-weight: 700;
+          z-index: 2;
+          box-shadow: 0 2px 8px rgba(201,111,140,0.15);
+          white-space: nowrap;
+        }}
+      </style>
+
       <div class="old-page-details-wrapper" style="margin-top: 2rem;">
         <header style="margin-top: 2rem;">
           <div class="header-main">
             <h1>{name}</h1>
+            <div class="badges-row" style="margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-start;">
+              {badges}
+            </div>
           </div>
         </header>
 
-        <!-- Abyss Profile Pull Quote -->
-        <div class="profile-pull-quote">
-          {ai_profile_html}
-        </div>
-
-        <!-- Accordion wrapping all data/detail panels -->
-        <details class="old-page-accordion" id="old-page-accordion">
-          <summary>Old Page Info &amp; Database Fields</summary>
-          <div class="accordion-content">
-
-
-            <main class="database-layout">
-              <!-- Main Rules Panel -->
-              <section class="panel rules-panel">
-                <h2 class="panel-title">Rules &amp; Text</h2>
-                <div class="field-row">
-                  <span class="field-label">Mana Cost</span>
-                  <span class="field-value mana-cost">{mana_cost}</span>
-                </div>
-                <div class="field-row">
-                  <span class="field-label">Type Line</span>
-                  <span class="field-value type-line">{type_line}</span>
-                </div>
-                <div class="oracle-text-box">
-                  {oracle_text}
-                </div>
-                {power_toughness_loyalty}
-              </section>
-
-              <!-- Card Facts -->
-              <section class="panel facts-panel">
-                <h2 class="panel-title">Card Facts</h2>
-                <div class="field-row">
-                  <span class="field-label">Color Identity</span>
-                  <span class="field-value">{color_identity}</span>
-                </div>
-                <div class="field-row">
-                  <span class="field-label">Keywords</span>
-                  <span class="field-value">{keywords}</span>
-                </div>
-                <div class="field-row">
-                  <span class="field-label">Artist</span>
-                  <span class="field-value">{artist}</span>
-                </div>
-                <div class="field-row">
-                  <span class="field-label">First Released</span>
-                  <span class="field-value">{released_at}</span>
-                </div>
-                <div class="tags-container">
-                  <span class="field-label" style="display: block; margin-bottom: 0.4rem;">Oracle Tags</span>
-                  <div class="tags-list">
-                    {tags_html}
-                  </div>
-                </div>
-              </section>
-            </main>
-
-            <!-- Legality Section -->
-            <section class="panel section-panel" style="margin-top: 1.25rem;">
-              <h2 class="panel-title">Format Legality</h2>
-              <div class="legality-grid">
-                {legality_grid_html}
-              </div>
-            </section>
-
-            <!-- Printings Section -->
-            <section class="panel section-panel">
-              <h2 class="panel-title">Primary Printing Info</h2>
-              <div class="printings-container">
-                {printings_html}
-              </div>
-            </section>
-
-            <!-- Rulings Section -->
-            <section class="panel section-panel">
-              <h2 class="panel-title">Rulings</h2>
-              <div class="rulings-list">
-                {rulings_html}
-              </div>
-            </section>
-
-            <!-- Debug/Source Fields Section -->
-            <details class="debug-panel">
-              <summary>Source Fields (Debug)</summary>
-              <div class="source-fields-list">
-                {source_fields_html}
-              </div>
-            </details>
-            <footer>
-              <p>Card data compiled from local Scryfall bulk data files.</p>
-              <p><a href="{scryfall_uri}" target="_blank" rel="noopener noreferrer">View on Scryfall &rarr;</a></p>
-            </footer>
+        <!-- Embedding Comparison Section -->
+        <section class="embedding-comparison-section" id="embedding-comparison-section" style="display: none;">
+          <h2 style="font-size: 1.25rem; font-weight: 800; margin-top: 0; margin-bottom: 2rem; color: var(--abyss-text); text-align: left; border-bottom: 1px solid var(--abyss-border); padding-bottom: 0.5rem; letter-spacing: -0.01em;">Semantic Comparison</h2>
+          <div class="comparison-container">
+            <div class="comparison-card-wrapper">
+              <div class="card-badge">Current Card</div>
+              <img class="comparison-card-img" src="{image_url}" alt="{name}">
+              <div class="comparison-card-name">{name}</div>
+              <div class="comparison-card-meta">Active Selection</div>
+            </div>
+            
+            <div class="comparison-connector">
+              <div class="comparison-connector-badge">✦</div>
+              <div class="connector-line"></div>
+            </div>
+            
+            <div class="comparison-card-wrapper match-card-wrapper" id="comparison-match-card" style="cursor: pointer;">
+              <div class="card-badge match-badge">Closest Match</div>
+              <img class="comparison-card-img" id="comparison-match-img" src="" alt="">
+              <div class="comparison-card-name" id="comparison-match-name"></div>
+              <div class="comparison-card-meta" id="comparison-match-meta"></div>
+            </div>
           </div>
-        </details>
+        </section>
+
+        <!-- Similar Cards Row -->
+        <section class="similar-cards-section">
+          <h2 style="font-size: 1.25rem; font-weight: 800; margin-top: 0; margin-bottom: 0.5rem; color: var(--abyss-text); text-align: left; border-bottom: 1px solid var(--abyss-border); padding-bottom: 0.5rem; letter-spacing: -0.01em;">Similar</h2>
+          <div class="similar-cards-row" id="similar-cards-row">
+            <!-- Populated dynamically by JS -->
+          </div>
+        </section>
+
+        {ai_profile_html}
+
+        <!-- Bottom Search Section -->
+        <section class="bottom-search-section" style="margin-top: 3rem; border-top: 1px solid var(--abyss-border); padding-top: 2rem; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+          <h2 style="font-size: 1.2rem; font-weight: 700; margin: 0; color: var(--abyss-text);">Seek another card</h2>
+          <form class="homepage-search-form" action="/search.html" method="get" style="max-width: 500px; width: 100%;">
+            <input 
+              type="text" 
+              name="q" 
+              class="homepage-search-input" 
+              placeholder="Black Lotus" 
+              required
+              autocomplete="off"
+            >
+            <button type="submit" class="homepage-search-btn">Search</button>
+          </form>
+        </section>
+
       </div>
+      
+      <script>
+        (function() {{
+          const similarCards = {similar_cards_json};
+          
+          // Populate Similar Cards section
+          const container = document.getElementById('similar-cards-row');
+          if (similarCards && similarCards.length > 0) {{
+            similarCards.forEach(card => {{
+              const item = document.createElement('div');
+              item.className = 'similar-card-item';
+              item.addEventListener('click', () => {{
+                window.location.href = `../../card/${{card.slug}}/index.html`;
+              }});
+              
+              const imgUrl = card.image_url || '../../assets/placeholder-card.png';
+              const earliest = card.earliest_printing || {{}};
+              const year = earliest.released_at ? earliest.released_at.split('-')[0] : '';
+              const yearStr = (year && year !== '9999') ? ` (${{year}})` : '';
+              const blurbText = `${{earliest.set_name}} (${{earliest.set_code}}) #${{earliest.collector_number}} by ${{earliest.artist}}${{yearStr}}`;
+
+              const blurbHtml = `
+                <span>Set: <span class="highlight">${{earliest.set_name || ''}}</span> (<span class="highlight">${{earliest.set_code || ''}}</span>)</span>
+                <span class="divider">/</span>
+                <span>Collector #: <span class="highlight">${{earliest.collector_number || ''}}</span></span>
+                <span class="divider">/</span>
+                <span>Released: <span class="highlight">${{earliest.released_at || ''}}</span></span>
+                <span class="divider">/</span>
+                <span>Artist: <span class="highlight">${{earliest.artist || ''}}</span></span>
+              `;
+
+              item.innerHTML = `
+                <img class="similar-card-img" src="${{imgUrl}}" alt="${{card.name}}">
+                <div class="similar-card-name" title="${{card.name}}">${{card.name}}</div>
+                <div class="similar-card-blurb" title="${{blurbText}}">${{blurbHtml}}</div>
+              `;
+              container.appendChild(item);
+            }});
+
+            // Populate Embedding Comparison Section
+            const comparisonSection = document.getElementById('embedding-comparison-section');
+            if (comparisonSection) {{
+              comparisonSection.style.display = 'block';
+              
+              const matchCard = similarCards[0];
+              document.getElementById('comparison-match-img').src = matchCard.image_url || '../../assets/placeholder-card.png';
+              document.getElementById('comparison-match-img').alt = matchCard.name;
+              document.getElementById('comparison-match-name').textContent = matchCard.name;
+              
+              const earliest = matchCard.earliest_printing || {{}};
+              const year = earliest.released_at ? earliest.released_at.split('-')[0] : '';
+              const yearStr = (year && year !== '9999') ? ` (${{year}})` : '';
+              document.getElementById('comparison-match-meta').textContent = `${{earliest.set_name || ''}}${{yearStr}}`;
+              
+              document.getElementById('comparison-match-card').addEventListener('click', () => {{
+                window.location.href = `../../card/${{matchCard.slug}}/index.html`;
+              }});
+            }}
+
+            // Toggle tooltip on tap/click for mobile support
+            document.querySelectorAll('.mechanic-chip').forEach(chip => {{
+              chip.addEventListener('click', (e) => {{
+                e.stopPropagation();
+                const isActive = chip.classList.contains('active');
+                document.querySelectorAll('.mechanic-chip').forEach(c => c.classList.remove('active'));
+                if (!isActive) {{
+                  chip.classList.add('active');
+                }}
+              }});
+            }});
+
+            document.addEventListener('click', () => {{
+              document.querySelectorAll('.mechanic-chip').forEach(c => c.classList.remove('active'));
+            }});
+          }} else {{
+            const section = document.querySelector('.similar-cards-section');
+            if (section) {{
+              section.style.display = 'none';
+            }}
+          }}
+        }})();
+      </script>
     </div>
   </div>
 

@@ -9,11 +9,11 @@ We use a modularized, networked controller-worker architecture to generate Lures
 ### 1. Start the Controller Server
 Run the controller on the host machine. By default, it binds to `127.0.0.1:5000` (localhost).
 ```bash
-python scripts/lure_controller.py --host 127.0.0.1 --port 5000
+python scripts/job_controller.py --host 127.0.0.1 --port 5000
 ```
 To allow workers from other laptops on the local network (LAN) to connect, bind the controller to `0.0.0.0`:
 ```bash
-python scripts/lure_controller.py --host 0.0.0.0 --port 5000
+python scripts/job_controller.py --host 0.0.0.0 --port 5000
 ```
 
 

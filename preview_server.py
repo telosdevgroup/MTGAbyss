@@ -1,7 +1,22 @@
 import os
 import sys
 import re
+import math
+import html
+import json
+import urllib.request
+import urllib.parse
+from flask import Flask, request, redirect, send_from_directory, abort
+
+# Add parent directory to path to allow importing db_mongo
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from db_mongo import get_mongo_db
+
+app = Flask(__name__)
+
+# Cache collections in memory for performance
+ALL_EMBEDDINGS = None
+PRINTINGS_CACHE = {}
 
 POWER_NINE = {
     'black lotus', 'ancestral recall', 'time walk', 
@@ -20,16 +35,13 @@ def slugify(s):
 def markdown_to_html(md):
     if not md:
         return ""
-    # Simple markdown parser to avoid dependencies
-    html = md
-    # Split paragraphs by double newline
-    paragraphs = html.split('\n\n')
+    html_content = md
+    paragraphs = html_content.split('\n\n')
     formatted_paras = []
     for p in paragraphs:
         p = p.strip()
         if not p:
             continue
-        # Headers: ### Header
         if p.startswith('### '):
             p = f"<h3>{p[4:]}</h3>"
         elif p.startswith('## '):
@@ -37,9 +49,7 @@ def markdown_to_html(md):
         elif p.startswith('# '):
             p = f"<h1>{p[2:]}</h1>"
         else:
-            # Bold
             p = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', p)
-            # Italics
             p = re.sub(r'\*(.*?)\*', r'<em>\1</em>', p)
             p = f"<p>{p.replace(chr(10), '<br>')}</p>"
         formatted_paras.append(p)
@@ -54,60 +64,44 @@ def get_earliest_printing(db, oracle_id, fallback_card):
         'collector_number': fallback_card.get('collector_number', 'N/A')
     }
 
-def main():
+def load_embeddings(db):
+    global ALL_EMBEDDINGS
+    if ALL_EMBEDDINGS is None:
+        print("Loading all card embeddings into memory...")
+        try:
+            ALL_EMBEDDINGS = list(db["card_embeddings"].find({}, {"oracle_id": 1, "embedding": 1}))
+            print(f"Loaded {len(ALL_EMBEDDINGS)} embeddings.")
+        except Exception as e:
+            print(f"Error loading embeddings: {e}")
+            ALL_EMBEDDINGS = []
+    return ALL_EMBEDDINGS
+
+def get_cosine_similarity(v1, v2):
+    dot_product = sum(x * y for x, y in zip(v1, v2))
+    norm_a = math.sqrt(sum(x * x for x in v1))
+    norm_b = math.sqrt(sum(y * y for y in v2))
+    if norm_a == 0 or norm_b == 0:
+        return 0.0
+    return dot_product / (norm_a * norm_b)
+
+def render_card_detail(card_slug):
     db = get_mongo_db()
+    card = db["cards"].find_one({"slug": card_slug})
+    if not card:
+        # Try search by exact name as fallback
+        card = db["cards"].find_one({"name": card_slug.replace('-', ' ')})
     
-    # Check arguments
-    search_term = None
-    if len(sys.argv) > 1:
-        search_term = sys.argv[1]
-        
-    card = None
-    
-    # 1. Search by argument if provided
-    if search_term:
-        print(f"Searching MongoDB for card: '{search_term}'...")
-        card = db["cards"].find_one({
-            "$or": [
-                {"name": search_term},
-                {"slug": slugify(search_term)}
-            ]
-        })
-        if card:
-            print(f"Found '{card.get('name')}' by exact name/slug match.")
-            
-    # 2. Fallback to Black Lotus if no search term, or search term didn't match
     if not card:
-        if search_term:
-            print(f"Card '{search_term}' not found. Falling back to default...")
-        card = db["cards"].find_one({"name": "Black Lotus"})
-        if card:
-            print("Found 'Black Lotus' in MongoDB.")
-            
-    # 3. Fallback to first restricted card
-    if not card:
-        print("Black Lotus not found. Searching for first card with Vintage legality = 'restricted'...")
-        card = db["cards"].find_one({"legalities.vintage": "restricted"})
-        if card:
-            print(f"Found restricted card: '{card.get('name')}'")
-            
-    if not card:
-        # Fallback to absolute first card in database
-        card = db["cards"].find_one({})
-        if card:
-            print(f"No restricted cards or Black Lotus found. Using first card: '{card.get('name')}'")
-        else:
-            print("No cards found in the MongoDB database at all!")
-            sys.exit(1)
-            
+        abort(404, description="Card not found")
+
     oracle_id = card.get('oracle_id')
     name = card.get('name')
-    slug = slugify(name)
+    slug = card.get('slug') or slugify(name)
     
     # Load rulings
     rulings = list(db["rulings"].find({"oracle_id": oracle_id}).sort("published_at", 1))
     
-    # Load tags from embedded array
+    # Load tags
     tags = card.get("tags", [])
     
     # Load AI page
@@ -117,14 +111,11 @@ def main():
         "page_type": "profile"
     })
     
-    # Format AI Profile section
     if ai_page:
         profile_content = markdown_to_html(ai_page.get("body_markdown", ""))
         ai_profile_html = f'<div class="profile-pull-quote">\n          {profile_content}\n        </div>'
-        print(f"Found AI profile for '{name}'.")
     else:
         ai_profile_html = ""
-        print(f"No AI profile found for '{name}'.")
     
     # Extract card image URL
     image_url = ''
@@ -138,7 +129,6 @@ def main():
             f_uris = card_faces[0].get('image_uris', {})
             image_url = f_uris.get('large') or f_uris.get('normal', '')
 
-    # Generate HTML components
     mana_cost = card.get('mana_cost') or 'None'
     cmc = card.get('cmc', 0.0)
     type_line = card.get('type_line') or ''
@@ -163,7 +153,6 @@ def main():
     collector_num = card.get('collector_number') or 'N/A'
     rarity = (card.get('rarity') or 'Unknown').capitalize()
     
-    # Badges formatting
     badges_list = []
     
     # 1. Card Types
@@ -256,28 +245,22 @@ def main():
     """
     
     # Rulings HTML
-    rulings_html = ''
     if rulings:
-        for r in rulings:
-            rulings_html += f"""
-            <div class="ruling-item">
-              <div class="ruling-date">{r.get('published_at', '')} ({r.get('source', '').upper()})</div>
-              <div>{r.get('comment', '')}</div>
-            </div>
-            """
+        rulings_html = "".join([f"""
+        <div class="ruling-item">
+          <div class="ruling-date">{r.get('published_at', '')} ({r.get('source', '').upper()})</div>
+          <div>{r.get('comment', '')}</div>
+        </div>
+        """ for r in rulings])
     else:
         rulings_html = '<div class="rulings-empty">No rulings available.</div>'
         
     # Tags HTML
-    tags_html = ''
     if tags:
-        for t in tags:
-            tags_html += f'<span class="tag-badge" title="{t["namespace"]}">{t["tag"]}</span>'
+        tags_html = "".join([f'<span class="tag-badge" title="{t["namespace"]}">{t["tag"]}</span>' for t in tags])
     else:
         tags_html = '<div class="rulings-empty">No tags associated with this card.</div>'
         
-    # Source fields
-    # MongoDB docs contain standard BSON object ids and raw keys. We clean them up
     source_fields = sorted(list(card.keys()))
     if "_id" in source_fields:
         source_fields.remove("_id")
@@ -286,16 +269,20 @@ def main():
     scryfall_uri = card.get('scryfall_uri') or 'https://scryfall.com'
 
     # Construct printings list locally (never hit Scryfall)
-    printings_list = [{
-        'set_name': card.get('set_name', 'Unknown Set'),
-        'set_code': (card.get('set') or '???').upper(),
-        'image': image_url,
-        'released_at': card.get('released_at', 'Unknown'),
-        'artist': card.get('artist', 'Unknown Artist'),
-        'collector_number': card.get('collector_number', 'N/A')
-    }]
+    global PRINTINGS_CACHE
+    if oracle_id in PRINTINGS_CACHE:
+        printings_list = PRINTINGS_CACHE[oracle_id]
+    else:
+        printings_list = [{
+            'set_name': card.get('set_name', 'Unknown Set'),
+            'set_code': (card.get('set') or '???').upper(),
+            'image': image_url,
+            'released_at': card.get('released_at', 'Unknown'),
+            'artist': card.get('artist', 'Unknown Artist'),
+            'collector_number': card.get('collector_number', 'N/A')
+        }]
+        PRINTINGS_CACHE[oracle_id] = printings_list
 
-    # Fallback to current card image if fetch fails or returns empty
     if not printings_list:
         printings_list = [{
             'set_name': set_name,
@@ -306,11 +293,8 @@ def main():
             'collector_number': collector_num
         }]
     else:
-        # Override initial page image with the oldest printing image
         image_url = printings_list[0]['image']
 
-    import json
-    # Export all metadata keys to clean_printings JSON
     clean_printings = [{
         'set_name': p['set_name'],
         'set_code': p['set_code'],
@@ -321,76 +305,42 @@ def main():
     } for p in printings_list]
     printings_json_str = json.dumps(clean_printings)
 
-    import html
-    # Fetch Lure content from abysses collection
     lure_html = ""
     default_desc = f"Oracle card details, rulings, legality, and all printings for {name} on MTGAbyss."
     meta_tags = f'<meta name="description" content="{html.escape(default_desc)}">'
     
     try:
-        abyss_lure_doc = db["abysses"].find_one({
-            "oracle_id": oracle_id
-        })
+        abyss_lure_doc = db["abysses"].find_one({"oracle_id": oracle_id})
         if abyss_lure_doc:
             lure_data = abyss_lure_doc.get("content", {}).get("lure", {})
             if lure_data.get("status") == "generated" and lure_data.get("text"):
                 lure_text = lure_data.get("text").strip()
                 collapsed_lure = " ".join(lure_text.split())
                 escaped_lure = html.escape(collapsed_lure)
-                
                 lure_html = f'<blockquote class="abyss-lure">{html.escape(lure_text)}</blockquote>'
                 meta_tags = f'<meta name="description" content="{escaped_lure}">\n  <meta property="og:description" content="{escaped_lure}">\n  <meta name="twitter:description" content="{escaped_lure}">'
     except Exception as e:
-        print(f"Warning: failed to query abysses: {e}")
+        pass
 
-    # Fetch similar cards using embeddings
+    # Similar cards calculation
     similar_cards = []
     try:
-        import math
-        import json
-        try:
-            import numpy as np
-            HAS_NUMPY = True
-        except ImportError:
-            HAS_NUMPY = False
-
-        def get_cosine_similarity(v1, v2):
-            if HAS_NUMPY:
-                a = np.array(v1, dtype=np.float32)
-                b = np.array(v2, dtype=np.float32)
-                norm_a = np.linalg.norm(a)
-                norm_b = np.linalg.norm(b)
-                if norm_a == 0 or norm_b == 0:
-                    return 0.0
-                return float(np.dot(a, b) / (norm_a * norm_b))
-            else:
-                dot_product = sum(x * y for x, y in zip(v1, v2))
-                norm_a = math.sqrt(sum(x * x for x in v1))
-                norm_b = math.sqrt(sum(y * y for y in v2))
-                if norm_a == 0 or norm_b == 0:
-                    return 0.0
-                return dot_product / (norm_a * norm_b)
-
         target_emb_doc = db["card_embeddings"].find_one({"oracle_id": oracle_id})
         if target_emb_doc and target_emb_doc.get("embedding"):
             target_embedding = target_emb_doc["embedding"]
             target_dim = len(target_embedding)
             
-            # Fetch all candidate embeddings (excluding current card)
-            all_embeddings = list(db["card_embeddings"].find(
-                {"oracle_id": {"$ne": oracle_id}},
-                {"oracle_id": 1, "embedding": 1}
-            ))
-            
+            embeddings = load_embeddings(db)
             scored_candidates = []
-            for emb_doc in all_embeddings:
+            for emb_doc in embeddings:
+                if emb_doc.get("oracle_id") == oracle_id:
+                    continue
                 vector = emb_doc.get("embedding")
-                if not vector or not isinstance(vector, list) or len(vector) != target_dim:
+                if not vector or len(vector) != target_dim:
                     continue
                 sim = get_cosine_similarity(target_embedding, vector)
                 scored_candidates.append((sim, emb_doc["oracle_id"]))
             
-            # Sort by similarity descending and pick top 3 valid standard cards
             scored_candidates.sort(key=lambda x: x[0], reverse=True)
             
             for sim, cand_oracle_id in scored_candidates:
@@ -406,7 +356,6 @@ def main():
                     cand_name = cand_card.get("name")
                     cand_slug = slugify(cand_name)
                     
-                    # Extract image URL
                     cand_image_url = ''
                     cand_image_uris = cand_raw.get('image_uris', {})
                     if cand_image_uris:
@@ -426,7 +375,7 @@ def main():
                         "earliest_printing": earliest
                     })
     except Exception as e:
-        print(f"Warning: failed to calculate similar cards: {e}")
+        print(f"Error calculating similar cards: {e}")
 
     # Fetch all mechanics from MongoDB mechanics collection
     mechanics_map = {}
@@ -500,15 +449,10 @@ def main():
     similar_cards_json_str = json.dumps(similar_cards)
 
     # Read template
-    template_path = "templates/card_detail.html"
-    if not os.path.exists(template_path):
-        print(f"Template not found at {template_path}!")
-        sys.exit(1)
-        
+    template_path = os.path.join(os.path.dirname(__file__), "templates", "card_detail.html")
     with open(template_path, 'r', encoding='utf-8') as f:
         template_content = f.read()
         
-    # Substitute values
     rendered = template_content.format(
         name=name,
         image_url=image_url,
@@ -535,17 +479,82 @@ def main():
         meta_tags=meta_tags,
         similar_cards_json=similar_cards_json_str
     )
+    return rendered
+
+@app.route('/')
+@app.route('/index.html')
+def home():
+    public_index = os.path.join(os.path.dirname(__file__), "public", "index.html")
+    if os.path.exists(public_index):
+        with open(public_index, 'r', encoding='utf-8') as f:
+            return f.read()
+    return "MTGAbyss Homepage placeholder. Run generate_homepage.py first!"
+
+@app.route('/assets/<path:filename>')
+def serve_assets(filename):
+    return send_from_directory(os.path.join(os.path.dirname(__file__), "public", "assets"), filename)
+
+@app.route('/card/<slug>/index.html')
+@app.route('/card/<slug>/')
+@app.route('/card/<slug>')
+def card_detail(slug):
+    try:
+        return render_card_detail(slug)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        abort(500, description=str(e))
+
+@app.route('/search.html')
+def search():
+    query = request.args.get('q', '').strip()
+    if not query:
+        return redirect('/')
     
-    # Write to target
-    output_dir = f"public/card/{slug}"
-    os.makedirs(output_dir, exist_ok=True)
-    output_path = f"{output_dir}/index.html"
+    db = get_mongo_db()
+    slug = slugify(query)
     
-    with open(output_path, 'w', encoding='utf-8') as f:
-        f.write(rendered)
+    # 1. Exact or Slug Match
+    card = db["cards"].find_one({
+        "$or": [
+            {"name": {"$regex": f"^{re.escape(query)}$", "$options": "i"}},
+            {"slug": slug}
+        ]
+    })
+    if card:
+        return redirect(f'/card/{card.get("slug")}/index.html')
         
-    print(f"\nStatic page generated successfully for card: {name}")
-    print(f"Output path: {output_path}")
+    # 2. Search matches
+    matches = list(db["cards"].find(
+        {"name": {"$regex": re.escape(query), "$options": "i"}},
+        {"name": 1, "slug": 1}
+    ).limit(50))
+    
+    match_list_html = ""
+    if matches:
+        match_list_html = '<ul style="list-style: none; padding: 0; margin-top: 2rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">'
+        for m in matches:
+            match_list_html += f'<li><a href="/card/{m["slug"]}/index.html" class="homepage-example-pill" style="display: block; text-decoration: none; text-align: center; margin: 0; width: auto;">{m["name"]}</a></li>'
+        match_list_html += '</ul>'
+    else:
+        match_list_html = '<div style="margin-top: 2rem; color: var(--abyss-muted);">No cards found matching your query.</div>'
+        
+    template_path = os.path.join(os.path.dirname(__file__), "public", "search.html")
+    if not os.path.exists(template_path):
+        template_content = "<h1>Search Results</h1><div id='search-query-display'></div><div id='results'></div>"
+    else:
+        with open(template_path, 'r', encoding='utf-8') as f:
+            template_content = f.read()
+            
+    rendered = template_content.replace(
+        '<div class="search-query-display" id="search-query-display">...</div>',
+        f'<div class="search-query-display" id="search-query-display">{html.escape(query)}</div>\n{match_list_html}'
+    )
+    return rendered
 
 if __name__ == '__main__':
-    main()
+    port = int(os.environ.get("PORT", 8080))
+    print(f"Starting MTGAbyss preview server on http://localhost:{port}")
+    db = get_mongo_db()
+    load_embeddings(db)
+    app.run(host='0.0.0.0', port=port, debug=True)

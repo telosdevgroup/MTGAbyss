@@ -995,14 +995,15 @@ footer a:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2rem;
+  gap: 3rem;
   margin: 1rem auto;
-  max-width: 950px;
+  max-width: 980px;
   position: relative;
+  width: 100%;
 }
 
 .carousel-item {
-  width: 180px;
+  width: 260px;
   aspect-ratio: 63 / 88;
   border-radius: 4.75% / 3.5%;
   overflow: hidden;
@@ -1027,7 +1028,7 @@ footer a:hover {
 }
 
 .carousel-item.center {
-  width: 250px;
+  width: 330px;
   opacity: 1;
   transform: scale(1);
   box-shadow: 0 12px 25px rgba(0,0,0,0.18), 0 0 20px rgba(232, 166, 184, 0.25);
@@ -1048,13 +1049,13 @@ footer a:hover {
     max-width: 85%;
   }
   .carousel-item {
-    width: 120px;
+    width: 140px;
   }
   .carousel-item.center {
-    width: 180px;
+    width: 210px;
   }
   .carousel-container {
-    gap: 1rem;
+    gap: 1.5rem;
   }
 }
 
@@ -1476,6 +1477,21 @@ body.theater-mode .mechanic-chip:focus {
   display: inline-block;
   margin-top: 0.5rem;
 }
+
+.abyss-lure {
+  margin: 2rem auto;
+  padding: 1.25rem 0;
+  font-family: 'Outfit', Georgia, serif;
+  font-size: 1.25rem;
+  font-style: italic;
+  color: var(--abyss-muted);
+  text-align: center;
+  max-width: 600px;
+  line-height: 1.6;
+  border-top: 1px solid var(--sakura);
+  border-bottom: 1px solid var(--sakura);
+}
+
 
 
 

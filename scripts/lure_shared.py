@@ -1,4 +1,6 @@
 import re
+import random
+
 
 def slugify(s):
     if not s:
@@ -60,13 +62,31 @@ def build_lure_prompt(card):
     if facts['power'] is not None and facts['toughness'] is not None:
         facts_str += f"Power/Toughness: {facts['power']}/{facts['toughness']}\n"
         
-    prompt = f"""Write one Abyss Lure for this Magic card. The Lure must be a single fully-developed, atmospheric paragraph (1–2 long, descriptive sentences) that invites a click rather than explaining the rules. It will also be used as the meta description. Make it concrete, strange, and card-specific. Output only the Lure.
+    # Choose sentence count target (even split: 1, 2, or 3 sentences)
+    sentence_target = random.choice([1, 2, 3])
+    if sentence_target == 1:
+        shape_desc = "EXACTLY one (1) sentence. Do not write a second sentence."
+        target_desc = "80–130 characters. Keep it brief, like a punchy pull quote."
+        soft_max = 150
+        hard_reject = 170
+    elif sentence_target == 2:
+        shape_desc = "EXACTLY two (2) sentences. Do not write three sentences. Do not write a single sentence."
+        target_desc = "120–180 characters. Keep it brief, like a punchy pull quote."
+        soft_max = 200
+        hard_reject = 220
+    else:
+        shape_desc = "EXACTLY three (3) sentences. Do not write four sentences. Do not write one or two sentences."
+        target_desc = "160–200 characters. Keep it brief, like a punchy pull quote."
+        soft_max = 220
+        hard_reject = 240
+
+    prompt = f"""Write one Abyss Lure for this Magic card. The Lure must be a short, atmospheric pull quote that invites a click rather than explaining the rules. It will also be used as the meta description. Make it concrete, strange, and card-specific. Output only the Lure.
 
 Shape:
-- Target length: 220–260 characters. Do NOT write a short, simple one-liner. Let the text develop into a rich, evocative paragraph.
-- Soft max: 300 characters.
-- Hard reject: 340+ characters.
-- 1–2 sentences max.
+- Target length: {target_desc}
+- Soft max: {soft_max} characters.
+- Hard reject: {hard_reject}+ characters.
+- {shape_desc}
 - No line breaks.
 - No markdown.
 - No quotes wrapped around the whole output.
@@ -98,10 +118,10 @@ def validate_lure_text(text, card_name):
         return False, "Lure contains line breaks."
         
     text_len = len(text)
-    if text_len >= 340:
-        return False, f"Lure is too long ({text_len} characters, hard reject limit is 340)."
-    if text_len < 80 or text_len > 320:
-        return False, f"Lure length ({text_len} characters) is outside the accepted 80–320 range."
+    if text_len >= 220:
+        return False, f"Lure is too long ({text_len} characters, hard reject limit is 220)."
+    if text_len < 60 or text_len > 200:
+        return False, f"Lure length ({text_len} characters) is outside the accepted 60–200 range."
         
     if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
         return False, "Lure is entirely wrapped in quotes."
@@ -122,8 +142,8 @@ def validate_lure_text(text, card_name):
         
     sentences = re.split(r'[.!?]+', text)
     sentences = [s.strip() for s in sentences if s.strip()]
-    if len(sentences) < 1 or len(sentences) > 2:
-        return False, f"Lure must be 1–2 sentences (found {len(sentences)})."
+    if len(sentences) < 1 or len(sentences) > 3:
+        return False, f"Lure must be 1–3 sentences (found {len(sentences)})."
         
     lower_name = card_name.lower()
     clunky_patterns = [

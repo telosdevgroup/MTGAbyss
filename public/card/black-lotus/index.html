@@ -40,6 +40,8 @@
         </div>
       </section>
 
+      
+
       <!-- All Printings Carousel Section -->
       <section class="carousel-section">
         <h2 class="carousel-title">All Printings</h2>
@@ -230,6 +232,51 @@
         updateCarousel(false);
       </script>
 
+      <style>
+        .similar-cards-section {
+          margin: 3rem 0;
+          text-align: center;
+        }
+        .similar-cards-row {
+          display: flex;
+          justify-content: space-between;
+          gap: 2rem;
+          margin-top: 1.5rem;
+          flex-wrap: nowrap;
+        }
+        .similar-card-item {
+          flex: 1;
+          cursor: pointer;
+          transition: transform 0.25s ease;
+          text-align: center;
+        }
+        .similar-card-item:hover {
+          transform: translateY(-6px);
+        }
+        .similar-card-img {
+          width: 100%;
+          aspect-ratio: 63 / 88;
+          object-fit: contain;
+          border-radius: 4.75% / 3.5%;
+          box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+          border: 1px solid var(--abyss-border);
+          transition: box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+        .similar-card-item:hover .similar-card-img {
+          box-shadow: 0 10px 24px rgba(201,111,140,0.25);
+          border-color: var(--sakura);
+        }
+        .similar-card-name {
+          font-size: 0.9rem;
+          font-weight: 700;
+          margin-top: 0.6rem;
+          color: var(--abyss-text);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+      </style>
+
       <div class="old-page-details-wrapper" style="margin-top: 2rem;">
         <header style="margin-top: 2rem;">
           <div class="header-main">
@@ -237,154 +284,45 @@
           </div>
         </header>
 
-        <!-- Abyss Profile Pull Quote -->
-        <div class="profile-pull-quote">
-          <p style="font-style: italic; color: var(--text-secondary);">Abyss profile not generated yet.</p>
-        </div>
-
-        <!-- Accordion wrapping all data/detail panels -->
-        <details class="old-page-accordion" id="old-page-accordion">
-          <summary>Old Page Info &amp; Database Fields</summary>
-          <div class="accordion-content">
-
-
-            <main class="database-layout">
-              <!-- Main Rules Panel -->
-              <section class="panel rules-panel">
-                <h2 class="panel-title">Rules &amp; Text</h2>
-                <div class="field-row">
-                  <span class="field-label">Mana Cost</span>
-                  <span class="field-value mana-cost">{0}</span>
-                </div>
-                <div class="field-row">
-                  <span class="field-label">Type Line</span>
-                  <span class="field-value type-line">Artifact</span>
-                </div>
-                <div class="oracle-text-box">
-                  {T}, Sacrifice this artifact: Add three mana of any one color.
-                </div>
-                
-              </section>
-
-              <!-- Card Facts -->
-              <section class="panel facts-panel">
-                <h2 class="panel-title">Card Facts</h2>
-                <div class="field-row">
-                  <span class="field-label">Color Identity</span>
-                  <span class="field-value">Colorless</span>
-                </div>
-                <div class="field-row">
-                  <span class="field-label">Keywords</span>
-                  <span class="field-value">None</span>
-                </div>
-                <div class="field-row">
-                  <span class="field-label">Artist</span>
-                  <span class="field-value">Chris Rahn</span>
-                </div>
-                <div class="field-row">
-                  <span class="field-label">First Released</span>
-                  <span class="field-value">2014-06-16</span>
-                </div>
-                <div class="tags-container">
-                  <span class="field-label" style="display: block; margin-bottom: 0.4rem;">Oracle Tags</span>
-                  <div class="tags-list">
-                    <span class="tag-badge" title="oracle">ramp</span><span class="tag-badge" title="oracle">virtual-legendary</span><span class="tag-badge" title="oracle">misnomer</span><span class="tag-badge" title="oracle">adds-multiple-mana</span><span class="tag-badge" title="oracle">mana-egg</span><span class="tag-badge" title="oracle">meme</span><span class="tag-badge" title="oracle">activated-ability</span><span class="tag-badge" title="oracle">manaless-value</span><span class="tag-badge" title="oracle">power-nine</span>
-                  </div>
-                </div>
-              </section>
-            </main>
-
-            <!-- Legality Section -->
-            <section class="panel section-panel" style="margin-top: 1.25rem;">
-              <h2 class="panel-title">Format Legality</h2>
-              <div class="legality-grid">
-                
-        <div class="legality-item">
-          <span class="legality-name">vintage</span>
-          <span class="legality-status restricted">restricted</span>
-        </div>
-        
-
-        <div class="legality-item">
-          <span class="legality-name">legacy</span>
-          <span class="legality-status banned">banned</span>
-        </div>
-        
-
-        <div class="legality-item">
-          <span class="legality-name">commander</span>
-          <span class="legality-status banned">banned</span>
-        </div>
-        
-
-        <div class="legality-item">
-          <span class="legality-name">modern</span>
-          <span class="legality-status not_legal">not legal</span>
-        </div>
-        
-
-        <div class="legality-item">
-          <span class="legality-name">pauper</span>
-          <span class="legality-status not_legal">not legal</span>
-        </div>
-        
-              </div>
-            </section>
-
-            <!-- Printings Section -->
-            <section class="panel section-panel">
-              <h2 class="panel-title">Primary Printing Info</h2>
-              <div class="printings-container">
-                
-    <table class="printings-table">
-      <thead>
-        <tr>
-          <th>Set Name</th>
-          <th>Set Code</th>
-          <th>Number</th>
-          <th>Rarity</th>
-          <th>Release Date</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Vintage Masters</td>
-          <td><span class="set-code">VMA</span></td>
-          <td>#4</td>
-          <td>Bonus</td>
-          <td>2014-06-16</td>
-        </tr>
-      </tbody>
-    </table>
-    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.75rem; font-style: italic;">
-      Note: This displays the primary representative printing of this card from Scryfall's Oracle dataset.
-    </p>
-    
-              </div>
-            </section>
-
-            <!-- Rulings Section -->
-            <section class="panel section-panel">
-              <h2 class="panel-title">Rulings</h2>
-              <div class="rulings-list">
-                <div class="rulings-empty">No rulings available.</div>
-              </div>
-            </section>
-
-            <!-- Debug/Source Fields Section -->
-            <details class="debug-panel">
-              <summary>Source Fields (Debug)</summary>
-              <div class="source-fields-list">
-                <div>artist</div><div>cmc</div><div>collector_number</div><div>color_identity</div><div>id</div><div>imported_at</div><div>keywords</div><div>lang</div><div>legalities</div><div>mana_cost</div><div>name</div><div>oracle_id</div><div>oracle_text</div><div>rarity</div><div>raw</div><div>released_at</div><div>reserved</div><div>scryfall_uri</div><div>set</div><div>set_name</div><div>slug</div><div>source_hash</div><div>tags</div><div>type_line</div><div>updated_at</div>
-              </div>
-            </details>
-            <footer>
-              <p>Card data compiled from local Scryfall bulk data files.</p>
-              <p><a href="https://scryfall.com/card/vma/4/black-lotus?utm_source=api" target="_blank" rel="noopener noreferrer">View on Scryfall &rarr;</a></p>
-            </footer>
+        <!-- Similar Cards Row -->
+        <section class="similar-cards-section">
+          <h2 style="font-size: 1.25rem; font-weight: 800; margin-top: 0; margin-bottom: 0.5rem; color: var(--abyss-text); text-align: left; border-bottom: 1px solid var(--abyss-border); padding-bottom: 0.5rem; letter-spacing: -0.01em;">Similar Cards</h2>
+          <div class="similar-cards-row" id="similar-cards-row">
+            <!-- Populated dynamically by JS -->
           </div>
-        </details>
+        </section>
+
+        
+
       </div>
+      
+      <script>
+        (function() {
+          const similarCards = [{"name": "Lotus Petal", "slug": "lotus-petal", "image_url": "https://cards.scryfall.io/large/front/f/8/f85ab5f9-508e-45de-8fa1-ce1f16552ffc.jpg?1782750662", "similarity": 0.8548}, {"name": "Radiant Lotus", "slug": "radiant-lotus", "image_url": "https://cards.scryfall.io/large/front/b/e/be6dac83-39c2-40dc-a322-76a3ea4e7aee.jpg?1782687768", "similarity": 0.8477}, {"name": "Blacker Lotus", "slug": "blacker-lotus", "image_url": "https://cards.scryfall.io/large/front/4/c/4c85d097-e87b-41ee-93c6-0e54ec41b174.jpg?1782755241", "similarity": 0.8196}];
+          const container = document.getElementById('similar-cards-row');
+          if (similarCards && similarCards.length > 0) {
+            similarCards.forEach(card => {
+              const item = document.createElement('div');
+              item.className = 'similar-card-item';
+              item.addEventListener('click', () => {
+                window.location.href = `../../card/${card.slug}/index.html`;
+              });
+              
+              const imgUrl = card.image_url || '../../assets/placeholder-card.png';
+              item.innerHTML = `
+                <img class="similar-card-img" src="${imgUrl}" alt="${card.name}">
+                <div class="similar-card-name" title="${card.name}">${card.name}</div>
+              `;
+              container.appendChild(item);
+            });
+          } else {
+            const section = document.querySelector('.similar-cards-section');
+            if (section) {
+              section.style.display = 'none';
+            }
+          }
+        })();
+      </script>
     </div>
   </div>
 
