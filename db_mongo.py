@@ -17,6 +17,7 @@ def ensure_indexes(db):
     cards.create_index("name")
     cards.create_index("lang")
     cards.create_index("tags.tag")
+    cards.create_index("base_priority")
     
     # Generated sections collection indexes
     generated_sections = db["generated_sections"]
@@ -82,6 +83,7 @@ def ensure_indexes(db):
     card_prints.create_index("oracle_id")
     card_prints.create_index("name")
     card_prints.create_index("lang")
+    card_prints.create_index("base_priority")
 
 
 

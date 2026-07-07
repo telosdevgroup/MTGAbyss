@@ -23,6 +23,63 @@ def get_db():
         ensure_indexes(db)
     return db
 
+def find_next_prioritized_card(mongo_db, collection_name, id_field, excluded_ids):
+    """
+    Finds the next card from the specified collection, prioritizing cards with
+    'base_priority' > 0.
+    To minimize race conditions among multiple workers:
+    1. Checks if any non-excluded cards have base_priority > 0.
+    2. If so, finds the maximum base_priority among those.
+    3. Randomly samples 1 card from all eligible cards matching that highest base_priority tier.
+    4. If no prioritized cards are available, falls back to randomly sampling 1 from all eligible cards.
+    """
+    match_stage = {}
+    if excluded_ids:
+        match_stage[id_field] = {"$nin": excluded_ids}
+
+    # Query to check for any eligible cards with base_priority > 0
+    priority_query = {
+        "$and": [
+            match_stage,
+            {"base_priority": {"$gt": 0}}
+        ]
+    } if match_stage else {
+        "base_priority": {"$gt": 0}
+    }
+
+    # Find the top base_priority value present
+    highest_cards = list(
+        mongo_db[collection_name]
+        .find(priority_query, {"base_priority": 1})
+        .sort([("base_priority", -1)])
+        .limit(1)
+    )
+
+    if highest_cards:
+        highest_card = highest_cards[0]
+        p = highest_card.get("base_priority", 0) or 0
+
+        # Match all eligible cards with this exact base_priority
+        sample_query = dict(match_stage)
+        sample_query["base_priority"] = p
+
+        pipeline = [
+            {"$match": sample_query},
+            {"$sample": {"size": 1}}
+        ]
+        sampled = list(mongo_db[collection_name].aggregate(pipeline))
+        if sampled:
+            return sampled[0]
+
+    # Fallback to random sample of all eligible cards
+    pipeline = []
+    if match_stage:
+        pipeline.append({"$match": match_stage})
+    pipeline.append({"$sample": {"size": 1}})
+
+    sampled = list(mongo_db[collection_name].aggregate(pipeline))
+    return sampled[0] if sampled else None
+
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()})
@@ -58,17 +115,10 @@ def claim_job():
         locked_ids = [doc["_id"] for doc in active_claims]
         excluded_ids.extend(locked_ids)
 
-        # Build pipeline to find a random card not in excluded_ids
-        pipeline = []
-        if excluded_ids:
-            pipeline.append({"$match": {"oracle_id": {"$nin": excluded_ids}}})
-        pipeline.append({"$sample": {"size": 1}})
-
-        cards = list(mongo_db["cards"].aggregate(pipeline))
-        if not cards:
+        card = find_next_prioritized_card(mongo_db, "cards", "oracle_id", excluded_ids)
+        if not card:
             return jsonify({"job_id": None, "message": "No cards available"}), 200
 
-        card = cards[0]
         oracle_id = card["oracle_id"]
 
         # Lock the card by inserting into active_claims
@@ -225,16 +275,10 @@ def claim_image_job():
         locked_ids = [doc["_id"] for doc in active_claims]
         excluded_ids.extend(locked_ids)
 
-        pipeline = []
-        if excluded_ids:
-            pipeline.append({"$match": {"id": {"$nin": excluded_ids}}})
-        pipeline.append({"$sample": {"size": 1}})
-
-        cards = list(mongo_db["card_prints"].aggregate(pipeline))
-        if not cards:
+        card = find_next_prioritized_card(mongo_db, "card_prints", "id", excluded_ids)
+        if not card:
             return jsonify({"job_id": None, "message": "No cards need image downloading"}), 200
 
-        card = cards[0]
         scryfall_id = card["id"]
         oracle_id = card.get("oracle_id")
 
