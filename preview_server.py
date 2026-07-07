@@ -570,5 +570,6 @@ if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
     print(f"Starting MTGAbyss preview server on http://localhost:{port}")
     db = get_mongo_db()
-    load_embeddings(db)
+    import threading
+    threading.Thread(target=load_embeddings, args=(db,), daemon=True).start()
     app.run(host='0.0.0.0', port=port, debug=True)
