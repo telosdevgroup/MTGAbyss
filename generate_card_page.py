@@ -54,13 +54,9 @@ def get_earliest_printing(db, oracle_id, fallback_card):
         'collector_number': fallback_card.get('collector_number', 'N/A')
     }
 
-def main():
-    db = get_mongo_db()
-    
-    # Check arguments
-    search_term = None
-    if len(sys.argv) > 1:
-        search_term = sys.argv[1]
+def generate_page(search_term=None, db=None):
+    if db is None:
+        db = get_mongo_db()
         
     card = None
     
@@ -98,7 +94,7 @@ def main():
             print(f"No restricted cards or Black Lotus found. Using first card: '{card.get('name')}'")
         else:
             print("No cards found in the MongoDB database at all!")
-            sys.exit(1)
+            return
             
     oracle_id = card.get('oracle_id')
     name = card.get('name')
@@ -269,7 +265,7 @@ def main():
         for t in tags:
             tags_html += f'<span class="tag-badge" title="{t["namespace"]}">{t["tag"]}</span>'
     else:
-        tags_html = '<div class="rulings-empty">No tags associated with this card.</div>'
+        tags_html = '<div class="rulings-empty">No rulings associated with this card.</div>'
         
     # Source fields
     # MongoDB docs contain standard BSON object ids and raw keys. We clean them up
@@ -284,22 +280,24 @@ def main():
     printings_cursor = db["card_prints"].find({"oracle_id": oracle_id})
     printings_list = []
     
-    # We want to sort printings by release date or priority, but since they don't have released_at, 
-    # we can sort them by set code and collector number, or base_priority (highest first)
+    # Sort printings by release date ascending, then base_priority descending
     p_docs = list(printings_cursor)
-    p_docs.sort(key=lambda x: x.get("base_priority", 0), reverse=True)
+    p_docs.sort(key=lambda x: (x.get("released_at") or "9999-12-31", -x.get("base_priority", 0)))
     
     for p_doc in p_docs:
         p_faces = p_doc.get('card_faces') or []
         if p_faces:
             p_image_url = f"/images/normal/{p_doc['id']}_0.jpg"
+            p_large_image_url = f"/images/large/{p_doc['id']}_0.jpg"
         else:
             p_image_url = f"/images/normal/{p_doc['id']}.jpg"
+            p_large_image_url = f"/images/large/{p_doc['id']}.jpg"
 
         printings_list.append({
             'set_name': p_doc.get('set_name', 'Unknown Set'),
             'set_code': (p_doc.get('set') or '???').upper(),
             'image': p_image_url,
+            'large_image': p_large_image_url,
             'released_at': p_doc.get('released_at', 'Unknown'),
             'artist': p_doc.get('artist', 'Unknown Artist'),
             'collector_number': p_doc.get('collector_number', 'N/A')
@@ -311,6 +309,7 @@ def main():
             'set_name': set_name,
             'set_code': set_code,
             'image': image_url,
+            'large_image': image_url.replace('/normal/', '/large/'),
             'released_at': released_at,
             'artist': artist,
             'collector_number': collector_num
@@ -319,12 +318,15 @@ def main():
         # Override initial page image with the oldest printing image
         image_url = printings_list[0]['image']
 
+    large_image_url = printings_list[0].get('large_image', image_url.replace('/normal/', '/large/'))
+
     import json
     # Export all metadata keys to clean_printings JSON
     clean_printings = [{
         'set_name': p['set_name'],
         'set_code': p['set_code'],
         'image': p['image'],
+        'large_image': p.get('large_image', p['image'].replace('/normal/', '/large/')),
         'released_at': p['released_at'],
         'artist': p['artist'],
         'collector_number': p['collector_number']
@@ -404,7 +406,7 @@ def main():
             scored_candidates.sort(key=lambda x: x[0], reverse=True)
             
             for sim, cand_oracle_id in scored_candidates:
-                if len(similar_cards) >= 3:
+                if len(similar_cards) >= 4:
                     break
                 cand_card = db["cards"].find_one({"oracle_id": cand_oracle_id})
                 if cand_card:
@@ -493,7 +495,7 @@ def main():
         mech_doc = mechanics_map.get(m_slug)
         definition = mech_doc.get("definition") if mech_doc else None
         
-        if definition and mech_doc.get("status") == "defined":
+        if definition:
             chips_html_list.append(
                 f'<span class="mechanic-chip" tabindex="0" data-tooltip="{display_name}: {definition}">{display_name}</span>'
             )
@@ -513,7 +515,7 @@ def main():
     template_path = "templates/card_detail.html"
     if not os.path.exists(template_path):
         print(f"Template not found at {template_path}!")
-        sys.exit(1)
+        return
         
     with open(template_path, 'r', encoding='utf-8') as f:
         template_content = f.read()
@@ -522,6 +524,7 @@ def main():
     rendered = template_content.format(
         name=name,
         image_url=image_url,
+        large_image_url=large_image_url,
         badges=badges_html,
         mechanics_chips=mechanics_chips_html,
         cmc=cmc,
@@ -557,5 +560,10 @@ def main():
     print(f"\nStatic page generated successfully for card: {name}")
     print(f"Output path: {output_path}")
 
-if __name__ == '__main__':
-    main()
+def main():
+    # Check arguments
+    search_term = None
+    if len(sys.argv) > 1:
+        search_term = sys.argv[1]
+    
+    generate_page(search_term)

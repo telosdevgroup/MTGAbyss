@@ -23,7 +23,7 @@ def get_db():
         ensure_indexes(db)
     return db
 
-def find_next_prioritized_card(mongo_db, collection_name, id_field, excluded_ids):
+def find_next_prioritized_card(mongo_db, collection_name, id_field, excluded_ids, filter_query=None):
     """
     Finds the next card from the specified collection, prioritizing cards with
     'base_priority' > 0.
@@ -36,6 +36,8 @@ def find_next_prioritized_card(mongo_db, collection_name, id_field, excluded_ids
     match_stage = {}
     if excluded_ids:
         match_stage[id_field] = {"$nin": excluded_ids}
+    if filter_query:
+        match_stage.update(filter_query)
 
     # Query to check for any eligible cards with base_priority > 0
     priority_query = {
@@ -87,21 +89,11 @@ def health():
 @app.route("/jobs/claim", methods=["POST"])
 def claim_job():
     data = request.json or {}
-    worker_id = data.get("worker_id", "unknown_worker")
     force = data.get("force", False)
 
     mongo_db = get_db()
-    now = datetime.datetime.now(datetime.timezone.utc)
-    expiry_time = now - datetime.timedelta(seconds=LOCK_TIMEOUT_SECONDS)
-
-    # Release stale active claims first
-    mongo_db["active_claims"].delete_many({
-        "claimed_at": {"$lt": expiry_time}
-    })
 
     try:
-        # Find oracle_ids that already have lures or hooks in abysses
-        # Unless force is True
         excluded_ids = []
         if not force:
             completed_lures = mongo_db["abysses"].find(
@@ -110,26 +102,11 @@ def claim_job():
             )
             excluded_ids = [doc["oracle_id"] for doc in completed_lures if "oracle_id" in doc]
 
-        # Also exclude currently active claims
-        active_claims = mongo_db["active_claims"].find({}, {"_id": 1})
-        locked_ids = [doc["_id"] for doc in active_claims]
-        excluded_ids.extend(locked_ids)
-
         card = find_next_prioritized_card(mongo_db, "cards", "oracle_id", excluded_ids)
         if not card:
             return jsonify({"job_id": None, "message": "No cards available"}), 200
 
         oracle_id = card["oracle_id"]
-
-        # Lock the card by inserting into active_claims
-        try:
-            mongo_db["active_claims"].insert_one({
-                "_id": oracle_id,
-                "claimed_by": worker_id,
-                "claimed_at": now
-            })
-        except pymongo.errors.DuplicateKeyError:
-            return jsonify({"job_id": None, "message": "Race condition on claim, retry"}), 200
 
         # Build prompt using build_lure_prompt
         prompt, facts = build_lure_prompt(card)
@@ -170,11 +147,6 @@ def complete_job(job_id):
     now_str = now.isoformat() + "Z"
 
     try:
-        # Verify the claim exists in active_claims
-        claim = mongo_db["active_claims"].find_one({"_id": job_id})
-        if not claim:
-            return jsonify({"error": f"No active claim found for card: {job_id}"}), 404
-
         # Retrieve card facts to save
         card = mongo_db["cards"].find_one({"oracle_id": job_id})
         if not card:
@@ -208,8 +180,32 @@ def complete_job(job_id):
             upsert=True
         )
 
-        # Delete the active claim lock
-        mongo_db["active_claims"].delete_one({"_id": job_id})
+        # No active claim locks to release
+
+        # Trigger rendering of the card detail page via render service
+        # try:
+        #     import urllib.request
+        #     render_url = "http://127.0.0.1:5001/render/card"
+        #     payload = {"card_name": card_name}
+        #     req = urllib.request.Request(
+        #         render_url,
+        #         data=json.dumps(payload).encode("utf-8"),
+        #         headers={"Content-Type": "application/json"},
+        #         method="POST"
+        #     )
+        #     with urllib.request.urlopen(req, timeout=40) as response:
+        #         html_content = response.read().decode("utf-8")
+        #         
+        #     # Save the returned HTML content
+        #     output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "public", "card", slug)
+        #     os.makedirs(output_dir, exist_ok=True)
+        #     output_path = os.path.join(output_dir, "index.html")
+        #     with open(output_path, "w", encoding="utf-8") as f:
+        #         f.write(html_content)
+        #         
+        #     print(f"Rendered: '{card_name}' -> public/card/{slug}/index.html")
+        # except Exception as render_err:
+        #     print(f"Render Error: '{card_name}' failed: {render_err}")
 
         return jsonify({"status": "completed", "job_id": job_id, "oracle_id": job_id})
 
@@ -219,14 +215,7 @@ def complete_job(job_id):
 
 @app.route("/jobs/<job_id>/fail", methods=["POST"])
 def fail_job(job_id):
-    mongo_db = get_db()
-    try:
-        # Simply delete the active claim lock. Do not record failure in DB!
-        mongo_db["active_claims"].delete_one({"_id": job_id})
-        return jsonify({"status": "failed_recorded", "job_id": job_id, "new_status": "pending"})
-    except Exception as e:
-        print(f"Error failing job {job_id}: {e}")
-        return jsonify({"error": str(e)}), 500
+    return jsonify({"status": "failed_recorded", "job_id": job_id, "new_status": "pending"})
 
 @app.route("/stats", methods=["GET"])
 def get_stats():
@@ -236,7 +225,7 @@ def get_stats():
     completed = mongo_db["abysses"].count_documents(
         {"$or": [{"content.lure": {"$exists": True}}, {"content.hook": {"$exists": True}}]}
     )
-    claimed = mongo_db["active_claims"].count_documents({})
+    claimed = 0
     failed = 0
 
     remaining = max(0, total_cards - completed)
@@ -252,17 +241,9 @@ def get_stats():
 @app.route("/jobs/claim_image", methods=["POST"])
 def claim_image_job():
     data = request.json or {}
-    worker_id = data.get("worker_id", "unknown_worker")
     force = data.get("force", False)
 
     mongo_db = get_db()
-    now = datetime.datetime.now(datetime.timezone.utc)
-    expiry_time = now - datetime.timedelta(seconds=LOCK_TIMEOUT_SECONDS)
-
-    # Release stale active claims
-    mongo_db["active_image_claims"].delete_many({
-        "claimed_at": {"$lt": expiry_time}
-    })
 
     try:
         excluded_ids = []
@@ -270,27 +251,18 @@ def claim_image_job():
             completed_images = mongo_db["image_metadata"].distinct("scryfall_id")
             excluded_ids = list(completed_images)
 
-        # Also exclude active image claims
-        active_claims = mongo_db["active_image_claims"].find({}, {"_id": 1})
-        locked_ids = [doc["_id"] for doc in active_claims]
-        excluded_ids.extend(locked_ids)
-
-        card = find_next_prioritized_card(mongo_db, "card_prints", "id", excluded_ids)
+        has_image_query = {
+            "$or": [
+                {"image_uris": {"$ne": None}},
+                {"card_faces.image_uris": {"$ne": None}}
+            ]
+        }
+        card = find_next_prioritized_card(mongo_db, "card_prints", "id", excluded_ids, filter_query=has_image_query)
         if not card:
             return jsonify({"job_id": None, "message": "No cards need image downloading"}), 200
 
         scryfall_id = card["id"]
         oracle_id = card.get("oracle_id")
-
-        # Lock the card image job
-        try:
-            mongo_db["active_image_claims"].insert_one({
-                "_id": scryfall_id,
-                "claimed_by": worker_id,
-                "claimed_at": now
-            })
-        except pymongo.errors.DuplicateKeyError:
-            return jsonify({"job_id": None, "message": "Race condition on claim, retry"}), 200
 
         # Retrieve image URLs
         image_jobs = []
@@ -321,9 +293,14 @@ def claim_image_job():
                             })
 
         # Calculate remaining card image downloads
-        completed_count = len(mongo_db["image_metadata"].distinct("scryfall_id"))
-        total_cards = mongo_db["card_prints"].count_documents({})
-        remaining = max(0, total_cards - completed_count)
+        completed_ids = mongo_db["image_metadata"].distinct("scryfall_id")
+        remaining = mongo_db["card_prints"].count_documents({
+            "id": {"$nin": completed_ids},
+            "$or": [
+                {"image_uris": {"$ne": None}},
+                {"card_faces.image_uris": {"$ne": None}}
+            ]
+        })
 
         return jsonify({
             "job_id": scryfall_id,
@@ -352,10 +329,6 @@ def complete_image_job(scryfall_id):
     except Exception as e:
         return jsonify({"error": f"Invalid JSON in metadata: {e}"}), 400
 
-    claim = mongo_db["active_image_claims"].find_one({"_id": scryfall_id})
-    if not claim:
-        return jsonify({"error": f"No active claim found for card images: {scryfall_id}"}), 404
-
     card = mongo_db["card_prints"].find_one({"id": scryfall_id})
     if not card:
         return jsonify({"error": f"Card not found in database: {scryfall_id}"}), 404
@@ -383,7 +356,7 @@ def complete_image_job(scryfall_id):
             else:
                 filename = f"{scryfall_id}.jpg"
             
-            dest_dir = os.path.join("data", "images", size)
+            dest_dir = os.path.join("public", "images", size)
             os.makedirs(dest_dir, exist_ok=True)
             dest_path = os.path.join(dest_dir, filename)
             
@@ -399,7 +372,7 @@ def complete_image_job(scryfall_id):
                 "name": card_name,
                 "size": size,
                 "face_index": face_idx,
-                "local_path": f"data/images/{size}/{filename}",
+                "local_path": f"public/images/{size}/{filename}",
                 "source_url": source_url,
                 "file_size": actual_size,
                 "downloaded_at": now
@@ -416,7 +389,7 @@ def complete_image_job(scryfall_id):
                 "local_path": record["local_path"]
             })
             
-        mongo_db["active_image_claims"].delete_one({"_id": scryfall_id})
+        # No active image claim locks to release
         
         return jsonify({
             "status": "completed",
@@ -430,13 +403,7 @@ def complete_image_job(scryfall_id):
 
 @app.route("/jobs/fail_image/<scryfall_id>", methods=["POST"])
 def fail_image_job(scryfall_id):
-    mongo_db = get_db()
-    try:
-        mongo_db["active_image_claims"].delete_one({"_id": scryfall_id})
-        return jsonify({"status": "failed_recorded", "scryfall_id": scryfall_id})
-    except Exception as e:
-        print(f"Error failing image job {scryfall_id}: {e}")
-        return jsonify({"error": str(e)}), 500
+    return jsonify({"status": "failed_recorded", "scryfall_id": scryfall_id})
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Monolith Job Controller Server")
