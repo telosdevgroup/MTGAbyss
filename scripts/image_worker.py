@@ -57,7 +57,7 @@ def encode_multipart_formdata(fields, files):
 
 def worker_thread_loop(args, thread_idx, counter):
     worker_id = f"{args.worker_id}_t{thread_idx}"
-    print(f"  [Thread-{thread_idx}] Started.")
+    print(f"Worker thread {thread_idx} started.")
 
     while True:
         # Check smoke test limit safely before claiming
@@ -74,7 +74,7 @@ def worker_thread_loop(args, thread_idx, counter):
                 "force": args.force
             })
         except Exception as e:
-            print(f"  [Thread-{thread_idx}] Error connecting to controller: {e}")
+            print(f"Error connecting to controller: {e}")
             time.sleep(args.sleep_seconds)
             continue
 
@@ -87,7 +87,7 @@ def worker_thread_loop(args, thread_idx, counter):
         card_name = claim_response.get("card_name")
         image_jobs = claim_response.get("image_jobs", [])
         remaining = claim_response.get("remaining", "?")
-        print(f"  [Thread-{thread_idx}] ({remaining} remaining) Downloading '{card_name}' ({scryfall_id})...")
+        print(f"({remaining} remaining) Downloading '{card_name}'...")
 
         files_to_upload = {}
         metadata_to_upload = {}
@@ -113,7 +113,7 @@ def worker_thread_loop(args, thread_idx, counter):
                         "file_size": len(image_data)
                     }
             except Exception as ex:
-                print(f"  [Thread-{thread_idx}] [Error] Failed to download {size} for {card_name}: {ex}")
+                print(f"[Error] Failed to download {size} for {card_name}: {ex}")
                 success = False
                 break
 
@@ -122,7 +122,7 @@ def worker_thread_loop(args, thread_idx, counter):
                 fail_url = f"{args.controller_url.rstrip('/')}/jobs/fail_image/{scryfall_id}"
                 post_json(fail_url, {"worker_id": worker_id})
             except Exception as ex:
-                print(f"  [Thread-{thread_idx}] [Error] Failed to report job failure: {ex}")
+                print(f"[Error] Failed to report job failure: {ex}")
         else:
             try:
                 # Check smoke limit again right before committing to avoid overshooting
@@ -150,11 +150,11 @@ def worker_thread_loop(args, thread_idx, counter):
                     res_body = json.loads(res.read().decode("utf-8"))
                     if res_body.get("status") == "completed":
                         saved_sizes = [s['size'] for s in res_body.get('saved', [])]
-                        print(f"  [Thread-{thread_idx}] Saved: {card_name} -> {saved_sizes}")
+                        print(f"Saved: {card_name} -> {saved_sizes}")
                     else:
-                        print(f"  [Thread-{thread_idx}] [Error] Controller response: {res_body}")
+                        print(f"[Error] Controller response: {res_body}")
             except Exception as ex:
-                print(f"  [Thread-{thread_idx}] [Error] Upload failed: {ex}")
+                print(f"[Error] Upload failed: {ex}")
                 try:
                     fail_url = f"{args.controller_url.rstrip('/')}/jobs/fail_image/{scryfall_id}"
                     post_json(fail_url, {"worker_id": worker_id})
@@ -163,7 +163,7 @@ def worker_thread_loop(args, thread_idx, counter):
 
         time.sleep(args.sleep_seconds)
         
-    print(f"  [Thread-{thread_idx}] Exiting.")
+    print(f"Worker thread {thread_idx} exiting.")
 
 def main():
     hostname = socket.gethostname()
