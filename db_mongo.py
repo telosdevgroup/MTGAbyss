@@ -76,6 +76,14 @@ def ensure_indexes(db):
     image_metadata.create_index([("scryfall_id", pymongo.ASCENDING), ("size", pymongo.ASCENDING), ("face_index", pymongo.ASCENDING)], unique=True)
     image_metadata.create_index("oracle_id")
 
+    # Lite card printings collection indexes
+    card_prints = db["card_prints"]
+    card_prints.create_index("id", unique=True)
+    card_prints.create_index("oracle_id")
+    card_prints.create_index("name")
+    card_prints.create_index("lang")
+
+
 
 
 

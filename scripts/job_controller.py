@@ -230,7 +230,7 @@ def claim_image_job():
             pipeline.append({"$match": {"id": {"$nin": excluded_ids}}})
         pipeline.append({"$sample": {"size": 1}})
 
-        cards = list(mongo_db["cards"].aggregate(pipeline))
+        cards = list(mongo_db["card_prints"].aggregate(pipeline))
         if not cards:
             return jsonify({"job_id": None, "message": "No cards need image downloading"}), 200
 
@@ -278,7 +278,7 @@ def claim_image_job():
 
         # Calculate remaining card image downloads
         completed_count = len(mongo_db["image_metadata"].distinct("scryfall_id"))
-        total_cards = mongo_db["cards"].count_documents({})
+        total_cards = mongo_db["card_prints"].count_documents({})
         remaining = max(0, total_cards - completed_count)
 
         return jsonify({
@@ -312,7 +312,7 @@ def complete_image_job(scryfall_id):
     if not claim:
         return jsonify({"error": f"No active claim found for card images: {scryfall_id}"}), 404
 
-    card = mongo_db["cards"].find_one({"id": scryfall_id})
+    card = mongo_db["card_prints"].find_one({"id": scryfall_id})
     if not card:
         return jsonify({"error": f"Card not found in database: {scryfall_id}"}), 404
 
