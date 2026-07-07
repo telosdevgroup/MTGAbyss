@@ -140,16 +140,18 @@ def render_card_detail(card_slug):
         if card_faces:
             flavor_text = " // ".join([face.get('flavor_text') for face in card_faces if face.get('flavor_text')])
             
-    # Format oracle and flavor text with mana symbols
-    formatted_oracle = markdown_to_html(format_mana_symbols(oracle_text))
-    formatted_flavor = ""
-    if flavor_text:
-        formatted_flavor = f'<p class="flavor-text" style="font-style: italic; color: var(--abyss-muted); margin-top: 1rem; border-top: 1px dashed var(--abyss-border); padding-top: 0.5rem;">{format_mana_symbols(html.escape(flavor_text))}</p>'
-        
-    ai_profile_html = f'''<div class="profile-pull-quote">
-          {formatted_oracle}
-          {formatted_flavor}
-        </div>'''
+    # Load AI page profile
+    ai_page = db["ai_pages"].find_one({
+        "oracle_id": oracle_id,
+        "language": "en",
+        "page_type": "profile"
+    })
+    
+    if ai_page:
+        profile_content = markdown_to_html(ai_page.get("body_markdown", ""))
+        ai_profile_html = f'<div class="profile-pull-quote">\n          {profile_content}\n        </div>'
+    else:
+        ai_profile_html = ""
     
     # Extract card image URL (point directly to local path)
     raw_card = card.get('raw', {})
@@ -632,6 +634,10 @@ if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
     print(f"Starting MTGAbyss preview server on http://localhost:{port}")
     db = get_mongo_db()
-    import threading
-    threading.Thread(target=load_embeddings, args=(db,), daemon=True).start()
-    app.run(host='0.0.0.0', port=port, debug=True)
+    
+    # Only load embeddings in the main worker process to prevent double loading
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+        import threading
+        threading.Thread(target=load_embeddings, args=(db,), daemon=True).start()
+        
+    app.run(host='0.0.0.0', port=port, debug=True, use_reloader=False)
