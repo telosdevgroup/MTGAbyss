@@ -117,21 +117,13 @@ def render_card_detail(card_slug):
     else:
         ai_profile_html = ""
     
-    # Extract card image URL (prefer local path from image_metadata if it exists)
-    image_url = ''
-    img_meta = db["image_metadata"].find_one({"scryfall_id": card.get("id"), "size": {"$in": ["normal", "large"]}})
-    if img_meta and img_meta.get("local_path"):
-        image_url = "/" + img_meta["local_path"].replace("\\", "/")
+    # Extract card image URL (point directly to local path)
+    raw_card = card.get('raw', {})
+    card_faces = raw_card.get('card_faces', [])
+    if card_faces:
+        image_url = f"/data/images/normal/{card.get('id')}_0.jpg"
     else:
-        raw_card = card.get('raw', {})
-        image_uris = raw_card.get('image_uris', {})
-        if image_uris:
-            image_url = image_uris.get('large') or image_uris.get('normal', '')
-        else:
-            card_faces = raw_card.get('card_faces', [])
-            if card_faces and card_faces[0].get('image_uris'):
-                f_uris = card_faces[0].get('image_uris', {})
-                image_url = f_uris.get('large') or f_uris.get('normal', '')
+        image_url = f"/data/images/normal/{card.get('id')}.jpg"
 
     mana_cost = card.get('mana_cost') or 'None'
     cmc = card.get('cmc', 0.0)
@@ -285,20 +277,11 @@ def render_card_detail(card_slug):
         p_docs.sort(key=lambda x: x.get("base_priority", 0), reverse=True)
         
         for p_doc in p_docs:
-            p_image_url = ''
-            p_image_uris = p_doc.get('image_uris') or {}
-            if p_image_uris:
-                p_image_url = p_image_uris.get('normal') or p_image_uris.get('large', '')
+            p_faces = p_doc.get('card_faces') or []
+            if p_faces:
+                p_image_url = f"/data/images/normal/{p_doc['id']}_0.jpg"
             else:
-                p_faces = p_doc.get('card_faces') or []
-                if p_faces and p_faces[0].get('image_uris'):
-                    f_uris = p_faces[0].get('image_uris') or {}
-                    p_image_url = f_uris.get('normal') or f_uris.get('large', '')
-
-            # Resolve local image path if it exists
-            p_img_meta = db["image_metadata"].find_one({"scryfall_id": p_doc["id"], "size": {"$in": ["normal", "large"]}})
-            if p_img_meta and p_img_meta.get("local_path"):
-                p_image_url = "/" + p_img_meta["local_path"].replace("\\", "/")
+                p_image_url = f"/data/images/normal/{p_doc['id']}.jpg"
 
             printings_list.append({
                 'set_name': p_doc.get('set_name', 'Unknown Set'),
