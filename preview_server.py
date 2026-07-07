@@ -121,9 +121,9 @@ def render_card_detail(card_slug):
     raw_card = card.get('raw', {})
     card_faces = raw_card.get('card_faces', [])
     if card_faces:
-        image_url = f"/data/images/normal/{card.get('id')}_0.jpg"
+        image_url = f"/images/normal/{card.get('id')}_0.jpg"
     else:
-        image_url = f"/data/images/normal/{card.get('id')}.jpg"
+        image_url = f"/images/normal/{card.get('id')}.jpg"
 
     mana_cost = card.get('mana_cost') or 'None'
     cmc = card.get('cmc', 0.0)
@@ -504,9 +504,9 @@ def home():
 def serve_assets(filename):
     return send_from_directory(os.path.join(os.path.dirname(__file__), "public", "assets"), filename)
 
-@app.route('/data/images/<size>/<filename>')
+@app.route('/images/<size>/<filename>')
 def serve_card_images(size, filename):
-    return send_from_directory(os.path.join(os.path.dirname(__file__), "data", "images", size), filename)
+    return send_from_directory(os.path.join(os.path.dirname(__file__), "public", "images", size), filename)
 
 @app.route('/card/<slug>/index.html')
 @app.route('/card/<slug>/')

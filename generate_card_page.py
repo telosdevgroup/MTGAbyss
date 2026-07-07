@@ -130,9 +130,9 @@ def main():
     raw_card = card.get('raw', {})
     card_faces = raw_card.get('card_faces', [])
     if card_faces:
-        image_url = f"/data/images/normal/{card.get('id')}_0.jpg"
+        image_url = f"/images/normal/{card.get('id')}_0.jpg"
     else:
-        image_url = f"/data/images/normal/{card.get('id')}.jpg"
+        image_url = f"/images/normal/{card.get('id')}.jpg"
     # Generate HTML components
     mana_cost = card.get('mana_cost') or 'None'
     cmc = card.get('cmc', 0.0)
@@ -292,9 +292,9 @@ def main():
     for p_doc in p_docs:
         p_faces = p_doc.get('card_faces') or []
         if p_faces:
-            p_image_url = f"/data/images/normal/{p_doc['id']}_0.jpg"
+            p_image_url = f"/images/normal/{p_doc['id']}_0.jpg"
         else:
-            p_image_url = f"/data/images/normal/{p_doc['id']}.jpg"
+            p_image_url = f"/images/normal/{p_doc['id']}.jpg"
 
         printings_list.append({
             'set_name': p_doc.get('set_name', 'Unknown Set'),
