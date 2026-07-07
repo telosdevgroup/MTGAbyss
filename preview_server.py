@@ -117,17 +117,21 @@ def render_card_detail(card_slug):
     else:
         ai_profile_html = ""
     
-    # Extract card image URL
+    # Extract card image URL (prefer local path from image_metadata if it exists)
     image_url = ''
-    raw_card = card.get('raw', {})
-    image_uris = raw_card.get('image_uris', {})
-    if image_uris:
-        image_url = image_uris.get('large') or image_uris.get('normal', '')
+    img_meta = db["image_metadata"].find_one({"scryfall_id": card.get("id"), "size": {"$in": ["normal", "large"]}})
+    if img_meta and img_meta.get("local_path"):
+        image_url = "/" + img_meta["local_path"].replace("\\", "/")
     else:
-        card_faces = raw_card.get('card_faces', [])
-        if card_faces and card_faces[0].get('image_uris'):
-            f_uris = card_faces[0].get('image_uris', {})
-            image_url = f_uris.get('large') or f_uris.get('normal', '')
+        raw_card = card.get('raw', {})
+        image_uris = raw_card.get('image_uris', {})
+        if image_uris:
+            image_url = image_uris.get('large') or image_uris.get('normal', '')
+        else:
+            card_faces = raw_card.get('card_faces', [])
+            if card_faces and card_faces[0].get('image_uris'):
+                f_uris = card_faces[0].get('image_uris', {})
+                image_url = f_uris.get('large') or f_uris.get('normal', '')
 
     mana_cost = card.get('mana_cost') or 'None'
     cmc = card.get('cmc', 0.0)
@@ -268,19 +272,42 @@ def render_card_detail(card_slug):
     
     scryfall_uri = card.get('scryfall_uri') or 'https://scryfall.com'
 
-    # Construct printings list locally (never hit Scryfall)
+    # Construct printings list locally (querying card_prints collection)
     global PRINTINGS_CACHE
     if oracle_id in PRINTINGS_CACHE:
         printings_list = PRINTINGS_CACHE[oracle_id]
     else:
-        printings_list = [{
-            'set_name': card.get('set_name', 'Unknown Set'),
-            'set_code': (card.get('set') or '???').upper(),
-            'image': image_url,
-            'released_at': card.get('released_at', 'Unknown'),
-            'artist': card.get('artist', 'Unknown Artist'),
-            'collector_number': card.get('collector_number', 'N/A')
-        }]
+        printings_cursor = db["card_prints"].find({"oracle_id": oracle_id})
+        printings_list = []
+        
+        # Sort printings by base_priority (highest first)
+        p_docs = list(printings_cursor)
+        p_docs.sort(key=lambda x: x.get("base_priority", 0), reverse=True)
+        
+        for p_doc in p_docs:
+            p_image_url = ''
+            p_image_uris = p_doc.get('image_uris') or {}
+            if p_image_uris:
+                p_image_url = p_image_uris.get('normal') or p_image_uris.get('large', '')
+            else:
+                p_faces = p_doc.get('card_faces') or []
+                if p_faces and p_faces[0].get('image_uris'):
+                    f_uris = p_faces[0].get('image_uris') or {}
+                    p_image_url = f_uris.get('normal') or f_uris.get('large', '')
+
+            # Resolve local image path if it exists
+            p_img_meta = db["image_metadata"].find_one({"scryfall_id": p_doc["id"], "size": {"$in": ["normal", "large"]}})
+            if p_img_meta and p_img_meta.get("local_path"):
+                p_image_url = "/" + p_img_meta["local_path"].replace("\\", "/")
+
+            printings_list.append({
+                'set_name': p_doc.get('set_name', 'Unknown Set'),
+                'set_code': (p_doc.get('set') or '???').upper(),
+                'image': p_image_url,
+                'released_at': p_doc.get('released_at', 'Unknown'),
+                'artist': p_doc.get('artist', 'Unknown Artist'),
+                'collector_number': p_doc.get('collector_number', 'N/A')
+            })
         PRINTINGS_CACHE[oracle_id] = printings_list
 
     if not printings_list:
@@ -493,6 +520,10 @@ def home():
 @app.route('/assets/<path:filename>')
 def serve_assets(filename):
     return send_from_directory(os.path.join(os.path.dirname(__file__), "public", "assets"), filename)
+
+@app.route('/data/images/<size>/<filename>')
+def serve_card_images(size, filename):
+    return send_from_directory(os.path.join(os.path.dirname(__file__), "data", "images", size), filename)
 
 @app.route('/card/<slug>/index.html')
 @app.route('/card/<slug>/')
