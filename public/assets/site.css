@@ -1295,17 +1295,17 @@ body:not(.theater-mode) .site-footer {
   z-index: 10;
 }
 
-.mechanic-chip:hover::after,
-.mechanic-chip:focus::after,
-.mechanic-chip.active::after {
+.mechanic-chip[data-tooltip]:hover::after,
+.mechanic-chip[data-tooltip]:focus::after,
+.mechanic-chip[data-tooltip].active::after {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);
 }
 
-.mechanic-chip:hover::before,
-.mechanic-chip:focus::before,
-.mechanic-chip.active::before {
+.mechanic-chip[data-tooltip]:hover::before,
+.mechanic-chip[data-tooltip]:focus::before,
+.mechanic-chip[data-tooltip].active::before {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);

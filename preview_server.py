@@ -55,6 +55,15 @@ def markdown_to_html(md):
         formatted_paras.append(p)
     return "\n".join(formatted_paras)
 
+def format_mana_symbols(text):
+    if not text:
+        return ""
+    def replace_symbol(match):
+        sym = match.group(1)
+        clean_sym = sym.replace('/', '')
+        return f'<img src="https://svgs.scryfall.io/card-symbols/{clean_sym.upper()}.svg" alt="{sym}" class="mana-symbol" style="height: 0.9em; width: 0.9em; vertical-align: middle; margin: 0 0.1em; display: inline-block;">'
+    return re.sub(r'\{(.*?)\}', replace_symbol, text)
+
 def get_earliest_printing(db, oracle_id, fallback_card):
     return {
         'set_name': fallback_card.get('set_name', 'Unknown Set'),
@@ -95,6 +104,19 @@ def render_card_detail(card_slug):
         abort(404, description="Card not found")
 
     oracle_id = card.get('oracle_id')
+    
+    # Prioritize this card's lure and image generation jobs
+    if oracle_id:
+        print(f"Prioritizing card '{card.get('name')}' (oracle_id: {oracle_id}) to priority 1000000 on visit.")
+        db["cards"].update_one(
+            {"oracle_id": oracle_id},
+            {"$set": {"base_priority": 1000000}}
+        )
+        db["card_prints"].update_many(
+            {"oracle_id": oracle_id},
+            {"$set": {"base_priority": 1000000}}
+        )
+        card["base_priority"] = 1000000
     name = card.get('name')
     slug = card.get('slug') or slugify(name)
     
@@ -104,18 +126,30 @@ def render_card_detail(card_slug):
     # Load tags
     tags = card.get("tags", [])
     
-    # Load AI page
-    ai_page = db["ai_pages"].find_one({
-        "oracle_id": oracle_id,
-        "language": "en",
-        "page_type": "profile"
-    })
-    
-    if ai_page:
-        profile_content = markdown_to_html(ai_page.get("body_markdown", ""))
-        ai_profile_html = f'<div class="profile-pull-quote">\n          {profile_content}\n        </div>'
-    else:
-        ai_profile_html = ""
+    # Extract oracle text and flavor text (including multi-faced cards support)
+    raw_card = card.get('raw', {})
+    oracle_text = card.get('oracle_text') or raw_card.get('oracle_text') or ''
+    if not oracle_text:
+        card_faces = raw_card.get('card_faces', [])
+        if card_faces:
+            oracle_text = "\n\n".join([face.get('oracle_text') for face in card_faces if face.get('oracle_text')])
+            
+    flavor_text = card.get('flavor_text') or raw_card.get('flavor_text') or ''
+    if not flavor_text:
+        card_faces = raw_card.get('card_faces', [])
+        if card_faces:
+            flavor_text = " // ".join([face.get('flavor_text') for face in card_faces if face.get('flavor_text')])
+            
+    # Format oracle and flavor text with mana symbols
+    formatted_oracle = markdown_to_html(format_mana_symbols(oracle_text))
+    formatted_flavor = ""
+    if flavor_text:
+        formatted_flavor = f'<p class="flavor-text" style="font-style: italic; color: var(--abyss-muted); margin-top: 1rem; border-top: 1px dashed var(--abyss-border); padding-top: 0.5rem;">{format_mana_symbols(html.escape(flavor_text))}</p>'
+        
+    ai_profile_html = f'''<div class="profile-pull-quote">
+          {formatted_oracle}
+          {formatted_flavor}
+        </div>'''
     
     # Extract card image URL (point directly to local path)
     raw_card = card.get('raw', {})
@@ -272,21 +306,24 @@ def render_card_detail(card_slug):
         printings_cursor = db["card_prints"].find({"oracle_id": oracle_id})
         printings_list = []
         
-        # Sort printings by base_priority (highest first)
+        # Sort printings by release date ascending, then base_priority descending
         p_docs = list(printings_cursor)
-        p_docs.sort(key=lambda x: x.get("base_priority", 0), reverse=True)
+        p_docs.sort(key=lambda x: (x.get("released_at") or "9999-12-31", -x.get("base_priority", 0)))
         
         for p_doc in p_docs:
             p_faces = p_doc.get('card_faces') or []
             if p_faces:
-                p_image_url = f"/data/images/normal/{p_doc['id']}_0.jpg"
+                p_image_url = f"/images/normal/{p_doc['id']}_0.jpg"
+                p_large_image_url = f"/images/large/{p_doc['id']}_0.jpg"
             else:
-                p_image_url = f"/data/images/normal/{p_doc['id']}.jpg"
+                p_image_url = f"/images/normal/{p_doc['id']}.jpg"
+                p_large_image_url = f"/images/large/{p_doc['id']}.jpg"
 
             printings_list.append({
                 'set_name': p_doc.get('set_name', 'Unknown Set'),
                 'set_code': (p_doc.get('set') or '???').upper(),
                 'image': p_image_url,
+                'large_image': p_large_image_url,
                 'released_at': p_doc.get('released_at', 'Unknown'),
                 'artist': p_doc.get('artist', 'Unknown Artist'),
                 'collector_number': p_doc.get('collector_number', 'N/A')
@@ -298,6 +335,7 @@ def render_card_detail(card_slug):
             'set_name': set_name,
             'set_code': set_code,
             'image': image_url,
+            'large_image': image_url.replace('/normal/', '/large/'),
             'released_at': released_at,
             'artist': artist,
             'collector_number': collector_num
@@ -305,10 +343,13 @@ def render_card_detail(card_slug):
     else:
         image_url = printings_list[0]['image']
 
+    large_image_url = printings_list[0].get('large_image', image_url.replace('/normal/', '/large/'))
+
     clean_printings = [{
         'set_name': p['set_name'],
         'set_code': p['set_code'],
         'image': p['image'],
+        'large_image': p.get('large_image', p['image'].replace('/normal/', '/large/')),
         'released_at': p['released_at'],
         'artist': p['artist'],
         'collector_number': p['collector_number']
@@ -354,7 +395,7 @@ def render_card_detail(card_slug):
             scored_candidates.sort(key=lambda x: x[0], reverse=True)
             
             for sim, cand_oracle_id in scored_candidates:
-                if len(similar_cards) >= 3:
+                if len(similar_cards) >= 35:
                     break
                 cand_card = db["cards"].find_one({"oracle_id": cand_oracle_id})
                 if cand_card:
@@ -376,13 +417,24 @@ def render_card_detail(card_slug):
                             f_uris = cand_faces[0].get('image_uris', {})
                             cand_image_url = f_uris.get('large') or f_uris.get('normal', '')
                             
+                    cand_lure = ""
+                    try:
+                        cand_lure_doc = db["abysses"].find_one({"oracle_id": cand_oracle_id})
+                        if cand_lure_doc:
+                            l_data = cand_lure_doc.get("content", {}).get("lure", {})
+                            if l_data.get("status") == "generated" and l_data.get("text"):
+                                cand_lure = l_data.get("text").strip()
+                    except Exception:
+                        pass
+
                     earliest = get_earliest_printing(db, cand_oracle_id, cand_card)
                     similar_cards.append({
                         "name": cand_name,
                         "slug": cand_slug,
                         "image_url": cand_image_url,
                         "similarity": round(sim, 4),
-                        "earliest_printing": earliest
+                        "earliest_printing": earliest,
+                        "lure": cand_lure
                     })
     except Exception as e:
         print(f"Error calculating similar cards: {e}")
@@ -442,7 +494,7 @@ def render_card_detail(card_slug):
         mech_doc = mechanics_map.get(m_slug)
         definition = mech_doc.get("definition") if mech_doc else None
         
-        if definition and mech_doc.get("status") == "defined":
+        if definition:
             chips_html_list.append(
                 f'<span class="mechanic-chip" tabindex="0" data-tooltip="{display_name}: {definition}">{display_name}</span>'
             )
@@ -466,6 +518,7 @@ def render_card_detail(card_slug):
     rendered = template_content.format(
         name=name,
         image_url=image_url,
+        large_image_url=large_image_url,
         badges=badges_html,
         mechanics_chips=mechanics_chips_html,
         cmc=cmc,
@@ -506,7 +559,16 @@ def serve_assets(filename):
 
 @app.route('/images/<size>/<filename>')
 def serve_card_images(size, filename):
-    return send_from_directory(os.path.join(os.path.dirname(__file__), "public", "images", size), filename)
+    public_path = os.path.join(os.path.dirname(__file__), "public", "images", size)
+    if os.path.exists(os.path.join(public_path, filename)):
+        return send_from_directory(public_path, filename)
+    data_path = os.path.join(os.path.dirname(__file__), "data", "images", size)
+    return send_from_directory(data_path, filename)
+
+@app.route('/data/images/<size>/<filename>')
+def serve_data_card_images(size, filename):
+    data_path = os.path.join(os.path.dirname(__file__), "data", "images", size)
+    return send_from_directory(data_path, filename)
 
 @app.route('/card/<slug>/index.html')
 @app.route('/card/<slug>/')

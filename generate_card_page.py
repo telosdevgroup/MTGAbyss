@@ -567,3 +567,6 @@ def main():
         search_term = sys.argv[1]
     
     generate_page(search_term)
+
+if __name__ == '__main__':
+    main()

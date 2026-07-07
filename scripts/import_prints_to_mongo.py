@@ -93,6 +93,7 @@ def main():
                 "set": card.get("set"),
                 "set_name": card.get("set_name"),
                 "collector_number": card.get("collector_number"),
+                "released_at": card.get("released_at"),
                 "image_uris": image_uris,
                 "card_faces": lite_faces if lite_faces else None,
                 "imported_at": now,
