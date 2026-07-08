@@ -33,14 +33,22 @@ def slugify(s):
     return s.strip('-')
 
 def get_image_slug(card_doc, has_faces=False):
-    card_name = card_doc.get('name') or 'unknown'
-    set_name = card_doc.get('set_name') or card_doc.get('set') or 'unknown'
-    artist = card_doc.get('artist') or 'unknown'
-    
-    slug_parts = [slugify(card_name), slugify(set_name), slugify(artist)]
-    slug_parts = [p for p in slug_parts if p]
-    base_slug = "-".join(slug_parts)
-    
+    base_slug = card_doc.get("image_slug")
+    if not base_slug:
+        card_name = card_doc.get('name') or 'unknown'
+        set_name = card_doc.get('set_name') or card_doc.get('set') or 'unknown'
+        artist = card_doc.get('artist') or 'unknown'
+        collector_number = card_doc.get('collector_number') or card_doc.get('raw', {}).get('collector_number') or ''
+        
+        slug_parts = [
+            slugify(card_name), 
+            slugify(set_name), 
+            slugify(artist),
+            slugify(collector_number)
+        ]
+        slug_parts = [p for p in slug_parts if p]
+        base_slug = "-".join(slug_parts)
+        
     suffix = "_0" if has_faces else ""
     return f"{base_slug}{suffix}.jpg"
 

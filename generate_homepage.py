@@ -1,5 +1,14 @@
 import os
 import shutil
+import re
+
+def slugify(s):
+    if not s:
+        return ""
+    s = s.lower()
+    s = re.sub(r'[^a-z0-9\s-]', '', s)
+    s = re.sub(r'[\s-]+', '-', s)
+    return s.strip('-')
 
 HOMEPAGE_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
@@ -12,12 +21,29 @@ HOMEPAGE_TEMPLATE = """<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/site.css">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-837M1ZGHPE"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-837M1ZGHPE');
+  </script>
+  <!-- Microsoft Clarity -->
+  <script type="text/javascript">
+      (function(c,l,a,r,i,t,y){
+          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window, document, "clarity", "script", "xj4uzg0vsb");
+  </script>
 </head>
 <body>
   <header class="site-header">
     <a class="site-logo" href="index.html">MTGAbyss</a>
     <nav>
-      <a href="cards/index.html">Cards</a>
+      <a href="cards/">Cards</a>
     </nav>
   </header>
 
@@ -78,6 +104,23 @@ SEARCH_TEMPLATE = """<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/site.css">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-837M1ZGHPE"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-837M1ZGHPE');
+  </script>
+  <!-- Microsoft Clarity -->
+  <script type="text/javascript">
+      (function(c,l,a,r,i,t,y){
+          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window, document, "clarity", "script", "xj4uzg0vsb");
+  </script>
 </head>
 <body>
   <header class="site-header">
@@ -88,12 +131,14 @@ SEARCH_TEMPLATE = """<!DOCTYPE html>
     <div class="container">
       <main class="search-results-panel">
         <h1 style="margin-top: 0; font-family: 'Outfit', sans-serif;">Search Results</h1>
-        <p style="color: var(--abyss-muted);">This is a minimal placeholder for the natural-language card parser.</p>
+        <div id="loading-indicator" style="color: var(--abyss-muted); margin-bottom: 1.5rem;">Searching card database...</div>
         
-        <div style="margin-top: 2rem;">
+        <div style="margin-top: 1.5rem;">
           <div>Search query:</div>
           <div class="search-query-display" id="search-query-display">...</div>
         </div>
+
+        <div id="results-container" style="margin-top: 2rem;"></div>
 
         <div style="margin-top: 2.5rem;">
           <a href="index.html" class="homepage-search-btn" style="text-decoration: none; display: inline-block;">&larr; Back to Search</a>
@@ -103,10 +148,83 @@ SEARCH_TEMPLATE = """<!DOCTYPE html>
   </div>
 
   <script>
+    function slugify(s) {
+      if (!s) return "";
+      return s.toLowerCase()
+              .replace(/[^a-z0-9\s-]/g, '')
+              .replace(/[\s-]+/g, '-')
+              .replace(/^-+|-+$/g, '');
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
       const query = params.get('q') || '';
-      document.getElementById('search-query-display').textContent = query;
+      const displayEl = document.getElementById('search-query-display');
+      displayEl.textContent = query;
+
+      const cleanQuery = query.trim();
+      if (!cleanQuery) {
+        document.getElementById('loading-indicator').textContent = 'No search query provided.';
+        return;
+      }
+
+      const querySlug = slugify(cleanQuery);
+
+      fetch('search-index.json')
+        .then(response => response.json())
+        .then(index => {
+          // index is {"Utopia Sprawl": "utopia-sprawl", ...}
+          let exactMatchSlug = null;
+          const queryLower = cleanQuery.toLowerCase();
+          
+          for (const [name, slug] of Object.entries(index)) {
+            if (name.toLowerCase() === queryLower || slug === querySlug) {
+              exactMatchSlug = slug;
+              break;
+            }
+          }
+
+          if (exactMatchSlug) {
+            document.getElementById('loading-indicator').textContent = 'Found exact match! Redirecting...';
+            window.location.href = `card/${exactMatchSlug}/`;
+            return;
+          }
+
+          // Prefix / substring search
+          const matches = [];
+          for (const [name, slug] of Object.entries(index)) {
+            const nameLower = name.toLowerCase();
+            if (nameLower.startsWith(queryLower)) {
+              matches.push({ name, slug, score: 2 });
+            } else if (nameLower.includes(queryLower)) {
+              matches.push({ name, slug, score: 1 });
+            }
+          }
+
+          matches.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+
+          const resultsContainer = document.getElementById('results-container');
+          document.getElementById('loading-indicator').style.display = 'none';
+
+          if (matches.length > 0) {
+            const limit = 50;
+            const displayMatches = matches.slice(0, limit);
+            
+            let html = `<p style="color: var(--abyss-muted); margin-bottom: 1.5rem;">No exact match found. Showing top ${displayMatches.length} matching cards:</p>`;
+            html += '<ul style="list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">';
+            for (const m of displayMatches) {
+              html += `<li><a href="card/${m.slug}/" class="homepage-example-pill" style="display: block; text-decoration: none; text-align: center; margin: 0; width: auto; font-family: 'Outfit', sans-serif;">${m.name}</a></li>`;
+            }
+            html += '</ul>';
+            resultsContainer.innerHTML = html;
+          } else {
+            resultsContainer.innerHTML = '<div style="color: var(--abyss-muted);">No cards found matching your query.</div>';
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('loading-indicator').textContent = 'Error loading search index.';
+        });
     });
   </script>
 </body>
@@ -114,8 +232,10 @@ SEARCH_TEMPLATE = """<!DOCTYPE html>
 """
 
 def main():
+    import json
     # Fetch 6 random cards from MongoDB
     card_names = []
+    db = None
     try:
         from db_mongo import get_mongo_db
         db = get_mongo_db()
@@ -144,6 +264,21 @@ def main():
     rendered_homepage = HOMEPAGE_TEMPLATE.replace("<!-- CARD_PILLS_PLACEHOLDER -->", pills_html.rstrip())
     rendered_homepage = rendered_homepage.replace("<!-- SEARCH_VALUE_PLACEHOLDER -->", prepopulated_name)
 
+    # Generate search-index.json mapping name to slug
+    search_index = {}
+    if db is not None:
+        try:
+            print("Generating search-index.json from MongoDB...")
+            all_cards = list(db["cards"].find({}, {"name": 1, "slug": 1}))
+            for c in all_cards:
+                name = c.get("name")
+                slug = c.get("slug") or slugify(name)
+                if name:
+                    search_index[name] = slug
+            print(f"Index built with {len(search_index):,} cards.")
+        except Exception as e:
+            print(f"Warning: failed to generate search index: {e}")
+
     # Targets
     targets = ["dist", "public"]
     
@@ -161,6 +296,12 @@ def main():
         with open(search_path, "w", encoding="utf-8") as f:
             f.write(SEARCH_TEMPLATE)
         print(f"Generated: {search_path}")
+
+        # Write search-index.json
+        index_file_path = os.path.join(target, "search-index.json")
+        with open(index_file_path, "w", encoding="utf-8") as f:
+            json.dump(search_index, f, indent=2)
+        print(f"Generated: {index_file_path}")
         
         # Copy assets
         assets_dir = os.path.join(target, "assets")

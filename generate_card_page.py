@@ -55,14 +55,22 @@ def get_earliest_printing(db, oracle_id, fallback_card):
     }
 
 def get_image_slug(card_doc, has_faces=False):
-    card_name = card_doc.get('name') or 'unknown'
-    set_name = card_doc.get('set_name') or card_doc.get('set') or 'unknown'
-    artist = card_doc.get('artist') or 'unknown'
-    
-    slug_parts = [slugify(card_name), slugify(set_name), slugify(artist)]
-    slug_parts = [p for p in slug_parts if p]
-    base_slug = "-".join(slug_parts)
-    
+    base_slug = card_doc.get("image_slug")
+    if not base_slug:
+        card_name = card_doc.get('name') or 'unknown'
+        set_name = card_doc.get('set_name') or card_doc.get('set') or 'unknown'
+        artist = card_doc.get('artist') or 'unknown'
+        collector_number = card_doc.get('collector_number') or card_doc.get('raw', {}).get('collector_number') or ''
+        
+        slug_parts = [
+            slugify(card_name), 
+            slugify(set_name), 
+            slugify(artist),
+            slugify(collector_number)
+        ]
+        slug_parts = [p for p in slug_parts if p]
+        base_slug = "-".join(slug_parts)
+        
     suffix = "_0" if has_faces else ""
     return f"{base_slug}{suffix}.jpg"
 
@@ -147,7 +155,7 @@ def generate_page(search_term=None, db=None):
     raw_card = card.get('raw', {})
     card_faces = raw_card.get('card_faces', [])
     slug_name = get_image_slug(card, bool(card_faces))
-    image_url = f"../../images/normal/{slug_name}"
+    image_url = f"/images/normal/{slug_name}"
     add_card_images(card, bool(card_faces))
     # Generate HTML components
     mana_cost = card.get('mana_cost') or 'None'
@@ -307,8 +315,8 @@ def generate_page(search_term=None, db=None):
     for p_doc in p_docs:
         p_faces = p_doc.get('card_faces') or []
         p_slug_name = get_image_slug(p_doc, bool(p_faces))
-        p_image_url = f"../../images/normal/{p_slug_name}"
-        p_large_image_url = f"../../images/large/{p_slug_name}"
+        p_image_url = f"/images/normal/{p_slug_name}"
+        p_large_image_url = f"/images/large/{p_slug_name}"
         add_card_images(p_doc, bool(p_faces))
 
         printings_list.append({
@@ -408,93 +416,65 @@ def generate_page(search_term=None, db=None):
     # Fetch similar cards using embeddings
     similar_cards = []
     try:
-        import math
-        import json
-        try:
-            import numpy as np
-            HAS_NUMPY = True
-        except ImportError:
-            HAS_NUMPY = False
-
-        def get_cosine_similarity(v1, v2):
-            if HAS_NUMPY:
-                a = np.array(v1, dtype=np.float32)
-                b = np.array(v2, dtype=np.float32)
-                norm_a = np.linalg.norm(a)
-                norm_b = np.linalg.norm(b)
-                if norm_a == 0 or norm_b == 0:
-                    return 0.0
-                return float(np.dot(a, b) / (norm_a * norm_b))
-            else:
-                dot_product = sum(x * y for x, y in zip(v1, v2))
-                norm_a = math.sqrt(sum(x * x for x in v1))
-                norm_b = math.sqrt(sum(y * y for y in v2))
-                if norm_a == 0 or norm_b == 0:
-                    return 0.0
-                return dot_product / (norm_a * norm_b)
-
+        import numpy as np
         target_emb_doc = db["card_embeddings"].find_one({"oracle_id": oracle_id})
-        if target_emb_doc and target_emb_doc.get("embedding"):
-            target_embedding = target_emb_doc["embedding"]
-            target_dim = len(target_embedding)
-            
-            # Fetch all candidate embeddings (excluding current card)
-            all_embeddings = list(db["card_embeddings"].find(
-                {"oracle_id": {"$ne": oracle_id}},
-                {"oracle_id": 1, "embedding": 1}
-            ))
-            
-            scored_candidates = []
-            for emb_doc in all_embeddings:
-                vector = emb_doc.get("embedding")
-                if not vector or not isinstance(vector, list) or len(vector) != target_dim:
-                    continue
-                sim = get_cosine_similarity(target_embedding, vector)
-                scored_candidates.append((sim, emb_doc["oracle_id"]))
-            
-            # Sort by similarity descending and pick top 3 valid standard cards
-            scored_candidates.sort(key=lambda x: x[0], reverse=True)
-            
-            for sim, cand_oracle_id in scored_candidates:
-                if len(similar_cards) >= 35:
-                    break
-                cand_card = db["cards"].find_one({"oracle_id": cand_oracle_id})
-                if cand_card:
-                    cand_raw = cand_card.get('raw', {})
-                    layout = cand_raw.get('layout', 'normal')
-                    if layout in ['art_series', 'token', 'double_faced_token', 'emblem', 'planar', 'scheme', 'vanguard', 'memorabilia']:
+        if target_emb_doc and target_emb_doc.get("embedding") and _worker_embeddings_matrix is not None:
+            target_embedding = np.array(target_emb_doc["embedding"], dtype=np.float32)
+            if len(target_embedding) == _worker_embeddings_matrix.shape[1]:
+                norm = np.linalg.norm(target_embedding)
+                if norm > 0:
+                    target_embedding /= norm
+                
+                # Fast matrix-vector dot product
+                similarities = _worker_embeddings_matrix.dot(target_embedding)
+                
+                # Get top indices (retrieve top 80 in case some layouts are skipped)
+                top_indices = np.argsort(similarities)[::-1][:80]
+                
+                scored_candidates = []
+                for idx in top_indices:
+                    cand_oracle_id = _worker_oracle_ids[idx]
+                    if cand_oracle_id == oracle_id:
                         continue
-                        
-                    cand_name = cand_card.get("name")
-                    cand_slug = slugify(cand_name)
+                    sim = float(similarities[idx])
+                    scored_candidates.append((sim, cand_oracle_id))
+                
+                for sim, cand_oracle_id in scored_candidates:
+                    if len(similar_cards) >= 35:
+                        break
                     
-                    # Extract local image URL
-                    cand_faces = cand_raw.get('card_faces', [])
-                    cand_slug_name = get_image_slug(cand_card, bool(cand_faces))
-                    cand_image_url = f"../../images/normal/{cand_slug_name}"
-                    add_card_images(cand_card, bool(cand_faces))
+                    cand_card = _worker_card_cache.get(cand_oracle_id)
+                    if cand_card:
+                        cand_raw = cand_card.get('raw', {})
+                        layout = cand_raw.get('layout', 'normal')
+                        if layout in ['art_series', 'token', 'double_faced_token', 'emblem', 'planar', 'scheme', 'vanguard', 'memorabilia']:
+                            continue
                             
-                    cand_lure = ""
-                    try:
-                        cand_lure_doc = db["abysses"].find_one({"oracle_id": cand_oracle_id})
-                        if cand_lure_doc:
-                            l_data = cand_lure_doc.get("content", {}).get("lure", {})
-                            if l_data.get("status") == "generated" and l_data.get("text"):
-                                cand_lure = l_data.get("text").strip()
-                    except Exception:
-                        pass
-
-                    earliest = get_earliest_printing(db, cand_oracle_id, cand_card)
-                    similar_cards.append({
-                        "name": cand_name,
-                        "slug": cand_slug,
-                        "image_url": cand_image_url,
-                        "similarity": round(sim, 4),
-                        "earliest_printing": earliest,
-                        "lure": cand_lure
-                    })
+                        cand_name = cand_card.get("name")
+                        cand_slug = slugify(cand_name)
+                        
+                        # Extract local image URL
+                        cand_faces = cand_raw.get('card_faces', [])
+                        cand_slug_name = get_image_slug(cand_card, bool(cand_faces))
+                        cand_image_url = f"../../images/normal/{cand_slug_name}"
+                        add_card_images(cand_card, bool(cand_faces))
+                                
+                        cand_lure = _worker_lure_cache.get(cand_oracle_id, "")
+                        earliest = get_earliest_printing(db, cand_oracle_id, cand_card)
+                        
+                        similar_cards.append({
+                            "name": cand_name,
+                            "slug": cand_slug,
+                            "image_url": cand_image_url,
+                            "similarity": round(sim, 4),
+                            "earliest_printing": earliest,
+                            "lure": cand_lure
+                        })
     except Exception as e:
-        print(f"Warning: failed to calculate similar cards: {e}")
+        sys_stdout = sys.stdout
+        sys.stdout = sys.__stdout__
+        print(f"\nWarning: failed to calculate similar cards: {e}")
+        sys.stdout = sys_stdout
 
     # Fetch all mechanics from MongoDB mechanics collection
     mechanics_map = {}
@@ -739,6 +719,37 @@ def generate_page(search_term=None, db=None):
     print(f"Output path: {output_path}")
     return slug, referenced_images
 
+_worker_db = None
+_worker_embeddings_matrix = None
+_worker_oracle_ids = []
+_worker_card_cache = {}
+_worker_lure_cache = {}
+
+def init_worker_data(db_uri, card_cache, lure_cache, matrix, oracle_ids):
+    global _worker_db, _worker_card_cache, _worker_lure_cache, _worker_embeddings_matrix, _worker_oracle_ids
+    import pymongo
+    client = pymongo.MongoClient(db_uri)
+    db_name = os.environ.get("MONGODB_DB", "mtgabyss")
+    _worker_db = client[db_name]
+    _worker_card_cache = card_cache
+    _worker_lure_cache = lure_cache
+    _worker_embeddings_matrix = matrix
+    _worker_oracle_ids = oracle_ids
+
+def worker_generate_page(card_name):
+    global _worker_db
+    try:
+        # Disable print buffering/output to prevent console spam slowing down parallel execution
+        sys_stdout = sys.stdout
+        devnull = open(os.devnull, 'w', encoding='utf-8')
+        sys.stdout = devnull
+        generate_page(card_name, db=_worker_db)
+        devnull.close()
+        sys.stdout = sys_stdout
+        return True, card_name
+    except Exception as e:
+        return False, f"{card_name}: {e}"
+
 def main():
     import argparse
     import subprocess
@@ -746,12 +757,99 @@ def main():
     import tarfile
     import io
     import sys
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+    import multiprocessing
     
     parser = argparse.ArgumentParser(description="Generate card page.")
     parser.add_argument("search_term", nargs="?", default=None, help="Name or slug of the card")
     parser.add_argument("--deploy", action="store_true", help="Upload the generated page to the VPS")
+    parser.add_argument("--all", action="store_true", help="Generate all cards in the database")
+    parser.add_argument("--workers", type=int, default=None, help="Number of worker processes for parallel generation")
     args = parser.parse_args()
     
+    if args.all:
+        db = get_mongo_db()
+        cards = list(db["cards"].find({}, {"name": 1}))
+        card_names = [c.get("name") for c in cards if c.get("name")]
+        
+        num_cores = args.workers or multiprocessing.cpu_count()
+        print(f"Found {len(card_names):,} cards. Pre-loading MongoDB datasets to memory...")
+        
+        # 1. Load generated lures
+        print("  -> Loading lures...", end="", flush=True)
+        lure_cache = {}
+        lures_cursor = db["abysses"].find(
+            {"content.lure.status": "generated"}, 
+            {"oracle_id": 1, "content.lure.text": 1}
+        )
+        for doc in lures_cursor:
+            oracle_id = doc.get("oracle_id")
+            text = doc.get("content", {}).get("lure", {}).get("text")
+            if oracle_id and text:
+                lure_cache[oracle_id] = text.strip()
+        print(f" Loaded {len(lure_cache):,} lures.", flush=True)
+        
+        # 2. Load card metadata
+        print("  -> Loading card metadata...", end="", flush=True)
+        card_cache = {}
+        cards_cursor = db["cards"].find(
+            {}, 
+            {"oracle_id": 1, "name": 1, "raw.layout": 1, "raw.image_uris": 1, "raw.card_faces": 1, 
+             "set_name": 1, "set": 1, "released_at": 1, "artist": 1, "collector_number": 1}
+        )
+        for doc in cards_cursor:
+            oracle_id = doc.get("oracle_id")
+            if oracle_id:
+                card_cache[oracle_id] = doc
+        print(f" Loaded {len(card_cache):,} card metadata docs.", flush=True)
+        
+        # 3. Load embeddings and stack in matrix
+        print("  -> Loading embeddings and creating NumPy matrix...", end="", flush=True)
+        embeddings_list = list(db["card_embeddings"].find({}, {"oracle_id": 1, "embedding": 1}))
+        
+        import numpy as np
+        matrix_rows = []
+        oracle_ids = []
+        for doc in embeddings_list:
+            oracle_id = doc.get("oracle_id")
+            vec = doc.get("embedding")
+            if oracle_id and vec and isinstance(vec, list):
+                arr = np.array(vec, dtype=np.float32)
+                norm = np.linalg.norm(arr)
+                if norm > 0:
+                    arr /= norm
+                    matrix_rows.append(arr)
+                    oracle_ids.append(oracle_id)
+                    
+        embeddings_matrix = None
+        if matrix_rows:
+            embeddings_matrix = np.vstack(matrix_rows)
+            print(f" Created NumPy matrix {embeddings_matrix.shape}.", flush=True)
+        else:
+            print(" No embeddings found.", flush=True)
+            
+        print(f"Starting parallel generation using {num_cores} workers...")
+        mongo_uri = os.environ.get("MONGODB_URI", "mongodb://localhost:27017")
+        
+        completed_count = 0
+        with ProcessPoolExecutor(
+            max_workers=num_cores,
+            initializer=init_worker_data,
+            initargs=(mongo_uri, card_cache, lure_cache, embeddings_matrix, oracle_ids)
+        ) as executor:
+            futures = {executor.submit(worker_generate_page, name): name for name in card_names}
+            
+            for future in as_completed(futures):
+                success, info = future.result()
+                if not success:
+                    print(f"\nError generating card: {info}")
+                completed_count += 1
+                if completed_count % 100 == 0 or completed_count == len(card_names):
+                    sys.stdout.write(f"\rProgress: {completed_count:,} / {len(card_names):,} cards generated ({(completed_count/len(card_names))*100:.1f}%)")
+                    sys.stdout.flush()
+        print("\nAll card pages generated successfully.")
+        return
+        
     result = generate_page(args.search_term)
     if not result:
         return
