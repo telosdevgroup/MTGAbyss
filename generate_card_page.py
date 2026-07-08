@@ -54,9 +54,32 @@ def get_earliest_printing(db, oracle_id, fallback_card):
         'collector_number': fallback_card.get('collector_number', 'N/A')
     }
 
+def get_image_slug(card_doc, has_faces=False):
+    card_name = card_doc.get('name') or 'unknown'
+    set_name = card_doc.get('set_name') or card_doc.get('set') or 'unknown'
+    artist = card_doc.get('artist') or 'unknown'
+    
+    slug_parts = [slugify(card_name), slugify(set_name), slugify(artist)]
+    slug_parts = [p for p in slug_parts if p]
+    base_slug = "-".join(slug_parts)
+    
+    suffix = "_0" if has_faces else ""
+    return f"{base_slug}{suffix}.jpg"
+
 def generate_page(search_term=None, db=None):
     if db is None:
         db = get_mongo_db()
+        
+    referenced_images = {} # maps local_rel_path -> target_rel_path
+    
+    def add_card_images(card_doc, has_faces=False):
+        card_id = card_doc.get('id')
+        if not card_id:
+            return
+        suffix = "_0" if has_faces else ""
+        slug_name = get_image_slug(card_doc, has_faces)
+        referenced_images[f"public/images/normal/{card_id}{suffix}.jpg"] = f"images/normal/{slug_name}"
+        referenced_images[f"public/images/large/{card_id}{suffix}.jpg"] = f"images/large/{slug_name}"
         
     card = None
     
@@ -117,18 +140,15 @@ def generate_page(search_term=None, db=None):
     if ai_page:
         profile_content = markdown_to_html(ai_page.get("body_markdown", ""))
         ai_profile_html = f'<div class="profile-pull-quote">\n          {profile_content}\n        </div>'
-        print(f"Found AI profile for '{name}'.")
     else:
         ai_profile_html = ""
-        print(f"No AI profile found for '{name}'.")
     
     # Extract card image URL (point directly to local path)
     raw_card = card.get('raw', {})
     card_faces = raw_card.get('card_faces', [])
-    if card_faces:
-        image_url = f"/images/normal/{card.get('id')}_0.jpg"
-    else:
-        image_url = f"/images/normal/{card.get('id')}.jpg"
+    slug_name = get_image_slug(card, bool(card_faces))
+    image_url = f"../../images/normal/{slug_name}"
+    add_card_images(card, bool(card_faces))
     # Generate HTML components
     mana_cost = card.get('mana_cost') or 'None'
     cmc = card.get('cmc', 0.0)
@@ -286,12 +306,10 @@ def generate_page(search_term=None, db=None):
     
     for p_doc in p_docs:
         p_faces = p_doc.get('card_faces') or []
-        if p_faces:
-            p_image_url = f"/images/normal/{p_doc['id']}_0.jpg"
-            p_large_image_url = f"/images/large/{p_doc['id']}_0.jpg"
-        else:
-            p_image_url = f"/images/normal/{p_doc['id']}.jpg"
-            p_large_image_url = f"/images/large/{p_doc['id']}.jpg"
+        p_slug_name = get_image_slug(p_doc, bool(p_faces))
+        p_image_url = f"../../images/normal/{p_slug_name}"
+        p_large_image_url = f"../../images/large/{p_slug_name}"
+        add_card_images(p_doc, bool(p_faces))
 
         printings_list.append({
             'set_name': p_doc.get('set_name', 'Unknown Set'),
@@ -320,6 +338,23 @@ def generate_page(search_term=None, db=None):
 
     large_image_url = printings_list[0].get('large_image', image_url.replace('/normal/', '/large/'))
 
+    initial_print = printings_list[0]
+    initial_artist = initial_print.get('artist') or ''
+    if initial_artist and re.search(r'unknown', initial_artist, re.IGNORECASE):
+        initial_artist = ''
+    initial_set = initial_print.get('set_name') or ''
+    initial_released = initial_print.get('released_at', '')
+    initial_year = initial_released.split('-')[0] if '-' in initial_released else ''
+    
+    alt_parts = [name]
+    if initial_set:
+        alt_parts.append(initial_set)
+    if initial_year:
+        alt_parts.append(initial_year)
+    if initial_artist:
+        alt_parts.append(initial_artist)
+    image_alt = " | ".join(alt_parts)
+
     import json
     # Export all metadata keys to clean_printings JSON
     clean_printings = [{
@@ -337,7 +372,13 @@ def generate_page(search_term=None, db=None):
     # Fetch Lure content from abysses collection
     lure_html = ""
     default_desc = f"Oracle card details, rulings, legality, and all printings for {name} on MTGAbyss."
-    meta_tags = f'<meta name="description" content="{html.escape(default_desc)}">'
+    
+    # Calculate image name for og:image
+    image_filename = os.path.basename(large_image_url)
+    image_abs_url = f"https://mtgabyss.com/images/large/{image_filename}"
+    
+    description_text = default_desc
+    has_lure = False
     
     try:
         abyss_lure_doc = db["abysses"].find_one({
@@ -348,12 +389,21 @@ def generate_page(search_term=None, db=None):
             if lure_data.get("status") == "generated" and lure_data.get("text"):
                 lure_text = lure_data.get("text").strip()
                 collapsed_lure = " ".join(lure_text.split())
-                escaped_lure = html.escape(collapsed_lure)
-                
+                description_text = collapsed_lure
                 lure_html = f'<blockquote class="abyss-lure">{html.escape(lure_text)}</blockquote>'
-                meta_tags = f'<meta name="description" content="{escaped_lure}">\n  <meta property="og:description" content="{escaped_lure}">\n  <meta name="twitter:description" content="{escaped_lure}">'
+                has_lure = True
     except Exception as e:
         print(f"Warning: failed to query abysses: {e}")
+
+    escaped_desc = html.escape(description_text)
+    meta_tags = f'<meta name="description" content="{escaped_desc}">'
+    
+    # Open Graph/Twitter descriptions only if Lure is present
+    if has_lure:
+        meta_tags += f'\n  <meta property="og:description" content="{escaped_desc}">\n  <meta name="twitter:description" content="{escaped_desc}">'
+        
+    meta_tags += f'\n  <meta property="og:image" content="{image_abs_url}">\n  <meta name="twitter:image" content="{image_abs_url}">'
+    meta_tags += f'\n  <meta property="og:title" content="{html.escape(name)} | MTGAbyss">\n  <meta name="twitter:title" content="{html.escape(name)} | MTGAbyss">'
 
     # Fetch similar cards using embeddings
     similar_cards = []
@@ -406,7 +456,7 @@ def generate_page(search_term=None, db=None):
             scored_candidates.sort(key=lambda x: x[0], reverse=True)
             
             for sim, cand_oracle_id in scored_candidates:
-                if len(similar_cards) >= 4:
+                if len(similar_cards) >= 35:
                     break
                 cand_card = db["cards"].find_one({"oracle_id": cand_oracle_id})
                 if cand_card:
@@ -418,24 +468,30 @@ def generate_page(search_term=None, db=None):
                     cand_name = cand_card.get("name")
                     cand_slug = slugify(cand_name)
                     
-                    # Extract image URL
-                    cand_image_url = ''
-                    cand_image_uris = cand_raw.get('image_uris', {})
-                    if cand_image_uris:
-                        cand_image_url = cand_image_uris.get('large') or cand_image_uris.get('normal', '')
-                    else:
-                        cand_faces = cand_raw.get('card_faces', [])
-                        if cand_faces and cand_faces[0].get('image_uris'):
-                            f_uris = cand_faces[0].get('image_uris', {})
-                            cand_image_url = f_uris.get('large') or f_uris.get('normal', '')
+                    # Extract local image URL
+                    cand_faces = cand_raw.get('card_faces', [])
+                    cand_slug_name = get_image_slug(cand_card, bool(cand_faces))
+                    cand_image_url = f"../../images/normal/{cand_slug_name}"
+                    add_card_images(cand_card, bool(cand_faces))
                             
+                    cand_lure = ""
+                    try:
+                        cand_lure_doc = db["abysses"].find_one({"oracle_id": cand_oracle_id})
+                        if cand_lure_doc:
+                            l_data = cand_lure_doc.get("content", {}).get("lure", {})
+                            if l_data.get("status") == "generated" and l_data.get("text"):
+                                cand_lure = l_data.get("text").strip()
+                    except Exception:
+                        pass
+
                     earliest = get_earliest_printing(db, cand_oracle_id, cand_card)
                     similar_cards.append({
                         "name": cand_name,
                         "slug": cand_slug,
                         "image_url": cand_image_url,
                         "similarity": round(sim, 4),
-                        "earliest_printing": earliest
+                        "earliest_printing": earliest,
+                        "lure": cand_lure
                     })
     except Exception as e:
         print(f"Warning: failed to calculate similar cards: {e}")
@@ -511,6 +567,127 @@ def generate_page(search_term=None, db=None):
 
     similar_cards_json_str = json.dumps(similar_cards)
 
+    # Construct rich Schema.org VisualArtwork Graph mapping all printings & similar cards
+    printing_items = []
+    for idx, p in enumerate(printings_list):
+        p_large_filename = os.path.basename(p.get('large_image') or p['image'])
+        p_image_abs = f"https://mtgabyss.com/images/large/{p_large_filename}"
+        
+        p_artist = p.get('artist') or ''
+        if p_artist and re.search(r'unknown', p_artist, re.IGNORECASE):
+            p_artist = ''
+            
+        p_year = p.get('released_at', '').split('-')[0] if '-' in p.get('released_at', '') else ''
+        
+        artwork_item = {
+            "@type": "VisualArtwork",
+            "name": f"{name} ({p['set_name']})",
+            "image": p_image_abs,
+            "artMedium": "Card Art",
+            "artworkSurface": "Cardstock",
+        }
+        if p_artist:
+            artwork_item["creator"] = {
+                "@type": "Person",
+                "name": p_artist
+            }
+        if p_year:
+            artwork_item["dateCreated"] = p_year
+        if p.get('set_name'):
+            artwork_item["isPartOf"] = {
+                "@type": "CreativeWorkSeries",
+                "name": p['set_name']
+            }
+            
+        printing_items.append({
+            "@type": "ListItem",
+            "position": idx + 1,
+            "item": artwork_item
+        })
+
+    similar_items = []
+    for idx, s in enumerate(similar_cards):
+        s_large_filename = os.path.basename(s['image_url']).replace('/normal/', '/large/')
+        s_image_abs = f"https://mtgabyss.com/images/large/{s_large_filename}"
+        
+        s_artist = s.get('earliest_printing', {}).get('artist') or ''
+        if s_artist and re.search(r'unknown', s_artist, re.IGNORECASE):
+            s_artist = ''
+            
+        s_year = s.get('earliest_printing', {}).get('released_at', '').split('-')[0] if '-' in s.get('earliest_printing', {}).get('released_at', '') else ''
+        
+        s_artwork = {
+            "@type": "VisualArtwork",
+            "name": s['name'],
+            "image": s_image_abs,
+            "artMedium": "Card Art",
+            "artworkSurface": "Cardstock"
+        }
+        if s_artist:
+            s_artwork["creator"] = {
+                "@type": "Person",
+                "name": s_artist
+            }
+        if s_year:
+            s_artwork["dateCreated"] = s_year
+        if s.get('earliest_printing', {}).get('set_name'):
+            s_artwork["isPartOf"] = {
+                "@type": "CreativeWorkSeries",
+                "name": s['earliest_printing']['set_name']
+            }
+            
+        similar_items.append({
+            "@type": "ListItem",
+            "position": idx + 1,
+            "item": s_artwork
+        })
+
+    main_artist = printings_list[0].get('artist') or ''
+    if main_artist and re.search(r'unknown', main_artist, re.IGNORECASE):
+        main_artist = ''
+        
+    main_year = printings_list[0].get('released_at', '').split('-')[0] if '-' in printings_list[0].get('released_at', '') else ''
+    
+    main_artwork = {
+        "@type": "VisualArtwork",
+        "@id": f"https://mtgabyss.com/card/{slug}#artwork",
+        "name": name,
+        "image": image_abs_url,
+        "description": description_text,
+        "artMedium": "Card Art",
+        "artworkSurface": "Cardstock"
+    }
+    if main_artist:
+        main_artwork["creator"] = {
+            "@type": "Person",
+            "name": main_artist
+        }
+    if main_year:
+        main_artwork["dateCreated"] = main_year
+
+    json_ld = {
+        "@context": "https://schema.org",
+        "@graph": [
+            main_artwork,
+            {
+                "@type": "ItemList",
+                "@id": f"https://mtgabyss.com/card/{slug}#printings",
+                "name": f"Historical printings of {name}",
+                "itemListElement": printing_items
+            }
+        ]
+    }
+    if similar_items:
+        json_ld["@graph"].append({
+            "@type": "ItemList",
+            "@id": f"https://mtgabyss.com/card/{slug}#similar",
+            "name": f"Similar cards to {name}",
+            "itemListElement": similar_items
+        })
+
+    json_ld_script = f'\n  <script type="application/ld+json">\n  {json.dumps(json_ld, indent=2)}\n  </script>'
+    meta_tags += json_ld_script
+
     # Read template
     template_path = "templates/card_detail.html"
     if not os.path.exists(template_path):
@@ -525,6 +702,7 @@ def generate_page(search_term=None, db=None):
         name=name,
         image_url=image_url,
         large_image_url=large_image_url,
+        image_alt=image_alt,
         badges=badges_html,
         mechanics_chips=mechanics_chips_html,
         cmc=cmc,
@@ -559,14 +737,77 @@ def generate_page(search_term=None, db=None):
         
     print(f"\nStatic page generated successfully for card: {name}")
     print(f"Output path: {output_path}")
+    return slug, referenced_images
 
 def main():
-    # Check arguments
-    search_term = None
-    if len(sys.argv) > 1:
-        search_term = sys.argv[1]
+    import argparse
+    import subprocess
+    import os
+    import tarfile
+    import io
+    import sys
     
-    generate_page(search_term)
+    parser = argparse.ArgumentParser(description="Generate card page.")
+    parser.add_argument("search_term", nargs="?", default=None, help="Name or slug of the card")
+    parser.add_argument("--deploy", action="store_true", help="Upload the generated page to the VPS")
+    args = parser.parse_args()
+    
+    result = generate_page(args.search_term)
+    if not result:
+        return
+    slug, referenced_images = result
+    
+    if slug and args.deploy:
+        print(f"\nDeploying card page for '{slug}' to remote server...")
+        try:
+            # 1. Build a tar archive in memory containing the HTML directory and images
+            print("Bundling HTML and referenced images into an archive...")
+            tar_stream = io.BytesIO()
+            with tarfile.open(fileobj=tar_stream, mode="w:gz") as tar:
+                # Add the card details HTML folder
+                card_dir = f"public/card/{slug}"
+                if os.path.exists(card_dir):
+                    for root, dirs, files in os.walk(card_dir):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            arcname = os.path.relpath(file_path, "public")
+                            tar.add(file_path, arcname=arcname)
+                
+                # Add the referenced normal & large images
+                image_count = 0
+                for local_path, target_arcname in referenced_images.items():
+                    if os.path.exists(local_path):
+                        tar.add(local_path, arcname=target_arcname)
+                        image_count += 1
+            
+            tar_bytes = tar_stream.getvalue()
+            print(f"Archive created ({len(tar_bytes) / 1024 / 1024:.2f} MB, containing {image_count} images).")
+            
+            # 2. Pipe the tarball via a single SSH process (only one password prompt)
+            print("Uploading archive and configuring permissions on the server...")
+            remote_cmd = (
+                "tar -xzf - -C /srv/www/mtgabyss.com && "
+                "find /srv/www/mtgabyss.com/card /srv/www/mtgabyss.com/images -type d -exec chmod 755 {} + && "
+                "find /srv/www/mtgabyss.com/card /srv/www/mtgabyss.com/images -type f -exec chmod 644 {} +"
+            )
+            
+            ssh_proc = subprocess.Popen(
+                ["ssh", "ubuntu@15.204.113.15", remote_cmd],
+                stdin=subprocess.PIPE
+            )
+            
+            # Write the tar bytes to ssh stdin and wait for completion
+            ssh_proc.communicate(input=tar_bytes)
+            
+            if ssh_proc.returncode == 0:
+                print("Deployment completed successfully!")
+            else:
+                print(f"Deployment failed with exit code: {ssh_proc.returncode}")
+                sys.exit(ssh_proc.returncode)
+                
+        except Exception as e:
+            print(f"Error during deployment: {e}")
+            sys.exit(1)
 
 if __name__ == '__main__':
     main()

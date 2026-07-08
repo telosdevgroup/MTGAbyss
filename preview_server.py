@@ -32,6 +32,42 @@ def slugify(s):
     s = re.sub(r'[\s-]+', '-', s)
     return s.strip('-')
 
+def get_image_slug(card_doc, has_faces=False):
+    card_name = card_doc.get('name') or 'unknown'
+    set_name = card_doc.get('set_name') or card_doc.get('set') or 'unknown'
+    artist = card_doc.get('artist') or 'unknown'
+    
+    slug_parts = [slugify(card_name), slugify(set_name), slugify(artist)]
+    slug_parts = [p for p in slug_parts if p]
+    base_slug = "-".join(slug_parts)
+    
+    suffix = "_0" if has_faces else ""
+    return f"{base_slug}{suffix}.jpg"
+
+def lookup_uuid_by_image_slug(db, image_slug):
+    base = image_slug
+    if base.endswith('.jpg'):
+        base = base[:-4]
+    has_faces = False
+    if base.endswith('_0'):
+        base = base[:-2]
+        has_faces = True
+        
+    parts = base.split('-')
+    for i in range(len(parts), 0, -1):
+        candidate_slug = "-".join(parts[:i])
+        card_doc = db["cards"].find_one({"slug": candidate_slug})
+        if card_doc:
+            oracle_id = card_doc.get("oracle_id")
+            if oracle_id:
+                p_docs = list(db["card_prints"].find({"oracle_id": oracle_id}))
+                for p_doc in p_docs:
+                    if get_image_slug(p_doc, has_faces) == image_slug:
+                        return p_doc.get("id"), has_faces
+            if get_image_slug(card_doc, has_faces) == image_slug:
+                return card_doc.get("id"), has_faces
+    return None, has_faces
+
 def markdown_to_html(md):
     if not md:
         return ""
@@ -156,10 +192,8 @@ def render_card_detail(card_slug):
     # Extract card image URL (point directly to local path)
     raw_card = card.get('raw', {})
     card_faces = raw_card.get('card_faces', [])
-    if card_faces:
-        image_url = f"/images/normal/{card.get('id')}_0.jpg"
-    else:
-        image_url = f"/images/normal/{card.get('id')}.jpg"
+    slug_name = get_image_slug(card, bool(card_faces))
+    image_url = f"../../images/normal/{slug_name}"
 
     mana_cost = card.get('mana_cost') or 'None'
     cmc = card.get('cmc', 0.0)
@@ -314,12 +348,9 @@ def render_card_detail(card_slug):
         
         for p_doc in p_docs:
             p_faces = p_doc.get('card_faces') or []
-            if p_faces:
-                p_image_url = f"/images/normal/{p_doc['id']}_0.jpg"
-                p_large_image_url = f"/images/large/{p_doc['id']}_0.jpg"
-            else:
-                p_image_url = f"/images/normal/{p_doc['id']}.jpg"
-                p_large_image_url = f"/images/large/{p_doc['id']}.jpg"
+            p_slug_name = get_image_slug(p_doc, bool(p_faces))
+            p_image_url = f"../../images/normal/{p_slug_name}"
+            p_large_image_url = f"../../images/large/{p_slug_name}"
 
             printings_list.append({
                 'set_name': p_doc.get('set_name', 'Unknown Set'),
@@ -347,6 +378,23 @@ def render_card_detail(card_slug):
 
     large_image_url = printings_list[0].get('large_image', image_url.replace('/normal/', '/large/'))
 
+    initial_print = printings_list[0]
+    initial_artist = initial_print.get('artist') or ''
+    if initial_artist and re.search(r'unknown', initial_artist, re.IGNORECASE):
+        initial_artist = ''
+    initial_set = initial_print.get('set_name') or ''
+    initial_released = initial_print.get('released_at', '')
+    initial_year = initial_released.split('-')[0] if '-' in initial_released else ''
+    
+    alt_parts = [name]
+    if initial_set:
+        alt_parts.append(initial_set)
+    if initial_year:
+        alt_parts.append(initial_year)
+    if initial_artist:
+        alt_parts.append(initial_artist)
+    image_alt = " | ".join(alt_parts)
+
     clean_printings = [{
         'set_name': p['set_name'],
         'set_code': p['set_code'],
@@ -360,7 +408,13 @@ def render_card_detail(card_slug):
 
     lure_html = ""
     default_desc = f"Oracle card details, rulings, legality, and all printings for {name} on MTGAbyss."
-    meta_tags = f'<meta name="description" content="{html.escape(default_desc)}">'
+    
+    # Calculate image name for og:image
+    image_filename = os.path.basename(large_image_url)
+    image_abs_url = f"https://mtgabyss.com/images/large/{image_filename}"
+    
+    description_text = default_desc
+    has_lure = False
     
     try:
         abyss_lure_doc = db["abysses"].find_one({"oracle_id": oracle_id})
@@ -369,11 +423,21 @@ def render_card_detail(card_slug):
             if lure_data.get("status") == "generated" and lure_data.get("text"):
                 lure_text = lure_data.get("text").strip()
                 collapsed_lure = " ".join(lure_text.split())
-                escaped_lure = html.escape(collapsed_lure)
+                description_text = collapsed_lure
                 lure_html = f'<blockquote class="abyss-lure">{html.escape(lure_text)}</blockquote>'
-                meta_tags = f'<meta name="description" content="{escaped_lure}">\n  <meta property="og:description" content="{escaped_lure}">\n  <meta name="twitter:description" content="{escaped_lure}">'
+                has_lure = True
     except Exception as e:
         pass
+
+    escaped_desc = html.escape(description_text)
+    meta_tags = f'<meta name="description" content="{escaped_desc}">'
+    
+    # Open Graph/Twitter descriptions only if Lure is present
+    if has_lure:
+        meta_tags += f'\n  <meta property="og:description" content="{escaped_desc}">\n  <meta name="twitter:description" content="{escaped_desc}">'
+        
+    meta_tags += f'\n  <meta property="og:image" content="{image_abs_url}">\n  <meta name="twitter:image" content="{image_abs_url}">'
+    meta_tags += f'\n  <meta property="og:title" content="{html.escape(name)} | MTGAbyss">\n  <meta name="twitter:title" content="{html.escape(name)} | MTGAbyss">'
 
     # Similar cards calculation
     similar_cards = []
@@ -512,6 +576,127 @@ def render_card_detail(card_slug):
 
     similar_cards_json_str = json.dumps(similar_cards)
 
+    # Construct rich Schema.org VisualArtwork Graph mapping all printings & similar cards
+    printing_items = []
+    for idx, p in enumerate(printings_list):
+        p_large_filename = os.path.basename(p.get('large_image') or p['image'])
+        p_image_abs = f"https://mtgabyss.com/images/large/{p_large_filename}"
+        
+        p_artist = p.get('artist') or ''
+        if p_artist and re.search(r'unknown', p_artist, re.IGNORECASE):
+            p_artist = ''
+            
+        p_year = p.get('released_at', '').split('-')[0] if '-' in p.get('released_at', '') else ''
+        
+        artwork_item = {
+            "@type": "VisualArtwork",
+            "name": f"{name} ({p['set_name']})",
+            "image": p_image_abs,
+            "artMedium": "Card Art",
+            "artworkSurface": "Cardstock",
+        }
+        if p_artist:
+            artwork_item["creator"] = {
+                "@type": "Person",
+                "name": p_artist
+            }
+        if p_year:
+            artwork_item["dateCreated"] = p_year
+        if p.get('set_name'):
+            artwork_item["isPartOf"] = {
+                "@type": "CreativeWorkSeries",
+                "name": p['set_name']
+            }
+            
+        printing_items.append({
+            "@type": "ListItem",
+            "position": idx + 1,
+            "item": artwork_item
+        })
+
+    similar_items = []
+    for idx, s in enumerate(similar_cards):
+        s_large_filename = os.path.basename(s['image_url']).replace('/normal/', '/large/')
+        s_image_abs = f"https://mtgabyss.com/images/large/{s_large_filename}"
+        
+        s_artist = s.get('earliest_printing', {}).get('artist') or ''
+        if s_artist and re.search(r'unknown', s_artist, re.IGNORECASE):
+            s_artist = ''
+            
+        s_year = s.get('earliest_printing', {}).get('released_at', '').split('-')[0] if '-' in s.get('earliest_printing', {}).get('released_at', '') else ''
+        
+        s_artwork = {
+            "@type": "VisualArtwork",
+            "name": s['name'],
+            "image": s_image_abs,
+            "artMedium": "Card Art",
+            "artworkSurface": "Cardstock"
+        }
+        if s_artist:
+            s_artwork["creator"] = {
+                "@type": "Person",
+                "name": s_artist
+            }
+        if s_year:
+            s_artwork["dateCreated"] = s_year
+        if s.get('earliest_printing', {}).get('set_name'):
+            s_artwork["isPartOf"] = {
+                "@type": "CreativeWorkSeries",
+                "name": s['earliest_printing']['set_name']
+            }
+            
+        similar_items.append({
+            "@type": "ListItem",
+            "position": idx + 1,
+            "item": s_artwork
+        })
+
+    main_artist = printings_list[0].get('artist') or ''
+    if main_artist and re.search(r'unknown', main_artist, re.IGNORECASE):
+        main_artist = ''
+        
+    main_year = printings_list[0].get('released_at', '').split('-')[0] if '-' in printings_list[0].get('released_at', '') else ''
+    
+    main_artwork = {
+        "@type": "VisualArtwork",
+        "@id": f"https://mtgabyss.com/card/{slug}#artwork",
+        "name": name,
+        "image": image_abs_url,
+        "description": description_text,
+        "artMedium": "Card Art",
+        "artworkSurface": "Cardstock"
+    }
+    if main_artist:
+        main_artwork["creator"] = {
+            "@type": "Person",
+            "name": main_artist
+        }
+    if main_year:
+        main_artwork["dateCreated"] = main_year
+
+    json_ld = {
+        "@context": "https://schema.org",
+        "@graph": [
+            main_artwork,
+            {
+                "@type": "ItemList",
+                "@id": f"https://mtgabyss.com/card/{slug}#printings",
+                "name": f"Historical printings of {name}",
+                "itemListElement": printing_items
+            }
+        ]
+    }
+    if similar_items:
+        json_ld["@graph"].append({
+            "@type": "ItemList",
+            "@id": f"https://mtgabyss.com/card/{slug}#similar",
+            "name": f"Similar cards to {name}",
+            "itemListElement": similar_items
+        })
+
+    json_ld_script = f'\n  <script type="application/ld+json">\n  {json.dumps(json_ld, indent=2)}\n  </script>'
+    meta_tags += json_ld_script
+
     # Read template
     template_path = os.path.join(os.path.dirname(__file__), "templates", "card_detail.html")
     with open(template_path, 'r', encoding='utf-8') as f:
@@ -521,6 +706,7 @@ def render_card_detail(card_slug):
         name=name,
         image_url=image_url,
         large_image_url=large_image_url,
+        image_alt=image_alt,
         badges=badges_html,
         mechanics_chips=mechanics_chips_html,
         cmc=cmc,
@@ -565,7 +751,21 @@ def serve_card_images(size, filename):
     if os.path.exists(os.path.join(public_path, filename)):
         return send_from_directory(public_path, filename)
     data_path = os.path.join(os.path.dirname(__file__), "data", "images", size)
-    return send_from_directory(data_path, filename)
+    if os.path.exists(os.path.join(data_path, filename)):
+        return send_from_directory(data_path, filename)
+        
+    # If not found directly, try lookup by slugified image name
+    db = get_mongo_db()
+    card_id, has_faces = lookup_uuid_by_image_slug(db, filename)
+    if card_id:
+        suffix = "_0" if has_faces else ""
+        uuid_filename = f"{card_id}{suffix}.jpg"
+        if os.path.exists(os.path.join(public_path, uuid_filename)):
+            return send_from_directory(public_path, uuid_filename)
+        if os.path.exists(os.path.join(data_path, uuid_filename)):
+            return send_from_directory(data_path, uuid_filename)
+            
+    return abort(404)
 
 @app.route('/data/images/<size>/<filename>')
 def serve_data_card_images(size, filename):

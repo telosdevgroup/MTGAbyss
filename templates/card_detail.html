@@ -32,7 +32,8 @@
                fetchpriority="high"
                width="488"
                height="680"
-               alt="{name}">
+               alt="{image_alt}"
+               title="{image_alt}">
         </div>
         <div class="hero-card-subtitle" id="hero-card-subtitle">
           <!-- Populated by JavaScript -->
@@ -89,13 +90,16 @@
             const largeImg = activePrint.large_image || activePrint.image.replace('/normal/', '/large/');
             heroImage.srcset = `${{activePrint.image}} 488w, ${{largeImg}} 672w`;
             
+            const year = activePrint.released_at ? activePrint.released_at.split('-')[0] : '';
+            const altParts = [`{name}`, activePrint.set_name];
+            if (year) altParts.push(year);
+            if (activePrint.artist) altParts.push(activePrint.artist);
+            const dynamicAlt = altParts.join(' | ');
+            
+            heroImage.alt = dynamicAlt;
+            heroImage.title = dynamicAlt;
+            
             const showArtist = activePrint.artist && !/unknown/i.test(activePrint.artist);
-            const artBy = showArtist ? ` - Art by ${{activePrint.artist}}` : '';
-            const printInfo = `${{activePrint.set_name}} (${{activePrint.set_code}}) #${{activePrint.collector_number}}${{artBy}}`;
-            
-            heroImage.alt = `${name} | ${{printInfo}}`;
-            heroImage.title = `${name} | ${{printInfo}}`;
-            
             const artistPart = showArtist ? `<span class="divider">/</span><span>Artist: <span class="highlight">${{activePrint.artist}}</span></span>` : '';
             
             // Build creative metadata subtitle
@@ -504,28 +508,8 @@
               item.addEventListener('click', () => {{
                 window.location.href = `../../card/${{card.slug}}/index.html`;
               }});
-              
               const imgUrl = card.image_url || '../../assets/placeholder-card.png';
 
-              item.addEventListener('mouseenter', () => {{
-                const modal = document.getElementById('image-preview-modal');
-                const modalImg = document.getElementById('preview-modal-img');
-                const largeImgUrl = imgUrl.replace('/normal/', '/large/');
-                modalImg.src = largeImgUrl;
-                modal.style.display = 'flex';
-                setTimeout(() => modal.classList.add('active'), 10);
-              }});
-              item.addEventListener('mouseleave', () => {{
-                const modal = document.getElementById('image-preview-modal');
-                const modalImg = document.getElementById('preview-modal-img');
-                modal.classList.remove('active');
-                setTimeout(() => {{
-                  if (!modal.classList.contains('active')) {{
-                    modal.style.display = 'none';
-                    modalImg.src = '';
-                  }}
-                }}, 200);
-              }});
               const earliest = card.earliest_printing || {{}};
               const year = earliest.released_at ? earliest.released_at.split('-')[0] : '';
               const yearStr = (year && year !== '9999') ? ` (${{year}})` : '';
@@ -556,6 +540,30 @@
                 <div class="similar-card-blurb" title="${{blurbText}}">${{blurbHtml}}</div>
                 ${{lureHtml}}
               `;
+
+              const imgEl = item.querySelector('.similar-card-img');
+              if (imgEl) {{
+                imgEl.addEventListener('mouseenter', () => {{
+                  const modal = document.getElementById('image-preview-modal');
+                  const modalImg = document.getElementById('preview-modal-img');
+                  const largeImgUrl = imgUrl.replace('/normal/', '/large/');
+                  modalImg.src = largeImgUrl;
+                  modal.style.display = 'flex';
+                  setTimeout(() => modal.classList.add('active'), 10);
+                }});
+                imgEl.addEventListener('mouseleave', () => {{
+                  const modal = document.getElementById('image-preview-modal');
+                  const modalImg = document.getElementById('preview-modal-img');
+                  modal.classList.remove('active');
+                  setTimeout(() => {{
+                    if (!modal.classList.contains('active')) {{
+                      modal.style.display = 'none';
+                      modalImg.src = '';
+                    }}
+                  }}, 200);
+                }});
+              }}
+
               container.appendChild(item);
             }});
 

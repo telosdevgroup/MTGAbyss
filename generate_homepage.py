@@ -33,6 +33,7 @@ HOMEPAGE_TEMPLATE = """<!DOCTYPE html>
           id="search-input" 
           class="homepage-search-input" 
           placeholder="Black Lotus" 
+          value="<!-- SEARCH_VALUE_PLACEHOLDER -->"
           required
           autocomplete="off"
         >
@@ -113,31 +114,35 @@ SEARCH_TEMPLATE = """<!DOCTYPE html>
 """
 
 def main():
-    # Fetch 5 random cards from MongoDB
+    # Fetch 6 random cards from MongoDB
     card_names = []
     try:
         from db_mongo import get_mongo_db
         db = get_mongo_db()
-        random_cards = list(db["cards"].aggregate([{"$sample": {"size": 5}}]))
+        random_cards = list(db["cards"].aggregate([{"$sample": {"size": 6}}]))
         card_names = [c.get("name") for c in random_cards if c.get("name")]
     except Exception as e:
         print(f"Warning: failed to query cards from MongoDB ({e}). Using fallbacks.")
     
     # Pad with fallbacks if needed
-    fallbacks = ["Black Lotus", "Sol Ring", "Lightning Bolt", "Counterspell", "Colossal Dreadmaw"]
+    fallbacks = ["Black Lotus", "Sol Ring", "Lightning Bolt", "Counterspell", "Colossal Dreadmaw", "Ancestral Recall"]
     for f in fallbacks:
-        if len(card_names) >= 5:
+        if len(card_names) >= 6:
             break
         if f not in card_names:
             card_names.append(f)
-    card_names = card_names[:5]
+    card_names = card_names[:6]
+
+    prepopulated_name = card_names[0] if card_names else ""
+    pill_names = card_names[1:]
 
     # Generate HTML for the pills
     pills_html = ""
-    for name in card_names:
+    for name in pill_names:
         pills_html += f'          <button type="button" class="homepage-example-pill" data-query="{name}" style="text-align: center;">{name}</button>\n'
 
     rendered_homepage = HOMEPAGE_TEMPLATE.replace("<!-- CARD_PILLS_PLACEHOLDER -->", pills_html.rstrip())
+    rendered_homepage = rendered_homepage.replace("<!-- SEARCH_VALUE_PLACEHOLDER -->", prepopulated_name)
 
     # Targets
     targets = ["dist", "public"]
