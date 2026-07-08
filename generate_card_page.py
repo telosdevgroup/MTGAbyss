@@ -413,68 +413,47 @@ def generate_page(search_term=None, db=None):
     meta_tags += f'\n  <meta property="og:image" content="{image_abs_url}">\n  <meta name="twitter:image" content="{image_abs_url}">'
     meta_tags += f'\n  <meta property="og:title" content="{html.escape(name)} | MTGAbyss">\n  <meta name="twitter:title" content="{html.escape(name)} | MTGAbyss">'
 
-    # Fetch similar cards using embeddings
+    # Fetch similar cards using pre-calculated collection (V2)
     similar_cards = []
     try:
-        import numpy as np
-        target_emb_doc = db["card_embeddings"].find_one({"oracle_id": oracle_id})
-        if target_emb_doc and target_emb_doc.get("embedding") and _worker_embeddings_matrix is not None:
-            target_embedding = np.array(target_emb_doc["embedding"], dtype=np.float32)
-            if len(target_embedding) == _worker_embeddings_matrix.shape[1]:
-                norm = np.linalg.norm(target_embedding)
-                if norm > 0:
-                    target_embedding /= norm
-                
-                # Fast matrix-vector dot product
-                similarities = _worker_embeddings_matrix.dot(target_embedding)
-                
-                # Get top indices (retrieve top 80 in case some layouts are skipped)
-                top_indices = np.argsort(similarities)[::-1][:80]
-                
-                scored_candidates = []
-                for idx in top_indices:
-                    cand_oracle_id = _worker_oracle_ids[idx]
-                    if cand_oracle_id == oracle_id:
-                        continue
-                    sim = float(similarities[idx])
-                    scored_candidates.append((sim, cand_oracle_id))
-                
-                for sim, cand_oracle_id in scored_candidates:
-                    if len(similar_cards) >= 35:
-                        break
+        from mtgabyss.similar import calculate_similar_cards
+        
+        scored_candidates = calculate_similar_cards(db, oracle_id)
+        
+        for sim, cand_oracle_id in scored_candidates:
+            if len(similar_cards) >= 35:
+                break
+            
+            # Retrieve card metadata from memory cache to avoid DB lookup overhead
+            cand_card = _worker_card_cache.get(cand_oracle_id)
+            if cand_card:
+                cand_raw = cand_card.get('raw', {})
+                layout = cand_raw.get('layout', 'normal')
+                if layout in ['art_series', 'token', 'double_faced_token', 'emblem', 'planar', 'scheme', 'vanguard', 'memorabilia']:
+                    continue
                     
-                    cand_card = _worker_card_cache.get(cand_oracle_id)
-                    if cand_card:
-                        cand_raw = cand_card.get('raw', {})
-                        layout = cand_raw.get('layout', 'normal')
-                        if layout in ['art_series', 'token', 'double_faced_token', 'emblem', 'planar', 'scheme', 'vanguard', 'memorabilia']:
-                            continue
-                            
-                        cand_name = cand_card.get("name")
-                        cand_slug = slugify(cand_name)
+                cand_name = cand_card.get("name")
+                cand_slug = slugify(cand_name)
+                
+                # Extract local image URL
+                cand_faces = cand_raw.get('card_faces', [])
+                cand_slug_name = get_image_slug(cand_card, bool(cand_faces))
+                cand_image_url = f"/images/normal/{cand_slug_name}"
+                add_card_images(cand_card, bool(cand_faces))
                         
-                        # Extract local image URL
-                        cand_faces = cand_raw.get('card_faces', [])
-                        cand_slug_name = get_image_slug(cand_card, bool(cand_faces))
-                        cand_image_url = f"../../images/normal/{cand_slug_name}"
-                        add_card_images(cand_card, bool(cand_faces))
-                                
-                        cand_lure = _worker_lure_cache.get(cand_oracle_id, "")
-                        earliest = get_earliest_printing(db, cand_oracle_id, cand_card)
-                        
-                        similar_cards.append({
-                            "name": cand_name,
-                            "slug": cand_slug,
-                            "image_url": cand_image_url,
-                            "similarity": round(sim, 4),
-                            "earliest_printing": earliest,
-                            "lure": cand_lure
-                        })
+                cand_lure = _worker_lure_cache.get(cand_oracle_id, "")
+                earliest = get_earliest_printing(db, cand_oracle_id, cand_card)
+                
+                similar_cards.append({
+                    "name": cand_name,
+                    "slug": cand_slug,
+                    "image_url": cand_image_url,
+                    "similarity": round(sim, 4),
+                    "earliest_printing": earliest,
+                    "lure": cand_lure
+                })
     except Exception as e:
-        sys_stdout = sys.stdout
-        sys.stdout = sys.__stdout__
-        print(f"\nWarning: failed to calculate similar cards: {e}")
-        sys.stdout = sys_stdout
+        print(f"Warning: failed to calculate similar cards: {e}")
 
     # Fetch all mechanics from MongoDB mechanics collection
     mechanics_map = {}

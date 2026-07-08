@@ -450,66 +450,88 @@ def render_card_detail(card_slug):
     # Similar cards calculation
     similar_cards = []
     try:
-        target_emb_doc = db["card_embeddings"].find_one({"oracle_id": oracle_id})
-        if target_emb_doc and target_emb_doc.get("embedding"):
-            target_embedding = target_emb_doc["embedding"]
-            target_dim = len(target_embedding)
-            
-            embeddings = load_embeddings(db)
-            scored_candidates = []
-            for emb_doc in embeddings:
-                if emb_doc.get("oracle_id") == oracle_id:
-                    continue
-                vector = emb_doc.get("embedding")
-                if not vector or len(vector) != target_dim:
-                    continue
-                sim = get_cosine_similarity(target_embedding, vector)
-                scored_candidates.append((sim, emb_doc["oracle_id"]))
-            
-            scored_candidates.sort(key=lambda x: x[0], reverse=True)
-            
-            for sim, cand_oracle_id in scored_candidates:
-                if len(similar_cards) >= 35:
-                    break
-                cand_card = db["cards"].find_one({"oracle_id": cand_oracle_id})
-                if cand_card:
-                    cand_raw = cand_card.get('raw', {})
-                    layout = cand_raw.get('layout', 'normal')
-                    if layout in ['art_series', 'token', 'double_faced_token', 'emblem', 'planar', 'scheme', 'vanguard', 'memorabilia']:
-                        continue
-                        
-                    cand_name = cand_card.get("name")
-                    cand_slug = slugify(cand_name)
+        # Load from precalculated research_insights first
+        insights = db["research_insights"].find_one({"_id": "global_insights"})
+        similar_candidates = []
+        if insights and "links" in insights:
+            for link in insights["links"]:
+                src = link.get("source")
+                tgt = link.get("target")
+                sim = link.get("similarity", 0.0)
+                if src == oracle_id:
+                    similar_candidates.append((sim, tgt))
+                elif tgt == oracle_id:
+                    similar_candidates.append((sim, src))
                     
-                    cand_image_url = ''
-                    cand_image_uris = cand_raw.get('image_uris', {})
-                    if cand_image_uris:
-                        cand_image_url = cand_image_uris.get('large') or cand_image_uris.get('normal', '')
-                    else:
-                        cand_faces = cand_raw.get('card_faces', [])
-                        if cand_faces and cand_faces[0].get('image_uris'):
-                            f_uris = cand_faces[0].get('image_uris', {})
-                            cand_image_url = f_uris.get('large') or f_uris.get('normal', '')
-                            
-                    cand_lure = ""
-                    try:
-                        cand_lure_doc = db["abysses"].find_one({"oracle_id": cand_oracle_id})
-                        if cand_lure_doc:
-                            l_data = cand_lure_doc.get("content", {}).get("lure", {})
-                            if l_data.get("status") == "generated" and l_data.get("text"):
-                                cand_lure = l_data.get("text").strip()
-                    except Exception:
-                        pass
-
-                    earliest = get_earliest_printing(db, cand_oracle_id, cand_card)
-                    similar_cards.append({
-                        "name": cand_name,
-                        "slug": cand_slug,
-                        "image_url": cand_image_url,
-                        "similarity": round(sim, 4),
-                        "earliest_printing": earliest,
-                        "lure": cand_lure
-                    })
+        # If no precalculated insights, fall back to calculating similarities with a limit
+        if not similar_candidates:
+            target_emb_doc = db["card_embeddings"].find_one({"oracle_id": oracle_id})
+            if target_emb_doc and target_emb_doc.get("embedding"):
+                target_embedding = target_emb_doc["embedding"]
+                target_dim = len(target_embedding)
+                
+                # Fetch a sample of 200 embeddings instead of ALL to avoid OOM / slow load
+                sample_embeddings = list(db["card_embeddings"].find({}, {"oracle_id": 1, "embedding": 1}).limit(200))
+                for emb_doc in sample_embeddings:
+                    if emb_doc.get("oracle_id") == oracle_id:
+                        continue
+                    vector = emb_doc.get("embedding")
+                    if not vector or len(vector) != target_dim:
+                        continue
+                    sim = get_cosine_similarity(target_embedding, vector)
+                    similar_candidates.append((sim, emb_doc["oracle_id"]))
+                    
+        similar_candidates.sort(key=lambda x: x[0], reverse=True)
+        similar_candidates = similar_candidates[:35]
+        
+        if similar_candidates:
+            # Bulk query cards & abysses to avoid N+1 query problem
+            cand_oracle_ids = [c[1] for c in similar_candidates]
+            
+            cards_cursor = db["cards"].find({"oracle_id": {"$in": cand_oracle_ids}})
+            cards_by_oracle = {c["oracle_id"]: c for c in cards_cursor}
+            
+            abysses_cursor = db["abysses"].find({"oracle_id": {"$in": cand_oracle_ids}})
+            abysses_by_oracle = {}
+            for doc in abysses_cursor:
+                l_text = doc.get("content", {}).get("lure", {}).get("text", "")
+                if l_text:
+                    abysses_by_oracle[doc["oracle_id"]] = l_text.strip()
+                    
+            for sim, cand_oracle_id in similar_candidates:
+                cand_card = cards_by_oracle.get(cand_oracle_id)
+                if not cand_card:
+                    continue
+                    
+                cand_raw = cand_card.get('raw', {})
+                layout = cand_raw.get('layout', 'normal')
+                if layout in ['art_series', 'token', 'double_faced_token', 'emblem', 'planar', 'scheme', 'vanguard', 'memorabilia']:
+                    continue
+                    
+                cand_name = cand_card.get("name")
+                cand_slug = slugify(cand_name)
+                
+                cand_image_url = ''
+                cand_image_uris = cand_raw.get('image_uris', {})
+                if cand_image_uris:
+                    cand_image_url = cand_image_uris.get('large') or cand_image_uris.get('normal', '')
+                else:
+                    cand_faces = cand_raw.get('card_faces', [])
+                    if cand_faces and cand_faces[0].get('image_uris'):
+                        f_uris = cand_faces[0].get('image_uris', {})
+                        cand_image_url = f_uris.get('large') or f_uris.get('normal', '')
+                        
+                cand_lure = abysses_by_oracle.get(cand_oracle_id, "")
+                earliest = get_earliest_printing(db, cand_oracle_id, cand_card)
+                
+                similar_cards.append({
+                    "name": cand_name,
+                    "slug": cand_slug,
+                    "image_url": cand_image_url,
+                    "similarity": round(sim, 4),
+                    "earliest_printing": earliest,
+                    "lure": cand_lure
+                })
     except Exception as e:
         print(f"Error calculating similar cards: {e}")
 
@@ -740,6 +762,31 @@ def render_card_detail(card_slug):
     )
     return rendered
 
+@app.route('/research')
+def research_dashboard():
+    template_path = os.path.join(os.path.dirname(__file__), "templates", "research.html")
+    if os.path.exists(template_path):
+        with open(template_path, 'r', encoding='utf-8') as f:
+            return f.read()
+    return "Research dashboard template not found!", 404
+
+@app.route('/api/research')
+def api_research():
+    db = get_mongo_db()
+    insights = db["research_insights"].find_one({"_id": "global_insights"})
+    if not insights:
+        return {"error": "Insights data not generated yet. Please run abyss_walker/walker.py first."}, 404
+    
+    # Format datetime for JSON serialization
+    if "stats" in insights and "updated_at" in insights["stats"]:
+        insights["stats"]["updated_at"] = insights["stats"]["updated_at"].isoformat()
+    
+    # Remove _id
+    if "_id" in insights:
+        del insights["_id"]
+        
+    return insights
+
 @app.route('/')
 @app.route('/index.html')
 def home():
@@ -843,9 +890,7 @@ if __name__ == '__main__':
     print(f"Starting MTGAbyss preview server on http://localhost:{port}")
     db = get_mongo_db()
     
-    # Only load embeddings in the main worker process to prevent double loading
-    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-        import threading
-        threading.Thread(target=load_embeddings, args=(db,), daemon=True).start()
+    # Preloading embeddings disabled to save RAM and speed up startup on Pi
+    pass
         
     app.run(host='0.0.0.0', port=port, debug=True, use_reloader=False)
