@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abyss Walker // MTG Data Research Probe</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- D3.js CDN -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+            --bg-base: #07090e;
+            --bg-surface: rgba(15, 22, 36, 0.7);
+            --bg-glow: rgba(0, 242, 254, 0.15);
+            --accent-primary: #00f2fe;
+            --accent-secondary: #4facfe;
+            --accent-green: #39ff14;
+            --text-primary: #f0f4f8;
+            --text-secondary: #94a3b8;
+            --border-glow: rgba(0, 242, 254, 0.3);
+            --border-subtle: rgba(148, 163, 184, 0.1);
+            --shadow-glow: 0 0 20px rgba(0, 242, 254, 0.25);
+            --font-display: 'Orbitron', sans-serif;
+            --font-sub: 'Rajdhani', sans-serif;
+            --font-sans: 'Inter', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(79, 172, 254, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(0, 242, 254, 0.05) 0px, transparent 50%);
+            min-height: 100vh;
+        }
+
+        /* Glassmorphism utility */
+        .glass-card {
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .glass-card:hover {
+            border-color: var(--border-glow);
+            box-shadow: var(--shadow-glow);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(7, 9, 14, 0.8);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-title-container h1 {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 242, 254, 0.2);
+            letter-spacing: 2px;
+        }
+
+        .header-title-container p {
+            font-family: var(--font-sub);
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            margin-top: 0.2rem;
+            text-transform: uppercase;
+        }
+
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            font-family: var(--font-sub);
+            font-size: 1rem;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            background: rgba(15, 22, 36, 0.9);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--accent-green);
+            box-shadow: 0 0 10px var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 1.5rem;
+            padding: 0 2rem 2rem 2rem;
+            height: calc(100vh - 110px);
+        }
+
+        @media (max-width: 1200px) {
+            main {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+        }
+
+        .dashboard-left {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            min-height: 500px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .stat-card {
+            padding: 1.2rem;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+            margin-bottom: 0.3rem;
+        }
+
+        .stat-label {
+            font-family: var(--font-sub);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .graph-section {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .graph-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            z-index: 10;
+        }
+
+        .graph-title {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            letter-spacing: 1px;
+        }
+
+        .graph-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .control-input {
+            background: rgba(7, 9, 14, 0.6);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            outline: none;
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .control-input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            border: none;
+            color: #07090e;
+            font-family: var(--font-sub);
+            font-weight: bold;
+            padding: 0.4rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .graph-container {
+            width: 100%;
+            flex-grow: 1;
+            position: relative;
+            background: rgba(5, 7, 12, 0.95);
+        }
+
+        #network-graph {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #network-graph:active {
+            cursor: grabbing;
+        }
+
+        .node-tooltip {
+            position: absolute;
+            background: rgba(10, 15, 30, 0.95);
+            border: 1px solid var(--accent-primary);
+            border-radius: 8px;
+            padding: 0.8rem;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            pointer-events: none;
+            box-shadow: var(--shadow-glow);
+            z-index: 100;
+            display: none;
+        }
+
+        .dashboard-right {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            max-height: 100%;
+            overflow-y: auto;
+            padding-right: 0.3rem;
+        }
+
+        .dashboard-right::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .dashboard-right::-webkit-scrollbar-thumb {
+            background: var(--border-subtle);
+            border-radius: 3px;
+        }
+
+        .panel-section {
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            max-height: 450px;
+            overflow: hidden;
+        }
+
+        .panel-title {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title span {
+            color: var(--accent-primary);
+        }
+
+        .scrollable-list {
+            overflow-y: auto;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            padding-right: 0.2rem;
+        }
+
+        .scrollable-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .scrollable-list::-webkit-scrollbar-thumb {
+            background: var(--border-subtle);
+            border-radius: 2px;
+        }
+
+        .synergy-item {
+            padding: 0.8rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .synergy-item:hover {
+            background: rgba(0, 242, 254, 0.03);
+            border-color: rgba(0, 242, 254, 0.2);
+            transform: translateX(3px);
+        }
+
+        .synergy-names {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .synergy-card-link {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .synergy-card-link:hover {
+            color: var(--accent-primary);
+        }
+
+        .synergy-score {
+            font-family: var(--font-display);
+            color: var(--accent-green);
+            font-size: 0.9rem;
+            background: rgba(57, 255, 20, 0.08);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            border: 1px solid rgba(57, 255, 20, 0.2);
+        }
+
+        .hot-card-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0.8rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .hot-card-name {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .hot-card-name:hover {
+            color: var(--accent-primary);
+        }
+
+        .hot-card-metric {
+            font-family: var(--font-sub);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .cluster-item {
+            padding: 0.8rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .cluster-item:hover {
+            background: rgba(79, 172, 254, 0.04);
+            border-color: rgba(79, 172, 254, 0.3);
+        }
+
+        .cluster-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.4rem;
+        }
+
+        .cluster-name {
+            font-weight: 600;
+            color: var(--accent-secondary);
+        }
+
+        .cluster-size {
+            font-family: var(--font-sub);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .cluster-details {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Node legend styles */
+        .color-legend {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            padding: 0.8rem;
+            background: rgba(10, 15, 30, 0.9);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            z-index: 10;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="glass-card">
+        <div class="header-title-container">
+            <h1>Abyss Walker</h1>
+            <p>MTG Vector Analysis & Network Synergy Probe</p>
+        </div>
+        <div class="system-status">
+            <div class="status-pill">
+                <span class="status-indicator"></span>
+                <span>Pi 500+ Daemon Active</span>
+            </div>
+            <div class="status-pill">
+                <span>Updated:</span>
+                <span id="sync-time" style="color: var(--accent-primary);">Syncing...</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="dashboard-left">
+            <div class="stats-grid">
+                <div class="glass-card stat-card">
+                    <div class="stat-val" id="stat-nodes">0</div>
+                    <div class="stat-label">Vector Cards</div>
+                </div>
+                <div class="glass-card stat-card">
+                    <div class="stat-val" id="stat-edges">0</div>
+                    <div class="stat-label">Synergy Links</div>
+                </div>
+                <div class="glass-card stat-card">
+                    <div class="stat-val" id="stat-clusters">0</div>
+                    <div class="stat-label">Clusters</div>
+                </div>
+                <div class="glass-card stat-card">
+                    <div class="stat-val" id="stat-similarity">0.00</div>
+                    <div class="stat-label">Avg Similarity</div>
+                </div>
+            </div>
+
+            <div class="glass-card graph-section">
+                <div class="graph-header">
+                    <div class="graph-title">Synergy Network Graph</div>
+                    <div class="graph-controls">
+                        <input type="text" id="search-box" class="control-input" placeholder="Search card...">
+                        <button id="search-btn" class="control-btn">Locate</button>
+                    </div>
+                </div>
+                <div class="graph-container">
+                    <svg id="network-graph"></svg>
+                    <div class="color-legend">
+                        <div class="legend-item"><div class="legend-color" style="background: #ffffff; border: 1px solid #777;"></div><span>White (W)</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: #00f2fe;"></div><span>Blue (U)</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: #333333; border: 1px solid #555;"></div><span>Black (B)</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: #ff007f;"></div><span>Red (R)</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: #39ff14;"></div><span>Green (G)</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: #e28743;"></div><span>Multicolor</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: #94a3b8;"></div><span>Colorless</span></div>
+                    </div>
+                    <div class="node-tooltip" id="tooltip"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-right">
+            <!-- Little Known Synergies -->
+            <div class="glass-card panel-section">
+                <div class="panel-title">Little-Known Synergies <span>(Probe Discoveries)</span></div>
+                <div class="scrollable-list" id="synergies-list">
+                    <div style="color: var(--text-secondary); text-align: center; padding: 2rem;">Analyzing graph...</div>
+                </div>
+            </div>
+
+            <!-- Hot Cards -->
+            <div class="glass-card panel-section">
+                <div class="panel-title">Central Hot Cards <span>(Degree Rank)</span></div>
+                <div class="scrollable-list" id="hot-cards-list">
+                    <div style="color: var(--text-secondary); text-align: center; padding: 2rem;">Loading centrality metrics...</div>
+                </div>
+            </div>
+
+            <!-- Clusters list -->
+            <div class="glass-card panel-section">
+                <div class="panel-title">Theme Clusters <span>(K-Means Groups)</span></div>
+                <div class="scrollable-list" id="clusters-list">
+                    <div style="color: var(--text-secondary); text-align: center; padding: 2rem;">Discovering groups...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Color mapping based on card colors list
+        function getNodeColor(colors) {
+            if (!colors || colors.length === 0) return '#94a3b8'; // Colorless
+            if (colors.length > 1) return '#e28743'; // Multicolor
+            const c = colors[0].toUpperCase();
+            if (c === 'W') return '#ffffff';
+            if (c === 'U') return '#00f2fe';
+            if (c === 'B') return '#444448';
+            if (c === 'R') return '#ff007f';
+            if (c === 'G') return '#39ff14';
+            return '#94a3b8';
+        }
+
+        // Fetch analysis data from API
+        fetch('/api/research')
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                renderDashboard(data);
+            })
+            .catch(err => {
+                console.error("Error fetching insights:", err);
+            });
+
+        function renderDashboard(data) {
+            const stats = data.stats;
+            document.getElementById('sync-time').innerText = new Date(stats.updated_at).toLocaleString();
+            document.getElementById('stat-nodes').innerText = stats.total_nodes;
+            document.getElementById('stat-edges').innerText = stats.total_edges;
+            document.getElementById('stat-clusters').innerText = stats.clusters_count;
+            document.getElementById('stat-similarity').innerText = stats.average_similarity;
+
+            // Render Little Known Synergies
+            const synergiesList = document.getElementById('synergies-list');
+            synergiesList.innerHTML = '';
+            data.little_known_synergies.forEach(syn => {
+                const item = document.createElement('div');
+                item.className = 'synergy-item';
+                item.innerHTML = `
+                    <div class="synergy-names">
+                        <a href="/card/${syn.card_a.slug}/" class="synergy-card-link" target="_blank">${syn.card_a.name}</a>
+                        <a href="/card/${syn.card_b.slug}/" class="synergy-card-link" target="_blank">${syn.card_b.name}</a>
+                    </div>
+                    <span class="synergy-score">${syn.similarity.toFixed(2)}</span>
+                `;
+                synergiesList.appendChild(item);
+            });
+
+            // Render Hot Cards
+            const hotCardsList = document.getElementById('hot-cards-list');
+            hotCardsList.innerHTML = '';
+            data.hot_cards.forEach(card => {
+                const item = document.createElement('div');
+                item.className = 'hot-card-item';
+                item.innerHTML = `
+                    <a href="/card/${card.slug}/" class="hot-card-name" target="_blank">${card.name}</a>
+                    <div class="hot-card-metric">
+                        <span>Deg: <strong>${card.degree}</strong></span>
+                        <span>Avg Sim: <strong>${card.avg_similarity.toFixed(2)}</strong></span>
+                    </div>
+                `;
+                hotCardsList.appendChild(item);
+            });
+
+            // Render Clusters
+            const clustersList = document.getElementById('clusters-list');
+            clustersList.innerHTML = '';
+            data.clusters.forEach(cl => {
+                const item = document.createElement('div');
+                item.className = 'cluster-item';
+                const cardNames = cl.cards.map(c => c.name).slice(0, 5).join(', ');
+                item.innerHTML = `
+                    <div class="cluster-header">
+                        <span class="cluster-name">${cl.name}</span>
+                        <span class="cluster-size">${cl.size} cards</span>
+                    </div>
+                    <div class="cluster-details">${cardNames}...</div>
+                `;
+                // Add click behavior to highlight nodes in cluster
+                item.addEventListener('click', () => {
+                    highlightCluster(cl.cluster_id);
+                });
+                clustersList.appendChild(item);
+            });
+
+            // Render D3 Graph
+            renderD3Graph(data.nodes, data.links);
+        }
+
+        let globalNodes, globalLinks, svg, linkElements, nodeElements, simulation;
+
+        function renderD3Graph(nodes, links) {
+            globalNodes = nodes;
+            globalLinks = links;
+
+            const svgElement = document.getElementById('network-graph');
+            const width = svgElement.clientWidth || 800;
+            const height = svgElement.clientHeight || 500;
+            
+            svg = d3.select("#network-graph")
+                .attr("width", width)
+                .attr("height", height);
+
+            // Clear previous contents
+            svg.selectAll("*").remove();
+
+            // Zoom support
+            const g = svg.append("g");
+            
+            svg.call(d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on("zoom", (event) => {
+                    g.attr("transform", event.transform);
+                }));
+
+            // Force simulation
+            simulation = d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links).id(d => d.id).distance(80))
+                .force("charge", d3.forceManyBody().strength(-120))
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("x", d3.forceX(width / 2).strength(0.05))
+                .force("y", d3.forceY(height / 2).strength(0.05));
+
+            // Link elements
+            linkElements = g.append("g")
+                .attr("stroke", "rgba(0, 242, 254, 0.15)")
+                .attr("stroke-width", 1.5)
+                .selectAll("line")
+                .data(links)
+                .join("line");
+
+            // Node elements
+            nodeElements = g.append("g")
+                .selectAll("circle")
+                .data(nodes)
+                .join("circle")
+                .attr("r", 6)
+                .attr("fill", d => getNodeColor(d.colors))
+                .attr("stroke", "#07090e")
+                .attr("stroke-width", 1)
+                .call(drag(simulation));
+
+            // Tooltip and interactivity
+            const tooltip = d3.select("#tooltip");
+
+            nodeElements
+                .on("mouseover", (event, d) => {
+                    tooltip.style("display", "block")
+                           .html(`<strong>${d.name}</strong><br><span style="color:var(--text-secondary);">${d.type}</span>`);
+                    
+                    // Highlight node and neighbors
+                    const neighbors = new Set();
+                    links.forEach(l => {
+                        if (l.source.id === d.id) neighbors.add(l.target.id);
+                        if (l.target.id === d.id) neighbors.add(l.source.id);
+                    });
+
+                    nodeElements.style("opacity", n => (n.id === d.id || neighbors.has(n.id)) ? 1.0 : 0.15);
+                    linkElements.style("stroke", l => (l.source.id === d.id || l.target.id === d.id) ? "rgba(0, 242, 254, 0.7)" : "rgba(0, 242, 254, 0.05)")
+                                .style("stroke-width", l => (l.source.id === d.id || l.target.id === d.id) ? 2.5 : 1.5);
+                })
+                .on("mousemove", (event) => {
+                    const bounds = svgElement.getBoundingClientRect();
+                    tooltip.style("left", (event.clientX - bounds.left + 15) + "px")
+                           .style("top", (event.clientY - bounds.top + 15) + "px");
+                })
+                .on("mouseout", () => {
+                    tooltip.style("display", "none");
+                    nodeElements.style("opacity", 1.0);
+                    linkElements.style("stroke", "rgba(0, 242, 254, 0.15)")
+                                .style("stroke-width", 1.5);
+                })
+                .on("click", (event, d) => {
+                    window.open(`/card/${d.slug}/`, "_blank");
+                });
+
+            simulation.on("tick", () => {
+                linkElements
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+
+                nodeElements
+                    .attr("cx", d => d.x)
+                    .attr("cy", d => d.y);
+            });
+
+            // Search logic
+            document.getElementById('search-btn').addEventListener('click', locateCard);
+            document.getElementById('search-box').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') locateCard();
+            });
+        }
+
+        function drag(simulation) {
+            return d3.drag()
+                .on("start", (event, d) => {
+                    if (!event.active) simulation.alphaTarget(0.3).restart();
+                    d.fx = d.x;
+                    d.fy = d.y;
+                })
+                .on("drag", (event, d) => {
+                    d.fx = event.x;
+                    d.fy = event.y;
+                })
+                .on("end", (event, d) => {
+                    if (!event.active) simulation.alphaTarget(0);
+                    d.fx = null;
+                    d.fy = null;
+                });
+        }
+
+        function highlightCluster(clusterId) {
+            if (!nodeElements) return;
+            nodeElements.style("opacity", n => n.cluster_id === clusterId ? 1.0 : 0.15);
+            linkElements.style("stroke", l => (l.source.cluster_id === clusterId && l.target.cluster_id === clusterId) ? "rgba(0, 242, 254, 0.5)" : "rgba(0, 242, 254, 0.05)");
+            
+            // Auto reset highlight after 5 seconds
+            setTimeout(() => {
+                nodeElements.style("opacity", 1.0);
+                linkElements.style("stroke", "rgba(0, 242, 254, 0.15)");
+            }, 5000);
+        }
+
+        function locateCard() {
+            const query = document.getElementById('search-box').value.toLowerCase().strip();
+            if (!query || !globalNodes) return;
+            
+            const matchedNode = globalNodes.find(n => n.name.toLowerCase().includes(query));
+            if (matchedNode) {
+                // Pulse effect on matched node
+                nodeElements.transition()
+                    .duration(500)
+                    .attr("r", n => n.id === matchedNode.id ? 20 : 6)
+                    .transition()
+                    .duration(500)
+                    .attr("r", n => n.id === matchedNode.id ? 12 : 6);
+
+                // Highlight node
+                nodeElements.style("opacity", n => n.id === matchedNode.id ? 1.0 : 0.15);
+                setTimeout(() => {
+                    nodeElements.style("opacity", 1.0);
+                }, 4000);
+            }
+        }
+    </script>
+</body>
+</html>

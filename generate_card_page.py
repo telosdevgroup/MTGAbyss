@@ -408,54 +408,11 @@ def generate_page(search_term=None, db=None):
     # Fetch similar cards using embeddings
     similar_cards = []
     try:
-        import math
-        import json
-        try:
-            import numpy as np
-            HAS_NUMPY = True
-        except ImportError:
-            HAS_NUMPY = False
-
-        def get_cosine_similarity(v1, v2):
-            if HAS_NUMPY:
-                a = np.array(v1, dtype=np.float32)
-                b = np.array(v2, dtype=np.float32)
-                norm_a = np.linalg.norm(a)
-                norm_b = np.linalg.norm(b)
-                if norm_a == 0 or norm_b == 0:
-                    return 0.0
-                return float(np.dot(a, b) / (norm_a * norm_b))
-            else:
-                dot_product = sum(x * y for x, y in zip(v1, v2))
-                norm_a = math.sqrt(sum(x * x for x in v1))
-                norm_b = math.sqrt(sum(y * y for y in v2))
-                if norm_a == 0 or norm_b == 0:
-                    return 0.0
-                return dot_product / (norm_a * norm_b)
-
-        target_emb_doc = db["card_embeddings"].find_one({"oracle_id": oracle_id})
-        if target_emb_doc and target_emb_doc.get("embedding"):
-            target_embedding = target_emb_doc["embedding"]
-            target_dim = len(target_embedding)
-            
-            # Fetch all candidate embeddings (excluding current card)
-            all_embeddings = list(db["card_embeddings"].find(
-                {"oracle_id": {"$ne": oracle_id}},
-                {"oracle_id": 1, "embedding": 1}
-            ))
-            
-            scored_candidates = []
-            for emb_doc in all_embeddings:
-                vector = emb_doc.get("embedding")
-                if not vector or not isinstance(vector, list) or len(vector) != target_dim:
-                    continue
-                sim = get_cosine_similarity(target_embedding, vector)
-                scored_candidates.append((sim, emb_doc["oracle_id"]))
-            
-            # Sort by similarity descending and pick top 3 valid standard cards
-            scored_candidates.sort(key=lambda x: x[0], reverse=True)
-            
-            for sim, cand_oracle_id in scored_candidates:
+        from mtgabyss.similar import calculate_similar_cards
+        
+        scored_candidates = calculate_similar_cards(db, oracle_id)
+        
+        for sim, cand_oracle_id in scored_candidates:
                 if len(similar_cards) >= 35:
                     break
                 cand_card = db["cards"].find_one({"oracle_id": cand_oracle_id})
