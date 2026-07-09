@@ -483,10 +483,7 @@ def generate_page(search_term=None, db=None):
                 cand_faces = cand_raw.get('card_faces', [])
                 cand_slug_name = get_image_slug(cand_card, bool(cand_faces))
                 
-                # Use Scryfall CDN image URL to prevent broken links on live VPS
-                cand_image_url = get_scryfall_image_url(cand_card)
-                if not cand_image_url:
-                    cand_image_url = f"../../images/normal/{cand_slug_name}"
+                cand_image_url = f"../../images/normal/{cand_slug_name}"
                 add_card_images(cand_card, bool(cand_faces))
                         
                 cand_lure = _worker_lure_cache.get(cand_oracle_id, "") if _worker_lure_cache else ""
@@ -825,7 +822,7 @@ def main():
         card_cache = {}
         cards_cursor = db["cards"].find(
             {}, 
-            {"oracle_id": 1, "name": 1, "raw.layout": 1, "raw.image_uris": 1, "raw.card_faces": 1, 
+            {"id": 1, "oracle_id": 1, "name": 1, "image_slug": 1, "raw.layout": 1, "raw.image_uris": 1, "raw.card_faces": 1, 
              "set_name": 1, "set": 1, "released_at": 1, "artist": 1, "collector_number": 1}
         )
         for doc in cards_cursor:

@@ -48,6 +48,7 @@ app.conf.update(
         "tasks.precompute_similar_cards": {"queue": "builder-tasks"},
         "tasks.generate_card_page": {"queue": "builder-tasks"},
         "tasks.deploy_card_page": {"queue": "builder-tasks"},
+        "tasks.generate_and_deploy_page": {"queue": "builder-tasks"},
     }
 )
 
