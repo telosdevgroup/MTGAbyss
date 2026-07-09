@@ -26,10 +26,17 @@ def main():
     # Only fetch cards that have names and oracle IDs
     cards_cursor = db["cards"].find(
         {"oracle_id": {"$exists": True}, "name": {"$exists": True}},
-        {"name": 1}
+        {"name": 1, "base_priority": 1}
     )
     
-    card_names = sorted(list(set(c["name"] for c in cards_cursor if c.get("name"))))
+    name_prios = {}
+    for c in cards_cursor:
+        name = c.get("name")
+        if name:
+            prio = c.get("base_priority", 0) or 0
+            name_prios[name] = max(name_prios.get(name, 0), prio)
+            
+    card_names = sorted(name_prios.keys(), key=lambda n: (-name_prios[n], n))
     total_cards = len(card_names)
     log(f"Found {total_cards:,} unique cards.")
     
