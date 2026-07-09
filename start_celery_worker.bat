@@ -1,4 +1,9 @@
 @echo off
+set PYTHON_CMD=python
+if exist .venv\Scripts\python.exe (
+    set PYTHON_CMD=.venv\Scripts\python.exe
+)
+set MONGODB_URI=mongodb://192.168.1.213:27017
 echo ========================================================
 echo MTGAbyss Celery Worker Bootloader
 echo ========================================================
@@ -13,9 +18,12 @@ set OLLAMA_URL=http://127.0.0.1:11434
 
 if "%target%"=="2" (
     set OLLAMA_URL=http://192.168.1.213:11434
-    echo Configured to use Beast Ollama.
+    set OLLAMA_MODEL=mistral-small3.2:24b
+    echo Configured to use Beast Ollama with mistral-small3.2:24b.
 ) else (
-    echo Configured to use Local Ollama.
+    set OLLAMA_URL=http://127.0.0.1:11434
+    set OLLAMA_MODEL=mistral-nemo
+    echo Configured to use Local Ollama with mistral-nemo.
 )
 echo.
 
@@ -29,13 +37,13 @@ set /p choice="Enter choice (1-3): "
 
 if "%choice%"=="1" (
     echo Starting GPU/Embedding Worker...
-    python -m celery -A celery_app worker -Q gpu-tasks -P solo --loglevel=info
+    %PYTHON_CMD% -m celery -A celery_app worker -Q gpu-tasks -P solo --loglevel=info
 ) else if "%choice%"=="2" (
     echo Starting AI Lure/Mistral Worker...
-    python -m celery -A celery_app worker -Q ai-lures -P solo --loglevel=info
+    %PYTHON_CMD% -m celery -A celery_app worker -Q ai-lures -P solo --loglevel=info
 ) else if "%choice%"=="3" (
     echo Starting Builder/Pi Worker...
-    python -m celery -A celery_app worker -Q builder-tasks -P eventlet -c 2 --loglevel=info
+    %PYTHON_CMD% -m celery -A celery_app worker -Q builder-tasks -P eventlet -c 2 --loglevel=info
 ) else (
     echo Invalid choice. Exiting.
 )
