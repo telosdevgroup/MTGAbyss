@@ -145,7 +145,8 @@ def _send_embed_request(url, text, model):
         raise ValueError(f"Unexpected response structure from Ollama: {res_data}")
 
 def call_ollama_embed(text, model):
-    url = "http://localhost:11434/api/embed"
+    ollama_host = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
+    url = f"{ollama_host}/api/embed"
     try:
         return _send_embed_request(url, text, model)
     except urllib.error.HTTPError as e:
@@ -181,7 +182,8 @@ def _send_embed_batch_request(url, texts, model):
         raise ValueError(f"Unexpected response structure from Ollama batch: {res_data}")
 
 def call_ollama_embed_batch(texts, model):
-    url = "http://localhost:11434/api/embed"
+    ollama_host = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
+    url = f"{ollama_host}/api/embed"
     try:
         return _send_embed_batch_request(url, texts, model)
     except urllib.error.HTTPError as e:
