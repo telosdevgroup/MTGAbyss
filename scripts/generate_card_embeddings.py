@@ -23,7 +23,23 @@ from scripts.generate_embedding import (
 
 def log(msg):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Clear the progress bar line if we are in a terminal
+    sys.stdout.write("\r" + " " * 100 + "\r")
+    sys.stdout.flush()
     print(f"[{timestamp}] {msg}")
+
+def draw_progress_bar(completed, total, bar_length=40):
+    if total <= 0:
+        return
+    percent = min(1.0, max(0.0, float(completed) / total))
+    arrow_len = int(round(percent * bar_length))
+    arrow = '=' * (arrow_len - 1) + '>' if arrow_len > 0 else ''
+    if len(arrow) > bar_length:
+        arrow = '=' * bar_length
+    spaces = ' ' * (bar_length - len(arrow))
+    sys.stdout.write(f"\rProgress: [{arrow}{spaces}] {completed}/{total} ({percent*100:.1f}%)")
+    sys.stdout.flush()
+
 
 class HeartbeatThread(threading.Thread):
     def __init__(self, db, job_id, interval=10):
@@ -68,7 +84,7 @@ def process_card_embedding(db, card, model, version, mock_mode, worker_id, now, 
     })
 
     if existing and existing.get("context_hash") == context_hash and existing.get("embedding") is not None and not force:
-        log(f"Skipping: Embedding for '{card_name}' is up to date (hash matches).")
+        # log(f"Skipping: Embedding for '{card_name}' is up to date (hash matches).")
         return True
 
     if mock_mode:
@@ -95,11 +111,11 @@ def process_card_embedding(db, card, model, version, mock_mode, worker_id, now, 
             {"_id": existing["_id"]},
             {"$set": doc}
         )
-        log(f"Updated embedding for '{card_name}' in MongoDB.")
+        # log(f"Updated embedding for '{card_name}' in MongoDB.")
     else:
         doc["created_at"] = now
         embeddings_col.insert_one(doc)
-        log(f"Stored embedding for '{card_name}' in MongoDB.")
+        # log(f"Stored embedding for '{card_name}' in MongoDB.")
 
     return True
 
@@ -142,7 +158,7 @@ def process_card_embeddings_batch(db, cards, model, version, mock_mode, worker_i
 
         existing = existing_embeddings.get(oracle_id)
         if existing and existing.get("context_hash") == context_hash and existing.get("embedding") is not None and not force:
-            log(f"Skipping: Embedding for '{card_name}' is up to date (hash matches).")
+            # log(f"Skipping: Embedding for '{card_name}' is up to date (hash matches).")
             results[oracle_id] = True
             continue
 
@@ -212,14 +228,14 @@ def process_card_embeddings_batch(db, cards, model, version, mock_mode, worker_i
 
         if bulk_ops:
             db["card_embeddings"].bulk_write(bulk_ops)
-            for card, _, _ in cards_to_generate:
-                if results[card["oracle_id"]]:
-                    log(f"Saved embedding for '{card['name']}' in MongoDB via bulk write.")
+            # for card, _, _ in cards_to_generate:
+            #     if results[card["oracle_id"]]:
+            #         log(f"Saved embedding for '{card['name']}' in MongoDB via bulk write.")
 
     return results
 
 
-def run_batch_worker(batch, index, worker_id, model, version, mock_mode, force, completed_counter, remaining_counter, progress_lock):
+def run_batch_worker(batch, index, worker_id, model, version, mock_mode, force, completed_counter, remaining_counter, progress_lock, total_jobs):
     try:
         # Re-initialize DB client in the child process to avoid connection pooling issues
         db = get_mongo_db()
@@ -227,9 +243,6 @@ def run_batch_worker(batch, index, worker_id, model, version, mock_mode, force, 
         now_utc = datetime.datetime.now(datetime.timezone.utc)
 
         oracle_ids = [job.get("oracle_id") for job in batch if job.get("oracle_id")]
-
-        with progress_lock:
-            log(f"[{completed_counter.value} completed / {remaining_counter.value} left] Worker {index}: Starting batch of {len(batch)} cards...")
 
         # Bulk query card documents from cards collection
         cards_cursor = db["cards"].find({"oracle_id": {"$in": oracle_ids}})
@@ -321,7 +334,7 @@ def run_batch_worker(batch, index, worker_id, model, version, mock_mode, force, 
         with progress_lock:
             completed_counter.value += batch_completed
             remaining_counter.value -= batch_remaining_decrement
-            log(f"[{completed_counter.value} completed / {remaining_counter.value} left] Worker {index}: Finished batch of {len(batch)} cards.")
+            draw_progress_bar(completed_counter.value, total_jobs)
     except Exception as e:
         log(f"Worker {index} encountered error: {e}")
 
@@ -510,6 +523,7 @@ def main():
         progress_lock = manager.Lock()
 
         # Submit batches to ProcessPoolExecutor
+        total_jobs = completed_count + len(pending_jobs)
         executor = concurrent.futures.ProcessPoolExecutor(max_workers=args.workers)
         futures = []
         try:
@@ -525,7 +539,8 @@ def main():
                     args.force, 
                     completed_counter, 
                     remaining_counter, 
-                    progress_lock
+                    progress_lock,
+                    total_jobs
                 ))
             
             # Wait for all futures to complete

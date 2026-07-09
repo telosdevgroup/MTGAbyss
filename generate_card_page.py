@@ -45,6 +45,22 @@ def markdown_to_html(md):
         formatted_paras.append(p)
     return "\n".join(formatted_paras)
 
+def get_scryfall_image_url(card_doc):
+    raw = card_doc.get("raw", {})
+    if not raw:
+        return None
+    image_uris = raw.get("image_uris")
+    if image_uris and isinstance(image_uris, dict):
+        return image_uris.get("normal") or image_uris.get("small")
+    
+    card_faces = raw.get("card_faces")
+    if card_faces and isinstance(card_faces, list) and len(card_faces) > 0:
+        face_uris = card_faces[0].get("image_uris")
+        if face_uris and isinstance(face_uris, dict):
+            return face_uris.get("normal") or face_uris.get("small")
+            
+    return None
+
 def get_earliest_printing(db, oracle_id, fallback_card):
     return {
         'set_name': fallback_card.get('set_name', 'Unknown Set'),
@@ -155,7 +171,7 @@ def generate_page(search_term=None, db=None):
     raw_card = card.get('raw', {})
     card_faces = raw_card.get('card_faces', [])
     slug_name = get_image_slug(card, bool(card_faces))
-    image_url = f"/images/normal/{slug_name}"
+    image_url = f"../../images/normal/{slug_name}"
     add_card_images(card, bool(card_faces))
     # Generate HTML components
     mana_cost = card.get('mana_cost') or 'None'
@@ -315,8 +331,8 @@ def generate_page(search_term=None, db=None):
     for p_doc in p_docs:
         p_faces = p_doc.get('card_faces') or []
         p_slug_name = get_image_slug(p_doc, bool(p_faces))
-        p_image_url = f"/images/normal/{p_slug_name}"
-        p_large_image_url = f"/images/large/{p_slug_name}"
+        p_image_url = f"../../images/normal/{p_slug_name}"
+        p_large_image_url = f"../../images/large/{p_slug_name}"
         add_card_images(p_doc, bool(p_faces))
 
         printings_list.append({
@@ -420,12 +436,40 @@ def generate_page(search_term=None, db=None):
         
         scored_candidates = calculate_similar_cards(db, oracle_id)
         
+        if not scored_candidates:
+            print("Warning: no precomputed similar cards found. Querying database fallback by color and type...")
+            # Query fallback cards sharing the main type and color identity
+            colors = card.get("color_identity", [])
+            type_line = card.get("type_line") or ""
+            
+            # Extract main card type
+            main_type = "Creature"
+            for t in ["Enchantment", "Artifact", "Instant", "Sorcery", "Planeswalker", "Land"]:
+                if t in type_line:
+                    main_type = t
+                    break
+            
+            # Find up to 10 fallback cards
+            fallback_query = {
+                "oracle_id": {"$ne": oracle_id},
+                "type_line": {"$regex": main_type, "$options": "i"}
+            }
+            if colors:
+                fallback_query["color_identity"] = {"$all": colors}
+            else:
+                fallback_query["color_identity"] = {"$size": 0}
+                
+            fallback_matches = list(db["cards"].find(fallback_query, {"oracle_id": 1}).sort("base_priority", -1).limit(10))
+            scored_candidates = [(1.0 - idx * 0.01, item["oracle_id"]) for idx, item in enumerate(fallback_matches)]
+            
         for sim, cand_oracle_id in scored_candidates:
             if len(similar_cards) >= 35:
                 break
             
             # Retrieve card metadata from memory cache to avoid DB lookup overhead
             cand_card = _worker_card_cache.get(cand_oracle_id)
+            if not cand_card:
+                cand_card = db["cards"].find_one({"oracle_id": cand_oracle_id})
             if cand_card:
                 cand_raw = cand_card.get('raw', {})
                 layout = cand_raw.get('layout', 'normal')
@@ -438,10 +482,18 @@ def generate_page(search_term=None, db=None):
                 # Extract local image URL
                 cand_faces = cand_raw.get('card_faces', [])
                 cand_slug_name = get_image_slug(cand_card, bool(cand_faces))
-                cand_image_url = f"/images/normal/{cand_slug_name}"
+                
+                # Use Scryfall CDN image URL to prevent broken links on live VPS
+                cand_image_url = get_scryfall_image_url(cand_card)
+                if not cand_image_url:
+                    cand_image_url = f"../../images/normal/{cand_slug_name}"
                 add_card_images(cand_card, bool(cand_faces))
                         
-                cand_lure = _worker_lure_cache.get(cand_oracle_id, "")
+                cand_lure = _worker_lure_cache.get(cand_oracle_id, "") if _worker_lure_cache else ""
+                if not cand_lure:
+                    abyss_doc = db["abysses"].find_one({"oracle_id": cand_oracle_id})
+                    if abyss_doc:
+                        cand_lure = abyss_doc.get("content", {}).get("lure", {}).get("text", "").strip()
                 earliest = get_earliest_printing(db, cand_oracle_id, cand_card)
                 
                 similar_cards.append({

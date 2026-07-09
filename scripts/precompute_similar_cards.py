@@ -15,7 +15,24 @@ DB_NAME = os.environ.get("MONGODB_DB", "mtgabyss")
 
 def log(msg):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Clear the progress bar line if we are in a terminal
+    sys.stdout.write("\r" + " " * 100 + "\r")
+    sys.stdout.flush()
     print(f"[{timestamp}] [PrecomputeSimilar] {msg}", flush=True)
+
+def draw_progress_bar(completed, total, speed=0.0, bar_length=40):
+    if total <= 0:
+        return
+    percent = min(1.0, max(0.0, float(completed) / total))
+    arrow_len = int(round(percent * bar_length))
+    arrow = '=' * (arrow_len - 1) + '>' if arrow_len > 0 else ''
+    if len(arrow) > bar_length:
+        arrow = '=' * bar_length
+    spaces = ' ' * (bar_length - len(arrow))
+    speed_text = f", {speed:.2f} cards/sec" if speed > 0 else ""
+    sys.stdout.write(f"\rProgress: [{arrow}{spaces}] {completed}/{total} ({percent*100:.1f}%{speed_text})")
+    sys.stdout.flush()
+
 
 def main():
     import argparse
@@ -139,6 +156,11 @@ def main():
                 )
             
             total_processed += 1
+            if total_processed % 10 == 0 or total_processed == num_cards:
+                elapsed = time.time() - start_time
+                rate = total_processed / elapsed if elapsed > 0 else 0.0
+                draw_progress_bar(total_processed, num_cards, speed=rate)
+
             if args.limit and total_processed >= args.limit:
                 log(f"Reached test limit of {args.limit} cards. Stopping.")
                 break
@@ -147,9 +169,6 @@ def main():
                 if not args.dry_run:
                     db["similar_cards"].bulk_write(bulk_operations)
                 bulk_operations = []
-                elapsed = time.time() - start_time
-                rate = total_processed / elapsed
-                log(f"Precomputed {total_processed}/{num_cards} cards. Speed: {rate:.2f} cards/sec.")
                 
         if args.limit and total_processed >= args.limit:
             break

@@ -10,6 +10,22 @@ def slugify(s):
     s = re.sub(r'[\s-]+', '-', s)
     return s.strip('-')
 
+def get_scryfall_image_url(card_doc):
+    raw = card_doc.get("raw", {})
+    if not raw:
+        return None
+    image_uris = raw.get("image_uris")
+    if image_uris and isinstance(image_uris, dict):
+        return image_uris.get("normal") or image_uris.get("small")
+    
+    card_faces = raw.get("card_faces")
+    if card_faces and isinstance(card_faces, list) and len(card_faces) > 0:
+        face_uris = card_faces[0].get("image_uris")
+        if face_uris and isinstance(face_uris, dict):
+            return face_uris.get("normal") or face_uris.get("small")
+            
+    return None
+
 HOMEPAGE_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,9 +64,10 @@ HOMEPAGE_TEMPLATE = """<!DOCTYPE html>
   </header>
 
   <div class="homepage-wrapper">
-    <div class="homepage-panel">
+    <div class="homepage-panel" style="max-width: 850px !important; margin: 0 auto;">
       <div class="homepage-brand">MTGAbyss</div>
       <div class="homepage-subtitle">What do you seek?</div>
+      <div class="homepage-tagline">A bottomless archive of Magic: The Gathering. Where the cards gaze back.</div>
       
       <form class="homepage-search-form" id="search-form" action="search.html" method="get">
         <input 
@@ -67,8 +84,8 @@ HOMEPAGE_TEMPLATE = """<!DOCTYPE html>
       </form>
       
       <div class="homepage-examples">
-        <div class="homepage-examples-label" style="text-align: center; margin-top: 1.5rem;">Try searching for:</div>
-        <div class="homepage-examples-list" style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-top: 0.75rem;">
+        <div class="homepage-examples-label">Try searching for:</div>
+        <div class="homepage-examples-list" style="display: flex !important; flex-direction: row !important; justify-content: center !important; align-items: center !important; gap: 1rem !important; flex-wrap: nowrap !important; margin-top: 1rem !important; width: 100% !important;">
 <!-- CARD_PILLS_PLACEHOLDER -->
         </div>
       </div>
@@ -79,7 +96,7 @@ HOMEPAGE_TEMPLATE = """<!DOCTYPE html>
     document.addEventListener('DOMContentLoaded', () => {
       const searchForm = document.getElementById('search-form');
       const searchInput = document.getElementById('search-input');
-      const pills = document.querySelectorAll('.homepage-example-pill');
+      const pills = document.querySelectorAll('.homepage-example-pill-img');
 
       pills.forEach(pill => {
         pill.addEventListener('click', () => {
@@ -123,8 +140,20 @@ SEARCH_TEMPLATE = """<!DOCTYPE html>
   </script>
 </head>
 <body>
-  <header class="site-header">
+  <header class="site-header search-page-header">
     <a class="site-logo" href="index.html">MTGAbyss</a>
+    <form class="header-search-form" id="header-search-form" action="search.html" method="get">
+      <input 
+        type="text" 
+        name="q" 
+        id="header-search-input" 
+        class="header-search-input" 
+        placeholder="Search cards..." 
+        required
+        autocomplete="off"
+      >
+      <button type="submit" class="header-search-btn">Search</button>
+    </form>
   </header>
 
   <div class="page-wrapper">
@@ -133,9 +162,9 @@ SEARCH_TEMPLATE = """<!DOCTYPE html>
         <h1 style="margin-top: 0; font-family: 'Outfit', sans-serif;">Search Results</h1>
         <div id="loading-indicator" style="color: var(--abyss-muted); margin-bottom: 1.5rem;">Searching card database...</div>
         
-        <div style="margin-top: 1.5rem;">
-          <div>Search query:</div>
-          <div class="search-query-display" id="search-query-display">...</div>
+        <div style="margin-top: 1.5rem; display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap;">
+          <span style="font-weight: 500;">Search query:</span>
+          <span class="search-query-display" id="search-query-display">...</span>
         </div>
 
         <div id="results-container" style="margin-top: 2rem;"></div>
@@ -151,8 +180,8 @@ SEARCH_TEMPLATE = """<!DOCTYPE html>
     function slugify(s) {
       if (!s) return "";
       return s.toLowerCase()
-              .replace(/[^a-z0-9\s-]/g, '')
-              .replace(/[\s-]+/g, '-')
+              .replace(/[^a-z0-9\\s-]/g, '')
+              .replace(/[\\s-]+/g, '-')
               .replace(/^-+|-+$/g, '');
     }
 
@@ -161,6 +190,11 @@ SEARCH_TEMPLATE = """<!DOCTYPE html>
       const query = params.get('q') || '';
       const displayEl = document.getElementById('search-query-display');
       displayEl.textContent = query;
+
+      const headerInput = document.getElementById('header-search-input');
+      if (headerInput) {
+        headerInput.value = query;
+      }
 
       const cleanQuery = query.trim();
       if (!cleanQuery) {
@@ -210,15 +244,28 @@ SEARCH_TEMPLATE = """<!DOCTYPE html>
             const limit = 50;
             const displayMatches = matches.slice(0, limit);
             
-            let html = `<p style="color: var(--abyss-muted); margin-bottom: 1.5rem;">No exact match found. Showing top ${displayMatches.length} matching cards:</p>`;
-            html += '<ul style="list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">';
+            let html = `
+              <div class="search-info-bar">
+                <span class="search-count">Found <strong>${matches.length}</strong> matches</span>
+                <span class="search-limit">(showing top ${displayMatches.length})</span>
+              </div>
+              <div class="search-results-grid">
+            `;
             for (const m of displayMatches) {
-              html += `<li><a href="card/${m.slug}/" class="homepage-example-pill" style="display: block; text-decoration: none; text-align: center; margin: 0; width: auto; font-family: 'Outfit', sans-serif;">${m.name}</a></li>`;
+              html += `
+                <a href="card/${m.slug}/" class="search-result-card">
+                  <div class="search-result-content">
+                    <span class="search-result-icon">✦</span>
+                    <span class="search-result-name">${m.name}</span>
+                  </div>
+                  <span class="search-result-action">View details &rarr;</span>
+                </a>
+              `;
             }
-            html += '</ul>';
+            html += '</div>';
             resultsContainer.innerHTML = html;
           } else {
-            resultsContainer.innerHTML = '<div style="color: var(--abyss-muted);">No cards found matching your query.</div>';
+            resultsContainer.innerHTML = '<div style="color: var(--abyss-muted); padding: 2rem 0; text-align: center;">No cards found matching your query.</div>';
           }
         })
         .catch(err => {
@@ -233,33 +280,58 @@ SEARCH_TEMPLATE = """<!DOCTYPE html>
 
 def main():
     import json
-    # Fetch 6 random cards from MongoDB
-    card_names = []
+    pill_cards = []
     db = None
     try:
         from db_mongo import get_mongo_db
         db = get_mongo_db()
-        random_cards = list(db["cards"].aggregate([{"$sample": {"size": 6}}]))
-        card_names = [c.get("name") for c in random_cards if c.get("name")]
+        
+        # Fetch 6 random cards with images for the pills/examples
+        pill_docs = list(db["cards"].aggregate([
+            {"$match": {
+                "$and": [
+                    {"name": {"$exists": True, "$ne": ""}},
+                    {"$or": [
+                        {"raw.image_uris": {"$exists": True}},
+                        {"raw.card_faces": {"$exists": True}}
+                    ]}
+                ]
+            }},
+            {"$sample": {"size": 6}}
+        ]))
+        for c in pill_docs:
+            scryfall_url = get_scryfall_image_url(c)
+            if scryfall_url:
+                pill_cards.append({
+                    "name": c.get("name"),
+                    "image_url": scryfall_url
+                })
     except Exception as e:
         print(f"Warning: failed to query cards from MongoDB ({e}). Using fallbacks.")
     
-    # Pad with fallbacks if needed
-    fallbacks = ["Black Lotus", "Sol Ring", "Lightning Bolt", "Counterspell", "Colossal Dreadmaw", "Ancestral Recall"]
+    # Pad pill_cards with fallbacks if needed
+    fallbacks = [
+        {"name": "Black Lotus", "image_url": "https://cards.scryfall.io/normal/front/b/d/bd8fa256-3535-4c46-bc3c-dcee457519ab.jpg"},
+        {"name": "Sol Ring", "image_url": "https://cards.scryfall.io/normal/front/c/c/cc999776-251d-4a35-ae80-5b82eb15fcff.jpg"},
+        {"name": "Lightning Bolt", "image_url": "https://cards.scryfall.io/normal/front/f/2/f2bb4783-bdce-2647-4531-838d-4a5748266376.jpg"},
+        {"name": "Counterspell", "image_url": "https://cards.scryfall.io/normal/front/a/c/ac1c5cff-e579-432a-bcee-864b12eb0558.jpg"},
+        {"name": "Colossal Dreadmaw", "image_url": "https://cards.scryfall.io/normal/front/8/0/8059d092-2c7d-4c61-af55-8942107a7c1f.jpg"},
+        {"name": "Ancestral Recall", "image_url": "https://cards.scryfall.io/normal/front/7/b/7b9edea9-96eb-4146-8922-fbefdb8d57af.jpg"}
+    ]
     for f in fallbacks:
-        if len(card_names) >= 6:
+        if len(pill_cards) >= 6:
             break
-        if f not in card_names:
-            card_names.append(f)
-    card_names = card_names[:6]
+        if not any(c["name"] == f["name"] for c in pill_cards):
+            pill_cards.append(f)
+    pill_cards = pill_cards[:6]
 
-    prepopulated_name = card_names[0] if card_names else ""
-    pill_names = card_names[1:]
+    prepopulated_name = pill_cards[0]["name"] if pill_cards else ""
+    pill_examples = pill_cards[1:]
 
-    # Generate HTML for the pills
+    # Generate HTML for the pills (small CDN thumbnail images with inline styling)
     pills_html = ""
-    for name in pill_names:
-        pills_html += f'          <button type="button" class="homepage-example-pill" data-query="{name}" style="text-align: center;">{name}</button>\n'
+    for card in pill_examples:
+        pills_html += f'          <img class="homepage-example-pill-img" data-query="{card["name"]}" src="{card["image_url"]}" alt="{card["name"]}" title="Click to search {card["name"]}" style="width: 150px !important; height: 210px !important; object-fit: contain; border-radius: 6px; cursor: pointer; border: 1.5px solid var(--abyss-border); transition: transform 0.2s;">\n'
 
     rendered_homepage = HOMEPAGE_TEMPLATE.replace("<!-- CARD_PILLS_PLACEHOLDER -->", pills_html.rstrip())
     rendered_homepage = rendered_homepage.replace("<!-- SEARCH_VALUE_PLACEHOLDER -->", prepopulated_name)

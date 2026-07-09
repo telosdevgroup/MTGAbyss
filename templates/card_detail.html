@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/site.css">
+  <link rel="stylesheet" href="../../assets/site.css">
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-837M1ZGHPE"></script>
   <script>
@@ -29,9 +29,9 @@
 </head>
 <body>
   <header class="site-header">
-    <a class="site-logo" href="/">MTGAbyss</a>
+    <a class="site-logo" href="../../index.html">MTGAbyss</a>
     <nav>
-      <a href="/cards/">Cards</a>
+      <a href="../../cards/index.html">Cards</a>
     </nav>
   </header>
 
@@ -268,6 +268,11 @@
         }}
         .similar-card-item {{
           flex: 1;
+          max-width: 280px;
+          margin: 0 auto;
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
           cursor: pointer;
           transition: transform 0.25s ease;
           text-align: center;
@@ -277,9 +282,11 @@
         }}
         .similar-card-img {{
           width: 100%;
+          display: block;
           aspect-ratio: 63 / 88;
-          object-fit: contain;
+          object-fit: cover;
           border-radius: 4.75% / 3.5%;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.08);
         }}
         .similar-card-name {{
           font-size: 0.9rem;
@@ -457,7 +464,7 @@
 
         <!-- Embedding Comparison Section -->
         <section class="embedding-comparison-section" id="embedding-comparison-section" style="display: none;">
-          <h2 style="font-size: 1.25rem; font-weight: 800; margin-top: 0; margin-bottom: 2rem; color: var(--abyss-text); text-align: left; border-bottom: 1px solid var(--abyss-border); padding-bottom: 0.5rem; letter-spacing: -0.01em;">Semantic Comparison</h2>
+          <h2 style="font-size: 1.25rem; font-weight: 800; margin-top: 0; margin-bottom: 2rem; color: var(--abyss-text); text-align: left; border-bottom: 1px solid var(--abyss-border); padding-bottom: 0.5rem; letter-spacing: -0.01em;">Close Kin</h2>
           <div class="comparison-container">
             <div class="comparison-card-wrapper">
               <div class="card-badge">Current Card</div>
@@ -491,7 +498,7 @@
         <!-- Bottom Search Section -->
         <section class="bottom-search-section" style="margin-top: 3rem; border-top: 1px solid var(--abyss-border); padding-top: 2rem; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
           <h2 style="font-size: 1.2rem; font-weight: 700; margin: 0; color: var(--abyss-text);">Seek another card</h2>
-          <form class="homepage-search-form" id="bottom-search-form" action="/search.html" method="get" style="max-width: 500px; width: 100%;">
+          <form class="homepage-search-form" id="bottom-search-form" action="../../search.html" method="get" style="max-width: 500px; width: 100%;">
             <input 
               type="text" 
               name="q" 
@@ -546,16 +553,10 @@
                 ${{artistHtml}}
               `;
 
-              let lureHtml = '';
-              if (card.lure) {{
-                lureHtml = `<blockquote class="abyss-lure" style="font-size: 0.75rem; margin: 0.5rem 0 0 0; padding: 0.5rem; border-left: 2px solid var(--sakura); text-align: left; font-style: italic; background: rgba(255,255,255,0.02); max-height: 80px; overflow-y: auto;">${{card.lure}}</blockquote>`;
-              }}
-
               item.innerHTML = `
-                <img class="similar-card-img" src="${{imgUrl}}" alt="${{card.name}}" loading="lazy" decoding="async" width="150" height="209">
+                <img class="similar-card-img" src="${{imgUrl}}" alt="${{card.name}}" loading="lazy" decoding="async" width="280" height="391">
                 <div class="similar-card-name" title="${{card.name}}">${{card.name}}</div>
                 <div class="similar-card-blurb" title="${{blurbText}}">${{blurbHtml}}</div>
-                ${{lureHtml}}
               `;
 
               const imgEl = item.querySelector('.similar-card-img');

@@ -36,9 +36,10 @@
   </header>
 
   <div class="homepage-wrapper">
-    <div class="homepage-panel">
+    <div class="homepage-panel" style="max-width: 850px !important; margin: 0 auto;">
       <div class="homepage-brand">MTGAbyss</div>
       <div class="homepage-subtitle">What do you seek?</div>
+      <div class="homepage-tagline">A bottomless archive of Magic: The Gathering. Where the cards gaze back.</div>
       
       <form class="homepage-search-form" id="search-form" action="search.html" method="get">
         <input 
@@ -47,7 +48,7 @@
           id="search-input" 
           class="homepage-search-input" 
           placeholder="Black Lotus" 
-          value="Ancient Imperiosaur"
+          value="Dead of Winter"
           required
           autocomplete="off"
         >
@@ -55,13 +56,13 @@
       </form>
       
       <div class="homepage-examples">
-        <div class="homepage-examples-label" style="text-align: center; margin-top: 1.5rem;">Try searching for:</div>
-        <div class="homepage-examples-list" style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-top: 0.75rem;">
-          <button type="button" class="homepage-example-pill" data-query="Cabal Trainee" style="text-align: center;">Cabal Trainee</button>
-          <button type="button" class="homepage-example-pill" data-query="Petting Zookeeper" style="text-align: center;">Petting Zookeeper</button>
-          <button type="button" class="homepage-example-pill" data-query="Rapacious One" style="text-align: center;">Rapacious One</button>
-          <button type="button" class="homepage-example-pill" data-query="Fangren Firstborn" style="text-align: center;">Fangren Firstborn</button>
-          <button type="button" class="homepage-example-pill" data-query="Sprouting Renewal" style="text-align: center;">Sprouting Renewal</button>
+        <div class="homepage-examples-label">Try searching for:</div>
+        <div class="homepage-examples-list" style="display: flex !important; flex-direction: row !important; justify-content: center !important; align-items: center !important; gap: 1rem !important; flex-wrap: nowrap !important; margin-top: 1rem !important; width: 100% !important;">
+          <img class="homepage-example-pill-img" data-query="Summoner's Egg" src="https://cards.scryfall.io/normal/front/3/5/3581ac02-5dab-423a-9cf3-275d9203f26d.jpg?1782718273" alt="Summoner's Egg" title="Click to search Summoner's Egg" style="width: 150px !important; height: 210px !important; object-fit: contain; border-radius: 6px; cursor: pointer; border: 1.5px solid var(--abyss-border); transition: transform 0.2s;">
+          <img class="homepage-example-pill-img" data-query="Geth, Lord of the Vault" src="https://cards.scryfall.io/normal/front/9/2/920d56a4-fc94-43d8-9d65-361b66172a5f.jpg?1782743988" alt="Geth, Lord of the Vault" title="Click to search Geth, Lord of the Vault" style="width: 150px !important; height: 210px !important; object-fit: contain; border-radius: 6px; cursor: pointer; border: 1.5px solid var(--abyss-border); transition: transform 0.2s;">
+          <img class="homepage-example-pill-img" data-query="Divebomber Griffin" src="https://cards.scryfall.io/normal/front/8/a/8aa5a010-6253-4dfb-952e-df05ff08eb9e.jpg?1782717545" alt="Divebomber Griffin" title="Click to search Divebomber Griffin" style="width: 150px !important; height: 210px !important; object-fit: contain; border-radius: 6px; cursor: pointer; border: 1.5px solid var(--abyss-border); transition: transform 0.2s;">
+          <img class="homepage-example-pill-img" data-query="Forest Dryad" src="https://cards.scryfall.io/normal/front/1/0/107be8ee-ee22-4d37-94f1-2a5b438fbe05.jpg?1782729788" alt="Forest Dryad" title="Click to search Forest Dryad" style="width: 150px !important; height: 210px !important; object-fit: contain; border-radius: 6px; cursor: pointer; border: 1.5px solid var(--abyss-border); transition: transform 0.2s;">
+          <img class="homepage-example-pill-img" data-query="Bristlebud Farmer" src="https://cards.scryfall.io/normal/front/d/4/d498c4de-5e80-4baa-9fcb-70f164880c84.jpg?1782692526" alt="Bristlebud Farmer" title="Click to search Bristlebud Farmer" style="width: 150px !important; height: 210px !important; object-fit: contain; border-radius: 6px; cursor: pointer; border: 1.5px solid var(--abyss-border); transition: transform 0.2s;">
         </div>
       </div>
     </div>
@@ -71,7 +72,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       const searchForm = document.getElementById('search-form');
       const searchInput = document.getElementById('search-input');
-      const pills = document.querySelectorAll('.homepage-example-pill');
+      const pills = document.querySelectorAll('.homepage-example-pill-img');
 
       pills.forEach(pill => {
         pill.addEventListener('click', () => {

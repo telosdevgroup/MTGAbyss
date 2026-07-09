@@ -54,3 +54,7 @@ dist/
 # OS specific files
 .DS_Store
 Thumbs.db
+
+# Large utility scripts
+rename_remote.sh
+scripts/rename_local.py
