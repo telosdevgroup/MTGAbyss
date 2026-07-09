@@ -131,14 +131,39 @@ def generate_and_deploy_page(search_term, deploy=True):
     Renders static HTML for the card detail page and deploys it to the remote VPS.
     Runs on the builder-tasks queue (Raspberry Pi/Beast).
     """
+    import time
+    start_time = time.time()
     db = get_mongo_db()
-    result = generate_page(search_term, db)
+    
+    # Suppress verbose generate_page prints inside the Celery logs
+    import sys
+    sys_stdout = sys.stdout
+    devnull = open(os.devnull, 'w', encoding='utf-8')
+    sys.stdout = devnull
+    try:
+        result = generate_page(search_term, db)
+    finally:
+        devnull.close()
+        sys.stdout = sys_stdout
+
     if not result:
         raise ValueError(f"Failed to generate page for '{search_term}'")
     
     slug, referenced_images = result
+    
     if not deploy:
-        return f"Generated page locally for card: {slug}"
+        remaining = 0
+        try:
+            broker_db = db.client["celery_broker"]
+            remaining = broker_db["messages"].count_documents({"payload": {"$regex": "generate_and_deploy_page"}})
+        except Exception:
+            pass
+        completed = max(0, 37740 - remaining)
+        gen_time = time.time() - start_time
+        log_entry = f"\n\n{completed}/37740: {search_term}\n(local build, not deployed)\n{gen_time:.2f}s\n\n"
+        print(log_entry)
+        sys.stdout.flush()
+        return log_entry
 
     # Compress the static files and referenced images
     tar_stream = io.BytesIO()
@@ -170,7 +195,20 @@ def generate_and_deploy_page(search_term, deploy=True):
     )
     ssh_proc.communicate(input=tar_bytes)
     
-    if ssh_proc.returncode == 0:
-        return f"Successfully generated and deployed card page for '{slug}'"
-    else:
+    if ssh_proc.returncode != 0:
         raise RuntimeError(f"Deployment failed with exit code: {ssh_proc.returncode}")
+
+    # Fetch remaining count in Celery broker database to compute progress
+    remaining = 0
+    try:
+        broker_db = db.client["celery_broker"]
+        remaining = broker_db["messages"].count_documents({"payload": {"$regex": "generate_and_deploy_page"}})
+    except Exception:
+        pass
+
+    completed = max(0, 37740 - remaining)
+    gen_time = time.time() - start_time
+    log_entry = f"\n\n{completed}/37740: {search_term}\nhttps://mtgabyss.com/card/{slug}/\n{gen_time:.2f}s\n\n"
+    print(log_entry)
+    sys.stdout.flush()
+    return log_entry
