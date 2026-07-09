@@ -42,11 +42,13 @@ def generate_embedding(oracle_id, model="qwen3-embedding:8b", version="card_cont
         raise RuntimeError(f"Failed to generate embedding for '{card.get('name')}'")
 
 @app.task
-def generate_lure(oracle_id, model="mistral-small3.2:24b", force=False):
+def generate_lure(oracle_id, model=None, force=False):
     """
     Generate the flavor lore lure using Mistral on Ollama and store it in MongoDB.
     Runs on the ai-lures queue.
     """
+    if model is None:
+        model = os.environ.get("OLLAMA_MODEL", "mistral-small3.2:24b")
     db = get_mongo_db()
     card = db["cards"].find_one({"oracle_id": oracle_id})
     if not card:
