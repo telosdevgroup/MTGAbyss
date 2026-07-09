@@ -498,6 +498,19 @@ def generate_page(search_term=None, db=None):
                     continue
                     
                 cand_name = cand_card.get("name")
+                
+                # Skip same card name or Alchemy equivalents
+                def get_base_name(n):
+                    if not n:
+                        return ""
+                    n_split = n.split(" // ")[0]
+                    if n_split.startswith("A-"):
+                        n_split = n_split[2:]
+                    return n_split.strip().lower()
+                
+                if get_base_name(cand_name) == get_base_name(name):
+                    continue
+
                 cand_slug = slugify(cand_name)
                 
                 # Extract local image URL
@@ -820,6 +833,17 @@ def main():
         db = get_mongo_db()
         cards = list(db["cards"].find({}, {"name": 1}))
         card_names = [c.get("name") for c in cards if c.get("name")]
+        
+        if args.deploy:
+            print(f"Starting sequential build and deploy for {len(card_names):,} cards...")
+            from tasks import generate_and_deploy_page
+            for idx, name in enumerate(card_names, 1):
+                try:
+                    generate_and_deploy_page(name, deploy=True)
+                except Exception as e:
+                    sys.__stdout__.write(f"\n\nERROR {idx}/{len(card_names)}: {name}\n{e}\n\n")
+                    sys.__stdout__.flush()
+            return
         
         num_cores = args.workers or multiprocessing.cpu_count()
         print(f"Found {len(card_names):,} cards. Pre-loading MongoDB datasets to memory...")
