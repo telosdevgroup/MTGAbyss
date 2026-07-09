@@ -462,6 +462,27 @@ def generate_page(search_term=None, db=None):
             fallback_matches = list(db["cards"].find(fallback_query, {"oracle_id": 1}).sort("base_priority", -1).limit(10))
             scored_candidates = [(1.0 - idx * 0.01, item["oracle_id"]) for idx, item in enumerate(fallback_matches)]
             
+        # Batch query cards and lures to eliminate loop queries
+        cand_oracle_ids = [c[1] for c in scored_candidates]
+        missing_card_ids = [cid for cid in cand_oracle_ids if cid not in _worker_card_cache]
+        if missing_card_ids:
+            try:
+                found_cards = list(db["cards"].find({"oracle_id": {"$in": missing_card_ids}}))
+                for c_doc in found_cards:
+                    _worker_card_cache[c_doc["oracle_id"]] = c_doc
+            except Exception as e:
+                print(f"Warning: failed batch card query: {e}")
+
+        missing_lure_ids = [cid for cid in cand_oracle_ids if cid not in _worker_lure_cache]
+        if missing_lure_ids:
+            try:
+                found_abysses = list(db["abysses"].find({"oracle_id": {"$in": missing_lure_ids}}))
+                for a_doc in found_abysses:
+                    lure_text = a_doc.get("content", {}).get("lure", {}).get("text", "").strip()
+                    _worker_lure_cache[a_doc["oracle_id"]] = lure_text
+            except Exception as e:
+                print(f"Warning: failed batch lure query: {e}")
+
         for sim, cand_oracle_id in scored_candidates:
             if len(similar_cards) >= 35:
                 break
