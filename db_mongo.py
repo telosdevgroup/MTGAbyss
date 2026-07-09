@@ -2,7 +2,7 @@ import os
 import pymongo
 
 def get_mongo_db():
-    mongo_uri = os.environ.get("MONGODB_URI", "mongodb://localhost:27017")
+    mongo_uri = os.environ.get("MONGODB_URI", "mongodb://192.168.1.213:27017")
     db_name = os.environ.get("MONGODB_DB", "mtgabyss")
     client = pymongo.MongoClient(mongo_uri)
     db = client[db_name]
