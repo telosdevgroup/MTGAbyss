@@ -1,0 +1,949 @@
+{% extends "base.html" %}
+{% block title %}{{ t('cmd_title', current_lang or 'en') }} — AvaScry{% endblock %}
+{% block meta_description %}{{ t('cmd_title', current_lang or 'en') }}: {{ t('cmd_step1_sub', current_lang or 'en') }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 2rem auto 0; padding-bottom: 4rem;">
+
+  <!-- Step Indicator & My Decks bar -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;">
+    
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+      <button id="btn-my-decks" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.9rem; border-radius: var(--radius-pill); background: var(--surface); border: 1.5px solid var(--border); color: var(--text); font-size: 0.82rem; font-weight: 700; cursor: pointer;">
+        📚 {{ t('cmd_my_decks', current_lang or 'en') }} <span id="my-decks-count" style="display:none; background:var(--accent); color:#fff; padding:1px 6px; border-radius:99px; font-size:0.7rem;">0</span>
+      </button>
+      <button id="btn-new-deck" style="padding: 0.4rem 0.8rem; border-radius: var(--radius-pill); background: transparent; border: 1.5px solid var(--border); color: var(--muted); font-size: 0.8rem; cursor: pointer;">
+        {{ t('cmd_new_deck', current_lang or 'en') }}
+      </button>
+    </div>
+
+    <!-- Step Progress Dots -->
+    <div id="step-indicator" style="display: flex; align-items: center; gap: 0;">
+      <div class="step-dot active" id="dot-1">1</div>
+      <div class="step-line" id="line-1"></div>
+      <div class="step-dot" id="dot-2">2</div>
+    </div>
+
+    <!-- Autosave Status Indicator -->
+    <div id="autosave-status" style="font-size: 0.78rem; color: var(--muted); display: flex; align-items: center; gap: 0.4rem;">
+      <span id="autosave-icon">☁️</span>
+      <span id="autosave-text">{% if user %}Autosave ready{% else %}<a href="/auth/login" style="color:var(--accent);text-decoration:none;font-weight:600;">Sign in</a> to autosave decks{% endif %}</span>
+    </div>
+  </div>
+
+  <!-- My Decks Modal Drawer -->
+  <div id="decks-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.65); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius-lg); max-width:480px; width:90%; max-height:80vh; overflow-y:auto; padding:1.5rem; box-shadow:0 12px 36px rgba(0,0,0,0.5);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <h3 style="margin:0; font-size:1.1rem; font-weight:800;">{{ t('cmd_my_decks', current_lang or 'en') }}</h3>
+        <button id="btn-close-modal" style="background:transparent; border:none; color:var(--muted); font-size:1.2rem; cursor:pointer;">✕</button>
+      </div>
+      <div id="saved-decks-list" style="display:flex; flex-direction:column; gap:0.6rem;"></div>
+      <div id="saved-decks-empty" style="display:none; text-align:center; padding:2rem 0; color:var(--muted); font-size:0.85rem;">
+        {% if user %}
+          No saved decks yet. Start drafting below!
+        {% else %}
+          <p>Sign in with Google to save and manage multiple decks across devices.</p>
+          <a href="/auth/login" style="display:inline-block; margin-top:0.5rem; padding:0.5rem 1.2rem; background:var(--accent); color:#fff; border-radius:var(--radius-pill); font-weight:700; text-decoration:none; font-size:0.85rem;">Sign in with Google</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== STEP 1: PICK COMMANDER ========== -->
+  <div id="step-1">
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.3rem;">{{ t('cmd_step1_header', current_lang or 'en') }}</h1>
+      <p style="color: var(--muted); font-size: 0.95rem;">{{ t('cmd_step1_sub', current_lang or 'en') }}</p>
+    </div>
+
+    <!-- Autocomplete search -->
+    <div style="position: relative; max-width: 650px; margin: 0 auto 1rem;">
+      <input id="cmd-search" type="text" autocomplete="off"
+             placeholder="{{ t('cmd_search_placeholder', current_lang or 'en') }}"
+             style="width: 100%; padding: 0.9rem 1.1rem; font-size: 1.05rem; border-radius: var(--radius-lg); border: 2px solid var(--border); background: var(--surface); color: var(--text); outline: none; box-sizing: border-box;">
+      <div id="cmd-dropdown" style="display:none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-md); z-index: 100; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.3);"></div>
+    </div>
+
+    <!-- Confirmed commander card -->
+    <div id="cmd-confirmed" style="display:none; max-width: 650px; margin: 1.5rem auto 0;">
+      <div style="display: flex; gap: 1.5rem; align-items: flex-start; background: var(--surface); border: 2px solid var(--accent); border-radius: var(--radius-lg); padding: 1.25rem;">
+        <img id="cmd-art" src="" alt="" style="width: 150px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); flex-shrink: 0;">
+        <div style="flex: 1; min-width: 0;">
+          <div id="cmd-name" style="font-size: 1.3rem; font-weight: 800; margin-bottom: 0.25rem;"></div>
+          <div id="cmd-type" style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.6rem;"></div>
+          <div id="cmd-pips" style="display: flex; gap: 4px; margin-bottom: 0.8rem; font-size: 1.2rem;"></div>
+          <div id="cmd-text" style="font-size: 0.85rem; color: var(--muted); line-height: 1.5; margin-bottom: 1.2rem; max-height: 90px; overflow-y: auto;"></div>
+          <div style="display: flex; gap: 0.75rem;">
+            <button id="btn-lock" style="padding: 0.65rem 1.5rem; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-pill); font-weight: 700; font-size: 1rem; cursor: pointer;">
+              {{ t('cmd_lock_btn', current_lang or 'en') }}
+            </button>
+            <button id="btn-clear" style="padding: 0.65rem 1rem; background: transparent; color: var(--muted); border: 1.5px solid var(--border); border-radius: var(--radius-pill); font-size: 0.88rem; cursor: pointer;">{{ t('cmd_change_btn', current_lang or 'en') }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== STEP 2: CONVERSATIONAL DRAFTING ========== -->
+  <div id="step-2" style="display:none;">
+    
+    <!-- Commander summary banner -->
+    <div style="display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 0.75rem 1.25rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <img id="s2-art" src="" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent);">
+        <div>
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <input id="deck-name-input" type="text" value="Untitled Deck" style="font-weight: 800; font-size: 1.05rem; background:transparent; border:none; outline:none; color:var(--text); border-bottom:1px dashed var(--border); padding-bottom:1px;">
+            <span id="s2-pips" style="font-size: 0.9rem;"></span>
+          </div>
+          <div id="s2-type" style="font-size: 0.78rem; color: var(--muted);"></div>
+        </div>
+      </div>
+      <button id="btn-change-cmd" style="padding: 0.45rem 0.9rem; background: transparent; color: var(--muted); border: 1.5px solid var(--border); border-radius: var(--radius-pill); font-size: 0.82rem; cursor: pointer;">{{ t('cmd_switch_cmd', current_lang or 'en') }}</button>
+    </div>
+
+    <!-- Main Workspace Layout: Cards (Left 3-cols) + Deck Tray (Right) -->
+    <div style="display: flex; gap: 1.75rem; align-items: flex-start; flex-wrap: wrap;">
+
+      <!-- Left Column: Search Bar + 3-Cards Per Row Big Grid -->
+      <div style="flex: 1; min-width: 320px;">
+        
+        <!-- Prompt Box -->
+        <div style="background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <input id="prompt-input" type="text"
+                   placeholder='{{ t('cmd_prompt_placeholder', current_lang or 'en') }}'
+                   style="flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-size: 1.05rem; font-family: inherit;">
+            <button id="btn-ask" style="padding: 0.6rem 1.4rem; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.95rem; cursor: pointer; white-space: nowrap;">
+              {{ t('cmd_find_cards', current_lang or 'en') }}
+            </button>
+          </div>
+
+          <!-- Quick suggestion chips -->
+          <div style="display: flex; gap: 0.4rem; margin-top: 0.75rem; flex-wrap: wrap;">
+            <span style="font-size: 0.75rem; color: var(--muted); line-height: 1.8;">{{ t('cmd_try', current_lang or 'en') }}</span>
+            <button class="chip" data-q="staples and synergies">Synergies</button>
+            <button class="chip" data-q="mana ramp artifacts">Ramp</button>
+            <button class="chip" data-q="card draw">Card Draw</button>
+            <button class="chip" data-q="removal and board wipes">Removal</button>
+            <button class="chip" data-q="utility lands">Lands</button>
+            <button class="chip" data-q="creatures with 3 mana">3-Mana Creatures</button>
+          </div>
+        </div>
+
+        <!-- Status / Query header -->
+        <div id="results-status" style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.85rem; min-height: 1.2em; display: none;"></div>
+
+        <!-- Loading spinner -->
+        <div id="loading-grid" style="display:none; text-align:center; padding: 4rem 0;">
+          <div style="font-size: 2.2rem; margin-bottom: 0.5rem; animation: spin 1.2s linear infinite; display: inline-block;">⚙️</div>
+          <div style="font-size: 0.95rem; color: var(--muted); font-weight: 600;">{{ t('cmd_searching', current_lang or 'en') }}</div>
+        </div>
+
+        <!-- 3 Cards Per Row Big Visual Grid -->
+        <div id="cards-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;"></div>
+
+      </div>
+
+      <!-- Right Column: Deck Tray -->
+      <div style="width: 280px; flex-shrink: 0; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.1rem; position: sticky; top: 1.5rem;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--border);">
+          <div style="font-weight: 800; font-size: 1rem;">{{ t('cmd_deck_list', current_lang or 'en') }}</div>
+          <div id="deck-badge" style="background: var(--accent); color: #fff; font-weight: 700; border-radius: 99px; padding: 2px 10px; font-size: 0.8rem;">0 / 99</div>
+        </div>
+
+        <!-- Deck cards list -->
+        <div id="deck-tray-items" style="max-height: 500px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem;"></div>
+        <div id="deck-empty-msg" style="text-align: center; color: var(--muted); font-size: 0.82rem; padding: 2rem 0;">
+          {{ t('cmd_click_add', current_lang or 'en') }}
+        </div>
+
+        <div id="deck-actions" style="display: none; flex-direction: column; gap: 0.6rem;">
+          
+          <!-- Standalone Print Button -->
+          <button id="btn-print-deck" style="width: 100%; padding: 0.6rem; background: var(--accent); border: none; border-radius: var(--radius-pill); color: #fff; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+            <span>🖨️</span> {{ t('cmd_print_deck', current_lang or 'en') }}
+          </button>
+
+          <!-- Export Formats 3-Grid (Stacked Icons) -->
+          <div style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.65rem 0.6rem;">
+            <div style="font-size: 0.7rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.45rem; text-align: center;">{{ t('cmd_export_deck', current_lang or 'en') }}</div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem;">
+              <button id="btn-copy-deck" class="btn-stacked-export" title="Copy card list to clipboard">
+                <span class="exp-icon">📋</span>
+                <span class="exp-lbl">{{ t('cmd_copy', current_lang or 'en') }}</span>
+              </button>
+              <button class="btn-stacked-export btn-export-fmt" data-fmt="csv" title="Download Spreadsheet .csv">
+                <span class="exp-icon">📊</span>
+                <span class="exp-lbl">CSV</span>
+              </button>
+              <button class="btn-stacked-export btn-export-fmt" data-fmt="json" title="Download Full JSON">
+                <span class="exp-icon">📦</span>
+                <span class="exp-lbl">JSON</span>
+              </button>
+            </div>
+          </div>
+        </div>
+              <button class="btn-stacked-export btn-export-fmt" data-fmt="json" title="Download Full JSON">
+                <span class="exp-icon">📦</span>
+                <span class="exp-lbl">JSON</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .step-dot {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.85rem;
+    background: var(--surface); border: 2px solid var(--border); color: var(--muted);
+    transition: all 0.2s ease; flex-shrink: 0;
+  }
+  .step-dot.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .step-dot.done { background: var(--surface); border-color: var(--accent); color: var(--accent); }
+  .step-line { flex: 1; max-width: 80px; height: 2px; background: var(--border); }
+  .step-line.done { background: var(--accent); }
+
+  .chip {
+    background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-pill);
+    padding: 0.2rem 0.65rem; font-size: 0.75rem; color: var(--muted); cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--text); }
+
+  .cmd-suggestion {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.6rem 0.85rem; cursor: pointer;
+    transition: background 0.1s ease;
+  }
+  .cmd-suggestion:hover { background: var(--bg); }
+  .cmd-suggestion img { width: 40px; height: 56px; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
+
+  /* Big visual card in 3-column grid with smooth magnifier hover */
+  .card-tile {
+    position: relative;
+    border-radius: 12px;
+    background: var(--surface);
+    border: 2px solid transparent;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease, z-index 0.2s ease;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+    z-index: 1;
+  }
+  .card-tile:hover {
+    transform: scale(1.32) translateY(-10px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.7);
+    border-color: var(--accent);
+    z-index: 50;
+  }
+  .card-tile img {
+    width: 100%;
+    aspect-ratio: 745/1040;
+    object-fit: cover;
+    display: block;
+    border-radius: 10px;
+    pointer-events: none;
+  }
+  .card-tile .action-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.75) 60%, transparent 100%);
+    padding: 1.4rem 0.6rem 0.55rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.4rem;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+  }
+  .btn-card-add {
+    flex: 1;
+    padding: 0.45rem 0.6rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-pill);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: filter 0.15s ease;
+  }
+  .btn-card-add.added {
+    background: #2ea043;
+  }
+  .btn-card-inspect {
+    padding: 0.45rem 0.65rem;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: var(--radius-pill);
+    font-size: 0.75rem;
+    text-decoration: none;
+  }
+
+  .deck-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    background: var(--bg);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .deck-item-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 0.5rem;
+  }
+  .deck-item-del {
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0 4px;
+  }
+  .deck-item-del:hover { color: #e55; }
+
+  /* Square stacked export buttons */
+  .btn-stacked-export {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem 0.2rem;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    gap: 0.15rem;
+  }
+  .btn-stacked-export:hover {
+    border-color: var(--accent);
+    background: var(--bg);
+    transform: translateY(-1px);
+  }
+  .btn-stacked-export .exp-icon {
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+  .btn-stacked-export .exp-lbl {
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .saved-deck-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--radius-md);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+  .saved-deck-row:hover { border-color: var(--accent); }
+
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  @media (max-width: 800px) {
+    #cards-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  }
+  @media (max-width: 520px) {
+    #cards-grid { grid-template-columns: 1fr !important; }
+  }
+</style>
+
+<script>
+const C_EMOJI = {'W':'☀️','U':'💧','B':'💀','R':'🔥','G':'🌲','C':'💎'};
+
+let currentDeckId = null;
+let commander = null;
+const deck = new Map(); // oracle_id -> card object
+let saveDebounceTimer = null;
+
+// ─── INIT: Check URL params or active session ──────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const deckParam = urlParams.get('deck');
+  
+  // Fetch user decks count if logged in
+  loadUserDecksList();
+
+  if (deckParam) {
+    await loadDeckById(deckParam);
+  }
+});
+
+// ─── STEP 1: Autocomplete ───────────────────────────────────────────────────
+const searchEl = document.getElementById('cmd-search');
+const dropdown = document.getElementById('cmd-dropdown');
+let debounceTimer = null;
+
+searchEl.addEventListener('input', () => {
+  clearTimeout(debounceTimer);
+  const q = searchEl.value.trim();
+  if (q.length < 2) { dropdown.style.display = 'none'; return; }
+  debounceTimer = setTimeout(() => fetchSuggestions(q), 180);
+});
+
+searchEl.addEventListener('keydown', e => {
+  if (e.key === 'Escape') dropdown.style.display = 'none';
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#cmd-search') && !e.target.closest('#cmd-dropdown')) {
+    dropdown.style.display = 'none';
+  }
+});
+
+async function fetchSuggestions(q) {
+  try {
+    const res = await fetch('/api/commander/suggest?q=' + encodeURIComponent(q));
+    const data = await res.json();
+    renderDropdown(data.suggestions || []);
+  } catch(e) { console.error(e); }
+}
+
+function renderDropdown(suggestions) {
+  dropdown.innerHTML = '';
+  if (!suggestions.length) { dropdown.style.display = 'none'; return; }
+  suggestions.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'cmd-suggestion';
+    const pips = (s.color_identity||[]).map(c => C_EMOJI[c]||c).join('');
+    const typeShort = (s.type_line||'').replace('Legendary Creature \u2014 ','').split('//')[0].trim();
+    el.innerHTML = `
+      <img src="${s.image_normal||''}" onerror="this.style.display='none'" loading="lazy">
+      <div style="min-width:0;">
+        <div style="font-weight:700; font-size:0.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(s.name)}</div>
+        <div style="font-size:0.72rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(typeShort)}</div>
+        <div style="font-size:0.82rem; margin-top:2px;">${pips}</div>
+      </div>`;
+    el.addEventListener('click', () => confirmCommander(s));
+    dropdown.appendChild(el);
+  });
+  dropdown.style.display = 'block';
+}
+
+function confirmCommander(s) {
+  commander = s;
+  dropdown.style.display = 'none';
+  searchEl.value = s.name;
+  document.getElementById('cmd-art').src = s.image_normal || '';
+  document.getElementById('cmd-name').textContent = s.name;
+  document.getElementById('cmd-type').textContent = s.type_line || '';
+  document.getElementById('cmd-pips').innerHTML = (s.color_identity||[]).map(c => `<span>${C_EMOJI[c]||c}</span>`).join('');
+  document.getElementById('cmd-text').textContent = s.oracle_text || '';
+  document.getElementById('cmd-confirmed').style.display = 'block';
+}
+
+document.getElementById('btn-lock').addEventListener('click', () => {
+  if (!commander) return;
+  if (!currentDeckId) {
+    currentDeckId = 'deck_' + Math.random().toString(36).substring(2, 10);
+    document.getElementById('deck-name-input').value = commander.name + ' EDH';
+    window.history.replaceState(null, '', `?deck=${currentDeckId}`);
+  }
+  startDrafting();
+  triggerAutosave();
+});
+
+document.getElementById('btn-clear').addEventListener('click', () => {
+  commander = null;
+  searchEl.value = '';
+  document.getElementById('cmd-confirmed').style.display = 'none';
+  searchEl.focus();
+});
+
+document.getElementById('btn-new-deck').addEventListener('click', () => {
+  currentDeckId = null;
+  commander = null;
+  deck.clear();
+  window.history.replaceState(null, '', '/commander');
+  document.getElementById('step-1').style.display = 'block';
+  document.getElementById('step-2').style.display = 'none';
+  document.getElementById('cmd-confirmed').style.display = 'none';
+  searchEl.value = '';
+  document.getElementById('dot-1').className = 'step-dot active';
+  document.getElementById('dot-2').className = 'step-dot';
+  document.getElementById('line-1').className = 'step-line';
+  updateDeckTray();
+});
+
+document.getElementById('btn-change-cmd').addEventListener('click', () => {
+  document.getElementById('step-1').style.display = 'block';
+  document.getElementById('step-2').style.display = 'none';
+  document.getElementById('dot-1').className = 'step-dot active';
+  document.getElementById('dot-2').className = 'step-dot';
+  document.getElementById('line-1').className = 'step-line';
+});
+
+// ─── STEP 2: Conversational Drafting ────────────────────────────────────────
+let currentPromptQuery = '';
+
+function startDrafting(initialQuery) {
+  document.getElementById('step-1').style.display = 'none';
+  document.getElementById('step-2').style.display = 'block';
+  document.getElementById('dot-1').className = 'step-dot done';
+  document.getElementById('dot-2').className = 'step-dot active';
+  document.getElementById('line-1').className = 'step-line done';
+
+  const pips = (commander.color_identity||[]).map(c => C_EMOJI[c]||c).join('');
+  document.getElementById('s2-art').src = commander.image_art_crop || commander.image_normal || '';
+  document.getElementById('s2-type').textContent = commander.type_line || '';
+  document.getElementById('s2-pips').textContent = pips;
+
+  updateDeckTray();
+
+  // Restore previous query or run default
+  const queryToRun = (initialQuery || currentPromptQuery || 'staples and synergies').trim();
+  document.getElementById('prompt-input').value = (queryToRun === 'staples and synergies' ? '' : queryToRun);
+  runDraftQuery(queryToRun);
+}
+
+const promptInput = document.getElementById('prompt-input');
+document.getElementById('btn-ask').addEventListener('click', () => {
+  const q = promptInput.value.trim();
+  if (q) {
+    currentPromptQuery = q;
+    runDraftQuery(q);
+    triggerAutosave();
+  }
+});
+
+promptInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const q = promptInput.value.trim();
+    if (q) {
+      currentPromptQuery = q;
+      runDraftQuery(q);
+      triggerAutosave();
+    }
+  }
+});
+
+document.querySelectorAll('.chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const q = btn.dataset.q;
+    promptInput.value = q;
+    runDraftQuery(q);
+  });
+});
+
+document.getElementById('deck-name-input').addEventListener('input', () => {
+  triggerAutosave();
+});
+
+let candidatePool = []; // Remaining cards buffer for current query
+const VISIBLE_SLOTS = 18;
+
+async function runDraftQuery(queryText) {
+  if (!commander) return;
+  
+  const loading = document.getElementById('loading-grid');
+  const grid = document.getElementById('cards-grid');
+  const status = document.getElementById('results-status');
+
+  loading.style.display = 'block';
+  grid.style.display = 'none';
+  status.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/commander/discover', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        oracle_id: commander.oracle_id,
+        theme: queryText,
+        color_identity: commander.color_identity || [],
+        limit: 50
+      })
+    });
+    const data = await res.json();
+    // Filter out any cards already drafted in the deck
+    const allCards = (data.cards || []).filter(c => !deck.has(c.oracle_id));
+    
+    // Split into initial visible cards and queue buffer
+    const initialCards = allCards.slice(0, VISIBLE_SLOTS);
+    candidatePool = allCards.slice(VISIBLE_SLOTS);
+
+    renderCardsGrid(initialCards, queryText);
+  } catch(e) {
+    console.error(e);
+    status.textContent = 'Failed to load cards. Please try another query.';
+    status.style.display = 'block';
+  } finally {
+    loading.style.display = 'none';
+    grid.style.display = 'grid';
+  }
+}
+
+const STR_ADD_CARD = "{{ t('cmd_add_card', current_lang or 'en') }}";
+
+function createCardTileElement(c) {
+  const tile = document.createElement('div');
+  tile.className = 'card-tile';
+  tile.setAttribute('data-oid', c.oracle_id);
+  tile.innerHTML = `
+    <img src="${c.image_large || c.image_normal}" alt="" loading="lazy">
+    <div class="action-overlay">
+      <button class="btn-card-add" data-oid="${c.oracle_id}">
+        ${STR_ADD_CARD}
+      </button>
+      <a href="/printing/${c.printing_slug}" target="_blank" class="btn-card-inspect" title="View Card Details">&#128269;</a>
+    </div>
+  `;
+
+  const addBtn = tile.querySelector('.btn-card-add');
+  addBtn.addEventListener('click', () => {
+    // 1. Add card to deck
+    deck.set(c.oracle_id, c);
+    updateDeckTray();
+    triggerAutosave();
+
+    // 2. Animate out the card tile
+    tile.style.transition = 'all 0.22s ease';
+    tile.style.transform = 'scale(0.8)';
+    tile.style.opacity = '0';
+
+    setTimeout(() => {
+      // 3. If there is a next candidate in buffer, replace this slot
+      if (candidatePool.length > 0) {
+        // Find next card not already in deck
+        let nextCard = null;
+        while (candidatePool.length > 0) {
+          const cand = candidatePool.shift();
+          if (!deck.has(cand.oracle_id)) {
+            nextCard = cand;
+            break;
+          }
+        }
+
+        if (nextCard) {
+          const newTile = createCardTileElement(nextCard);
+          newTile.style.opacity = '0';
+          newTile.style.transform = 'scale(0.85)';
+          tile.replaceWith(newTile);
+          requestAnimationFrame(() => {
+            newTile.style.transition = 'all 0.25s ease';
+            newTile.style.opacity = '1';
+            newTile.style.transform = 'scale(1)';
+          });
+          return;
+        }
+      }
+      // If buffer exhausted, smoothly remove slot
+      tile.remove();
+    }, 200);
+  });
+
+  return tile;
+}
+
+function renderCardsGrid(cards, queryText) {
+  const grid = document.getElementById('cards-grid');
+  const status = document.getElementById('results-status');
+  grid.innerHTML = '';
+
+  if (!cards.length) {
+    status.textContent = `No cards matched "${queryText}" within your commander's colors.`;
+    status.style.display = 'block';
+    return;
+  }
+
+  status.textContent = `Showing top results for "${queryText}"`;
+  status.style.display = 'block';
+
+  cards.forEach(c => {
+    const tile = createCardTileElement(c);
+    grid.appendChild(tile);
+  });
+}
+
+function updateDeckTray() {
+  const tray = document.getElementById('deck-tray-items');
+  const empty = document.getElementById('deck-empty-msg');
+  const badge = document.getElementById('deck-badge');
+  const copyBtn = document.getElementById('btn-copy-deck');
+
+  tray.innerHTML = '';
+  const count = deck.size;
+  badge.textContent = `${count} / 99`;
+
+  if (count === 0) {
+    empty.style.display = 'block';
+    document.getElementById('deck-actions').style.display = 'none';
+    return;
+  }
+
+  empty.style.display = 'none';
+  document.getElementById('deck-actions').style.display = 'flex';
+
+  deck.forEach((card, oid) => {
+    const item = document.createElement('div');
+    item.className = 'deck-item';
+    item.innerHTML = `
+      <span class="deck-item-name">${esc(card.name)}</span>
+      <span class="deck-item-del" title="Remove">&#10005;</span>
+    `;
+    item.querySelector('.deck-item-del').addEventListener('click', () => {
+      deck.delete(oid);
+      updateDeckTray();
+      triggerAutosave();
+      const btn = document.querySelector(`.btn-card-add[data-oid="${oid}"]`);
+      if (btn) {
+        btn.className = 'btn-card-add';
+        btn.innerHTML = '+ Add to Deck';
+      }
+    });
+    tray.appendChild(item);
+  });
+}
+
+// ─── DECK EXPORTS (Copy, Print, CSV, JSON) ──────────────────────────────
+document.getElementById('btn-print-deck').addEventListener('click', () => {
+  const deckName = (document.getElementById('deck-name-input').value.trim() || (commander ? commander.name : 'Deck')).replace(/[^a-zA-Z0-9_-]/g, '_');
+  const printWindow = window.open('', '_blank');
+  const cardListHtml = Array.from(deck.values()).map(c => `<li>1x <strong>${esc(c.name)}</strong> <span style="color:#666;">(${esc(c.type_line||'')})</span></li>`).join('');
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${esc(deckName)} - Decklist</title>
+      <style>
+        body { font-family: system-ui, sans-serif; padding: 2rem; color: #111; }
+        h1 { margin-bottom: 0.2rem; font-size: 1.5rem; }
+        .meta { color: #555; font-size: 0.9rem; margin-bottom: 1.5rem; }
+        .cmdr-box { border: 2px solid #222; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.5rem; }
+        ul { columns: 2; list-style-type: none; padding: 0; line-height: 1.6; font-size: 0.9rem; }
+      </style>
+    </head>
+    <body>
+      <h1>${esc(deckName)}</h1>
+      <div class="meta">Generated by AvaScry • Total: ${deck.size + (commander ? 1 : 0)} Cards</div>
+      ${commander ? `<div class="cmdr-box"><strong>Commander:</strong> 1x ${esc(commander.name)} <em>(${esc(commander.type_line||'')})</em> [Colors: ${(commander.color_identity||[]).join('') || 'C'}]</div>` : ''}
+      <h3>Maindeck (${deck.size})</h3>
+      <ul>${cardListHtml}</ul>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => { printWindow.print(); }, 250);
+});
+
+document.getElementById('btn-copy-deck').addEventListener('click', () => {
+  const lines = [`1 ${commander ? commander.name : 'Commander'} *CMDR*`];
+  deck.forEach(c => lines.push(`1 ${c.name}`));
+  navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    const lbl = document.querySelector('#btn-copy-deck .exp-lbl');
+    const orig = lbl.textContent;
+    lbl.textContent = 'Copied!';
+    setTimeout(() => { lbl.textContent = orig; }, 1500);
+  });
+});
+
+document.querySelectorAll('.btn-export-fmt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const fmt = btn.dataset.fmt;
+    const deckName = (document.getElementById('deck-name-input').value.trim() || (commander ? commander.name : 'Deck')).replace(/[^a-zA-Z0-9_-]/g, '_');
+    
+    if (fmt === 'csv') {
+      const rows = [['Count', 'Name', 'Type', 'Color Identity', 'Oracle ID']];
+      if (commander) {
+        rows.push([1, `"${commander.name}"`, `"${commander.type_line || ''}"`, `"${(commander.color_identity||[]).join('')}"`, `"${commander.oracle_id}"`]);
+      }
+      deck.forEach(c => {
+        rows.push([1, `"${c.name}"`, `"${c.type_line || ''}"`, `"${(c.color_identity||[]).join('')}"`, `"${c.oracle_id}"`]);
+      });
+      downloadFile(`${deckName}.csv`, rows.map(r => r.join(',')).join('\n'), 'text/csv');
+    }
+    else if (fmt === 'json') {
+      const data = {
+        deck_name: document.getElementById('deck-name-input').value.trim() || 'Commander Deck',
+        commander: commander,
+        card_count: deck.size,
+        cards: Array.from(deck.values())
+      };
+      downloadFile(`${deckName}.json`, JSON.stringify(data, null, 2), 'application/json');
+    }
+  });
+});
+
+function downloadFile(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ─── PERSISTENCE: Debounced Mongo Autosave ───────────────────────────────────
+function triggerAutosave() {
+  if (!currentDeckId || !commander) return;
+  
+  const statusEl = document.getElementById('autosave-text');
+  const iconEl = document.getElementById('autosave-icon');
+  iconEl.textContent = '⏳';
+  statusEl.textContent = 'Saving...';
+
+  clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(async () => {
+    try {
+      const cardsList = Array.from(deck.values()).map(c => ({
+        oracle_id: c.oracle_id,
+        name: c.name,
+        printing_slug: c.printing_slug,
+        type_line: c.type_line,
+        image_normal: c.image_normal,
+        count: 1
+      }));
+
+      const payload = {
+        deck_id: currentDeckId,
+        name: document.getElementById('deck-name-input').value.trim() || (commander.name + ' EDH'),
+        commander: commander,
+        active_query: currentPromptQuery,
+        cards: cardsList
+      };
+
+      const res = await fetch('/api/deck/save', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+
+      if (res.status === 401) {
+        iconEl.textContent = '☁️';
+        statusEl.innerHTML = '<a href="/auth/login" style="color:var(--accent);text-decoration:none;font-weight:600;">Sign in</a> to save';
+        return;
+      }
+
+      if (res.ok) {
+        iconEl.textContent = '✓';
+        statusEl.textContent = 'Saved to account';
+        loadUserDecksList();
+      }
+    } catch(e) {
+      console.error(e);
+      iconEl.textContent = '⚠️';
+      statusEl.textContent = 'Save error';
+    }
+  }, 800);
+}
+
+// ─── DECK MANAGEMENT: Load & Switch Decks ────────────────────────────────────
+async function loadDeckById(deckId) {
+  try {
+    const res = await fetch(`/api/deck/${deckId}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const d = data.deck;
+    if (!d) return;
+
+    currentDeckId = d.deck_id;
+    commander = d.commander;
+    deck.clear();
+    (d.cards || []).forEach(c => deck.set(c.oracle_id, c));
+
+    currentPromptQuery = d.active_query || '';
+    document.getElementById('deck-name-input').value = d.name || (commander.name + ' EDH');
+    window.history.replaceState(null, '', `?deck=${currentDeckId}`);
+    startDrafting(currentPromptQuery);
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+async function loadUserDecksList() {
+  try {
+    const res = await fetch('/api/decks');
+    const data = await res.json();
+    const countBadge = document.getElementById('my-decks-count');
+    const list = document.getElementById('saved-decks-list');
+    const empty = document.getElementById('saved-decks-empty');
+
+    if (!data.authenticated || !data.decks || data.decks.length === 0) {
+      countBadge.style.display = 'none';
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+
+    countBadge.textContent = data.decks.length;
+    countBadge.style.display = 'inline-block';
+    empty.style.display = 'none';
+    list.innerHTML = '';
+
+    data.decks.forEach(d => {
+      const row = document.createElement('div');
+      row.className = 'saved-deck-row';
+      const cmdName = d.commander ? d.commander.name : 'Unknown Commander';
+      row.innerHTML = `
+        <div>
+          <div style="font-weight:700; font-size:0.88rem;">${esc(d.name)}</div>
+          <div style="font-size:0.72rem; color:var(--muted);">${esc(cmdName)} • ${d.card_count || 0}/99 cards</div>
+        </div>
+        <button class="btn-del-deck" data-id="${d.deck_id}" style="background:transparent; border:none; color:var(--muted); font-size:0.8rem; cursor:pointer;" title="Delete">✕</button>
+      `;
+      row.addEventListener('click', (e) => {
+        if (e.target.classList.contains('btn-del-deck')) return;
+        document.getElementById('decks-modal').style.display = 'none';
+        loadDeckById(d.deck_id);
+      });
+      row.querySelector('.btn-del-deck').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (confirm(`Delete "${d.name}"?`)) {
+          await fetch(`/api/deck/${d.deck_id}`, {method: 'DELETE'});
+          loadUserDecksList();
+          if (currentDeckId === d.deck_id) {
+            document.getElementById('btn-new-deck').click();
+          }
+        }
+      });
+      list.appendChild(row);
+    });
+  } catch(e) { console.error(e); }
+}
+
+document.getElementById('btn-my-decks').addEventListener('click', () => {
+  document.getElementById('decks-modal').style.display = 'flex';
+});
+
+document.getElementById('btn-close-modal').addEventListener('click', () => {
+  document.getElementById('decks-modal').style.display = 'none';
+});
+
+document.getElementById('decks-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'decks-modal') {
+    document.getElementById('decks-modal').style.display = 'none';
+  }
+});
+
+function esc(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+{% endblock %}

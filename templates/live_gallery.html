@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}Live Art Gallery & Slideshow | AvaScry{% endblock %}
+{% block meta_description %}Experience an immersive live art gallery and slideshow of Magic: The Gathering card artworks on AvaScry.{% endblock %}
+
+{% block content %}
+<style>
+  /* Standard window size */
+  .slideshow-img {
+    max-width: 90%;
+    max-height: 88%;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+    transition: transform 0.3s ease;
+  }
+
+  /* Fullscreen mode expands art size to maximum visual impact while preserving ambient glow border */
+  #slideshow-stage:fullscreen,
+  #slideshow-stage:-webkit-full-screen {
+    width: 100vw !important;
+    height: 100vh !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
+  #slideshow-stage:fullscreen .slideshow-img,
+  #slideshow-stage:-webkit-full-screen .slideshow-img {
+    max-width: 96vw !important;
+    max-height: 94vh !important;
+    border-radius: 12px !important;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.8) !important;
+  }
+</style>
+
+<div class="slideshow-wrapper" style="margin-top: 1rem;">
+  <!-- Top Bar Controls & Info -->
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.85rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+    <!-- Controls on the Left -->
+    <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+      <button id="btn-fullscreen" class="btn" title="Press F11 for full browser fullscreen" style="padding: 0.5rem 1.15rem; font-size: 0.88rem; background: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius-pill); color: #ffffff; cursor: pointer; font-weight: 700; display: inline-flex; align-items: center; gap: 0.45rem; box-shadow: 0 4px 14px rgba(2,132,199,0.35); transition: transform 0.15s, filter 0.15s;" onmouseover="this.style.filter='brightness(1.1)';" onmouseout="this.style.filter='none';">
+        <span style="font-size: 1rem;">&#x26F6;</span> <span>{{ t('fullscreen_btn', current_lang or 'en') }}</span>
+      </button>
+      <button id="btn-pause" class="btn" style="padding: 0.5rem 0.95rem; font-size: 0.84rem; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-pill); color: var(--text); cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; transition: background 0.15s;">
+        <span id="pause-icon">&#10074;&#10074;</span> <span id="pause-text">{{ t('pause_btn', current_lang or 'en') }}</span>
+      </button>
+    </div>
+
+    <!-- Title on the Right -->
+    <div style="text-align: right;">
+      <h1 style="font-size: 1.35rem; font-weight: 800; margin: 0; color: var(--text);">{{ t('gallery_title', current_lang or 'en') }}</h1>
+      <p style="font-size: 0.78rem; color: var(--muted); margin: 0.15rem 0 0 0;">{{ t('gallery_desc', current_lang or 'en') }}</p>
+    </div>
+  </div>
+
+  <!-- Slideshow Canvas Container -->
+  <div id="slideshow-stage" style="position: relative; width: 100%; height: calc(100vh - 220px); min-height: 520px; background: #090d16; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 20px 45px rgba(0,0,0,0.35);">
+    
+    <!-- Background Ambient Blur -->
+    <div id="ambient-blur" style="position: absolute; inset: -30px; background-size: cover; background-position: center; filter: blur(45px) brightness(0.4); opacity: 0.85; transition: background-image 1.2s ease-in-out; z-index: 1;"></div>
+
+    <!-- Active Crossfading Image Layers -->
+    <div id="layer-a" class="slideshow-layer" style="position: absolute; inset: 0; display: flex; justify-content: center; align-items: center; z-index: 2; opacity: 1; transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 6s linear;">
+      <a id="art-link-a" href="#" target="_blank" rel="noopener noreferrer" style="display: inline-flex; justify-content: center; align-items: center; max-width: 90%; max-height: 88%; text-decoration: none; cursor: pointer;">
+        <img id="img-a" class="slideshow-img" src="" alt="" onmouseover="this.style.transform='scale(1.012)';" onmouseout="this.style.transform='none';">
+      </a>
+    </div>
+
+    <div id="layer-b" class="slideshow-layer" style="position: absolute; inset: 0; display: flex; justify-content: center; align-items: center; z-index: 2; opacity: 0; transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 6s linear;">
+      <a id="art-link-b" href="#" target="_blank" rel="noopener noreferrer" style="display: inline-flex; justify-content: center; align-items: center; max-width: 90%; max-height: 88%; text-decoration: none; cursor: pointer;">
+        <img id="img-b" class="slideshow-img" src="" alt="" onmouseover="this.style.transform='scale(1.012)';" onmouseout="this.style.transform='none';">
+      </a>
+    </div>
+
+    <!-- Floating Hover Tooltip (Centered Above Artwork) -->
+    <div id="art-hover-tooltip" style="position: absolute; top: 1.25rem; left: 50%; transform: translateX(-50%) translateY(-10px); z-index: 25; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(14px); border: 1.5px solid var(--accent); padding: 0.45rem 1.1rem; border-radius: var(--radius-pill); box-shadow: 0 10px 30px rgba(0,0,0,0.5); opacity: 0; pointer-events: none; transition: opacity 0.25s ease, transform 0.25s ease; display: flex; align-items: center; gap: 0.6rem;">
+      <span id="tooltip-title" style="font-size: 0.9rem; font-weight: 700; color: #ffffff;">Card Title</span>
+      <span style="color: #94a3b8; font-size: 0.75rem;">&bull;</span>
+      <span style="font-size: 0.78rem; font-weight: 600; color: #38bdf8;">{{ t('view_card_details', current_lang or 'en') }} &#x2197;</span>
+    </div>
+
+    <!-- Progress Indicator Bar -->
+    <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: rgba(255,255,255,0.1); z-index: 20;">
+      <div id="progress-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.1s linear;"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function() {
+    let queue = [];
+    let currentIndex = 0;
+    let isPaused = false;
+    let timer = null;
+    let progressTimer = null;
+    let progress = 0;
+    const SLIDE_DURATION = 9000; // 9 seconds per artwork (longer viewing)
+    let activeLayer = 'a'; // 'a' or 'b'
+
+    const stage = document.getElementById('slideshow-stage');
+    const layerA = document.getElementById('layer-a');
+    const layerB = document.getElementById('layer-b');
+    const imgA = document.getElementById('img-a');
+    const imgB = document.getElementById('img-b');
+    const artLinkA = document.getElementById('art-link-a');
+    const artLinkB = document.getElementById('art-link-b');
+    const ambient = document.getElementById('ambient-blur');
+    const cardTitle = document.getElementById('card-title');
+    const cardLink = document.getElementById('card-link');
+    const setInfo = document.getElementById('set-info');
+    const rarityBadge = document.getElementById('rarity-badge');
+    const artistName = document.getElementById('artist-name');
+    const artistLink = document.getElementById('artist-link');
+    const progressBar = document.getElementById('progress-bar');
+    const hoverTooltip = document.getElementById('art-hover-tooltip');
+    const tooltipTitle = document.getElementById('tooltip-title');
+    const btnPause = document.getElementById('btn-pause');
+    const pauseIcon = document.getElementById('pause-icon');
+    const pauseText = document.getElementById('pause-text');
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+
+    async function fetchMoreArtworks() {
+      try {
+        const resp = await fetch('/api/live-gallery/feed');
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.items && data.items.length > 0) {
+            queue.push(...data.items);
+            // Preload next 3 images
+            data.items.slice(0, 3).forEach(item => {
+              const pre = new Image();
+              pre.src = item.art_url;
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch gallery artworks:', err);
+      }
+    }
+
+    function updateInfo(item) {
+      if (!item) return;
+      if (tooltipTitle) tooltipTitle.textContent = item.name;
+    }
+
+    function showSlide(item) {
+      if (!item) return;
+
+      const nextImg = activeLayer === 'a' ? imgB : imgA;
+      const nextArtLink = activeLayer === 'a' ? artLinkB : artLinkA;
+      const nextLayer = activeLayer === 'a' ? layerB : layerA;
+      const outgoingLayer = activeLayer === 'a' ? layerA : layerB;
+
+      // Set new image source & link for the upcoming active layer
+      nextImg.src = item.art_url;
+      if (nextArtLink) {
+        nextArtLink.href = `/printing/${item.printing_slug}`;
+      }
+      ambient.style.backgroundImage = `url('${item.art_url}')`;
+
+      // Bring active layer to top and crossfade
+      nextLayer.style.zIndex = '3';
+      outgoingLayer.style.zIndex = '2';
+      nextLayer.style.opacity = '1';
+      outgoingLayer.style.opacity = '0';
+
+      // Update info panel
+      updateInfo(item);
+
+      // Flip active layer flag
+      activeLayer = activeLayer === 'a' ? 'b' : 'a';
+
+      // Reset progress
+      progress = 0;
+      if (progressBar) progressBar.style.width = '0%';
+    }
+
+    function nextSlide() {
+      if (queue.length === 0) return;
+      currentIndex = (currentIndex + 1) % queue.length;
+      showSlide(queue[currentIndex]);
+
+      // If we are getting close to the end of our queue, fetch more
+      if (currentIndex >= queue.length - 8) {
+        fetchMoreArtworks();
+      }
+    }
+
+    function startTimer() {
+      if (timer) clearInterval(timer);
+      if (progressTimer) clearInterval(progressTimer);
+
+      progress = 0;
+      progressTimer = setInterval(() => {
+        if (!isPaused) {
+          progress += (100 / (SLIDE_DURATION / 100));
+          if (progressBar) progressBar.style.width = Math.min(progress, 100) + '%';
+        }
+      }, 100);
+
+      timer = setInterval(() => {
+        if (!isPaused) {
+          nextSlide();
+        }
+      }, SLIDE_DURATION);
+    }
+
+    const STR_PAUSE = "{{ t('pause_btn', current_lang or 'en') }}";
+    const STR_RESUME = "{{ t('resume_btn', current_lang or 'en') }}";
+
+    // Auto-pause slideshow when user clicks on a card
+    function pauseSlideshow() {
+      if (!isPaused) {
+        isPaused = true;
+        pauseIcon.innerHTML = '&#9654;';
+        pauseText.textContent = STR_RESUME;
+      }
+    }
+
+    // Hover Tooltip Triggers on Card Artwork
+    function showTooltip() {
+      if (hoverTooltip) {
+        hoverTooltip.style.opacity = '1';
+        hoverTooltip.style.transform = 'translateX(-50%) translateY(0)';
+      }
+    }
+
+    function hideTooltip() {
+      if (hoverTooltip) {
+        hoverTooltip.style.opacity = '0';
+        hoverTooltip.style.transform = 'translateX(-50%) translateY(-10px)';
+      }
+    }
+
+    if (artLinkA) {
+      artLinkA.addEventListener('click', pauseSlideshow);
+      artLinkA.addEventListener('mouseenter', showTooltip);
+      artLinkA.addEventListener('mouseleave', hideTooltip);
+    }
+    if (artLinkB) {
+      artLinkB.addEventListener('click', pauseSlideshow);
+      artLinkB.addEventListener('mouseenter', showTooltip);
+      artLinkB.addEventListener('mouseleave', hideTooltip);
+    }
+
+    // Clicking outside the card image (on the ambient/stage background) exits fullscreen
+    function handleBackgroundClick(e) {
+      const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+      if (isFullscreen) {
+        if (!e.target.closest('.slideshow-img') && !e.target.closest('#btn-fullscreen') && !e.target.closest('#btn-pause')) {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+          }
+        }
+      }
+    }
+
+    stage.addEventListener('click', handleBackgroundClick);
+    if (layerA) layerA.addEventListener('click', handleBackgroundClick);
+    if (layerB) layerB.addEventListener('click', handleBackgroundClick);
+
+    // Controls
+    btnPause.addEventListener('click', function() {
+      isPaused = !isPaused;
+      if (isPaused) {
+        pauseIcon.innerHTML = '&#9654;';
+        pauseText.textContent = STR_RESUME;
+      } else {
+        pauseIcon.innerHTML = '&#10074;&#10074;';
+        pauseText.textContent = STR_PAUSE;
+      }
+    });
+
+    btnFullscreen.addEventListener('click', function() {
+      if (!document.fullscreenElement) {
+        if (stage.requestFullscreen) stage.requestFullscreen();
+        else if (stage.webkitRequestFullscreen) stage.webkitRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    });
+
+    // Keyboard navigation (Space to pause/resume, Right arrow for next)
+    document.addEventListener('keydown', function(e) {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        btnPause.click();
+      } else if (e.code === 'ArrowRight') {
+        e.preventDefault();
+        nextSlide();
+        startTimer();
+      }
+    });
+
+    // Initialize gallery
+    fetchMoreArtworks().then(() => {
+      if (queue.length > 0) {
+        showSlide(queue[0]);
+        startTimer();
+      }
+    });
+
+  })();
+</script>
+{% endblock %}

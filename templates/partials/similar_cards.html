@@ -1,0 +1,22 @@
+{% if similar_cards %}
+<section class="section-panel panel similar-cards-section" style="margin-top: 1.5rem;">
+  <h2 class="panel-title">Similar & Synergistic Cards</h2>
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 1rem; margin-top: 1rem;">
+    {% for s in similar_cards %}
+      <a href="/card/{{ s.slug }}" style="text-align: center; text-decoration: none;" title="{{ s.name }}">
+        <div class="card-image-wrapper" style="width: 100%; aspect-ratio: 63/88; border-radius: 4px; overflow: hidden; margin-bottom: 0.4rem;">
+          <img src="{{ s.image_url }}" alt="{{ s.name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div style="font-size: 0.8rem; font-weight: 600; color: var(--abyss-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          {{ s.name }}
+        </div>
+        {% if s.score %}
+          <div style="font-size: 0.7rem; color: var(--sakura-deep);">
+            {{ (s.score * 100)|round|int }}% Match
+          </div>
+        {% endif %}
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

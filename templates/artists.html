@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Magic: The Gathering Artists | MTGAbyss{% endblock %}
+{% block meta_description %}Browse Magic: The Gathering card illustrations by artist on MTGAbyss.{% endblock %}
+
+{% block content %}
+<section class="section-panel panel" style="margin-top: 1.5rem;">
+  <h1 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--abyss-text);">Magic: The Gathering Artists</h1>
+  <p style="color: var(--abyss-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">Explore iconic illustrators and their card artworks.</p>
+
+  <div class="directory-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">
+    {% for a in artists %}
+      <a href="/artist/{{ a.slug }}" class="directory-card" style="text-align: left; padding: 1rem 1.25rem;">
+        <div style="font-weight: 700; font-size: 1rem; color: var(--abyss-text); margin-bottom: 0.25rem;">{{ a.name }}</div>
+        <div style="font-size: 0.8rem; color: var(--abyss-muted);">
+          <span>{{ a.card_count }} cards</span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,32 @@
+# Static assets, images, media
+static/
+public/
+assets/
+media/
+images/
+uploads/
+
+# Large data dumps & caches
+data/
+datasets/
+*.json
+*.jsonl
+*.csv
+*.parquet
+*.sqlite3
+*.db
+*.log
+*.tar
+*.tar.gz
+rename_remote.sh
+scripts/rename_local.py
+rename_local.py
+
+# Build artifacts & dependencies
+node_modules/
+.venv/
+venv/
+dist/
+build/
+.cache/
+.agent/
