@@ -8,6 +8,12 @@ def get_mongo_db():
     db = client[db_name]
     return db
 
+def get_old_db():
+    """Returns the mtgabyss database (card_embeddings, similar_cards)."""
+    mongo_uri = os.environ.get("MONGODB_URI", "mongodb://localhost:27017")
+    client = pymongo.MongoClient(mongo_uri)
+    return client["mtgabyss"]
+
 def ensure_indexes(db):
     # Cards collection indexes
     cards = db["cards"]

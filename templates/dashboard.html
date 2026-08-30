@@ -26,17 +26,17 @@
 
     <!-- Quick action: New deck -->
     <a href="/commander" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.65rem 1.4rem; background: var(--accent); color: #fff; border-radius: var(--radius-pill); font-size: 0.9rem; font-weight: 700; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.18);">
-      <span>⚔️</span> Build New Deck
+      <span>⚔️</span> {{ t('dash_build_new_btn', current_lang or 'en') }}
     </a>
   </div>
 
   <!-- Dashboard Navigation Tabs -->
   <div style="display: flex; gap: 1rem; border-bottom: 2px solid var(--border); margin-bottom: 1.75rem;">
     <button class="dash-tab active" data-tab="tab-decks" style="padding: 0.65rem 1rem; background: transparent; border: none; font-size: 1rem; font-weight: 800; color: var(--accent); cursor: pointer; border-bottom: 3px solid var(--accent); margin-bottom: -2px;">
-      📚 My Decks ({{ deck_count }})
+      📚 {{ t('cmd_my_decks', current_lang or 'en') }} ({{ deck_count }})
     </button>
     <button class="dash-tab" data-tab="tab-settings" style="padding: 0.65rem 1rem; background: transparent; border: none; font-size: 1rem; font-weight: 700; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;">
-      ⚙️ Settings
+      {{ t('dash_settings_tab', current_lang or 'en') }}
     </button>
   </div>
 
@@ -85,7 +85,7 @@
               <!-- Deck Actions -->
               <div style="display: flex; gap: 0.5rem; align-items: center; pt-2; border-top: 1px solid var(--border); padding-top: 0.85rem;">
                 <a href="/commander?deck={{ d.deck_id }}" style="flex: 1; padding: 0.5rem; background: var(--accent); color: #fff; text-align: center; border-radius: var(--radius-pill); font-size: 0.82rem; font-weight: 700; text-decoration: none;">
-                  Resume Draft →
+                  {{ t('dash_resume_draft', current_lang or 'en') }}
                 </a>
                 <button class="btn-clone-deck" data-id="{{ d.deck_id }}" title="Clone Deck" style="padding: 0.5rem 0.65rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-pill); color: var(--text); font-size: 0.8rem; cursor: pointer;">
                   📋
@@ -102,10 +102,10 @@
     {% else %}
       <div style="text-align: center; padding: 4rem 1rem; background: var(--surface); border: 1.5px dashed var(--border); border-radius: var(--radius-lg);">
         <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">🧙‍♂️</div>
-        <h3 style="margin: 0 0 0.5rem; font-weight: 800;">No Saved Decks Yet</h3>
-        <p style="color: var(--muted); font-size: 0.9rem; max-width: 400px; margin: 0 auto 1.5rem;">Pick your favorite legendary commander, prompt for cards, and your draft will be automatically saved here.</p>
+        <h3 style="margin: 0 0 0.5rem; font-weight: 800;">{{ t('dash_no_decks_title', current_lang or 'en') }}</h3>
+        <p style="color: var(--muted); font-size: 0.9rem; max-width: 400px; margin: 0 auto 1.5rem;">{{ t('dash_no_decks_desc', current_lang or 'en') }}</p>
         <a href="/commander" style="padding: 0.65rem 1.6rem; background: var(--accent); color: #fff; border-radius: var(--radius-pill); font-weight: 700; text-decoration: none; font-size: 0.95rem;">
-          Start Your First Deck →
+          {{ t('dash_start_first_deck', current_lang or 'en') }}
         </a>
       </div>
     {% endif %}
@@ -114,15 +114,15 @@
   <!-- ================= TAB 2: SETTINGS ================= -->
   <div id="tab-settings" class="dash-content" style="display: none;">
     <div style="max-width: 600px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem;">
-      <h3 style="margin: 0 0 1.25rem; font-size: 1.15rem; font-weight: 800;">Player Preferences</h3>
+      <h3 style="margin: 0 0 1.25rem; font-size: 1.15rem; font-weight: 800;">{{ t('dash_player_prefs', current_lang or 'en') }}</h3>
       
       <div style="margin-bottom: 1.25rem;">
-        <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--muted); margin-bottom: 0.4rem;">Display Name</label>
+        <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--muted); margin-bottom: 0.4rem;">{{ t('dash_display_name', current_lang or 'en') }}</label>
         <input id="settings-name-input" type="text" value="{{ profile.name or user.name }}" style="width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.95rem; outline: none; box-sizing: border-box;">
       </div>
 
       <div style="margin-bottom: 1.5rem;">
-        <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--muted); margin-bottom: 0.4rem;">Favorite Format</label>
+        <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--muted); margin-bottom: 0.4rem;">{{ t('dash_favorite_format', current_lang or 'en') }}</label>
         <select id="settings-format-select" style="width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.95rem; outline: none; box-sizing: border-box;">
           <option value="Commander / EDH" {% if (profile.favorite_format or 'Commander / EDH') == 'Commander / EDH' %}selected{% endif %}>Commander / EDH (100 Cards)</option>
           <option value="Modern" {% if profile.favorite_format == 'Modern' %}selected{% endif %}>Modern (60 Cards)</option>
@@ -134,10 +134,10 @@
 
       <div style="display: flex; align-items: center; justify-content: space-between; pt-2; border-top: 1px solid var(--border); padding-top: 1.25rem;">
         <button id="btn-save-settings" style="padding: 0.6rem 1.4rem; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.9rem; cursor: pointer;">
-          Save Changes
+          {{ t('dash_save_changes', current_lang or 'en') }}
         </button>
         <a href="/auth/logout" style="color: #e55; font-size: 0.85rem; font-weight: 600; text-decoration: none;">
-          Sign Out of Account
+          {{ t('dash_sign_out', current_lang or 'en') }}
         </a>
       </div>
     </div>

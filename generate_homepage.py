@@ -58,9 +58,6 @@ HOMEPAGE_TEMPLATE = """<!DOCTYPE html>
 <body>
   <header class="site-header">
     <a class="site-logo" href="index.html">MTGAbyss</a>
-    <nav>
-      <a href="cards/">Cards</a>
-    </nav>
   </header>
 
   <div class="homepage-wrapper">
