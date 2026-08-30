@@ -1,6 +1,8 @@
 import os
 import re
 import asyncio
+import secrets
+import random
 from typing import Optional, List, Dict, Any, Tuple
 import httpx
 from datetime import datetime, timezone
@@ -51,6 +53,21 @@ templates.env.globals["get_locale"] = i18n.get_locale
 # =========================================================================
 RAM_CACHE: Dict[str, Any] = {}
 LAST_SUNDAY_FLUSH: Optional[str] = None
+MAX_CACHE_ITEMS: int = 200_000 # Max ~8-10 GB RAM footprint (safe guardrail on 128GB box)
+
+def set_ram_cache(key: str, value: Any):
+    """Store item in cache with safety ceiling."""
+    if len(RAM_CACHE) >= MAX_CACHE_ITEMS:
+        # Clear oldest quarter to prevent unbounded growth
+        try:
+            keys_to_remove = list(RAM_CACHE.keys())[:50_000]
+            for k in keys_to_remove:
+                RAM_CACHE.pop(k, None)
+        except Exception:
+            RAM_CACHE.clear()
+    RAM_CACHE[key] = value
+
+IMAGE_DOWNLOAD_SEMAPHORE = asyncio.Semaphore(4) # Bouncer: max 4 polite concurrent downloads to Scryfall CDN
 
 def get_ram_usage_gb() -> float:
     """Return process RAM usage in GB."""
@@ -193,17 +210,20 @@ def get_scryfall_direct_uris(card_doc: dict) -> Tuple[Optional[str], Optional[st
     return None, None, None
 
 async def _download_and_save_image(url: str, dest_path: str):
-    """Download single image file asynchronously and save to disk."""
+    """Download single image file asynchronously and save to disk with polite rate limiting."""
     if not url:
         return
     try:
-        headers = {"User-Agent": "MTGAbyss/2.0 (mtgabyss.com)"}
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.get(url, headers=headers, follow_redirects=True)
-            if resp.status_code == 200 and resp.content:
-                os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-                with open(dest_path, "wb") as f:
-                    f.write(resp.content)
+        async with IMAGE_DOWNLOAD_SEMAPHORE:
+            # Polite random 11-17ms delay to respect Scryfall CDN guidelines
+            await asyncio.sleep(random.uniform(0.011, 0.017))
+            headers = {"User-Agent": "MTGAbyss/2.0 (mtgabyss.com)"}
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                resp = await client.get(url, headers=headers, follow_redirects=True)
+                if resp.status_code == 200 and resp.content:
+                    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                    with open(dest_path, "wb") as f:
+                        f.write(resp.content)
     except Exception as e:
         print(f"Warning: Failed to download image from {url}: {e}")
 
@@ -452,6 +472,10 @@ async def auth_google_login(request: Request, next: str = "/commander"):
     redirect_uri = f"{get_base_url(request)}/auth/google/callback"
     request.session["oauth_next"] = next
     
+    # Generate cryptographic one-time state nonce to protect against OAuth CSRF
+    oauth_state = secrets.token_urlsafe(32)
+    request.session["oauth_state"] = oauth_state
+    
     auth_url = (
         "https://accounts.google.com/o/oauth2/v2/auth?"
         + httpx.QueryParams({
@@ -459,6 +483,7 @@ async def auth_google_login(request: Request, next: str = "/commander"):
             "response_type": "code",
             "scope": "openid email profile",
             "redirect_uri": redirect_uri,
+            "state": oauth_state,
             "access_type": "online",
             "prompt": "select_account"
         }).__str__()
@@ -466,9 +491,14 @@ async def auth_google_login(request: Request, next: str = "/commander"):
     return RedirectResponse(url=auth_url, status_code=303)
 
 @app.get("/auth/google/callback")
-async def auth_google_callback(request: Request, code: Optional[str] = None, error: Optional[str] = None):
+async def auth_google_callback(request: Request, code: Optional[str] = None, state: Optional[str] = None, error: Optional[str] = None):
     if error or not code:
         return RedirectResponse(url=f"/commander?auth_error={error or 'cancelled'}", status_code=303)
+    
+    # Strictly verify one-time OAuth state parameter against session
+    saved_state = request.session.pop("oauth_state", None)
+    if not saved_state or not state or not secrets.compare_digest(saved_state, state):
+        return RedirectResponse(url="/commander?auth_error=invalid_oauth_state", status_code=303)
     
     client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
     client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
@@ -636,6 +666,85 @@ async def delete_user_deck(deck_id: str, request: Request):
         raise HTTPException(status_code=404, detail="Deck not found")
     return JSONResponse({"status": "deleted", "deck_id": deck_id})
 
+@app.post("/api/deck/{deck_id}/clone")
+async def clone_user_deck(deck_id: str, request: Request):
+    user = request.session.get("user")
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    db = get_mongo_db()
+    original = db["decks"].find_one({"deck_id": deck_id, "user_id": user["id"]})
+    if not original:
+        raise HTTPException(status_code=404, detail="Deck not found")
+    
+    new_deck_id = str(uuid.uuid4())[:12]
+    now = datetime.now(timezone.utc).isoformat()
+    
+    cloned_doc = {
+        "deck_id": new_deck_id,
+        "user_id": user["id"],
+        "name": f"{original.get('name', 'Deck')} (Copy)",
+        "commander": original.get("commander", {}),
+        "cards": original.get("cards", []),
+        "active_query": original.get("active_query", ""),
+        "card_count": original.get("card_count", 0),
+        "created_at": now,
+        "updated_at": now
+    }
+    db["decks"].insert_one(cloned_doc)
+    return JSONResponse({"status": "cloned", "new_deck_id": new_deck_id})
+
+@app.post("/api/user/settings")
+async def update_user_settings(request: Request):
+    user = request.session.get("user")
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    body = await request.json()
+    new_name = (body.get("name") or "").strip()
+    fav_format = (body.get("favorite_format") or "Commander / EDH").strip()
+    
+    db = get_mongo_db()
+    update_fields = {
+        "favorite_format": fav_format,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    if new_name:
+        update_fields["name"] = new_name
+        # Update session display name as well
+        request.session["user"]["name"] = new_name
+        
+    db["users"].update_one(
+        {"google_sub": user["google_sub"]},
+        {"$set": update_fields}
+    )
+    return JSONResponse({"status": "updated", "name": new_name or user["name"], "favorite_format": fav_format})
+
+@app.get("/dashboard", response_class=HTMLResponse)
+async def user_dashboard(request: Request):
+    user = request.session.get("user")
+    if not user:
+        return RedirectResponse(url="/auth/login?next=/dashboard", status_code=303)
+    
+    db = get_mongo_db()
+    user_doc = db["users"].find_one({"google_sub": user["google_sub"]}) or {}
+    decks = list(db["decks"].find(
+        {"user_id": user["id"]}
+    ).sort("updated_at", -1))
+    
+    lang = i18n.get_locale(request)
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={
+            "active_nav": "dashboard",
+            "current_lang": lang,
+            "profile": user_doc,
+            "decks": decks,
+            "deck_count": len(decks)
+        }
+    )
+
 
 @app.get("/commander", response_class=HTMLResponse)
 async def commander_chooser(request: Request):
@@ -647,6 +756,24 @@ async def commander_chooser(request: Request):
             "active_nav": "commander",
             "current_lang": lang
         }
+    )
+
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy_policy(request: Request):
+    lang = i18n.get_locale(request)
+    return templates.TemplateResponse(
+        request=request,
+        name="privacy.html",
+        context={"current_lang": lang}
+    )
+
+@app.get("/terms", response_class=HTMLResponse)
+async def terms_of_service(request: Request):
+    lang = i18n.get_locale(request)
+    return templates.TemplateResponse(
+        request=request,
+        name="terms.html",
+        context={"current_lang": lang}
     )
 
 @app.get("/api/commander/search")
@@ -782,7 +909,7 @@ async def commander_suggest(q: str = Query("")):
             "image_normal": img.get("normal") or img.get("large") or "",
             "image_art_crop": img.get("art_crop") or "",
         })
-    RAM_CACHE[cache_key] = suggestions
+    set_ram_cache(cache_key, suggestions)
     return JSONResponse({"suggestions": suggestions})
 
 
@@ -967,7 +1094,7 @@ async def commander_discover(request: Request):
         })
 
     response_data = {"cards": results, "query": theme, "total": len(results)}
-    RAM_CACHE[cache_key] = response_data
+    set_ram_cache(cache_key, response_data)
     return JSONResponse(response_data)
 
 
@@ -1200,9 +1327,9 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
             "similar_cards": []
         }
     )
-    # Cache rendered HTML in RAM
+    # Cache rendered HTML in RAM with ceiling
     if hasattr(rendered_response, "body") and rendered_response.body:
-        RAM_CACHE[cache_key] = rendered_response.body.decode("utf-8")
+        set_ram_cache(cache_key, rendered_response.body.decode("utf-8"))
     return rendered_response
 
 @app.get("/search", response_class=HTMLResponse)

@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — AvaScry{% endblock %}
+{% block meta_description %}Manage your saved Commander decks, drafts, and player profile.{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 2rem auto 0; padding-bottom: 4rem;">
+
+  <!-- User Profile Header Banner -->
+  <div style="display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 2rem; flex-wrap: wrap; gap: 1.25rem;">
+    <div style="display: flex; align-items: center; gap: 1.25rem;">
+      {% if profile.picture %}
+        <img src="{{ profile.picture }}" alt="{{ profile.name }}" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+      {% else %}
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 1.75rem; display: flex; align-items: center; justify-content: center; font-weight: 800;">
+          {{ (profile.name or user.name or 'U')[0] }}
+        </div>
+      {% endif %}
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <h1 style="font-size: 1.4rem; font-weight: 800; margin: 0;" id="user-display-name">{{ profile.name or user.name }}</h1>
+          <span style="font-size: 0.72rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 2px 8px; color: var(--muted); font-weight: 600;">Google Verified</span>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--muted); margin-top: 0.2rem;">{{ profile.email or user.email }}</div>
+      </div>
+    </div>
+
+    <!-- Quick action: New deck -->
+    <a href="/commander" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.65rem 1.4rem; background: var(--accent); color: #fff; border-radius: var(--radius-pill); font-size: 0.9rem; font-weight: 700; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.18);">
+      <span>⚔️</span> Build New Deck
+    </a>
+  </div>
+
+  <!-- Dashboard Navigation Tabs -->
+  <div style="display: flex; gap: 1rem; border-bottom: 2px solid var(--border); margin-bottom: 1.75rem;">
+    <button class="dash-tab active" data-tab="tab-decks" style="padding: 0.65rem 1rem; background: transparent; border: none; font-size: 1rem; font-weight: 800; color: var(--accent); cursor: pointer; border-bottom: 3px solid var(--accent); margin-bottom: -2px;">
+      📚 My Decks ({{ deck_count }})
+    </button>
+    <button class="dash-tab" data-tab="tab-settings" style="padding: 0.65rem 1rem; background: transparent; border: none; font-size: 1rem; font-weight: 700; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;">
+      ⚙️ Settings
+    </button>
+  </div>
+
+  <!-- ================= TAB 1: DECKS HUB ================= -->
+  <div id="tab-decks" class="dash-content">
+    {% if decks and decks|length > 0 %}
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem;">
+        {% for d in decks %}
+          <div class="deck-card" id="deck-card-{{ d.deck_id }}" style="background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+            
+            <!-- Commander Header Art Banner -->
+            <div style="height: 100px; position: relative; background: var(--bg); overflow: hidden;">
+              {% if d.commander and (d.commander.image_art_crop or d.commander.image_normal) %}
+                <img src="{{ d.commander.image_art_crop or d.commander.image_normal }}" alt="{{ d.commander.name }}" style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.85);">
+              {% else %}
+                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 1.5rem;">⚔️</div>
+              {% endif %}
+              
+              <!-- Color Identity Pips Badge -->
+              <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.75); border-radius: var(--radius-pill); padding: 2px 8px; font-size: 0.8rem; display: flex; gap: 3px;">
+                {% if d.commander and d.commander.color_identity %}
+                  {% for c in d.commander.color_identity %}
+                    {% if c == 'W' %}☀️{% elif c == 'U' %}💧{% elif c == 'B' %}💀{% elif c == 'R' %}🔥{% elif c == 'G' %}🌲{% else %}💎{% endif %}
+                  {% endfor %}
+                {% else %}
+                  💎
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Body Details -->
+            <div style="padding: 1.1rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <h3 style="margin: 0 0 0.35rem; font-size: 1.05rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ d.name }}">{{ d.name }}</h3>
+                <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 0.6rem;">
+                  Commander: <strong style="color: var(--text);">{{ (d.commander.name if d.commander else 'None') }}</strong>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.75rem; color: var(--muted); margin-bottom: 1rem;">
+                  <span style="background: var(--bg); border: 1px solid var(--border); border-radius: 99px; padding: 2px 8px; font-weight: 700; color: var(--text);">{{ d.card_count or 0 }} / 99 cards</span>
+                  {% if d.updated_at %}
+                    <span>Updated {{ d.updated_at[:10] }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Deck Actions -->
+              <div style="display: flex; gap: 0.5rem; align-items: center; pt-2; border-top: 1px solid var(--border); padding-top: 0.85rem;">
+                <a href="/commander?deck={{ d.deck_id }}" style="flex: 1; padding: 0.5rem; background: var(--accent); color: #fff; text-align: center; border-radius: var(--radius-pill); font-size: 0.82rem; font-weight: 700; text-decoration: none;">
+                  Resume Draft →
+                </a>
+                <button class="btn-clone-deck" data-id="{{ d.deck_id }}" title="Clone Deck" style="padding: 0.5rem 0.65rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-pill); color: var(--text); font-size: 0.8rem; cursor: pointer;">
+                  📋
+                </button>
+                <button class="btn-delete-deck" data-id="{{ d.deck_id }}" data-name="{{ d.name }}" title="Delete Deck" style="padding: 0.5rem 0.65rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-pill); color: var(--muted); font-size: 0.8rem; cursor: pointer;">
+                  🗑️
+                </button>
+              </div>
+            </div>
+
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 4rem 1rem; background: var(--surface); border: 1.5px dashed var(--border); border-radius: var(--radius-lg);">
+        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">🧙‍♂️</div>
+        <h3 style="margin: 0 0 0.5rem; font-weight: 800;">No Saved Decks Yet</h3>
+        <p style="color: var(--muted); font-size: 0.9rem; max-width: 400px; margin: 0 auto 1.5rem;">Pick your favorite legendary commander, prompt for cards, and your draft will be automatically saved here.</p>
+        <a href="/commander" style="padding: 0.65rem 1.6rem; background: var(--accent); color: #fff; border-radius: var(--radius-pill); font-weight: 700; text-decoration: none; font-size: 0.95rem;">
+          Start Your First Deck →
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- ================= TAB 2: SETTINGS ================= -->
+  <div id="tab-settings" class="dash-content" style="display: none;">
+    <div style="max-width: 600px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem;">
+      <h3 style="margin: 0 0 1.25rem; font-size: 1.15rem; font-weight: 800;">Player Preferences</h3>
+      
+      <div style="margin-bottom: 1.25rem;">
+        <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--muted); margin-bottom: 0.4rem;">Display Name</label>
+        <input id="settings-name-input" type="text" value="{{ profile.name or user.name }}" style="width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.95rem; outline: none; box-sizing: border-box;">
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--muted); margin-bottom: 0.4rem;">Favorite Format</label>
+        <select id="settings-format-select" style="width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.95rem; outline: none; box-sizing: border-box;">
+          <option value="Commander / EDH" {% if (profile.favorite_format or 'Commander / EDH') == 'Commander / EDH' %}selected{% endif %}>Commander / EDH (100 Cards)</option>
+          <option value="Modern" {% if profile.favorite_format == 'Modern' %}selected{% endif %}>Modern (60 Cards)</option>
+          <option value="Standard" {% if profile.favorite_format == 'Standard' %}selected{% endif %}>Standard (60 Cards)</option>
+          <option value="Pauper" {% if profile.favorite_format == 'Pauper' %}selected{% endif %}>Pauper</option>
+          <option value="Legacy / Vintage" {% if profile.favorite_format == 'Legacy / Vintage' %}selected{% endif %}>Legacy / Vintage</option>
+        </select>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; pt-2; border-top: 1px solid var(--border); padding-top: 1.25rem;">
+        <button id="btn-save-settings" style="padding: 0.6rem 1.4rem; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.9rem; cursor: pointer;">
+          Save Changes
+        </button>
+        <a href="/auth/logout" style="color: #e55; font-size: 0.85rem; font-weight: 600; text-decoration: none;">
+          Sign Out of Account
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .deck-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    border-color: var(--accent);
+  }
+</style>
+
+<script>
+// Tab Switching
+document.querySelectorAll('.dash-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.dash-tab').forEach(t => {
+      t.style.color = 'var(--muted)';
+      t.style.borderBottomColor = 'transparent';
+      t.classList.remove('active');
+    });
+    tab.style.color = 'var(--accent)';
+    tab.style.borderBottomColor = 'var(--accent)';
+    tab.classList.add('active');
+
+    document.querySelectorAll('.dash-content').forEach(c => c.style.display = 'none');
+    document.getElementById(tab.dataset.tab).style.display = 'block';
+  });
+});
+
+// Clone Deck
+document.querySelectorAll('.btn-clone-deck').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const deckId = btn.dataset.id;
+    try {
+      const res = await fetch(`/api/deck/${deckId}/clone`, {method: 'POST'});
+      if (res.ok) {
+        window.location.reload();
+      }
+    } catch(e) { console.error(e); }
+  });
+});
+
+// Delete Deck
+document.querySelectorAll('.btn-delete-deck').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const deckId = btn.dataset.id;
+    const name = btn.dataset.name;
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
+      try {
+        const res = await fetch(`/api/deck/${deckId}`, {method: 'DELETE'});
+        if (res.ok) {
+          const card = document.getElementById(`deck-card-${deckId}`);
+          if (card) card.remove();
+        }
+      } catch(e) { console.error(e); }
+    }
+  });
+});
+
+// Save Profile Settings
+document.getElementById('btn-save-settings').addEventListener('click', async () => {
+  const name = document.getElementById('settings-name-input').value.trim();
+  const format = document.getElementById('settings-format-select').value;
+  const btn = document.getElementById('btn-save-settings');
+
+  try {
+    const res = await fetch('/api/user/settings', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ name: name, favorite_format: format })
+    });
+    if (res.ok) {
+      document.getElementById('user-display-name').textContent = name;
+      btn.textContent = '✓ Saved!';
+      setTimeout(() => { btn.textContent = 'Save Changes'; }, 1500);
+    }
+  } catch(e) { console.error(e); }
+});
+</script>
+{% endblock %}
