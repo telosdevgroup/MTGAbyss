@@ -65,14 +65,16 @@
         
         <!-- User Auth Nav -->
         {% if user %}
-          <div class="user-profile-menu" style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.2rem 0.6rem 0.2rem 0.25rem;">
-            {% if user.picture %}
-              <img src="{{ user.picture }}" alt="{{ user.name }}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
-            {% else %}
-              <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; font-weight: 700;">{{ user.name[0] }}</div>
-            {% endif %}
-            <span style="font-size: 0.8rem; font-weight: 700; max-width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ user.name }}</span>
-            <a href="/auth/logout" title="Sign out" style="color: var(--muted); font-size: 0.75rem; text-decoration: none; padding: 0 4px;">✕</a>
+          <div style="display: inline-flex; align-items: center; gap: 0.35rem;">
+            <a href="/dashboard" class="user-profile-menu {% if active_nav == 'dashboard' %}active{% endif %}" title="View Your Profile & Decks" style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.2rem 0.65rem 0.2rem 0.25rem; text-decoration: none; color: var(--text);">
+              {% if user.picture %}
+                <img src="{{ user.picture }}" alt="{{ user.name }}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
+              {% else %}
+                <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; font-weight: 700;">{{ user.name[0] }}</div>
+              {% endif %}
+              <span style="font-size: 0.8rem; font-weight: 700; max-width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ user.name }}</span>
+            </a>
+            <a href="/auth/logout" title="Sign out" style="color: var(--muted); font-size: 0.75rem; text-decoration: none; padding: 0.2rem 0.4rem; border-radius: 50%;">✕</a>
           </div>
         {% else %}
           <a href="/auth/login" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.85rem; border-radius: var(--radius-pill); background: var(--surface); border: 1.5px solid var(--border); color: var(--text); font-size: 0.82rem; font-weight: 700; text-decoration: none;">
@@ -105,8 +107,15 @@
   </div>
 
 
-  <footer class="site-footer">
-    <p>AvaScry &mdash; Not affiliated with Wizards of the Coast or Scryfall.</p>
+  <footer class="site-footer" style="padding: 2.5rem 1rem 3rem; text-align: center; border-top: 1px solid var(--border); margin-top: 4rem;">
+    <div style="margin-bottom: 0.75rem; display: flex; justify-content: center; gap: 1.5rem; font-size: 0.85rem; font-weight: 500;">
+      <a href="/privacy" style="color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">{{ t('footer_privacy', current_lang or 'en') }}</a>
+      <span style="color: var(--border);">&bull;</span>
+      <a href="/terms" style="color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">{{ t('footer_terms', current_lang or 'en') }}</a>
+    </div>
+    <p style="font-size: 0.78rem; color: var(--muted); margin: 0; max-width: 720px; margin: 0 auto; line-height: 1.5;">
+      {{ t('footer_fan_disclaimer', current_lang or 'en') }}
+    </p>
   </footer>
 
   <!-- Dark mode toggle logic -->
