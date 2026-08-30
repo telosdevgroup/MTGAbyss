@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <radialGradient id="irisGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="60%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </radialGradient>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Dark Background Capsule -->
+  <rect width="64" height="64" rx="14" fill="#090d16"/>
+  <rect width="64" height="64" rx="14" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+
+  <!-- Outer Arc / Scry Rings -->
+  <path d="M 12 32 C 18 18, 46 18, 52 32 C 46 46, 18 46, 12 32 Z" 
+        fill="none" stroke="url(#ringGrad)" stroke-width="3" stroke-linejoin="round" filter="url(#glow)"/>
+
+  <!-- Glowing Iris Eye -->
+  <circle cx="32" cy="32" r="9" fill="url(#irisGrad)"/>
+  
+  <!-- Pupil -->
+  <circle cx="32" cy="32" r="4.5" fill="#090d16"/>
+
+  <!-- Specular Reflection -->
+  <circle cx="29" cy="29" r="2" fill="#ffffff" opacity="0.9"/>
+</svg>

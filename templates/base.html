@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AvaScry — Magic: The Gathering Strategy & Visual Intelligence{% endblock %}</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="alternate icon" href="/favicon.ico">
+
+  <!-- Dark mode: default to dark, apply before paint to prevent flash -->
+  <script>
+    (function(){
+      var t = localStorage.getItem('avascry-theme') || 'dark';
+      if (t === 'dark') {
+        document.documentElement.setAttribute('data-theme','dark');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+    })();
+  </script>
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Site Stylesheet -->
+  <link rel="stylesheet" href="/static/css/site.css">
+
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoMVMfPmr0nUETZKkVGiWAfDUb58hdT/5e" crossorigin="anonymous"></script>
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-837M1ZGHPE"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-837M1ZGHPE');
+  </script>
+
+  <!-- Microsoft Clarity -->
+  <script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "xj4uzg0vsb");
+  </script>
+
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+  <header class="site-header">
+    <div class="nav-container">
+      <a class="site-logo" href="/">AvaScry</a>
+      <nav style="display: flex; align-items: center; gap: 0.75rem;">
+        <a href="/" class="{% if active_nav == 'home' %}active{% endif %}">{{ t('nav_search', current_lang or 'en') }}</a>
+        <a href="/live-gallery" class="{% if active_nav == 'live-gallery' %}active{% endif %}">{{ t('nav_live_gallery', current_lang or 'en') }}</a>
+        <a href="/random" title="Jump to a random card">{{ t('nav_random', current_lang or 'en') }}</a>
+        <a href="/commander" class="{% if active_nav == 'commander' %}active{% endif %}" title="Find your Commander">⚔️ Commander</a>
+        
+        <!-- User Auth Nav -->
+        {% if user %}
+          <div class="user-profile-menu" style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.2rem 0.6rem 0.2rem 0.25rem;">
+            {% if user.picture %}
+              <img src="{{ user.picture }}" alt="{{ user.name }}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
+            {% else %}
+              <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; font-weight: 700;">{{ user.name[0] }}</div>
+            {% endif %}
+            <span style="font-size: 0.8rem; font-weight: 700; max-width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ user.name }}</span>
+            <a href="/auth/logout" title="Sign out" style="color: var(--muted); font-size: 0.75rem; text-decoration: none; padding: 0 4px;">✕</a>
+          </div>
+        {% else %}
+          <a href="/auth/login" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.85rem; border-radius: var(--radius-pill); background: var(--surface); border: 1.5px solid var(--border); color: var(--text); font-size: 0.82rem; font-weight: 700; text-decoration: none;">
+            <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+            Sign in
+          </a>
+        {% endif %}
+        
+        <!-- Language Selector Dropdown -->
+        <div class="lang-selector-wrapper" style="position: relative; display: inline-flex; align-items: center;">
+          <select id="lang-selector" aria-label="Select Language" style="appearance: none; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.28rem 1.6rem 0.28rem 0.65rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; outline: none;">
+            {% for code, lang_meta in LANGUAGES.items() %}
+              <option value="{{ code }}" {% if (current_lang or 'en') == code %}selected{% endif %}>{{ lang_meta.flag }} {{ lang_meta.native }}</option>
+            {% endfor %}
+          </select>
+          <span style="position: absolute; right: 0.6rem; pointer-events: none; font-size: 0.65rem; color: var(--muted);">&#9660;</span>
+        </div>
+
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+          <span id="theme-icon">&#9788;</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <div class="page-wrapper">
+    <div class="{% block container_class %}container{% endblock %}">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+
+
+  <footer class="site-footer">
+    <p>AvaScry &mdash; Not affiliated with Wizards of the Coast or Scryfall.</p>
+  </footer>
+
+  <!-- Dark mode toggle logic -->
+  <script>
+    (function(){
+      var btn  = document.getElementById('theme-toggle');
+      var icon = document.getElementById('theme-icon');
+      var cur  = localStorage.getItem('mtgabyss-theme') || 'dark';
+
+      function apply(t) {
+        if (t === 'dark') {
+          document.documentElement.setAttribute('data-theme','dark');
+          icon.textContent = '\u263D'; // crescent moon
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+          icon.textContent = '\u2600'; // sun
+        }
+      }
+
+      apply(cur);
+
+      btn.addEventListener('click', function(){
+        cur = (cur === 'dark') ? 'light' : 'dark';
+        localStorage.setItem('mtgabyss-theme', cur);
+        apply(cur);
+      });
+
+      // Language switcher persistence
+      var langSelect = document.getElementById('lang-selector');
+      if (langSelect) {
+        langSelect.addEventListener('change', function(e){
+          var selected = e.target.value;
+          document.cookie = 'mtgabyss_lang=' + selected + '; path=/; max-age=31536000';
+          var url = new URL(window.location.href);
+          url.searchParams.set('lang', selected);
+          window.location.href = url.toString();
+        });
+      }
+    })();
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

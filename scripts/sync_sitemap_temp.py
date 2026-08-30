@@ -1,5 +1,4 @@
 import os
-import sys
 import subprocess
 import tarfile
 
@@ -8,10 +7,6 @@ def main():
     remote_host = "ubuntu@15.204.113.15"
 
     files_to_sync = [
-        "public/index.html",
-        "public/search.html",
-        "public/search-index.json",
-        "public/assets/site.css",
         "public/sitemap.xml",
         "public/robots.txt"
     ]
@@ -25,51 +20,43 @@ def main():
                     files_to_sync.append(full_path)
 
     print("Checking files to sync...")
-    total_bytes = 0
     valid_files = []
     for path in files_to_sync:
         if os.path.exists(path):
-            total_bytes += os.path.getsize(path)
             valid_files.append(path)
         else:
-            print(f"Warning: file '{path}' does not exist and will be skipped.")
+            print(f"Warning: file '{path}' does not exist.")
 
     if not valid_files:
         print("Error: No valid files to sync.")
-        sys.exit(1)
+        return
 
-    print(f"Found {len(valid_files)} files. Total size: {total_bytes / 1024:.2f} KB.")
-    print(f"Starting upload to {remote_host}:{remote_dest}...")
-
-    # Open SSH subprocess to unpack tar into remote_dest
+    print(f"Found {len(valid_files)} files. Starting upload...")
     ssh_cmd = ["ssh", remote_host, f"tar -xf - -C {remote_dest}"]
     ssh_proc = subprocess.Popen(ssh_cmd, stdin=subprocess.PIPE)
 
     try:
         with tarfile.open(fileobj=ssh_proc.stdin, mode="w|", encoding="utf-8") as tar:
             for path in valid_files:
-                # Add path as relative to "public" directory
                 arcname = os.path.relpath(path, "public")
                 tar.add(path, arcname=arcname)
                 
         ssh_proc.stdin.close()
-        print("Waiting for remote server to finish unpacking files...")
         ssh_proc.wait()
 
         if ssh_proc.returncode == 0:
-            # Set correct file permissions dynamically on VPS
             remote_paths = [f"{remote_dest}/{os.path.relpath(p, 'public')}".replace("\\", "/") for p in valid_files]
-            perm_cmd = f"chmod 644 {' '.join(remote_paths)}"
-            subprocess.run(["ssh", remote_host, perm_cmd], check=True)
-            print("Homepage and assets deployment completed successfully!")
+            # Batch chmod in chunks to avoid command line length limits if there are many files
+            chunk_size = 50
+            for i in range(0, len(remote_paths), chunk_size):
+                chunk = remote_paths[i:i+chunk_size]
+                perm_cmd = f"chmod 644 {' '.join(chunk)}"
+                subprocess.run(["ssh", remote_host, perm_cmd], check=True)
+            print("Sitemaps and robots.txt deployment completed successfully!")
         else:
             print(f"Deployment failed with return code {ssh_proc.returncode}")
-            
     except Exception as e:
         print(f"Error during deployment: {e}")
-        if ssh_proc.poll() is None:
-            ssh_proc.kill()
-        sys.exit(1)
 
 if __name__ == "__main__":
     main()

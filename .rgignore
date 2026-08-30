@@ -1,0 +1,19 @@
+# Large static and data directories
+public/
+data/
+dist/
+static/
+__pycache__/
+.venv/
+venv/
+
+# Large data formats
+*.jsonl
+*.json
+*.csv
+*.tsv
+*.parquet
+*.sqlite3
+*.db
+*.tar
+*.tar.gz

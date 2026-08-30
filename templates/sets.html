@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Magic: The Gathering Sets | MTGAbyss{% endblock %}
+{% block meta_description %}Browse all Magic: The Gathering sets and expansions on MTGAbyss.{% endblock %}
+
+{% block content %}
+<section class="section-panel panel" style="margin-top: 1.5rem;">
+  <h1 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--abyss-text);">Magic: The Gathering Sets</h1>
+  <p style="color: var(--abyss-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">Browse all expansions, core sets, and special releases.</p>
+
+  <div class="directory-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">
+    {% for s in sets %}
+      <a href="/set/{{ s.code }}" class="directory-card" style="text-align: left; padding: 1rem 1.25rem;">
+        <div style="font-weight: 700; font-size: 1rem; color: var(--abyss-text); margin-bottom: 0.25rem;">{{ s.name }}</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--abyss-muted);">
+          <span class="set-code">{{ s.code|upper }}</span>
+          <span>{{ s.card_count }} cards</span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

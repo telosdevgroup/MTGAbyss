@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}{{ set_doc.name }} ({{ set_doc.code|upper }}) | MTGAbyss{% endblock %}
+{% block meta_description %}All card printings from {{ set_doc.name }} on MTGAbyss.{% endblock %}
+
+{% block content %}
+<section class="section-panel panel" style="margin-top: 1.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--abyss-border); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--abyss-text);">{{ set_doc.name }}</h1>
+      <span class="set-code" style="margin-top: 0.4rem; display: inline-block;">{{ set_doc.code|upper }}</span>
+    </div>
+    <div style="font-size: 0.9rem; color: var(--abyss-muted);">
+      <strong>{{ total_cards }}</strong> printings
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem;">
+    {% for card in cards %}
+      <a href="/printing/{{ card.printing_slug }}" style="text-decoration: none; text-align: center;" title="{{ card.name }}">
+        <div class="card-image-wrapper" style="width: 100%; aspect-ratio: 63/88; border-radius: 4px; overflow: hidden; margin-bottom: 0.4rem;">
+          <img src="{{ card.image_url }}" alt="{{ card.name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div style="font-size: 0.82rem; font-weight: 700; color: var(--abyss-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          {{ card.name }}
+        </div>
+        <div style="font-size: 0.72rem; color: var(--abyss-muted);">
+          #{{ card.collector_number }} &bull; {{ card.rarity|capitalize }}
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

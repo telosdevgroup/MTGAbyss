@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Cards Illustrated by {{ artist_name }} | MTGAbyss{% endblock %}
+{% block meta_description %}Explore all Magic: The Gathering cards illustrated by {{ artist_name }} on MTGAbyss.{% endblock %}
+
+{% block content %}
+<section class="section-panel panel" style="margin-top: 1.5rem;">
+  <div style="border-bottom: 1px solid var(--abyss-border); padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--abyss-text);">{{ artist_name }}</h1>
+      <span style="font-size: 0.9rem; color: var(--abyss-muted); margin-top: 0.25rem; display: inline-block;">Card Illustrator</span>
+    </div>
+    <div style="font-size: 0.9rem; color: var(--abyss-muted);">
+      <strong>{{ total_cards }}</strong> artworks
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem;">
+    {% for card in cards %}
+      <a href="/printing/{{ card.printing_slug }}" style="text-decoration: none; text-align: center;" title="{{ card.name }} ({{ card.set_name }})">
+        <div class="card-image-wrapper" style="width: 100%; aspect-ratio: 63/88; border-radius: 4px; overflow: hidden; margin-bottom: 0.4rem;">
+          <img src="{{ card.image_url }}" alt="{{ card.name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div style="font-size: 0.82rem; font-weight: 700; color: var(--abyss-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          {{ card.name }}
+        </div>
+        <div style="font-size: 0.72rem; color: var(--abyss-muted);">
+          {{ card.set|upper }} &bull; {{ card.released_at }}
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

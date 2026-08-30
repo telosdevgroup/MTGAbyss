@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+
+{% block title %}{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} ({{ card.set|upper }}) | AvaScry{% endblock %}
+
+{% block meta %}
+  <meta name="description" content="Card details, rulings, legality, and all printings for {{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} from {{ card.set_name }} on AvaScry.">
+  <meta property="og:title" content="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} | MTGAbyss">
+  <meta property="og:image" content="{{ card.large_image_url or card.image_url }}">
+  <meta name="twitter:title" content="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} | MTGAbyss">
+  <meta name="twitter:image" content="{{ card.large_image_url or card.image_url }}">
+{% endblock %}
+
+{% block content %}
+<!-- Lure Block (HTMX Lazy loaded or SSR) -->
+<div id="lure-section" hx-get="/api/card/{{ card.slug }}/lure" hx-trigger="load" hx-swap="outerHTML">
+  {% if card.lure %}
+    {% include "partials/card_lure.html" with context %}
+  {% endif %}
+</div>
+
+<!-- Hero Image Section with Localization Notice -->
+<section class="hero-image-section">
+  {% if card.has_image_note %}
+  <div style="background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); padding: 0.55rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.85rem; color: var(--muted); display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm);">
+    <span style="color: var(--accent); font-weight: 700;">ℹ</span>
+    <span>{{ card.lang|upper }} localized scan is not available from the archive. Displaying English printing.</span>
+  </div>
+  {% endif %}
+
+  <div class="hero-image-large" id="hero-card-wrapper">
+    <img id="hero-card-image" 
+         src="{{ card.image_url }}" 
+         srcset="{{ card.image_url }} 488w, {{ card.large_image_url }} 672w" 
+         sizes="(max-width: 600px) 488px, 672px"
+         fetchpriority="high"
+         width="488"
+         height="680"
+         alt="{{ card.name }}"
+         title="{{ card.name }}">
+  </div>
+
+  <div class="hero-card-subtitle" id="hero-card-subtitle">
+    <span>
+      <a href="/set/{{ card.set }}" style="color: var(--text); font-weight: 700; text-decoration: none;" onmouseover="this.style.textDecoration='underline';" onmouseout="this.style.textDecoration='none';">
+        {{ card.set_name }} ({{ card.set|upper }})
+      </a>
+    </span>
+    <span class="divider">&bull;</span>
+    <span class="highlight">{{ card.rarity|capitalize }}</span>
+    <span class="divider">&bull;</span>
+    <span>#{{ card.collector_number }}</span>
+    {% if card.artist and card.artist != 'Unknown' %}
+      <span class="divider">&bull;</span>
+      <span>
+        <a href="/artist/{{ card.artist_slug }}" style="color: var(--accent); font-weight: 600; text-decoration: none;" onmouseover="this.style.textDecoration='underline';" onmouseout="this.style.textDecoration='none';">
+          {{ card.artist }}
+        </a>
+      </span>
+    {% endif %}
+  </div>
+
+  {% if mechanics %}
+    <div class="hero-card-mechanics">
+      {% for m in mechanics %}
+        <span class="mechanic-chip" tabindex="0" data-tooltip="{{ m.name }}: {{ m.definition or '' }}">{{ m.name }}</span>
+      {% endfor %}
+    </div>
+  {% endif %}
+</section>
+
+<!-- Card Header & Badges / Tags -->
+<header style="margin-top: 1.5rem;">
+  <div class="header-main">
+    <h1>
+      {{ card.printed_name }}{% if card.printed_name != card.name %} <span style="font-weight: 500; font-size: 1.25rem; color: var(--abyss-muted);">({{ card.name }})</span>{% endif %}
+    </h1>
+    <div class="badges-row">
+      {% for badge in badges %}
+        <span class="badge {{ badge.type }}">{{ badge.label }}</span>
+      {% endfor %}
+      {% if card.tags %}
+        {% for tag in card.tags %}
+          <span class="badge tag">{{ tag.tag or tag }}</span>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+
+<!-- Printings Table Collapsible Accordion Panel -->
+{% if printings %}
+<div class="printings-accordion" id="printings-accordion-panel" style="margin-bottom: 1.5rem;">
+  <div class="printings-accordion-header" id="printings-accordion-btn" role="button" tabindex="0" aria-expanded="true">
+    <div style="display: flex; align-items: center; gap: 0.6rem;">
+      <span class="accordion-icon" id="printings-accordion-icon">&#9662;</span>
+      <span class="panel-title" style="margin: 0; padding: 0; border: none;">{{ t('historical_printings', current_lang or 'en') }} ({{ printings|length }})</span>
+    </div>
+    <span class="badge" style="font-size: 0.72rem;">{{ lang_groups|length }} Languages</span>
+  </div>
+  <div class="printings-accordion-body" id="printings-accordion-content" style="padding: 1rem 1.25rem;">
+    
+    <!-- Language-based Nested Accordions -->
+    <div class="lang-accordions-container" style="display: flex; flex-direction: column; gap: 0.75rem;">
+      {% for g in lang_groups %}
+        <div class="lang-accordion-item" style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; background: var(--surface);">
+          <div class="lang-accordion-header" 
+               onclick="toggleLangAccordion('lang-panel-{{ g.lang_code }}', this)" 
+               role="button" 
+               tabindex="0"
+               style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--panel-bg); cursor: pointer; user-select: none;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span class="lang-accordion-icon" style="transition: transform 0.2s ease; font-size: 0.8rem; color: var(--muted); transform: {% if g.lang_code == 'en' or g.has_current %}rotate(0deg){% else %}rotate(-90deg){% endif %};">&#9662;</span>
+              <strong style="font-size: 0.95rem; color: var(--text);">{{ g.lang_name }}</strong>
+              {% if g.has_current %}
+                <span class="badge" style="font-size: 0.65rem; background-color: var(--accent); color: #fff; border-color: var(--accent);">Viewing Here</span>
+              {% endif %}
+            </div>
+            <span class="badge" style="font-size: 0.72rem;">{{ g.printings_list|length }} {{ 'printing' if g.printings_list|length == 1 else 'printings' }}</span>
+          </div>
+
+          <div class="lang-accordion-content" 
+               id="lang-panel-{{ g.lang_code }}" 
+               style="display: {% if g.lang_code == 'en' or g.has_current %}block{% else %}none{% endif %}; overflow-x: auto; border-top: 1px solid var(--border);">
+            <table class="printings-table" style="width: 100%; margin: 0;">
+              <thead>
+                <tr>
+                  <th style="width: 56px;"></th>
+                  <th>{{ t('th_set_name', current_lang or 'en') }}</th>
+                  <th>{{ t('th_code', current_lang or 'en') }}</th>
+                  <th>{{ t('th_rarity', current_lang or 'en') }}</th>
+                  <th>{{ t('th_artist', current_lang or 'en') }}</th>
+                  <th>{{ t('th_released', current_lang or 'en') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in g.printings_list %}
+                  <tr class="printing-row-item {% if p.is_current %}current-printing-row{% endif %}" 
+                      style="cursor: pointer;" 
+                      onclick="if (!event.target.closest('a')) { if (event.ctrlKey || event.metaKey) { window.open('/printing/{{ p.printing_slug }}', '_blank'); } else { window.location.href='/printing/{{ p.printing_slug }}'; } }">
+                    <td style="padding: 0.4rem 0.5rem; text-align: center;">
+                      <a href="/printing/{{ p.printing_slug }}" class="printing-thumb-link" data-preview-src="{{ p.large_image_url or p.image_url }}" data-card-title="{{ p.printed_name or p.name }} ({{ p.set|upper }})" style="display: inline-block;">
+                        <img src="{{ p.image_url }}" 
+                             alt="" 
+                             loading="lazy" 
+                             onerror="this.style.display='none';"
+                             style="width: 46px; height: 64px; border-radius: 4px; object-fit: cover; box-shadow: 0 2px 6px rgba(0,0,0,0.18); display: inline-block; vertical-align: middle;">
+                      </a>
+                    </td>
+                    <td>
+                      <a href="/printing/{{ p.printing_slug }}" style="font-weight: 700; color: var(--text); text-decoration: none; display: block; font-size: 0.92rem;">
+                        {{ p.printed_name or p.name }}
+                      </a>
+                      <a href="/printing/{{ p.printing_slug }}" style="font-size: 0.78rem; color: var(--muted); font-weight: 500; text-decoration: none;">
+                        {{ p.set_name }}
+                      </a>
+                      {% if p.is_current %}
+                        <span class="badge" style="margin-left: 0.4rem; font-size: 0.65rem; background-color: var(--accent); color: #fff; border-color: var(--accent);">Viewing</span>
+                      {% endif %}
+                    </td>
+                    <td><span class="set-code">{{ p.set|upper }}</span></td>
+                    <td>{{ p.rarity|capitalize }}</td>
+                    <td>
+                      {% if p.artist and p.artist != 'Unknown' %}
+                        <a href="/artist/{{ p.artist_slug }}" 
+                           onclick="event.stopPropagation();" 
+                           style="color: var(--accent); text-decoration: none; font-weight: 500;"
+                           onmouseover="this.style.textDecoration='underline';"
+                           onmouseout="this.style.textDecoration='none';">
+                          {{ p.artist }}
+                        </a>
+                      {% else %}
+                        <span style="color: var(--muted);">{{ p.artist }}</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ p.released_at }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
+{% endif %}
+
+<!-- Rulings Panel -->
+{% if rulings %}
+<section class="section-panel panel" style="margin-bottom: 1.5rem;">
+  <h2 class="panel-title">Official Rulings ({{ rulings|length }})</h2>
+  <div class="rulings-list">
+    {% for r in rulings %}
+      <div class="ruling-item">
+        <div class="ruling-date">{{ r.published_at }}</div>
+        <div>{{ r.comment }}</div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- Similar / Synergistic Cards Section -->
+<div id="similar-cards-container" hx-get="/api/card/{{ card.slug }}/similar" hx-trigger="load" hx-swap="outerHTML">
+  {% if similar_cards %}
+    {% include "partials/similar_cards.html" with context %}
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Language Accordion Sub-Panel Toggle
+  function toggleLangAccordion(panelId, headerEl) {
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    const icon = headerEl.querySelector('.lang-accordion-icon');
+    const isHidden = panel.style.display === 'none';
+    if (isHidden) {
+      panel.style.display = 'block';
+      if (icon) icon.style.transform = 'rotate(0deg)';
+    } else {
+      panel.style.display = 'none';
+      if (icon) icon.style.transform = 'rotate(-90deg)';
+    }
+  }
+
+  (function() {
+    // 1. Accordion Toggle Logic
+    const btn = document.getElementById('printings-accordion-btn');
+    const content = document.getElementById('printings-accordion-content');
+    const icon = document.getElementById('printings-accordion-icon');
+    if (btn && content) {
+      let isOpen = true;
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        isOpen = !isOpen;
+        if (isOpen) {
+          content.style.display = 'block';
+          icon.style.transform = 'rotate(0deg)';
+          btn.setAttribute('aria-expanded', 'true');
+        } else {
+          content.style.display = 'none';
+          icon.style.transform = 'rotate(-90deg)';
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+
+    // 2. Live Instant Filter Logic
+    const filterInput = document.getElementById('printings-table-filter');
+    const tbody = document.getElementById('printings-tbody');
+    const countDisplay = document.getElementById('printings-count-display');
+    const rows = Array.from(document.querySelectorAll('.printing-row-item'));
+    const totalCount = rows.length;
+
+    if (filterInput && tbody) {
+      filterInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+          const text = row.innerText.toLowerCase();
+          if (!query || text.includes(query)) {
+            row.style.display = '';
+            visibleCount++;
+          } else {
+            row.style.display = 'none';
+          }
+        });
+
+        if (countDisplay) {
+          countDisplay.textContent = query 
+            ? `Showing ${visibleCount} of ${totalCount} printings` 
+            : `Showing all ${totalCount} printings`;
+        }
+      });
+    }
+
+    // 3. Clickable Header Sorting Logic
+    const headers = document.querySelectorAll('.sortable-th');
+    let currentSort = { col: -1, asc: true };
+
+    headers.forEach(th => {
+      th.addEventListener('click', function() {
+        const colIndex = parseInt(this.getAttribute('data-col'));
+        if (currentSort.col === colIndex) {
+          currentSort.asc = !currentSort.asc;
+        } else {
+          currentSort.col = colIndex;
+          currentSort.asc = true;
+        }
+
+        // Update sort indicators
+        headers.forEach(h => {
+          const indicator = h.querySelector('.sort-indicator');
+          if (h === th) {
+            indicator.innerHTML = currentSort.asc ? '&#9650;' : '&#9660;';
+            indicator.style.color = 'var(--accent)';
+          } else {
+            indicator.innerHTML = '&#8645;';
+            indicator.style.color = 'var(--muted)';
+          }
+        });
+
+        // Sort rows
+        const sortedRows = rows.slice().sort((a, b) => {
+          const cellA = a.children[colIndex] ? a.children[colIndex].innerText.trim() : '';
+          const cellB = b.children[colIndex] ? b.children[colIndex].innerText.trim() : '';
+
+          const comp = cellA.localeCompare(cellB, undefined, { numeric: true, sensitivity: 'base' });
+          return currentSort.asc ? comp : -comp;
+        });
+
+        // Re-append in sorted order
+        sortedRows.forEach(row => tbody.appendChild(row));
+      });
+    });
+
+    // 4. Floating High-Res Hover Preview
+    const previewBox = document.createElement('div');
+    previewBox.id = 'table-card-hover-preview';
+    previewBox.style.cssText = 'position: fixed; display: none; z-index: 99999; pointer-events: none; width: 250px; border-radius: 12px; overflow: hidden; box-shadow: 0 12px 35px rgba(0,0,0,0.4); border: 2px solid var(--accent); background: var(--surface); transform: translateY(-50%); transition: opacity 0.15s ease;';
+    const previewImg = document.createElement('img');
+    previewImg.style.cssText = 'width: 100%; height: auto; display: block;';
+    previewBox.appendChild(previewImg);
+    document.body.appendChild(previewBox);
+
+    document.querySelectorAll('.printing-thumb-link').forEach(link => {
+      link.addEventListener('mouseenter', function(e) {
+        const src = this.getAttribute('data-preview-src');
+        if (!src) return;
+        previewImg.src = src;
+        previewBox.style.display = 'block';
+      });
+
+      link.addEventListener('mousemove', function(e) {
+        const margin = 20;
+        let x = e.clientX + margin;
+        if (x + 260 > window.innerWidth) {
+          x = e.clientX - 270;
+        }
+        let y = e.clientY;
+        previewBox.style.left = x + 'px';
+        previewBox.style.top = y + 'px';
+      });
+
+      link.addEventListener('mouseleave', function() {
+        previewBox.style.display = 'none';
+        previewImg.src = '';
+      });
+    });
+
+  })();
+</script>
+{% endblock %}
+
+

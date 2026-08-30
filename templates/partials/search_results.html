@@ -1,0 +1,29 @@
+{% if results %}
+  <div class="panel" style="padding: 0.5rem; max-height: 320px; overflow-y: auto; box-shadow: 0 4px 16px rgba(0,0,0,0.12);">
+    {% for item in results %}
+      <a href="/card/{{ item.slug }}" 
+         class="search-result-card" 
+         style="padding: 0.5rem 0.75rem; margin-bottom: 0.25rem; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          {% if item.image_url %}
+            <img src="{{ item.image_url }}" alt="{{ item.name }}" style="width: 28px; height: 39px; border-radius: 3px; object-fit: cover;">
+          {% endif %}
+          <div>
+            <div style="font-weight: 600; font-size: 0.95rem; color: var(--text);">{{ item.name }}</div>
+            <div style="font-size: 0.75rem; color: var(--muted);">{{ item.type_line or '' }}</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.25rem; align-items: center;">
+          {% if item.mana_cost %}
+            <span style="font-family: monospace; font-size: 0.8rem; color: var(--muted);">{{ item.mana_cost }}</span>
+          {% endif %}
+          <span style="color: var(--accent); font-size: 0.85rem;">&rarr;</span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+{% elif query and query|length > 1 %}
+  <div class="panel" style="padding: 0.75rem; font-size: 0.85rem; color: var(--muted); text-align: center;">
+    No cards found matching "<em>{{ query }}</em>"
+  </div>
+{% endif %}

@@ -1,0 +1,12 @@
+{% if lure and lure.text %}
+<div class="lure-container" id="card-lure-block" style="margin-bottom: 2rem;">
+  <blockquote class="abyss-lure">
+    {{ lure.text }}
+  </blockquote>
+  {% if lure.persona %}
+    <div style="font-size: 0.75rem; text-align: right; color: var(--abyss-muted); margin-top: -1.25rem; margin-right: 1rem;">
+      Persona: <span class="highlight">{{ lure.persona|capitalize }}</span>
+    </div>
+  {% endif %}
+</div>
+{% endif %}
