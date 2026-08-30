@@ -34,8 +34,14 @@ venv.bak/
 *.tsv
 data/
 db_dumps/
+all-cards-all-printings-all-languages.jsonl
+*.zip
+*.tar.gz
+archive_static_backup.zip
 
 # Generated static pages/build output
+public/
+public/card/
 public/cards/
 public/images/
 public/dist/

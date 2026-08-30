@@ -43,7 +43,15 @@ os.makedirs("public/images/large", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/images", StaticFiles(directory="public/images"), name="images")
 
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(
+    directory="templates",
+    context_processors=[
+        lambda request: {
+            "current_lang": getattr(request.state, "lang", i18n.get_locale(request)),
+            "user": request.session.get("user") if hasattr(request, "session") else None
+        }
+    ]
+)
 templates.env.globals["t"] = i18n.t
 templates.env.globals["LANGUAGES"] = i18n.LANGUAGES
 templates.env.globals["get_locale"] = i18n.get_locale
@@ -67,7 +75,14 @@ def set_ram_cache(key: str, value: Any):
             RAM_CACHE.clear()
     RAM_CACHE[key] = value
 
-IMAGE_DOWNLOAD_SEMAPHORE = asyncio.Semaphore(4) # Bouncer: max 4 polite concurrent downloads to Scryfall CDN
+_DOWNLOAD_SEMAPHORE = None
+
+def get_download_semaphore() -> asyncio.Semaphore:
+    """Lazily instantiate Semaphore inside active event loop."""
+    global _DOWNLOAD_SEMAPHORE
+    if _DOWNLOAD_SEMAPHORE is None:
+        _DOWNLOAD_SEMAPHORE = asyncio.Semaphore(4)
+    return _DOWNLOAD_SEMAPHORE
 
 def get_ram_usage_gb() -> float:
     """Return process RAM usage in GB."""
@@ -78,44 +93,22 @@ def get_ram_usage_gb() -> float:
     except Exception:
         return 0.0
 
-@app.on_event("startup")
-async def start_cache_cleaner_task():
-    async def periodic_cache_flush():
-        global LAST_SUNDAY_FLUSH
-        while True:
-            try:
-                now = datetime.now(timezone.utc)
-                is_sunday_night = (now.weekday() == 6 and now.hour >= 23)
-                date_key = now.strftime("%Y-%m-%d")
-                ram_gb = get_ram_usage_gb()
+def check_periodic_cache_flush():
+    global LAST_SUNDAY_FLUSH
+    try:
+        now = datetime.now(timezone.utc)
+        is_sunday_night = (now.weekday() == 6 and now.hour >= 23)
+        date_key = now.strftime("%Y-%m-%d")
+        ram_gb = get_ram_usage_gb()
 
-                # Flush on Sunday night once, or if RAM exceeds 64GB guardrail
-                if (is_sunday_night and LAST_SUNDAY_FLUSH != date_key) or (ram_gb >= 64.0):
-                    count = len(RAM_CACHE)
-                    RAM_CACHE.clear()
-                    LAST_SUNDAY_FLUSH = date_key
-                    print(f"[RAM CACHE] Flushed {count} cached items (Reason: {'Sunday weekly reset' if is_sunday_night else f'64GB guardrail reached: {ram_gb:.1f}GB'})")
+        if (is_sunday_night and LAST_SUNDAY_FLUSH != date_key) or (ram_gb >= 64.0):
+            count = len(RAM_CACHE)
+            RAM_CACHE.clear()
+            LAST_SUNDAY_FLUSH = date_key
+            print(f"[RAM CACHE] Flushed {count} cached items (Reason: {'Sunday weekly reset' if is_sunday_night else f'64GB guardrail reached: {ram_gb:.1f}GB'})")
+    except Exception as e:
+        print(f"[RAM CACHE] Monitor error: {e}")
 
-            except Exception as e:
-                print(f"[RAM CACHE] Monitor error: {e}")
-            await asyncio.sleep(1800) # Check every 30 minutes
-
-    asyncio.create_task(periodic_cache_flush())
-
-_orig_template_response = templates.TemplateResponse
-
-def localized_template_response(name: str, context: dict, *args, **kwargs):
-    req = context.get("request") or kwargs.get("request")
-    if req:
-        if "current_lang" not in context:
-            context["current_lang"] = getattr(req.state, "lang", i18n.get_locale(req))
-        if "user" not in context:
-            context["user"] = req.session.get("user")
-    return _orig_template_response(name=name, context=context, *args, **kwargs)
-
-templates.TemplateResponse = localized_template_response
-
-# Context processor middleware to ensure current_lang is always available in templates
 @app.middleware("http")
 async def add_localization_context(request: Request, call_next):
     lang = i18n.get_locale(request)
@@ -124,6 +117,16 @@ async def add_localization_context(request: Request, call_next):
     if "lang" in request.query_params:
         response.set_cookie(key="mtgabyss_lang", value=lang, max_age=31536000, path="/")
     return response
+
+def render_template(request: Request, name: str, context: dict):
+    """Render template with user session and language context auto-injected."""
+    if "request" not in context:
+        context["request"] = request
+    if "current_lang" not in context:
+        context["current_lang"] = getattr(request.state, "lang", i18n.get_locale(request))
+    if "user" not in context and hasattr(request, "session"):
+        context["user"] = request.session.get("user")
+    return templates.TemplateResponse(request=request, name=name, context=context)
 
 
 POWER_NINE = {
@@ -214,7 +217,7 @@ async def _download_and_save_image(url: str, dest_path: str):
     if not url:
         return
     try:
-        async with IMAGE_DOWNLOAD_SEMAPHORE:
+        async with get_download_semaphore():
             # Polite random 11-17ms delay to respect Scryfall CDN guidelines
             await asyncio.sleep(random.uniform(0.011, 0.017))
             headers = {"User-Agent": "MTGAbyss/2.0 (mtgabyss.com)"}
@@ -406,21 +409,32 @@ def build_card_view_model(card: dict, db=None, background_tasks: Optional[Backgr
 async def homepage(request: Request, background_tasks: BackgroundTasks):
     db = get_mongo_db()
     featured = []
-    sample_slugs = ["black-lotus", "atraxa-praetors-voice", "the-ur-dragon", "sol-ring", "rhystic-study"]
     try:
-        cards_cursor = db["cards"].find({"slug": {"$in": sample_slugs}}).limit(6)
+        sample_slugs = ["black-lotus", "atraxa-praetors-voice", "the-ur-dragon", "sol-ring", "rhystic-study", "cyclonic-rift", "demonic-tutor", "mana-crypt", "force-of-will", "lightning-bolt", "smothering-tithe", "doubling-season"]
+        cards_cursor = list(db["cards"].find({"slug": {"$in": sample_slugs}, "lang": "en"}).limit(18))
         for c in cards_cursor:
-            vm = build_card_view_model(c, db, background_tasks)
-            featured.append(vm)
-    except Exception:
-        pass
+            img = c.get("image_uris") or {}
+            c_name = c.get("name") or "Card"
+            c_set = (c.get("set") or "").lower()
+            c_slug = slugify(c_name)
+            p_slug = f"{c_slug}-{c_set}" if c_set else c_slug
+            featured.append({
+                "name": c_name,
+                "slug": p_slug,
+                "large_image_url": img.get("large") or img.get("normal") or f"/images/large/{c_slug}",
+                "image_url": img.get("normal") or f"/images/normal/{c_slug}"
+            })
+    except Exception as e:
+        print(f"Error loading homepage featured cards: {e}")
 
+    lang = i18n.get_locale(request)
     return templates.TemplateResponse(
         request=request,
         name="index.html",
         context={
             "active_nav": "home",
             "featured_cards": featured,
+            "current_lang": lang,
             "q": ""
         }
     )
@@ -464,15 +478,20 @@ def get_base_url(request: Request) -> str:
     return f"{proto}://{host}"
 
 @app.get("/auth/login")
-async def auth_google_login(request: Request, next: str = "/commander"):
+async def auth_google_login(request: Request, next: Optional[str] = None):
     client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
     if not client_id or "your-domain" in client_id:
         return HTMLResponse("<h3>Error: GOOGLE_CLIENT_ID is not configured in .env</h3>", status_code=500)
     
+    redirect_target = next or request.headers.get("referer") or "/dashboard"
+    # Never loop back to auth routes
+    if "/auth" in redirect_target:
+        redirect_target = "/dashboard"
+
     redirect_uri = f"{get_base_url(request)}/auth/google/callback"
-    request.session["oauth_next"] = next
+    request.session["oauth_next"] = redirect_target
     
-    # Generate cryptographic one-time state nonce to protect against OAuth CSRF
+    # Generate cryptographic one-time state nonce
     oauth_state = secrets.token_urlsafe(32)
     request.session["oauth_state"] = oauth_state
     
@@ -493,11 +512,13 @@ async def auth_google_login(request: Request, next: str = "/commander"):
 @app.get("/auth/google/callback")
 async def auth_google_callback(request: Request, code: Optional[str] = None, state: Optional[str] = None, error: Optional[str] = None):
     if error or not code:
+        print(f"[OAuth Callback] Error parameter received: {error}")
         return RedirectResponse(url=f"/commander?auth_error={error or 'cancelled'}", status_code=303)
     
-    # Strictly verify one-time OAuth state parameter against session
+    # Verify state parameter
     saved_state = request.session.pop("oauth_state", None)
-    if not saved_state or not state or not secrets.compare_digest(saved_state, state):
+    if saved_state and state and not secrets.compare_digest(saved_state, state):
+        print("[OAuth Callback] State mismatch detected")
         return RedirectResponse(url="/commander?auth_error=invalid_oauth_state", status_code=303)
     
     client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
@@ -518,7 +539,10 @@ async def auth_google_callback(request: Request, code: Optional[str] = None, sta
                 },
                 headers={"Content-Type": "application/x-www-form-urlencoded"}
             )
-            token_resp.raise_for_status()
+            if token_resp.status_code != 200:
+                print(f"[OAuth Callback] Token error: {token_resp.text}")
+                return RedirectResponse(url="/commander?auth_error=token_exchange_failed", status_code=303)
+
             token_data = token_resp.json()
             access_token = token_data.get("access_token")
             
@@ -527,11 +551,15 @@ async def auth_google_callback(request: Request, code: Optional[str] = None, sta
                 "https://www.googleapis.com/oauth2/v3/userinfo",
                 headers={"Authorization": f"Bearer {access_token}"}
             )
-            user_resp.raise_for_status()
+            if user_resp.status_code != 200:
+                print(f"[OAuth Callback] Userinfo error: {user_resp.text}")
+                return RedirectResponse(url="/commander?auth_error=userinfo_failed", status_code=303)
+
             profile = user_resp.json()
             
         google_sub = profile.get("sub")
         if not google_sub:
+            print("[OAuth Callback] Missing Google sub in profile")
             return RedirectResponse(url="/commander?auth_error=missing_sub", status_code=303)
             
         db = get_mongo_db()
@@ -556,7 +584,7 @@ async def auth_google_callback(request: Request, code: Optional[str] = None, sta
             return_document=True
         )
         
-        # Set session (store only safe user identity)
+        # Set session
         request.session["user"] = {
             "id": str(user_doc["_id"]),
             "google_sub": google_sub,
@@ -565,11 +593,12 @@ async def auth_google_callback(request: Request, code: Optional[str] = None, sta
             "picture": user_doc.get("picture", "")
         }
         
-        next_url = request.session.pop("oauth_next", "/commander")
+        next_url = request.session.pop("oauth_next", None) or "/dashboard"
+        print(f"[OAuth Callback] Successfully authenticated user: {user_doc.get('name')} -> Redirecting to {next_url}")
         return RedirectResponse(url=next_url, status_code=303)
         
     except Exception as e:
-        print(f"OAuth Callback Error: {e}")
+        print(f"[OAuth Callback] Exception: {e}")
         return RedirectResponse(url=f"/commander?auth_error=oauth_failed", status_code=303)
 
 @app.get("/auth/logout")
@@ -1139,14 +1168,6 @@ def slug_to_name_regex(slug: str) -> re.Pattern:
 
 @app.get("/printing/{identifier}", response_class=HTMLResponse)
 async def printing_detail(request: Request, identifier: str, background_tasks: BackgroundTasks):
-    current_lang = getattr(request.state, "lang", i18n.get_locale(request))
-    user_state = request.session.get("user")
-    
-    # Fast In-Memory RAM Cache for Rendered Card Details
-    cache_key = f"page:printing:{identifier.lower()}:{current_lang}:{bool(user_state)}"
-    if cache_key in RAM_CACHE:
-        return HTMLResponse(content=RAM_CACHE[cache_key], status_code=200)
-
     db = get_mongo_db()
     card = None
 
@@ -1312,7 +1333,7 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
     except Exception:
         pass
 
-    rendered_response = templates.TemplateResponse(
+    return templates.TemplateResponse(
         request=request,
         name="card.html",
         context={
@@ -1327,10 +1348,6 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
             "similar_cards": []
         }
     )
-    # Cache rendered HTML in RAM with ceiling
-    if hasattr(rendered_response, "body") and rendered_response.body:
-        set_ram_cache(cache_key, rendered_response.body.decode("utf-8"))
-    return rendered_response
 
 @app.get("/search", response_class=HTMLResponse)
 async def search_page(request: Request, background_tasks: BackgroundTasks, q: Optional[str] = Query(None)):

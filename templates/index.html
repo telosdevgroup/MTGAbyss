@@ -42,19 +42,156 @@
   </form>
 </div>
 
-<!-- Dense, Tight, Large-Card Flowing Masonry Wall -->
-<div class="home-masonry-wrapper">
-  <div class="home-masonry-columns">
-    {% for card in featured_cards %}
-    <a href="/card/{{ card.slug }}" 
-       class="masonry-card-item {% if loop.index % 7 == 0 %}scale-hero{% elif loop.index % 4 == 0 %}scale-mid{% endif %}" 
-       title="{{ card.name }}">
-      <img src="{{ card.large_image_url or card.image_url }}" 
-           alt="{{ card.name }}" 
-           loading="lazy"
-           onerror="this.onerror=null; this.src='{{ card.image_url }}';">
-    </a>
-    {% endfor %}
+<!-- ======================================================= -->
+<!-- SECTION 1: LIVE ART GALLERY SHOWCASE                     -->
+<!-- ======================================================= -->
+<section style="max-width: 1100px; margin: 3.5rem auto 0; padding: 0 1.5rem;">
+  <div style="background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 2.5rem; display: flex; align-items: center; justify-content: space-between; gap: 3rem; flex-wrap: wrap; box-shadow: 0 12px 36px rgba(0,0,0,0.18);">
+    
+    <!-- Left: Copy & Bullet Points -->
+    <div style="flex: 1; min-width: 320px;">
+      <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(99, 102, 241, 0.12); color: #818cf8; font-size: 0.78rem; font-weight: 700; padding: 0.3rem 0.85rem; border-radius: var(--radius-pill); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.06em;">
+        {{ t('feat_gallery_badge', current_lang or 'en') }}
+      </div>
+      <h2 style="font-size: 1.85rem; font-weight: 800; color: var(--text); margin-bottom: 0.6rem; line-height: 1.25;">
+        {{ t('feat_gallery_title', current_lang or 'en') }}
+      </h2>
+      <p style="font-size: 1rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.5rem;">
+        {{ t('feat_gallery_desc', current_lang or 'en') }}
+      </p>
+
+      <ul style="list-style: none; padding: 0; margin: 0 0 1.85rem 0; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.9rem; color: var(--text);">
+        <li style="display: flex; align-items: flex-start; gap: 0.65rem;">
+          <span style="color: var(--accent); font-weight: 800;">✓</span>
+          <span>{{ t('feat_gallery_point1', current_lang or 'en') }}</span>
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 0.65rem;">
+          <span style="color: var(--accent); font-weight: 800;">✓</span>
+          <span>{{ t('feat_gallery_point2', current_lang or 'en') }}</span>
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 0.65rem;">
+          <span style="color: var(--accent); font-weight: 800;">✓</span>
+          <span>{{ t('feat_gallery_point3', current_lang or 'en') }}</span>
+        </li>
+      </ul>
+
+      <a href="/live-gallery" class="btn-hero-primary" style="display: inline-flex; text-decoration: none; padding: 0.75rem 1.6rem; font-size: 0.95rem;">
+        {{ t('feat_gallery_cta', current_lang or 'en') }}
+      </a>
+    </div>
+
+    <!-- Right: Visual Slideshow Preview Frame with Ambient Glow -->
+    <div style="flex: 1; min-width: 300px; display: flex; justify-content: center; position: relative;">
+      <div style="position: relative; width: 100%; max-width: 420px; aspect-ratio: 16/10; border-radius: 12px; overflow: hidden; background: #090d16; border: 1.5px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+        <!-- Ambient Blur -->
+        <div style="position: absolute; inset: -20px; background-image: url('https://cards.scryfall.io/art_crop/front/4/9/4982f15f-2191-4cff-96c6-e42ce6fbc54f.jpg'); background-size: cover; filter: blur(25px) brightness(0.6); opacity: 0.85;"></div>
+        <!-- Card Art -->
+        <img src="https://cards.scryfall.io/art_crop/front/4/9/4982f15f-2191-4cff-96c6-e42ce6fbc54f.jpg" alt="Live Gallery Art Preview" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 2; padding: 0.75rem;">
+        <div style="position: absolute; top: 0.75rem; right: 0.75rem; z-index: 10; background: rgba(15,23,42,0.85); backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.25rem 0.65rem; font-size: 0.72rem; font-weight: 700; color: #38bdf8;">
+          {{ t('feat_gallery_stream_badge', current_lang or 'en') }}
+        </div>
+      </div>
+    </div>
+
   </div>
-</div>
+</section>
+
+<!-- ======================================================= -->
+<!-- SECTION 2: INTELLIGENT DECK COMPLETER SHOWCASE           -->
+<!-- ======================================================= -->
+<section style="max-width: 1100px; margin: 3.5rem auto 0; padding: 0 1.5rem;">
+  <div style="background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 2.5rem; display: flex; align-items: center; justify-content: space-between; gap: 3rem; flex-wrap: wrap-reverse; box-shadow: 0 12px 36px rgba(0,0,0,0.18);">
+    
+    <!-- Left: Deck Builder UI Card Graphic Preview -->
+    <div style="flex: 1; min-width: 300px; display: flex; justify-content: center;">
+      <div style="width: 100%; max-width: 420px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 12px; padding: 1.25rem; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <!-- Mock Commander Header -->
+        <div style="display: flex; align-items: center; gap: 0.75rem; padding-bottom: 0.85rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem;">
+          <img src="https://cards.scryfall.io/art_crop/front/1/2/124c4959-4298-4d6e-83e9-7c35a620d660.jpg?1783929748" alt="Atraxa" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent);">
+          <div>
+            <div style="font-weight: 800; font-size: 0.95rem; color: var(--text);">Atraxa, Praetors' Voice</div>
+            <div style="font-size: 0.75rem; color: var(--muted);">☀️💧💀🌲 • 99 / 99 {{ t('feat_mock_drafted', current_lang or 'en') }}</div>
+          </div>
+        </div>
+        <!-- Mock Synergy Cards Grid -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem;">
+          <div style="border-radius: 6px; overflow: hidden; border: 1px solid var(--border);">
+            <img src="https://cards.scryfall.io/normal/front/0/d/0d5bf249-3773-404f-9e46-d7745d3826e8.jpg?1783908986" alt="Doubling Season" style="width: 100%; display: block;">
+          </div>
+          <div style="border-radius: 6px; overflow: hidden; border: 1px solid var(--border);">
+            <img src="https://cards.scryfall.io/normal/front/0/f/0f7c787f-2134-4cfd-901f-d5e45e62de1e.jpg?1783937090" alt="Deepglow Skate" style="width: 100%; display: block;">
+          </div>
+          <div style="border-radius: 6px; overflow: hidden; border: 1px solid var(--border);">
+            <img src="https://cards.scryfall.io/normal/front/1/d/1d58d08d-cd62-416d-8d8e-7d9c56d5c4da.jpg?1783904546" alt="Evolution Sage" style="width: 100%; display: block;">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Copy & Bullet Points -->
+    <div style="flex: 1; min-width: 320px;">
+      <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-size: 0.78rem; font-weight: 700; padding: 0.3rem 0.85rem; border-radius: var(--radius-pill); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.06em;">
+        {{ t('feat_commander_badge', current_lang or 'en') }}
+      </div>
+      <h2 style="font-size: 1.85rem; font-weight: 800; color: var(--text); margin-bottom: 0.6rem; line-height: 1.25;">
+        {{ t('feat_commander_title', current_lang or 'en') }}
+      </h2>
+      <p style="font-size: 1rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.5rem;">
+        {{ t('feat_commander_desc', current_lang or 'en') }}
+      </p>
+
+      <ul style="list-style: none; padding: 0; margin: 0 0 1.85rem 0; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.9rem; color: var(--text);">
+        <li style="display: flex; align-items: flex-start; gap: 0.65rem;">
+          <span style="color: var(--accent); font-weight: 800;">✓</span>
+          <span>{{ t('feat_commander_point1', current_lang or 'en') }}</span>
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 0.65rem;">
+          <span style="color: var(--accent); font-weight: 800;">✓</span>
+          <span>{{ t('feat_commander_point2', current_lang or 'en') }}</span>
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 0.65rem;">
+          <span style="color: var(--accent); font-weight: 800;">✓</span>
+          <span>{{ t('feat_commander_point3', current_lang or 'en') }}</span>
+        </li>
+      </ul>
+
+      <a href="/commander" class="btn-hero-primary" style="display: inline-flex; text-decoration: none; padding: 0.75rem 1.6rem; font-size: 0.95rem;">
+        {{ t('feat_commander_cta', current_lang or 'en') }}
+      </a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ======================================================= -->
+<!-- SECTION 3: CENTERED FUNNEL PARTNERSHIP CARD              -->
+<!-- ======================================================= -->
+<section style="max-width: 640px; margin: 4rem auto 1.5rem; padding: 0 1.5rem;">
+  <div style="background: linear-gradient(180deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 2rem 2.25rem; text-align: center; box-shadow: 0 16px 40px rgba(0,0,0,0.25); position: relative;">
+    
+    <!-- Top Funnel Badge -->
+    <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.25); color: #38bdf8; font-size: 0.75rem; font-weight: 700; padding: 0.28rem 0.85rem; border-radius: var(--radius-pill); margin-bottom: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">
+      🤝 Creators & Commercial
+    </div>
+
+    <!-- Heading -->
+    <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--text); margin-bottom: 0.45rem; line-height: 1.25;">
+      {{ t('partner_title', current_lang or 'en') }}
+    </h3>
+
+    <!-- Subtitle -->
+    <p style="font-size: 0.9rem; color: var(--muted); line-height: 1.55; margin: 0 auto 1.5rem; max-width: 480px;">
+      {{ t('partner_subtitle', current_lang or 'en') }}
+    </p>
+
+    <!-- Prominent Centered Action Button -->
+    <a href="mailto:telosdevgroup@gmail.com?subject=AvaScry%20Partnership%20Inquiry" 
+       target="_blank"
+       rel="noopener noreferrer"
+       class="btn-hero-primary"
+       style="display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-decoration: none; padding: 0.85rem 2.2rem; font-size: 1rem; font-weight: 800; border-radius: var(--radius-pill); box-shadow: 0 4px 20px rgba(2, 132, 199, 0.45); width: 100%; max-width: 280px;">
+      {{ t('partner_cta_btn', current_lang or 'en') }}
+    </a>
+  </div>
+</section>
 {% endblock %}

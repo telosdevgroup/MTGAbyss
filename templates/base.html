@@ -58,10 +58,9 @@
     <div class="nav-container">
       <a class="site-logo" href="/">AvaScry</a>
       <nav style="display: flex; align-items: center; gap: 0.75rem;">
-        <a href="/" class="{% if active_nav == 'home' %}active{% endif %}">{{ t('nav_search', current_lang or 'en') }}</a>
         <a href="/live-gallery" class="{% if active_nav == 'live-gallery' %}active{% endif %}">{{ t('nav_live_gallery', current_lang or 'en') }}</a>
+        <a href="/commander" class="{% if active_nav == 'commander' %}active{% endif %}" title="SmartDeck — Intelligent Deck Completer">{{ t('nav_deck_builder', current_lang or 'en') }}</a>
         <a href="/random" title="Jump to a random card">{{ t('nav_random', current_lang or 'en') }}</a>
-        <a href="/commander" class="{% if active_nav == 'commander' %}active{% endif %}" title="Find your Commander">⚔️ Commander</a>
         
         <!-- User Auth Nav -->
         {% if user %}
@@ -108,7 +107,9 @@
 
 
   <footer class="site-footer" style="padding: 2.5rem 1rem 3rem; text-align: center; border-top: 1px solid var(--border); margin-top: 4rem;">
-    <div style="margin-bottom: 0.75rem; display: flex; justify-content: center; gap: 1.5rem; font-size: 0.85rem; font-weight: 500;">
+    <div style="margin-bottom: 0.75rem; display: flex; justify-content: center; gap: 1.5rem; font-size: 0.85rem; font-weight: 500; flex-wrap: wrap;">
+      <a href="mailto:telosdevgroup@gmail.com?subject=AvaScry%20Partnership%20Inquiry" target="_blank" rel="noopener noreferrer" style="color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">{{ t('footer_contact', current_lang or 'en') }}</a>
+      <span style="color: var(--border);">&bull;</span>
       <a href="/privacy" style="color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">{{ t('footer_privacy', current_lang or 'en') }}</a>
       <span style="color: var(--border);">&bull;</span>
       <a href="/terms" style="color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">{{ t('footer_terms', current_lang or 'en') }}</a>

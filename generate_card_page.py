@@ -838,11 +838,16 @@ def main():
         import numpy as np
         matrix_rows = []
         oracle_ids = []
+        target_dim = None
         for doc in embeddings_list:
             oracle_id = doc.get("oracle_id")
             vec = doc.get("embedding")
             if oracle_id and vec and isinstance(vec, list):
                 arr = np.array(vec, dtype=np.float32)
+                if target_dim is None:
+                    target_dim = len(arr)
+                if len(arr) != target_dim:
+                    continue
                 norm = np.linalg.norm(arr)
                 if norm > 0:
                     arr /= norm
