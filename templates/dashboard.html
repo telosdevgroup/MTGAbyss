@@ -35,6 +35,9 @@
     <button class="dash-tab active" data-tab="tab-decks" style="padding: 0.65rem 1rem; background: transparent; border: none; font-size: 1rem; font-weight: 800; color: var(--accent); cursor: pointer; border-bottom: 3px solid var(--accent); margin-bottom: -2px;">
       📚 {{ t('cmd_my_decks', current_lang or 'en') }} ({{ deck_count }})
     </button>
+    <button class="dash-tab" data-tab="tab-saved-cards" style="padding: 0.65rem 1rem; background: transparent; border: none; font-size: 1rem; font-weight: 700; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;">
+      🔖 Saved Cards ({{ saved_card_count or 0 }})
+    </button>
     <button class="dash-tab" data-tab="tab-settings" style="padding: 0.65rem 1rem; background: transparent; border: none; font-size: 1rem; font-weight: 700; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;">
       {{ t('dash_settings_tab', current_lang or 'en') }}
     </button>
@@ -87,6 +90,9 @@
                 <a href="/commander?deck={{ d.deck_id }}" style="flex: 1; padding: 0.5rem; background: var(--accent); color: #fff; text-align: center; border-radius: var(--radius-pill); font-size: 0.82rem; font-weight: 700; text-decoration: none;">
                   {{ t('dash_resume_draft', current_lang or 'en') }}
                 </a>
+                <button class="btn-share-deck-dash" data-id="{{ d.deck_id }}" title="Copy Share Link" style="padding: 0.5rem 0.65rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-pill); color: var(--text); font-size: 0.8rem; cursor: pointer;">
+                  🔗
+                </button>
                 <button class="btn-clone-deck" data-id="{{ d.deck_id }}" title="Clone Deck" style="padding: 0.5rem 0.65rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-pill); color: var(--text); font-size: 0.8rem; cursor: pointer;">
                   📋
                 </button>
@@ -111,6 +117,194 @@
     {% endif %}
   </div>
 
+  <!-- ================= TAB: SAVED CARDS (STASH) ================= -->
+  <div id="tab-saved-cards" class="dash-content" style="display: none;">
+    {% if saved_cards and saved_cards|length > 0 %}
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="font-size: 0.9rem; color: var(--muted);">
+          Stash of <strong style="color: var(--text);">{{ saved_card_count }}</strong> cards ready for brewing or trading
+        </div>
+        <button id="btn-open-wtb-modal" style="padding: 0.5rem 1.1rem; background: var(--surface); border: 1.5px solid var(--accent); color: var(--accent); border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: var(--shadow-sm);">
+          <span>🏷️</span> Generate Discord WTB Ad
+        </button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.25rem;">
+        {% for sc in saved_cards %}
+          <div class="saved-card-item" id="saved-card-{{ sc._id }}" style="background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+            
+            <!-- Card Image -->
+            <div style="aspect-ratio: 488 / 680; width: 100%; position: relative; background: var(--bg); overflow: hidden;">
+              <a href="/printing/{{ sc.slug or sc.card_id }}" style="display: block; width: 100%; height: 100%;">
+                <img src="{{ sc.image_url or '/static/card-back.jpg' }}" alt="{{ sc.name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s ease;">
+              </a>
+            </div>
+
+            <!-- Details & Actions -->
+            <div style="padding: 0.85rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 0.6rem;">
+              <div>
+                <a href="/printing/{{ sc.slug or sc.card_id }}" style="font-size: 0.95rem; font-weight: 800; color: var(--text); text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ sc.name }}">
+                  {{ sc.name }}
+                </a>
+                <div style="font-size: 0.78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  {{ sc.set_name or 'Card' }}
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 0.4rem; align-items: center;">
+                <button class="btn-push-to-deck" 
+                        data-oracle-id="{{ sc.oracle_id }}"
+                        data-name="{{ sc.name }}"
+                        data-slug="{{ sc.slug }}"
+                        data-image="{{ sc.image_url }}"
+                        style="flex: 1; padding: 0.4rem 0.6rem; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-pill); font-size: 0.78rem; font-weight: 700; cursor: pointer; text-align: center;">
+                  ➕ Add to Deck
+                </button>
+                <button class="btn-remove-saved" 
+                        data-oracle-id="{{ sc.oracle_id }}"
+                        data-card-id="{{ sc.card_id }}"
+                        data-name="{{ sc.name }}"
+                        data-dom-id="saved-card-{{ sc._id }}"
+                        title="Remove from Saved"
+                        style="padding: 0.4rem 0.6rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-pill); color: var(--muted); font-size: 0.8rem; cursor: pointer;">
+                  🗑️
+                </button>
+              </div>
+            </div>
+
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 4rem 1rem; background: var(--surface); border: 1.5px dashed var(--border); border-radius: var(--radius-lg);">
+        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">🔖</div>
+        <h3 style="margin: 0 0 0.5rem; font-weight: 800;">No Saved Cards Yet</h3>
+        <p style="color: var(--muted); font-size: 0.9rem; max-width: 400px; margin: 0 auto 1.5rem;">
+          Click <strong>"Save for Deckbuilding"</strong> while browsing cards to stash them here for later!
+        </p>
+        <a href="/commander" style="padding: 0.65rem 1.6rem; background: var(--accent); color: #fff; border-radius: var(--radius-pill); font-weight: 700; text-decoration: none; font-size: 0.95rem;">
+          Explore Commanders & Cards
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Modal: Pick Deck Popover -->
+  <div id="deck-picker-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div style="background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); width: 90%; max-width: 420px; padding: 1.5rem; box-shadow: 0 20px 50px rgba(0,0,0,0.4); position: relative;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800;">Add to Deck</h3>
+        <button id="btn-close-deck-modal" style="background: transparent; border: none; font-size: 1.25rem; color: var(--muted); cursor: pointer;">✕</button>
+      </div>
+      
+      <p id="deck-modal-card-name" style="font-size: 0.9rem; color: var(--muted); margin-bottom: 1.25rem;">
+        Choose a deck for <strong style="color: var(--text);" id="modal-target-card-title">Card</strong>:
+      </p>
+
+      {% if decks and decks|length > 0 %}
+        <div style="margin-bottom: 1.25rem;">
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--muted); margin-bottom: 0.4rem;">Select Deck</label>
+          <select id="deck-modal-select" style="width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.95rem; outline: none; box-sizing: border-box;">
+            {% for d in decks %}
+              <option value="{{ d.deck_id }}">{{ d.name }} ({{ d.card_count or 0 }} cards)</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div id="deck-modal-status" style="display: none; font-size: 0.85rem; font-weight: 700; color: #22c55e; margin-bottom: 1rem;"></div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button id="btn-cancel-deck-modal" style="padding: 0.55rem 1.1rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 700; color: var(--muted); cursor: pointer;">
+            Cancel
+          </button>
+          <button id="btn-confirm-add-deck" style="padding: 0.55rem 1.3rem; background: var(--accent); border: none; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 700; color: #fff; cursor: pointer;">
+            Add to Deck
+          </button>
+        </div>
+      {% else %}
+        <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem;">You don't have any active decks yet.</p>
+        <a href="/commander" style="display: block; text-align: center; padding: 0.6rem; background: var(--accent); color: #fff; border-radius: var(--radius-pill); font-weight: 700; text-decoration: none;">
+          Create a Deck
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Modal: Discord WTB Trade Ad Generator -->
+  <div id="wtb-ad-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+    <div style="background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); width: 90%; max-width: 540px; padding: 1.5rem; box-shadow: 0 24px 60px rgba(0,0,0,0.5); position: relative;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3 style="margin: 0; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;">
+          <span>🏷️</span> Discord Trade / WTB Ad Generator
+        </h3>
+        <button id="btn-close-wtb-modal" style="background: transparent; border: none; font-size: 1.35rem; color: var(--muted); cursor: pointer; padding: 0.2rem 0.5rem;">✕</button>
+      </div>
+
+      <!-- Source Selector -->
+      <div style="margin-bottom: 1rem;">
+        <label style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.5px;">Choose Card Source</label>
+        <select id="wtb-source-select" style="width: 100%; padding: 0.6rem 0.8rem; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.9rem; outline: none; box-sizing: border-box;">
+          <option value="saved">🔖 Saved Cards Stash ({{ saved_card_count or 0 }} cards)</option>
+          {% for d in decks %}
+            <option value="deck-{{ d.deck_id }}">⚔️ Deck: {{ d.name }} ({{ d.card_count or 0 }} cards)</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Card Selection Checkbox List -->
+      <div style="margin-bottom: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+          <label style="font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;">
+            Select Cards to Buy/Trade (<span id="wtb-selected-count" style="color: var(--text); font-weight: 800;">0</span>)
+          </label>
+          <div style="display: flex; gap: 0.4rem; font-size: 0.78rem;">
+            <button id="btn-wtb-select-all" style="background: transparent; border: none; font-weight: 700; color: var(--accent); cursor: pointer; padding: 0;">Select All</button>
+            <span style="color: var(--muted);">·</span>
+            <button id="btn-wtb-select-none" style="background: transparent; border: none; font-weight: 700; color: var(--muted); cursor: pointer; padding: 0;">Clear</button>
+          </div>
+        </div>
+        <div id="wtb-card-checklist" style="max-height: 150px; overflow-y: auto; background: var(--bg); border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 0.5rem 0.65rem; display: flex; flex-direction: column; gap: 0.35rem;">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Trade Rate Presets -->
+      <div style="margin-bottom: 1.25rem;">
+        <label style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">Offer Rate Preset</label>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;" id="wtb-rate-buttons">
+          <button class="wtb-rate-btn active" data-rate="80% TCGPlayer Market Value" style="padding: 0.5rem 0.6rem; border-radius: var(--radius-md); border: 1.5px solid var(--accent); background: var(--accent); color: #fff; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+            80% TCG Market
+          </button>
+          <button class="wtb-rate-btn" data-rate="75% Cash / PayPal" style="padding: 0.5rem 0.6rem; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+            75% Cash
+          </button>
+          <button class="wtb-rate-btn" data-rate="100% Trade Value" style="padding: 0.5rem 0.6rem; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+            100% Trade
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Markdown Preview -->
+      <div style="margin-bottom: 1.25rem;">
+        <label style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.5px;">Discord Post Preview</label>
+        <textarea id="wtb-preview-textarea" rows="6" style="width: 100%; padding: 0.75rem; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-family: monospace; font-size: 0.85rem; line-height: 1.45; resize: vertical; box-sizing: border-box; outline: none;"></textarea>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 0.75rem; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1.25rem; flex-wrap: wrap;">
+        <a id="btn-open-tcgplayer" href="https://www.tcgplayer.com" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 700; color: var(--accent); text-decoration: none;">
+          <span>↗️</span> Open TCGPlayer Search
+        </a>
+        <div style="display: flex; gap: 0.6rem;">
+          <button id="btn-copy-wtb-ad" style="padding: 0.6rem 1.3rem; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-pill); font-size: 0.88rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 4px 14px rgba(0,0,0,0.25);">
+            <span>📋</span> Copy for Discord
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ================= TAB 2: SETTINGS ================= -->
   <div id="tab-settings" class="dash-content" style="display: none;">
     <div style="max-width: 600px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem;">
@@ -130,6 +324,53 @@
           <option value="Pauper" {% if profile.favorite_format == 'Pauper' %}selected{% endif %}>Pauper</option>
           <option value="Legacy / Vintage" {% if profile.favorite_format == 'Legacy / Vintage' %}selected{% endif %}>Legacy / Vintage</option>
         </select>
+      </div>
+
+      <!-- Connected Accounts -->
+      <div style="margin-bottom: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+        <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--muted); margin-bottom: 0.75rem;">Connected Accounts</label>
+        
+        <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+          <!-- Discord -->
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md);">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <svg width="20" height="16" viewBox="0 0 127.14 96.36" fill="#5865F2"><path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,45.91,53.92,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,45.91,96.15,53,91.08,65.69,84.69,65.69Z"/></svg>
+              <div style="text-align: left;">
+                <div style="font-size: 0.85rem; font-weight: 700;">Discord</div>
+                {% if profile.discord_username or user.discord_username %}
+                  <div style="font-size: 0.75rem; color: #22c55e; font-weight: 600;">✓ Connected as @{{ profile.discord_username or user.discord_username }}</div>
+                {% else %}
+                  <div style="font-size: 0.75rem; color: var(--muted);">Not connected</div>
+                {% endif %}
+              </div>
+            </div>
+            {% if not (profile.discord_username or user.discord_username) %}
+              <a href="/auth/discord/login?next=/dashboard" style="padding: 0.35rem 0.85rem; background: #5865F2; color: #fff; border-radius: var(--radius-pill); font-size: 0.78rem; font-weight: 700; text-decoration: none;">
+                Link Discord
+              </a>
+            {% endif %}
+          </div>
+
+          <!-- Google -->
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md);">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+              <div style="text-align: left;">
+                <div style="font-size: 0.85rem; font-weight: 700;">Google</div>
+                {% if profile.google_sub or user.google_sub %}
+                  <div style="font-size: 0.75rem; color: #22c55e; font-weight: 600;">✓ Connected</div>
+                {% else %}
+                  <div style="font-size: 0.75rem; color: var(--muted);">Not connected</div>
+                {% endif %}
+              </div>
+            </div>
+            {% if not (profile.google_sub or user.google_sub) %}
+              <a href="/auth/google/login?next=/dashboard" style="padding: 0.35rem 0.85rem; background: var(--surface); border: 1.5px solid var(--border); color: var(--text); border-radius: var(--radius-pill); font-size: 0.78rem; font-weight: 700; text-decoration: none;">
+                Link Google
+              </a>
+            {% endif %}
+          </div>
+        </div>
       </div>
 
       <div style="display: flex; align-items: center; justify-content: space-between; pt-2; border-top: 1px solid var(--border); padding-top: 1.25rem;">
@@ -186,6 +427,21 @@ document.querySelectorAll('.btn-clone-deck').forEach(btn => {
   });
 });
 
+// Share Deck Link
+document.querySelectorAll('.btn-share-deck-dash').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const deckId = btn.dataset.id;
+    const url = `${window.location.origin}/deck/${deckId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = '✓';
+      setTimeout(() => { btn.textContent = orig; }, 1500);
+    }).catch(() => {
+      prompt('Share Deck URL:', url);
+    });
+  });
+});
+
 // Delete Deck
 document.querySelectorAll('.btn-delete-deck').forEach(btn => {
   btn.addEventListener('click', async () => {
@@ -221,6 +477,294 @@ document.getElementById('btn-save-settings').addEventListener('click', async () 
       setTimeout(() => { btn.textContent = 'Save Changes'; }, 1500);
     }
   } catch(e) { console.error(e); }
+});
+
+// ==========================================
+// SAVED CARDS: ADD TO DECK & REMOVE
+// ==========================================
+let activeCardForDeck = null;
+const deckPickerModal = document.getElementById('deck-picker-modal');
+const modalTargetTitle = document.getElementById('modal-target-card-title');
+const modalStatus = document.getElementById('deck-modal-status');
+const btnConfirmAddDeck = document.getElementById('btn-confirm-add-deck');
+
+function closeDeckPickerModal() {
+  if (deckPickerModal) {
+    deckPickerModal.style.display = 'none';
+    if (modalStatus) modalStatus.style.display = 'none';
+    activeCardForDeck = null;
+  }
+}
+
+document.getElementById('btn-close-deck-modal')?.addEventListener('click', closeDeckPickerModal);
+document.getElementById('btn-cancel-deck-modal')?.addEventListener('click', closeDeckPickerModal);
+
+document.querySelectorAll('.btn-push-to-deck').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeCardForDeck = {
+      oracle_id: btn.dataset.oracleId,
+      name: btn.dataset.name,
+      slug: btn.dataset.slug,
+      image_url: btn.dataset.image,
+      count: 1
+    };
+    if (modalTargetTitle) modalTargetTitle.textContent = btn.dataset.name;
+    if (deckPickerModal) deckPickerModal.style.display = 'flex';
+  });
+});
+
+btnConfirmAddDeck?.addEventListener('click', async () => {
+  if (!activeCardForDeck) return;
+  const select = document.getElementById('deck-modal-select');
+  if (!select) return;
+  const deckId = select.value;
+
+  btnConfirmAddDeck.disabled = true;
+  btnConfirmAddDeck.textContent = 'Adding...';
+
+  try {
+    const res = await fetch('/api/saved-cards/push-to-deck', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        deck_id: deckId,
+        card: activeCardForDeck
+      })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (modalStatus) {
+        modalStatus.textContent = `✓ Added to "${data.deck_name}"!`;
+        modalStatus.style.display = 'block';
+      }
+      setTimeout(() => {
+        closeDeckPickerModal();
+        btnConfirmAddDeck.disabled = false;
+        btnConfirmAddDeck.textContent = 'Add to Deck';
+      }, 1200);
+    } else {
+      alert('Failed to add card to deck');
+      btnConfirmAddDeck.disabled = false;
+      btnConfirmAddDeck.textContent = 'Add to Deck';
+    }
+  } catch(e) {
+    console.error(e);
+    btnConfirmAddDeck.disabled = false;
+    btnConfirmAddDeck.textContent = 'Add to Deck';
+  }
+});
+
+// Remove from Saved Cards
+document.querySelectorAll('.btn-remove-saved').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const oracleId = btn.dataset.oracleId;
+    const cardId = btn.dataset.cardId;
+    const name = btn.dataset.name;
+    const domId = btn.dataset.domId;
+
+    try {
+      const res = await fetch('/api/saved-cards/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          oracle_id: oracleId,
+          card_id: cardId,
+          name: name
+        })
+      });
+
+      if (res.ok) {
+        const item = document.getElementById(domId);
+        if (item) item.remove();
+      }
+    } catch(e) {
+      console.error('Failed to remove saved card:', e);
+    }
+  });
+});
+
+// ==========================================
+// DISCORD WTB TRADE AD GENERATOR
+// ==========================================
+const savedCardsForAd = [
+  {% for sc in saved_cards %}
+    { name: {{ sc.name | tojson }}, set: {{ (sc.set_name or '') | tojson }} },
+  {% endfor %}
+];
+
+const userDecksData = {
+  {% for d in decks %}
+    "deck-{{ d.deck_id }}": {
+      name: {{ d.name | tojson }},
+      cards: [
+        {% for c in d.cards %}
+          { name: {{ c.name | tojson }}, set: "" },
+        {% endfor %}
+      ]
+    },
+  {% endfor %}
+};
+
+const wtbModal = document.getElementById('wtb-ad-modal');
+const wtbTextarea = document.getElementById('wtb-preview-textarea');
+let currentRate = '80% TCGPlayer Market Value';
+let currentAvailableCards = [...savedCardsForAd];
+let selectedIndices = new Set(currentAvailableCards.map((_, i) => i));
+
+function renderChecklist() {
+  const container = document.getElementById('wtb-card-checklist');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (currentAvailableCards.length === 0) {
+    container.innerHTML = '<span style="color: var(--muted); font-size: 0.8rem;">No cards found in this selection.</span>';
+    updateWtbPreview();
+    return;
+  }
+
+  currentAvailableCards.forEach((c, idx) => {
+    const label = document.createElement('label');
+    label.style.display = 'flex';
+    label.style.alignItems = 'center';
+    label.style.gap = '0.5rem';
+    label.style.fontSize = '0.84rem';
+    label.style.cursor = 'pointer';
+    label.style.padding = '2px 0';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = selectedIndices.has(idx);
+    cb.dataset.idx = idx;
+    cb.style.accentColor = 'var(--accent)';
+    cb.style.cursor = 'pointer';
+
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        selectedIndices.add(idx);
+      } else {
+        selectedIndices.delete(idx);
+      }
+      updateWtbPreview();
+    });
+
+    const span = document.createElement('span');
+    span.textContent = c.set ? `${c.name} [${c.set}]` : c.name;
+    span.style.color = 'var(--text)';
+
+    label.appendChild(cb);
+    label.appendChild(span);
+    container.appendChild(label);
+  });
+
+  updateWtbPreview();
+}
+
+function updateWtbPreview() {
+  const countEl = document.getElementById('wtb-selected-count');
+  if (countEl) countEl.textContent = selectedIndices.size;
+
+  let lines = [];
+  lines.push(`📦 **[WTB / Want List] (Paying ${currentRate})**`);
+  
+  const pickedCards = [];
+  selectedIndices.forEach(idx => {
+    if (currentAvailableCards[idx]) {
+      pickedCards.push(currentAvailableCards[idx]);
+    }
+  });
+
+  if (pickedCards.length === 0) {
+    lines.push('*(No cards selected)*');
+  } else {
+    pickedCards.forEach(c => {
+      const setTag = c.set ? ` [${c.set}]` : '';
+      lines.push(`• 1x *${c.name}*${setTag}`);
+    });
+  }
+
+  lines.push('');
+  lines.push('💬 DM with printings & conditions. Cash / PayPal ready!');
+  if (pickedCards.length > 0) {
+    lines.push(`🛒 Compare on TCGPlayer: https://www.tcgplayer.com/search/all/product?q=${encodeURIComponent(pickedCards[0].name)}`);
+  } else {
+    lines.push('🛒 Compare on TCGPlayer: https://www.tcgplayer.com');
+  }
+
+  if (wtbTextarea) {
+    wtbTextarea.value = lines.join('\n');
+  }
+
+  const link = document.getElementById('btn-open-tcgplayer');
+  if (link && pickedCards.length > 0) {
+    link.href = `https://www.tcgplayer.com/search/all/product?q=${encodeURIComponent(pickedCards[0].name)}`;
+  }
+}
+
+document.getElementById('wtb-source-select')?.addEventListener('change', (e) => {
+  const val = e.target.value;
+  if (val === 'saved') {
+    currentAvailableCards = [...savedCardsForAd];
+  } else if (userDecksData[val]) {
+    currentAvailableCards = [...userDecksData[val].cards];
+  }
+  selectedIndices = new Set(currentAvailableCards.map((_, i) => i));
+  renderChecklist();
+});
+
+document.getElementById('btn-wtb-select-all')?.addEventListener('click', () => {
+  selectedIndices = new Set(currentAvailableCards.map((_, i) => i));
+  document.querySelectorAll('#wtb-card-checklist input[type="checkbox"]').forEach(cb => cb.checked = true);
+  updateWtbPreview();
+});
+
+document.getElementById('btn-wtb-select-none')?.addEventListener('click', () => {
+  selectedIndices.clear();
+  document.querySelectorAll('#wtb-card-checklist input[type="checkbox"]').forEach(cb => cb.checked = false);
+  updateWtbPreview();
+});
+
+document.getElementById('btn-open-wtb-modal')?.addEventListener('click', () => {
+  renderChecklist();
+  if (wtbModal) wtbModal.style.display = 'flex';
+});
+
+function closeWtbModal() {
+  if (wtbModal) wtbModal.style.display = 'none';
+}
+
+document.getElementById('btn-close-wtb-modal')?.addEventListener('click', closeWtbModal);
+wtbModal?.addEventListener('click', (e) => {
+  if (e.target === wtbModal) closeWtbModal();
+});
+
+document.querySelectorAll('.wtb-rate-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.wtb-rate-btn').forEach(b => {
+      b.classList.remove('active');
+      b.style.background = 'var(--bg)';
+      b.style.borderColor = 'var(--border)';
+      b.style.color = 'var(--text)';
+    });
+    btn.classList.add('active');
+    btn.style.background = 'var(--accent)';
+    btn.style.borderColor = 'var(--accent)';
+    btn.style.color = '#fff';
+    currentRate = btn.dataset.rate;
+    updateWtbPreview();
+  });
+});
+
+document.getElementById('btn-copy-wtb-ad')?.addEventListener('click', () => {
+  if (!wtbTextarea) return;
+  navigator.clipboard.writeText(wtbTextarea.value).then(() => {
+    const btn = document.getElementById('btn-copy-wtb-ad');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span>✓</span> Copied for Discord!';
+    setTimeout(() => { btn.innerHTML = orig; }, 1600);
+  }).catch(() => {
+    prompt('Copy Discord WTB Ad:', wtbTextarea.value);
+  });
 });
 </script>
 {% endblock %}

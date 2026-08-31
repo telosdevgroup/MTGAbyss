@@ -3,7 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-F5S5SN2GEY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-F5S5SN2GEY');
+  </script>
+
   <title>{% block title %}AvaScry — Magic: The Gathering Strategy & Visual Intelligence{% endblock %}</title>
+
+  {% if noindex %}
+  <meta name="robots" content="noindex, follow">
+  {% endif %}
+  {% block meta %}{% endblock %}
+
+  <!-- Google AdSense -->
+  <meta name="google-adsense-account" content="ca-pub-7283717447639840">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7283717447639840" crossorigin="anonymous"></script>
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
@@ -32,15 +52,6 @@
   <!-- HTMX -->
   <script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoMVMfPmr0nUETZKkVGiWAfDUb58hdT/5e" crossorigin="anonymous"></script>
 
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-837M1ZGHPE"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-837M1ZGHPE');
-  </script>
-
   <!-- Microsoft Clarity -->
   <script type="text/javascript">
     (function(c,l,a,r,i,t,y){
@@ -50,6 +61,25 @@
     })(window, document, "clarity", "script", "xj4uzg0vsb");
   </script>
 
+  <!-- Google Sitelinks Searchbox & WebSite Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "AvaScry",
+    "url": "https://avascry.com/",
+    "description": "Magic: The Gathering Visual Intelligence, Card Search, and SmartDeck Builder",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://avascry.com/search?q={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+
   {% block head_extra %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -57,11 +87,13 @@
   <header class="site-header">
     <div class="nav-container">
       <a class="site-logo" href="/">AvaScry</a>
-      <nav style="display: flex; align-items: center; gap: 0.75rem;">
-        <a href="/live-gallery" class="{% if active_nav == 'live-gallery' %}active{% endif %}">{{ t('nav_live_gallery', current_lang or 'en') }}</a>
-        <a href="/commander" class="{% if active_nav == 'commander' %}active{% endif %}" title="SmartDeck — Intelligent Deck Completer">{{ t('nav_deck_builder', current_lang or 'en') }}</a>
-        <a href="/random" title="Jump to a random card">{{ t('nav_random', current_lang or 'en') }}</a>
+      <nav itemscope itemtype="https://schema.org/SiteNavigationElement" style="display: flex; align-items: center; gap: 1.15rem;">
+        <a itemprop="url" href="/live-gallery" class="{% if active_nav == 'live-gallery' %}active{% endif %}"><span itemprop="name">{{ t('nav_live_gallery', current_lang or 'en') }}</span></a>
+        <a itemprop="url" href="/commander" class="{% if active_nav == 'commander' %}active{% endif %}" title="SmartDeck — Intelligent Deck Completer"><span itemprop="name">{{ t('nav_deck_builder', current_lang or 'en') }}</span></a>
+        <a itemprop="url" href="/random" title="Jump to a random card"><span itemprop="name">{{ t('nav_random', current_lang or 'en') }}</span></a>
         
+        <span style="display: inline-block; width: 1px; height: 16px; background: var(--border); margin: 0 0.15rem;"></span>
+
         <!-- User Auth Nav -->
         {% if user %}
           <div style="display: inline-flex; align-items: center; gap: 0.35rem;">
@@ -71,14 +103,16 @@
               {% else %}
                 <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; font-weight: 700;">{{ user.name[0] }}</div>
               {% endif %}
-              <span style="font-size: 0.8rem; font-weight: 700; max-width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ user.name }}</span>
+              <span style="font-size: 0.8rem; font-weight: 700; max-width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {% if user.discord_username %}@{{ user.discord_username }}{% else %}{{ user.name }}{% endif %}
+              </span>
             </a>
             <a href="/auth/logout" title="Sign out" style="color: var(--muted); font-size: 0.75rem; text-decoration: none; padding: 0.2rem 0.4rem; border-radius: 50%;">✕</a>
           </div>
         {% else %}
           <a href="/auth/login" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.85rem; border-radius: var(--radius-pill); background: var(--surface); border: 1.5px solid var(--border); color: var(--text); font-size: 0.82rem; font-weight: 700; text-decoration: none;">
-            <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-            Sign in
+            <span>🧙‍♂️</span>
+            {{ t('nav_sign_in', current_lang or 'en') }}
           </a>
         {% endif %}
         
@@ -106,18 +140,76 @@
   </div>
 
 
-  <footer class="site-footer" style="padding: 2.5rem 1rem 3rem; text-align: center; border-top: 1px solid var(--border); margin-top: 4rem;">
-    <div style="margin-bottom: 0.75rem; display: flex; justify-content: center; gap: 1.5rem; font-size: 0.85rem; font-weight: 500; flex-wrap: wrap;">
-      <a href="mailto:telosdevgroup@gmail.com?subject=AvaScry%20Partnership%20Inquiry" target="_blank" rel="noopener noreferrer" style="color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">{{ t('footer_contact', current_lang or 'en') }}</a>
-      <span style="color: var(--border);">&bull;</span>
-      <a href="/privacy" style="color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">{{ t('footer_privacy', current_lang or 'en') }}</a>
-      <span style="color: var(--border);">&bull;</span>
-      <a href="/terms" style="color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">{{ t('footer_terms', current_lang or 'en') }}</a>
+  <footer class="site-footer" style="margin-top: 5rem; border-top: 1px solid var(--border); background: var(--surface);">
+
+    <!-- Main Footer Columns -->
+    <div style="max-width: 1200px; margin: 0 auto; padding: 3rem 1.5rem 2rem; display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap;">
+
+      <!-- Brand Column -->
+      <div style="flex: 1; min-width: 160px;">
+        <a href="/" style="font-size: 1.35rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; text-decoration: none; display: inline-block; margin-bottom: 0.5rem;">AvaScry</a>
+        <p style="font-size: 0.82rem; color: var(--muted); line-height: 1.6; margin: 0 0 1rem 0;">
+          Explore deeper. Build smarter. Play your way.
+        </p>
+        <div style="font-size: 0.78rem; color: var(--muted);">
+          Created by <a href="mailto:telosdevgroup@gmail.com?subject=AvaScry.com%20Inquiry" style="color: var(--text); font-weight: 600; text-decoration: none;" onmouseover="this.style.textDecoration='underline';" onmouseout="this.style.textDecoration='none';">Telos Development Group LLC</a>
+        </div>
+      </div>
+
+      <!-- Explore Column -->
+      <div style="flex: 1; min-width: 120px;">
+        <div style="font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.9rem;">Explore</div>
+        <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem;">
+          <li><a href="/live-gallery" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Live Gallery</a></li>
+          <li><a href="/sets" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Sets</a></li>
+          <li><a href="/artists" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Artists</a></li>
+          <li><a href="/random" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Random Card</a></li>
+        </ul>
+      </div>
+
+      <!-- Tools Column -->
+      <div style="flex: 1; min-width: 120px;">
+        <div style="font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.9rem;">Tools</div>
+        <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem;">
+          <li><a href="/commander" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">SmartDeck Builder</a></li>
+          <li><a href="/search" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Card Search</a></li>
+          <li><a href="/dashboard" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">My Decks</a></li>
+        </ul>
+      </div>
+
+      <!-- Company Column -->
+      <div style="flex: 1; min-width: 120px;">
+        <div style="font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.9rem;">Company</div>
+        <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem;">
+          <li><a href="/privacy" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Privacy Policy</a></li>
+          <li><a href="/terms" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Terms of Use</a></li>
+          <li><a href="mailto:telosdevgroup@gmail.com?subject=AvaScry.com%20Inquiry" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Contact Us</a></li>
+        </ul>
+      </div>
+
     </div>
-    <p style="font-size: 0.78rem; color: var(--muted); margin: 0; max-width: 720px; margin: 0 auto; line-height: 1.5;">
-      {{ t('footer_fan_disclaimer', current_lang or 'en') }}
-    </p>
+
+    <!-- Bottom Bar -->
+    <div style="border-top: 1px solid var(--border); padding: 1.1rem 1.5rem; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+      <p style="font-size: 0.74rem; color: var(--muted); margin: 0; text-align: center; line-height: 1.6; opacity: 0.8; max-width: 900px;">
+        {{ t('footer_fan_disclaimer', current_lang or 'en') }}
+      </p>
+    </div>
+
   </footer>
+
+  <style>
+    @media (max-width: 768px) {
+      .site-footer > div:first-child {
+        grid-template-columns: 1fr 1fr !important;
+      }
+    }
+    @media (max-width: 480px) {
+      .site-footer > div:first-child {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
 
   <!-- Dark mode toggle logic -->
   <script>

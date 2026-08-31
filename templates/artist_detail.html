@@ -1,30 +1,60 @@
 {% extends "base.html" %}
 
-{% block title %}Cards Illustrated by {{ artist_name }} | MTGAbyss{% endblock %}
-{% block meta_description %}Explore all Magic: The Gathering cards illustrated by {{ artist_name }} on MTGAbyss.{% endblock %}
+{% block title %}Magic: The Gathering Cards Illustrated by {{ artist_name }} | AvaScry{% endblock %}
+{% block meta_description %}Explore all {{ total_cards }} Magic: The Gathering cards and original illustrations by {{ artist_name }} on AvaScry.{% endblock %}
+
+{% block head_extra %}
+<link rel="canonical" href="https://avascry.com/artist/{{ artist_slug }}">
+<meta property="og:title" content="Cards Illustrated by {{ artist_name }} — AvaScry">
+<meta property="og:description" content="Explore {{ total_cards }} Magic cards and illustrations by {{ artist_name }} on AvaScry.">
+<meta property="og:type" content="profile">
+<meta property="og:url" content="https://avascry.com/artist/{{ artist_slug }}">
+{% if cards and cards[0] and cards[0].image_url %}
+<meta property="og:image" content="{{ cards[0].large_image_url or cards[0].image_url }}">
+{% endif %}
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ProfilePage",
+  "name": "Cards Illustrated by {{ artist_name }}",
+  "url": "https://avascry.com/artist/{{ artist_slug }}",
+  "mainEntity": {
+    "@type": "Person",
+    "name": "{{ artist_name }}",
+    "jobTitle": "Magic: The Gathering Card Illustrator",
+    "sameAs": "https://avascry.com/artist/{{ artist_slug }}",
+    "knowsAbout": "Magic: The Gathering Fantasy Art"
+  }
+}
+</script>
+{% endblock %}
 
 {% block content %}
-<section class="section-panel panel" style="margin-top: 1.5rem;">
-  <div style="border-bottom: 1px solid var(--abyss-border); padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+<section class="section-panel panel" style="margin-top: 1.5rem; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 1rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;">
     <div>
-      <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--abyss-text);">{{ artist_name }}</h1>
-      <span style="font-size: 0.9rem; color: var(--abyss-muted); margin-top: 0.25rem; display: inline-block;">Card Illustrator</span>
+      <div style="display: flex; align-items: center; gap: 0.6rem;">
+        <h1 style="font-size: 1.85rem; font-weight: 800; margin: 0; color: var(--text);">{{ artist_name }}</h1>
+        <span style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.2rem 0.65rem; font-size: 0.8rem; font-weight: 700; color: var(--accent);">Card Illustrator</span>
+      </div>
+      <div style="font-size: 0.82rem; color: var(--muted); margin-top: 0.3rem;">Magic: The Gathering Artist Archive &bull; <a href="/artists" style="color: var(--muted); text-decoration: underline;">All Artists</a></div>
     </div>
-    <div style="font-size: 0.9rem; color: var(--abyss-muted);">
-      <strong>{{ total_cards }}</strong> artworks
+    <div style="font-size: 0.9rem; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.35rem 0.9rem;">
+      <strong style="color: var(--text);">{{ total_cards }}</strong> Artworks
     </div>
   </div>
 
-  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1.1rem;">
     {% for card in cards %}
-      <a href="/printing/{{ card.printing_slug }}" style="text-decoration: none; text-align: center;" title="{{ card.name }} ({{ card.set_name }})">
-        <div class="card-image-wrapper" style="width: 100%; aspect-ratio: 63/88; border-radius: 4px; overflow: hidden; margin-bottom: 0.4rem;">
-          <img src="{{ card.image_url }}" alt="{{ card.name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+      <a href="/printing/{{ card.printing_slug }}" style="text-decoration: none; text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.5rem; transition: transform 0.15s ease, border-color 0.15s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='var(--accent)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--border)';" title="{{ card.name }} ({{ card.set_name }})">
+        <div class="card-image-wrapper" style="width: 100%; aspect-ratio: 63/88; border-radius: 6px; overflow: hidden; margin-bottom: 0.5rem; background: var(--bg);">
+          <img src="{{ card.image_url }}" alt="{{ card.name }} art by {{ artist_name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
-        <div style="font-size: 0.82rem; font-weight: 700; color: var(--abyss-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        <div style="font-size: 0.84rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
           {{ card.name }}
         </div>
-        <div style="font-size: 0.72rem; color: var(--abyss-muted);">
+        <div style="font-size: 0.72rem; color: var(--muted); margin-top: 0.2rem;">
           {{ card.set|upper }} &bull; {{ card.released_at }}
         </div>
       </a>

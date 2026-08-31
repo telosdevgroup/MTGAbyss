@@ -1,32 +1,117 @@
 {% extends "base.html" %}
 
-{% block title %}{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} ({{ card.set|upper }}) | AvaScry{% endblock %}
+{% block title %}{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} — {{ card.set_name }} | AvaScry{% endblock %}
 
 {% block meta %}
-  <meta name="description" content="Card details, rulings, legality, and all printings for {{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} from {{ card.set_name }} on AvaScry.">
-  <meta property="og:title" content="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} | MTGAbyss">
+  <meta name="description" content="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} MTG card from {{ card.set_name }}. Illustrated by {{ card.artist or 'Unknown' }}. Rulings, legalities, and all historical printings on AvaScry.">
+  <meta property="og:title" content="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} — {{ card.set_name }} | AvaScry">
+  <meta property="og:description" content="Explore high-resolution Magic: The Gathering scans, printings, and rulings for {{ card.printed_name }} on AvaScry.">
   <meta property="og:image" content="{{ card.large_image_url or card.image_url }}">
-  <meta name="twitter:title" content="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} | MTGAbyss">
+  <meta property="og:image:alt" content="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} from {{ card.set_name }} illustrated by {{ card.artist or 'Unknown' }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} — {{ card.set_name }} | AvaScry">
   <meta name="twitter:image" content="{{ card.large_image_url or card.image_url }}">
+
+  <link rel="canonical" href="https://avascry.com/printing/{{ card.printing_slug }}">
+
+  <!-- Schema.org Structured Data for Google Images & Knowledge Graph -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ImageObject",
+    "name": "{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} - {{ card.set_name }}",
+    "caption": "Magic: The Gathering card {{ card.name }} from {{ card.set_name }} (#{{ card.collector_number }}), illustrated by {{ card.artist or 'Unknown' }}",
+    "contentUrl": "{{ card.large_image_url or card.image_url }}",
+    "thumbnailUrl": "{{ card.image_url }}",
+    "encodingFormat": "image/jpeg",
+    "width": 672,
+    "height": 936,
+    "creator": {
+      "@type": "Person",
+      "name": "{{ card.artist or 'Unknown' }}"
+    },
+    "creditText": "Illustrated by {{ card.artist or 'Unknown' }} / Wizards of the Coast",
+    "copyrightNotice": "© Wizards of the Coast / Hasbro",
+    "license": "https://company.wizards.com/en/legal/fancontentpolicy",
+    "acquireLicensePage": "https://avascry.com/printing/{{ card.printing_slug }}",
+    "copyrightHolder": {
+      "@type": "Organization",
+      "name": "Wizards of the Coast"
+    },
+    "keywords": [
+      "Magic: The Gathering",
+      "MTG",
+      "{{ card.name }}",
+      "{{ card.set_name }}",
+      "{{ card.type_line }}",
+      "{{ card.artist }}"
+    ]
+  }
+  </script>
+
+  <!-- Google Breadcrumbs Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "AvaScry",
+        "item": "https://avascry.com/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "{{ card.set_name }}",
+        "item": "https://avascry.com/set/{{ card.set }}"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %}",
+        "item": "https://avascry.com/printing/{{ card.printing_slug }}"
+      }
+    ]
+  }
+  </script>
+
+  {% if rulings %}
+  <!-- FAQPage Schema: Rulings as expandable Q&A in Google SERP -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {% for r in rulings %}
+      {
+        "@type": "Question",
+        "name": "{{ card.name }} ruling ({{ r.published_at }})",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "{{ r.comment | replace('"', '\\"') | replace('\n', ' ') }}"
+        }
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+  </script>
+  {% endif %}
 {% endblock %}
 
 {% block content %}
-<!-- Lure Block (HTMX Lazy loaded or SSR) -->
-<div id="lure-section" hx-get="/api/card/{{ card.slug }}/lure" hx-trigger="load" hx-swap="outerHTML">
-  {% if card.lure %}
-    {% include "partials/card_lure.html" with context %}
-  {% endif %}
+<!-- Authentic Localized Flavor Text Pullquote (Only shown if printing has flavor text) -->
+{% if card.flavor_text %}
+<div class="card-flavor-pullquote" style="max-width: 680px; margin: 1.5rem auto 2.25rem; text-align: center; padding: 0 1.5rem;">
+  <blockquote style="font-family: 'Cinzel', Georgia, 'Times New Roman', serif; font-style: italic; font-size: 1.15rem; line-height: 1.6; color: var(--text); opacity: 0.9; margin: 0; position: relative;">
+    <span style="font-size: 1.8rem; line-height: 0; vertical-align: -0.35rem; color: var(--accent); opacity: 0.6; margin-right: 0.25rem;">&ldquo;</span>{{ card.flavor_text }}<span style="font-size: 1.8rem; line-height: 0; vertical-align: -0.35rem; color: var(--accent); opacity: 0.6; margin-left: 0.25rem;">&rdquo;</span>
+  </blockquote>
 </div>
+{% endif %}
 
-<!-- Hero Image Section with Localization Notice -->
+<!-- Hero Image Section -->
 <section class="hero-image-section">
-  {% if card.has_image_note %}
-  <div style="background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); padding: 0.55rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.85rem; color: var(--muted); display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm);">
-    <span style="color: var(--accent); font-weight: 700;">ℹ</span>
-    <span>{{ card.lang|upper }} localized scan is not available from the archive. Displaying English printing.</span>
-  </div>
-  {% endif %}
-
   <div class="hero-image-large" id="hero-card-wrapper">
     <img id="hero-card-image" 
          src="{{ card.image_url }}" 
@@ -35,14 +120,21 @@
          fetchpriority="high"
          width="488"
          height="680"
-         alt="{{ card.name }}"
-         title="{{ card.name }}">
+         alt="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} - {{ card.set_name }} (#{{ card.collector_number }}){% if card.artist and card.artist != 'Unknown' %} - Illustrated by {{ card.artist }}{% endif %} - Magic: The Gathering Card"
+         title="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} - {{ card.set_name }} (#{{ card.collector_number }})">
   </div>
+
+  {% if card.has_image_note %}
+  <div style="background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); margin: 0.85rem auto 0; font-size: 0.82rem; color: var(--muted); display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm); max-width: 488px;">
+    <span style="color: var(--accent); font-weight: 700;">ℹ</span>
+    <span><strong>{{ card.lang|upper }}</strong> {{ t('card_scan_missing_notice', current_lang or 'en') }}</span>
+  </div>
+  {% endif %}
 
   <div class="hero-card-subtitle" id="hero-card-subtitle">
     <span>
       <a href="/set/{{ card.set }}" style="color: var(--text); font-weight: 700; text-decoration: none;" onmouseover="this.style.textDecoration='underline';" onmouseout="this.style.textDecoration='none';">
-        {{ card.set_name }} ({{ card.set|upper }})
+        {{ card.set_name }}
       </a>
     </span>
     <span class="divider">&bull;</span>
@@ -84,9 +176,71 @@
         {% endfor %}
       {% endif %}
     </div>
+    <div style="margin-top: 0.95rem;">
+      <button id="btn-save-stash" 
+              onclick="toggleSaveCard(this)"
+              data-oracle-id="{{ card.oracle_id }}"
+              data-card-id="{{ card.id }}"
+              data-name="{{ card.name }}"
+              data-slug="{{ card.printing_slug }}"
+              data-image="{{ card.image_url }}"
+              data-set="{{ card.set_name }}"
+              style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.45rem 1.1rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; border: 1.5px solid var(--accent); background: {% if is_saved %}var(--accent){% else %}var(--surface){% endif %}; color: {% if is_saved %}#fff{% else %}var(--accent){% endif %}; box-shadow: var(--shadow-sm);">
+        <span id="save-stash-icon">{% if is_saved %}✓{% else %}➕{% endif %}</span>
+        <span id="save-stash-label">{% if is_saved %}Saved for Deckbuilding{% else %}Save for Deckbuilding{% endif %}</span>
+      </button>
+    </div>
   </div>
 </header>
 
+<!-- Estimated Market Pricing Stat Strip -->
+{% if card.prices and (card.prices.usd or card.prices.usd_foil or card.prices.usd_etched or card.prices.eur) %}
+<div class="card-price-strip" style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem 1.25rem; margin: 1.5rem 0; box-shadow: var(--shadow-sm);">
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+    
+    <!-- Price Pills -->
+    <div style="display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap;">
+      <span style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); display: flex; align-items: center; gap: 0.35rem;">
+        <span>💰</span> Est. Market
+      </span>
+
+      {% if card.prices.usd %}
+      <div style="background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.35rem 0.75rem; text-align: center; min-width: 70px;">
+        <div style="font-size: 1.05rem; font-weight: 800; color: var(--text); line-height: 1.1;">${{ card.prices.usd }}</div>
+        <div style="font-size: 0.68rem; font-weight: 600; color: var(--muted); text-transform: uppercase;">Regular</div>
+      </div>
+      {% endif %}
+
+      {% if card.prices.usd_foil %}
+      <div style="background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.35rem 0.75rem; text-align: center; min-width: 70px;">
+        <div style="font-size: 1.05rem; font-weight: 800; color: #38bdf8; line-height: 1.1;">${{ card.prices.usd_foil }}</div>
+        <div style="font-size: 0.68rem; font-weight: 600; color: var(--muted); text-transform: uppercase;">✨ Foil</div>
+      </div>
+      {% endif %}
+
+      {% if card.prices.usd_etched %}
+      <div style="background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.35rem 0.75rem; text-align: center; min-width: 70px;">
+        <div style="font-size: 1.05rem; font-weight: 800; color: #a855f7; line-height: 1.1;">${{ card.prices.usd_etched }}</div>
+        <div style="font-size: 0.68rem; font-weight: 600; color: var(--muted); text-transform: uppercase;">Etched</div>
+      </div>
+      {% endif %}
+
+      {% if card.prices.eur %}
+      <div style="background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.35rem 0.75rem; text-align: center; min-width: 70px;">
+        <div style="font-size: 1.05rem; font-weight: 800; color: var(--text); line-height: 1.1;">€{{ card.prices.eur }}</div>
+        <div style="font-size: 0.68rem; font-weight: 600; color: var(--muted); text-transform: uppercase;">Euro</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Timestamp & Retailer Disclaimer -->
+    <div style="font-size: 0.75rem; color: var(--muted); line-height: 1.4; max-width: 320px; text-align: right;">
+      Prices as of {{ card.prices_as_of or 'recently' }}. Market values fluctuate; double-check current pricing before purchasing.
+    </div>
+
+  </div>
+</div>
+{% endif %}
 
 <!-- Printings Table Collapsible Accordion Panel -->
 {% if printings %}
@@ -96,7 +250,7 @@
       <span class="accordion-icon" id="printings-accordion-icon">&#9662;</span>
       <span class="panel-title" style="margin: 0; padding: 0; border: none;">{{ t('historical_printings', current_lang or 'en') }} ({{ printings|length }})</span>
     </div>
-    <span class="badge" style="font-size: 0.72rem;">{{ lang_groups|length }} Languages</span>
+    <span class="badge" style="font-size: 0.72rem;">{{ lang_groups|length }} {{ t('card_languages_count', current_lang or 'en') }}</span>
   </div>
   <div class="printings-accordion-body" id="printings-accordion-content" style="padding: 1rem 1.25rem;">
     
@@ -113,7 +267,7 @@
               <span class="lang-accordion-icon" style="transition: transform 0.2s ease; font-size: 0.8rem; color: var(--muted); transform: {% if g.lang_code == 'en' or g.has_current %}rotate(0deg){% else %}rotate(-90deg){% endif %};">&#9662;</span>
               <strong style="font-size: 0.95rem; color: var(--text);">{{ g.lang_name }}</strong>
               {% if g.has_current %}
-                <span class="badge" style="font-size: 0.65rem; background-color: var(--accent); color: #fff; border-color: var(--accent);">Viewing Here</span>
+                <span class="badge" style="font-size: 0.65rem; background-color: var(--accent); color: #fff; border-color: var(--accent);">{{ t('card_viewing_here', current_lang or 'en') }}</span>
               {% endif %}
             </div>
             <span class="badge" style="font-size: 0.72rem;">{{ g.printings_list|length }} {{ 'printing' if g.printings_list|length == 1 else 'printings' }}</span>
@@ -139,9 +293,10 @@
                       style="cursor: pointer;" 
                       onclick="if (!event.target.closest('a')) { if (event.ctrlKey || event.metaKey) { window.open('/printing/{{ p.printing_slug }}', '_blank'); } else { window.location.href='/printing/{{ p.printing_slug }}'; } }">
                     <td style="padding: 0.4rem 0.5rem; text-align: center;">
-                      <a href="/printing/{{ p.printing_slug }}" class="printing-thumb-link" data-preview-src="{{ p.large_image_url or p.image_url }}" data-card-title="{{ p.printed_name or p.name }} ({{ p.set|upper }})" style="display: inline-block;">
+                      <a href="/printing/{{ p.printing_slug }}" class="printing-thumb-link" data-preview-src="{{ p.large_image_url or p.image_url }}" data-card-title="{{ p.printed_name or p.name }} — {{ p.set_name }}" style="display: inline-block;">
                         <img src="{{ p.image_url }}" 
-                             alt="" 
+                             alt="{{ p.printed_name or p.name }} - {{ p.set_name }} MTG card scan" 
+                             title="{{ p.printed_name or p.name }} — {{ p.set_name }}"
                              loading="lazy" 
                              onerror="this.style.display='none';"
                              style="width: 46px; height: 64px; border-radius: 4px; object-fit: cover; box-shadow: 0 2px 6px rgba(0,0,0,0.18); display: inline-block; vertical-align: middle;">
@@ -155,7 +310,7 @@
                         {{ p.set_name }}
                       </a>
                       {% if p.is_current %}
-                        <span class="badge" style="margin-left: 0.4rem; font-size: 0.65rem; background-color: var(--accent); color: #fff; border-color: var(--accent);">Viewing</span>
+                        <span class="badge" style="margin-left: 0.4rem; font-size: 0.65rem; background-color: var(--accent); color: #fff; border-color: var(--accent);">{{ t('card_viewing_badge', current_lang or 'en') }}</span>
                       {% endif %}
                     </td>
                     <td><span class="set-code">{{ p.set|upper }}</span></td>
@@ -190,7 +345,7 @@
 <!-- Rulings Panel -->
 {% if rulings %}
 <section class="section-panel panel" style="margin-bottom: 1.5rem;">
-  <h2 class="panel-title">Official Rulings ({{ rulings|length }})</h2>
+  <h2 class="panel-title">{{ t('card_rulings_title', current_lang or 'en') }} ({{ rulings|length }})</h2>
   <div class="rulings-list">
     {% for r in rulings %}
       <div class="ruling-item">
@@ -202,12 +357,90 @@
 </section>
 {% endif %}
 
-<!-- Similar / Synergistic Cards Section -->
-<div id="similar-cards-container" hx-get="/api/card/{{ card.slug }}/similar" hx-trigger="load" hx-swap="outerHTML">
-  {% if similar_cards %}
-    {% include "partials/similar_cards.html" with context %}
-  {% endif %}
-</div>
+<!-- ======================================================= -->
+<!-- SECTION: MECHANICALLY SIMILAR & SYNERGISTIC CARDS        -->
+<!-- ======================================================= -->
+{% if similar_cards %}
+<section style="margin: 4.5rem 0 2.5rem; padding-top: 1rem;">
+  <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 1.35rem; flex-wrap: wrap; gap: 0.75rem;">
+    <div>
+      <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.35rem 0;">
+        <span>🔮</span> {{ t('sim_section_title', current_lang or 'en') }}
+      </h3>
+      <div style="display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap; margin-top: 0.2rem;">
+        <p style="font-size: 0.88rem; color: var(--muted); margin: 0; line-height: 1.4;">
+          {{ t('sim_section_sub', current_lang or 'en') }}
+        </p>
+        <a href="/similar/{{ card.slug }}" 
+           style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; font-weight: 700; color: var(--accent); text-decoration: none; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); padding: 0.25rem 0.75rem; border-radius: var(--radius-pill); transition: background 0.15s, border-color 0.15s;"
+           onmouseover="this.style.background='rgba(56, 189, 248, 0.16)'; this.style.borderColor='var(--accent)';"
+           onmouseout="this.style.background='rgba(56, 189, 248, 0.08)'; this.style.borderColor='rgba(56, 189, 248, 0.2)';">
+          <span>{{ t('sim_more_link', current_lang or 'en') }}</span>
+          <span style="font-size: 0.95rem;">&rarr;</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4-Card Visual Grid -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.5rem;">
+    {% for sim in similar_cards %}
+    <a href="/card/{{ sim.slug }}" 
+       style="display: block; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 0.85rem; text-decoration: none; color: inherit; transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;"
+       onmouseover="this.style.transform='translateY(-5px)'; this.style.borderColor='var(--accent)'; this.style.boxShadow='0 14px 32px rgba(0,0,0,0.35)';"
+       onmouseout="this.style.transform='none'; this.style.borderColor='var(--border)'; this.style.boxShadow='none';">
+      
+      <div style="width: 100%; aspect-ratio: 488/680; border-radius: 6px; overflow: hidden; background: #000; margin-bottom: 0.75rem;">
+        <img src="{{ sim.image_url }}" 
+             alt="{{ sim.name }} - {{ sim.set_name }} Magic card"
+             title="{{ sim.name }}"
+             loading="lazy" 
+             style="width: 100%; height: 100%; object-fit: cover; display: block;">
+      </div>
+      
+      <div style="font-weight: 700; font-size: 0.95rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0.25rem;">
+        {{ sim.name }}
+      </div>
+      <div style="font-size: 0.78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        {{ sim.type_line }}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- ======================================================= -->
+<!-- SECTION: BUILD AROUND THIS CARD (SMARTDECK SEED CTA)    -->
+<!-- ======================================================= -->
+<section style="margin: 3.5rem 0 4.5rem;">
+  <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 2.35rem 2.5rem; display: flex; align-items: center; justify-content: space-between; gap: 2.5rem; flex-wrap: wrap; box-shadow: 0 16px 36px rgba(0,0,0,0.25);">
+    
+    <!-- Left Copy -->
+    <div style="flex: 1; min-width: 280px;">
+      <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-size: 0.75rem; font-weight: 700; padding: 0.28rem 0.85rem; border-radius: var(--radius-pill); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        ⚔️ {{ t('seed_builder_badge', current_lang or 'en') }}
+      </div>
+      <h3 style="font-size: 1.45rem; font-weight: 800; color: var(--text); margin-bottom: 0.4rem; line-height: 1.25;">
+        {{ t('seed_title_prefix', current_lang or 'en') }} {{ card.printed_name or card.name }}
+      </h3>
+      <p style="font-size: 0.9rem; color: var(--muted); line-height: 1.55; margin: 0; max-width: 580px;">
+        {{ t('seed_subtitle', current_lang or 'en') }} {{ card.printed_name or card.name }}
+      </p>
+    </div>
+
+    <!-- Right Action Button -->
+    <div style="flex-shrink: 0;">
+      <a href="/commander?q={{ card.name|urlencode }}" 
+         class="btn-hero-primary"
+         style="display: inline-flex; align-items: center; gap: 0.55rem; text-decoration: none; padding: 0.9rem 2rem; font-size: 1rem; font-weight: 800; border-radius: var(--radius-pill); box-shadow: 0 4px 20px rgba(2, 132, 199, 0.45);">
+        <span>{{ t('seed_btn_launch', current_lang or 'en') }}</span>
+        <span style="font-size: 1.1rem;">&rarr;</span>
+      </a>
+    </div>
+
+  </div>
+</section>
 {% endblock %}
 
 {% block scripts %}
@@ -354,6 +587,54 @@
     });
 
   })();
+
+  async function toggleSaveCard(btn) {
+    const icon = document.getElementById('save-stash-icon');
+    const label = document.getElementById('save-stash-label');
+    const oracleId = btn.dataset.oracleId;
+    const cardId = btn.dataset.cardId;
+    const name = btn.dataset.name;
+    const slug = btn.dataset.slug;
+    const imageUrl = btn.dataset.image;
+    const setName = btn.dataset.set;
+
+    try {
+      const res = await fetch('/api/saved-cards/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          oracle_id: oracleId,
+          card_id: cardId,
+          name: name,
+          slug: slug,
+          image_url: imageUrl,
+          set_name: setName
+        })
+      });
+
+      if (res.status === 401) {
+        window.location.href = `/auth/login?next=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.saved) {
+          btn.style.background = 'var(--accent)';
+          btn.style.color = '#fff';
+          icon.textContent = '✓';
+          label.textContent = 'Saved for Deckbuilding';
+        } else {
+          btn.style.background = 'var(--surface)';
+          btn.style.color = 'var(--accent)';
+          icon.textContent = '➕';
+          label.textContent = 'Save for Deckbuilding';
+        }
+      }
+    } catch(e) {
+      console.error('Failed to toggle save card:', e);
+    }
+  }
 </script>
 {% endblock %}
 
