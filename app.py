@@ -1,8 +1,11 @@
 import os
+import glob
 import re
 import asyncio
 import secrets
 import random
+import gzip
+import time
 from typing import Optional, List, Dict, Any, Tuple
 import httpx
 from datetime import datetime, timezone
@@ -10,8 +13,8 @@ import uuid
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI, Request, HTTPException, Query, BackgroundTasks, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse
+from fastapi import FastAPI, Request, HTTPException, Query, BackgroundTasks, Depends, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -24,6 +27,41 @@ app = FastAPI(title="AvaScry", description="Magic: The Gathering Visual Explorer
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     return FileResponse("static/favicon.svg", media_type="image/svg+xml")
+
+@app.get("/sitemap.xml", include_in_schema=False)
+async def sitemap_xml():
+    return FileResponse("public/sitemap.xml", media_type="application/xml")
+
+@app.get("/robots.txt", include_in_schema=False)
+async def robots_txt():
+    return FileResponse("public/robots.txt", media_type="text/plain")
+
+@app.get("/ads.txt", response_class=PlainTextResponse, include_in_schema=False)
+async def ads_txt():
+    return "google.com, pub-7283717447639840, DIRECT, f08c47fec0942fa0\n"
+
+INDEXNOW_KEY = os.environ.get("INDEXNOW_KEY", "b3901b0f58d0445bb8d15a9e334df58a")
+
+@app.get("/b3901b0f58d0445bb8d15a9e334df58a.txt", response_class=PlainTextResponse, include_in_schema=False)
+async def indexnow_key_txt():
+    return f"{INDEXNOW_KEY}\n"
+
+async def ping_indexnow(urls: list[str]):
+    """Background helper to notify Bing / IndexNow search engines when URLs are published or updated."""
+    if not urls:
+        return
+    payload = {
+        "host": "avascry.com",
+        "key": INDEXNOW_KEY,
+        "keyLocation": f"https://avascry.com/{INDEXNOW_KEY}.txt",
+        "urlList": urls[:10000]
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post("https://api.indexnow.org/indexnow", json=payload)
+            print(f"[IndexNow] Submitted {len(urls)} URLs. Response status: {resp.status_code}")
+    except Exception as e:
+        print(f"[IndexNow] Error notifying IndexNow: {e}")
 
 SESSION_SECRET_KEY = os.environ.get("SESSION_SECRET_KEY", "fallback-insecure-secret-key-32-bytes-min")
 app.add_middleware(
@@ -41,7 +79,67 @@ os.makedirs("public/images/normal", exist_ok=True)
 os.makedirs("public/images/large", exist_ok=True)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
-app.mount("/images", StaticFiles(directory="public/images"), name="images")
+
+# Serve card images with long-lived Cache-Control so Cloudflare caches them at the edge
+@app.get("/images/{rest_of_path:path}", include_in_schema=False)
+async def serve_image(rest_of_path: str):
+    file_path = os.path.join("public", "images", rest_of_path)
+    
+    # 1. Direct file match on disk
+    if os.path.isfile(file_path):
+        ext = os.path.splitext(file_path)[1].lower()
+        media_type = {"jpg": "image/jpeg", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}.get(ext, "image/jpeg")
+        return FileResponse(file_path, media_type=media_type, headers={"Cache-Control": "public, max-age=2592000, immutable"})
+
+    # 2. Check for missing extensions (.jpg, .webp, .png, .jpeg)
+    for ext_try in [".jpg", ".webp", ".png", ".jpeg"]:
+        if os.path.isfile(file_path + ext_try):
+            file_path = file_path + ext_try
+            ext = os.path.splitext(file_path)[1].lower()
+            media_type = {"jpg": "image/jpeg", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}.get(ext, "image/jpeg")
+            return FileResponse(file_path, media_type=media_type, headers={"Cache-Control": "public, max-age=2592000, immutable"})
+
+    # 3. Fuzzy disk match (e.g. /images/normal/ohran-frostfang-ohran-frostfang -> matches on disk with _0.jpg or set suffix)
+    parts = rest_of_path.strip("/").split("/")
+    if len(parts) >= 2 and parts[0] in ("normal", "large"):
+        size_type = parts[0]
+        slug_or_name = os.path.splitext(parts[1])[0]
+        tokens = [t for t in slug_or_name.split("-") if t]
+        
+        for end_idx in range(len(tokens), 0, -1):
+            prefix = "-".join(tokens[:end_idx])
+            pattern = os.path.join("public", "images", size_type, f"{prefix}*")
+            matches = glob.glob(pattern)
+            valid_files = [m for m in matches if os.path.isfile(m)]
+            if valid_files:
+                matched_file = valid_files[0]
+                ext = os.path.splitext(matched_file)[1].lower()
+                media_type = {"jpg": "image/jpeg", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}.get(ext, "image/jpeg")
+                return FileResponse(matched_file, media_type=media_type, headers={"Cache-Control": "public, max-age=2592000, immutable"})
+
+        # 4. Fallback to Scryfall API / DB lookup if not on disk at all
+        clean_slug = tokens[0] if tokens else slug_or_name
+        clean_name = " ".join(tokens)
+        try:
+            db = get_mongo_db()
+            card = db["cards"].find_one({
+                "$or": [
+                    {"slug": clean_slug},
+                    {"image_slug": {"$regex": f"^{re.escape(clean_slug)}", "$options": "i"}},
+                    {"name": {"$regex": f"^{re.escape(clean_name)}", "$options": "i"}}
+                ]
+            })
+            if card:
+                _, cdn_normal, cdn_large = get_scryfall_direct_uris(card)
+                cdn_url = cdn_large if size_type == "large" else cdn_normal
+                if cdn_url:
+                    dest_save = file_path if file_path.endswith('.jpg') else file_path + '.jpg'
+                    asyncio.create_task(_download_and_save_image(cdn_url, dest_save))
+                    return RedirectResponse(url=cdn_url, status_code=307)
+        except Exception as e:
+            print(f"[Image Resolver Error] {e}")
+
+    raise HTTPException(status_code=404)
 
 templates = Jinja2Templates(
     directory="templates",
@@ -109,6 +207,76 @@ def check_periodic_cache_flush():
     except Exception as e:
         print(f"[RAM CACHE] Monitor error: {e}")
 
+# =========================================================================
+# HONEYPOT & BOT-TROLLING SHIELD (Gzip Bomb, Socratic Redirect, The Abyss)
+# =========================================================================
+# Pre-compress 10MB of zeros into ~10KB gzip (inflates heavily in scanner memory)
+GZIP_BOMB_PAYLOAD: bytes = gzip.compress(b"0" * (10 * 1024 * 1024), compresslevel=9)
+
+ETHICS_WIKI_URL = "https://en.wikipedia.org/wiki/Ethics"
+
+THE_ABYSS_ASCII_HONEYPOT = """
+================================================================================
+                           THE ABYSS (Legends)
+   "At the beginning of your upkeep, destroy target nonartifact creature bot.
+    It cannot be regenerated."
+================================================================================
+   [HONEYPOT ENGAGED — BOGUS CREDENTIALS DISPATCHED]
+   DB_PASSWORD="pwned_by_the_abyss_nice_try"
+   AWS_ACCESS_KEY_ID="AKIA_YOU_HAVE_BEEN_BAMBOOZLED_BY_MTGABYSS"
+   AWS_SECRET_ACCESS_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY_NICE_TRY"
+   STRIPE_SECRET_KEY="sk_live_enjoy_wasting_your_time_and_compute"
+   OPENAI_API_KEY="sk-proj-rickroll-infinite-troll-loop"
+   MESSAGE="Your automated scanner has wandered into The Abyss. Have a lovely day."
+================================================================================
+"""
+
+PROBE_REDIRECT_PATHS = (
+    "/wp-admin", "/wp-login", "/admin.php", "/xmlrpc.php", "/phpmyadmin",
+    "/pma", "/admin/login", "/administrator", "/wp-content", "/wp-includes"
+)
+
+PROBE_SENSITIVE_PATTERNS = (
+    "/.env", "/.git", "/.aws", "/.ssh", "/.ds_store", "/config.json",
+    "/api/env", "/api/config", "/docker-compose", "/web.config", "/phpinfo"
+)
+
+@app.middleware("http")
+async def bot_probe_shield_middleware(request: Request, call_next):
+    path = request.url.path.lower()
+
+    # 1. CMS / Admin Scanners -> Redirect to Socratic Ethics
+    if any(path.startswith(prefix) for prefix in PROBE_REDIRECT_PATHS):
+        print(f"[SHIELD] Intercepted CMS exploit scan: {request.url.path} from {request.client.host if request.client else 'unknown'} -> Redirecting to Plato/Ethics")
+        return RedirectResponse(url=ETHICS_WIKI_URL, status_code=301)
+
+    # 2. Secret & Config File Scanners (e.g. /.env, /.git, /config.json)
+    if any(p in path for p in PROBE_SENSITIVE_PATTERNS) or (path.startswith("/.") and not path.startswith("/.well-known")):
+        accept_encoding = request.headers.get("accept-encoding", "").lower()
+        print(f"[SHIELD] Intercepted secret hunter scan: {request.url.path} from {request.client.host if request.client else 'unknown'}")
+
+        # If scanner accepts gzip, feed them the gzip memory bomb
+        if "gzip" in accept_encoding:
+            return Response(
+                content=GZIP_BOMB_PAYLOAD,
+                status_code=200,
+                headers={
+                    "Content-Encoding": "gzip",
+                    "Content-Type": "text/plain; charset=utf-8",
+                    "X-Shield": "The-Abyss-Active"
+                }
+            )
+        
+        # Otherwise, deliver HTTP 418 with The Abyss MTG ASCII Trap
+        return Response(
+            content=THE_ABYSS_ASCII_HONEYPOT.strip(),
+            status_code=418,
+            media_type="text/plain; charset=utf-8",
+            headers={"X-Shield": "The-Abyss-Active"}
+        )
+
+    return await call_next(request)
+
 @app.middleware("http")
 async def add_localization_context(request: Request, call_next):
     lang = i18n.get_locale(request)
@@ -116,6 +284,77 @@ async def add_localization_context(request: Request, call_next):
     response = await call_next(request)
     if "lang" in request.query_params:
         response.set_cookie(key="mtgabyss_lang", value=lang, max_age=31536000, path="/")
+    return response
+
+def get_client_ip(request: Request) -> str:
+    """Extract the most accurate client IP possible (Cloudflare -> XFF -> socket)."""
+    cf_ip = request.headers.get("cf-connecting-ip")
+    if cf_ip:
+        return cf_ip.strip()
+    xff = request.headers.get("x-forwarded-for")
+    if xff:
+        return xff.split(",")[0].strip()
+    if request.client and request.client.host:
+        return request.client.host
+    return "127.0.0.1"
+
+def get_caller_badge(request: Request) -> str:
+    """Classify visitor into clear badges for high-signal log monitoring."""
+    ua = request.headers.get("user-agent", "").lower()
+    cf_country = request.headers.get("cf-ipcountry")
+    
+    if "googlebot" in ua or "google-inspectiontool" in ua or "feedfetcher-google" in ua:
+        return "[Googlebot]"
+    if "bingbot" in ua or "bingpreview" in ua:
+        return "[Bingbot]"
+    if "duckduckbot" in ua:
+        return "[DuckDuckBot]"
+    if "yandexbot" in ua:
+        return "[YandexBot]"
+    if "perplexitybot" in ua:
+        return "[AI:Perplexity]"
+    if "claudebot" in ua or "anthropic-ai" in ua:
+        return "[AI:Claude]"
+    if "gptbot" in ua or "chatgpt-user" in ua or "oai-searchbot" in ua:
+        return "[AI:OpenAI]"
+    if "bytespider" in ua:
+        return "[AI:ByteDance]"
+    if "twitterbot" in ua or "facebookexternalhit" in ua or "discordbot" in ua:
+        return "[SocialBot]"
+    if "avascry-cachewarmer" in ua:
+        return "[CacheWarmer]"
+    if any(bot in ua for bot in ("bot", "crawl", "spider", "slurp")):
+        return "[Bot:Other]"
+        
+    if cf_country and cf_country != "XX":
+        return f"[User:{cf_country}]"
+    return "[User]"
+
+LOG_DIR = "logs"
+ACCESS_LOG_PATH = os.path.join(LOG_DIR, "access.log")
+os.makedirs(LOG_DIR, exist_ok=True)
+
+@app.middleware("http")
+async def request_logger_middleware(request: Request, call_next):
+    start_time = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = (time.perf_counter() - start_time) * 1000
+    
+    ip = get_client_ip(request)
+    badge = get_caller_badge(request)
+    method = request.method
+    path = request.url.path
+    if request.url.query:
+        path = f"{path}?{request.url.query}"
+    status = response.status_code
+    
+    log_line = f"{ip:<15} {badge:<15} {status} ({duration_ms:>4.0f}ms) -> {method} {path}"
+    print(log_line, flush=True)
+    try:
+        with open(ACCESS_LOG_PATH, "a", encoding="utf-8") as f_log:
+            f_log.write(f"{datetime.now(timezone.utc).isoformat()} {log_line}\n")
+    except Exception:
+        pass
     return response
 
 def render_template(request: Request, name: str, context: dict):
@@ -369,6 +608,26 @@ def build_card_view_model(card: dict, db=None, background_tasks: Optional[Backgr
     }
     c_lang = (card.get("lang") or "en").lower()
 
+    # Localized Flavor Text for the specific printing
+    raw_flavor = card.get("flavor_text") or card.get("raw", {}).get("flavor_text")
+    if not raw_flavor and card.get("card_faces"):
+        raw_flavor = card["card_faces"][0].get("flavor_text")
+    if not raw_flavor and card.get("raw", {}).get("card_faces"):
+        raw_flavor = card["raw"]["card_faces"][0].get("flavor_text")
+    flavor_text = raw_flavor.strip() if raw_flavor else None
+
+    # Extract Market Prices
+    raw_prices = card.get("prices") or card.get("raw", {}).get("prices") or {}
+    prices_data = {}
+    if raw_prices.get("usd"):
+        prices_data["usd"] = raw_prices["usd"]
+    if raw_prices.get("usd_foil"):
+        prices_data["usd_foil"] = raw_prices["usd_foil"]
+    if raw_prices.get("usd_etched"):
+        prices_data["usd_etched"] = raw_prices["usd_etched"]
+    if raw_prices.get("eur"):
+        prices_data["eur"] = raw_prices["eur"]
+
     return {
         "id": card.get("id"),
         "oracle_id": card.get("oracle_id"),
@@ -376,6 +635,7 @@ def build_card_view_model(card: dict, db=None, background_tasks: Optional[Backgr
         "printed_name": c_printed_name,
         "slug": base_slug,
         "printing_slug": printing_slug,
+        "flavor_text": flavor_text,
         "mana_cost": card.get("mana_cost"),
         "cmc": card.get("cmc", 0),
         "type_line": type_line,
@@ -401,7 +661,9 @@ def build_card_view_model(card: dict, db=None, background_tasks: Optional[Backgr
         "back_image_url": back_image_url,
         "back_large_image_url": back_large_image_url,
         "has_image_note": has_image_note,
-        "badges": badges
+        "badges": badges,
+        "prices": prices_data,
+        "prices_as_of": datetime.now(timezone.utc).strftime("%b %d, %Y")
     }
 
 
@@ -413,7 +675,10 @@ async def homepage(request: Request, background_tasks: BackgroundTasks):
         sample_slugs = ["black-lotus", "atraxa-praetors-voice", "the-ur-dragon", "sol-ring", "rhystic-study", "cyclonic-rift", "demonic-tutor", "mana-crypt", "force-of-will", "lightning-bolt", "smothering-tithe", "doubling-season"]
         cards_cursor = list(db["cards"].find({"slug": {"$in": sample_slugs}, "lang": "en"}).limit(18))
         for c in cards_cursor:
-            img = c.get("image_uris") or {}
+            img = c.get("image_uris")
+            if not img and c.get("card_faces"):
+                img = c["card_faces"][0].get("image_uris") or {}
+            img = img or {}
             c_name = c.get("name") or "Card"
             c_set = (c.get("set") or "").lower()
             c_slug = slugify(c_name)
@@ -421,8 +686,8 @@ async def homepage(request: Request, background_tasks: BackgroundTasks):
             featured.append({
                 "name": c_name,
                 "slug": p_slug,
-                "large_image_url": img.get("large") or img.get("normal") or f"/images/large/{c_slug}",
-                "image_url": img.get("normal") or f"/images/normal/{c_slug}"
+                "large_image_url": img.get("large") or img.get("normal") or f"/images/large/{c_slug}.jpg",
+                "image_url": img.get("normal") or f"/images/normal/{c_slug}.jpg"
             })
     except Exception as e:
         print(f"Error loading homepage featured cards: {e}")
@@ -468,6 +733,17 @@ async def random_card(request: Request):
 # AUTHENTICATION (Google OAuth)
 # ==========================================
 
+def is_safe_redirect(url: Optional[str]) -> bool:
+    """Validate that redirect target is strictly a safe local relative path."""
+    if not url or not isinstance(url, str):
+        return False
+    url = url.strip()
+    if not url.startswith("/") or url.startswith("//") or "\\" in url or "://" in url:
+        return False
+    if url.startswith("/auth"):
+        return False
+    return True
+
 def get_base_url(request: Request) -> str:
     """Resolve correct base URL honoring Cloudflare / reverse proxy headers."""
     env_base = os.environ.get("APP_BASE_URL", "").strip().rstrip("/")
@@ -477,19 +753,182 @@ def get_base_url(request: Request) -> str:
     host = request.headers.get("x-forwarded-host", request.headers.get("host", request.url.netloc))
     return f"{proto}://{host}"
 
-@app.get("/auth/login")
+@app.get("/auth/login", response_class=HTMLResponse)
+async def auth_login_choice(request: Request, next: Optional[str] = None):
+    redirect_target = next if is_safe_redirect(next) else "/dashboard"
+    lang = i18n.get_locale(request)
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={
+            "active_nav": "login",
+            "current_lang": lang,
+            "next_url": redirect_target,
+            "auth_error": request.query_params.get("auth_error"),
+            "user": request.session.get("user")
+        }
+    )
+
+@app.get("/auth/discord/login")
+async def auth_discord_login(request: Request, next: Optional[str] = None):
+    client_id = os.environ.get("DISCORD_CLIENT_ID", "").strip()
+    if not client_id:
+        return HTMLResponse("<h3>Error: DISCORD_CLIENT_ID is not configured in .env</h3>", status_code=500)
+    
+    redirect_target = next if is_safe_redirect(next) else "/dashboard"
+    redirect_uri = f"{get_base_url(request)}/auth/discord/callback"
+    request.session["oauth_next"] = redirect_target
+    
+    # If already logged in, store linking user ID
+    curr_user = request.session.get("user")
+    if curr_user and curr_user.get("id"):
+        request.session["linking_user_id"] = curr_user["id"]
+    
+    oauth_state = secrets.token_urlsafe(32)
+    request.session["oauth_state"] = oauth_state
+    
+    auth_url = (
+        "https://discord.com/oauth2/authorize?"
+        + httpx.QueryParams({
+            "client_id": client_id,
+            "response_type": "code",
+            "scope": "identify email",
+            "redirect_uri": redirect_uri,
+            "state": oauth_state,
+            "prompt": "consent"
+        }).__str__()
+    )
+    return RedirectResponse(url=auth_url, status_code=303)
+
+@app.get("/auth/discord/callback")
+async def auth_discord_callback(request: Request, code: Optional[str] = None, state: Optional[str] = None, error: Optional[str] = None):
+    if error or not code:
+        print(f"[Discord Callback] Error received: {error}")
+        return RedirectResponse(url=f"/auth/login?auth_error={error or 'cancelled'}", status_code=303)
+    
+    saved_state = request.session.pop("oauth_state", None)
+    if not saved_state or not state or not secrets.compare_digest(saved_state, state):
+        print("[Discord Callback] State mismatch detected")
+        return RedirectResponse(url="/auth/login?auth_error=invalid_oauth_state", status_code=303)
+    
+    client_id = os.environ.get("DISCORD_CLIENT_ID", "").strip()
+    client_secret = os.environ.get("DISCORD_CLIENT_SECRET", "").strip()
+    redirect_uri = f"{get_base_url(request)}/auth/discord/callback"
+    
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            token_resp = await client.post(
+                "https://discord.com/api/v10/oauth2/token",
+                data={
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "grant_type": "authorization_code",
+                    "code": code,
+                    "redirect_uri": redirect_uri,
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"}
+            )
+            if token_resp.status_code != 200:
+                print(f"[Discord Callback] Token exchange failed: {token_resp.text}")
+                return RedirectResponse(url="/auth/login?auth_error=token_exchange_failed", status_code=303)
+                
+            token_data = token_resp.json()
+            access_token = token_data.get("access_token")
+            
+            user_resp = await client.get(
+                "https://discord.com/api/v10/users/@me",
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            if user_resp.status_code != 200:
+                print(f"[Discord Callback] User info fetch failed: {user_resp.text}")
+                return RedirectResponse(url="/auth/login?auth_error=userinfo_failed", status_code=303)
+                
+            discord_user = user_resp.json()
+            
+        discord_id = discord_user.get("id")
+        discord_username = discord_user.get("username", "Planeswalker")
+        email = discord_user.get("email", "")
+        avatar_hash = discord_user.get("avatar")
+        picture = f"https://cdn.discordapp.com/avatars/{discord_id}/{avatar_hash}.png" if avatar_hash else ""
+        
+        db = get_mongo_db()
+        now = datetime.now(timezone.utc).isoformat()
+        
+        # Dual-identity merge / link
+        linking_user_id = request.session.pop("linking_user_id", None)
+        existing_user = None
+        if linking_user_id:
+            try:
+                from bson import ObjectId
+                existing_user = db["users"].find_one({"_id": ObjectId(linking_user_id)})
+            except Exception:
+                pass
+                
+        if not existing_user:
+            query = {"discord_id": discord_id}
+            if email:
+                query = {"$or": [{"discord_id": discord_id}, {"email": email}]}
+            existing_user = db["users"].find_one(query)
+            
+        if existing_user:
+            update_data = {
+                "discord_id": discord_id,
+                "discord_username": discord_username,
+                "updated_at": now
+            }
+            if picture and not existing_user.get("picture"):
+                update_data["picture"] = picture
+            if not existing_user.get("name") or existing_user.get("name") == "Magic Player":
+                update_data["name"] = discord_username
+            if email and not existing_user.get("email"):
+                update_data["email"] = email
+                
+            db["users"].update_one({"_id": existing_user["_id"]}, {"$set": update_data})
+            user_doc = db["users"].find_one({"_id": existing_user["_id"]})
+        else:
+            new_doc = {
+                "discord_id": discord_id,
+                "discord_username": discord_username,
+                "name": discord_username,
+                "email": email,
+                "picture": picture,
+                "created_at": now,
+                "updated_at": now
+            }
+            res = db["users"].insert_one(new_doc)
+            user_doc = db["users"].find_one({"_id": res.inserted_id})
+            
+        request.session["user"] = {
+            "id": str(user_doc["_id"]),
+            "discord_id": discord_id,
+            "discord_username": discord_username,
+            "google_sub": user_doc.get("google_sub"),
+            "name": user_doc.get("name", discord_username),
+            "email": user_doc.get("email", ""),
+            "picture": user_doc.get("picture", "")
+        }
+        
+        raw_next = request.session.pop("oauth_next", None)
+        next_url = raw_next if is_safe_redirect(raw_next) else "/dashboard"
+        return RedirectResponse(url=next_url, status_code=303)
+    except Exception as e:
+        print(f"[Discord Callback] Exception: {e}")
+        return RedirectResponse(url="/auth/login?auth_error=oauth_failed", status_code=303)
+
+@app.get("/auth/google/login")
 async def auth_google_login(request: Request, next: Optional[str] = None):
     client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
     if not client_id or "your-domain" in client_id:
         return HTMLResponse("<h3>Error: GOOGLE_CLIENT_ID is not configured in .env</h3>", status_code=500)
     
-    redirect_target = next or request.headers.get("referer") or "/dashboard"
-    # Never loop back to auth routes
-    if "/auth" in redirect_target:
-        redirect_target = "/dashboard"
-
+    redirect_target = next if is_safe_redirect(next) else "/dashboard"
     redirect_uri = f"{get_base_url(request)}/auth/google/callback"
     request.session["oauth_next"] = redirect_target
+    
+    # If already logged in, store linking user ID
+    curr_user = request.session.get("user")
+    if curr_user and curr_user.get("id"):
+        request.session["linking_user_id"] = curr_user["id"]
     
     # Generate cryptographic one-time state nonce
     oauth_state = secrets.token_urlsafe(32)
@@ -513,13 +952,13 @@ async def auth_google_login(request: Request, next: Optional[str] = None):
 async def auth_google_callback(request: Request, code: Optional[str] = None, state: Optional[str] = None, error: Optional[str] = None):
     if error or not code:
         print(f"[OAuth Callback] Error parameter received: {error}")
-        return RedirectResponse(url=f"/commander?auth_error={error or 'cancelled'}", status_code=303)
+        return RedirectResponse(url=f"/auth/login?auth_error={error or 'cancelled'}", status_code=303)
     
-    # Verify state parameter
+    # Verify state parameter (strictly require both saved state and incoming state)
     saved_state = request.session.pop("oauth_state", None)
-    if saved_state and state and not secrets.compare_digest(saved_state, state):
-        print("[OAuth Callback] State mismatch detected")
-        return RedirectResponse(url="/commander?auth_error=invalid_oauth_state", status_code=303)
+    if not saved_state or not state or not secrets.compare_digest(saved_state, state):
+        print("[OAuth Callback] State mismatch or missing state detected")
+        return RedirectResponse(url="/auth/login?auth_error=invalid_oauth_state", status_code=303)
     
     client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
     client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
@@ -541,7 +980,7 @@ async def auth_google_callback(request: Request, code: Optional[str] = None, sta
             )
             if token_resp.status_code != 200:
                 print(f"[OAuth Callback] Token error: {token_resp.text}")
-                return RedirectResponse(url="/commander?auth_error=token_exchange_failed", status_code=303)
+                return RedirectResponse(url="/auth/login?auth_error=token_exchange_failed", status_code=303)
 
             token_data = token_resp.json()
             access_token = token_data.get("access_token")
@@ -553,58 +992,81 @@ async def auth_google_callback(request: Request, code: Optional[str] = None, sta
             )
             if user_resp.status_code != 200:
                 print(f"[OAuth Callback] Userinfo error: {user_resp.text}")
-                return RedirectResponse(url="/commander?auth_error=userinfo_failed", status_code=303)
+                return RedirectResponse(url="/auth/login?auth_error=userinfo_failed", status_code=303)
 
             profile = user_resp.json()
             
         google_sub = profile.get("sub")
         if not google_sub:
             print("[OAuth Callback] Missing Google sub in profile")
-            return RedirectResponse(url="/commander?auth_error=missing_sub", status_code=303)
+            return RedirectResponse(url="/auth/login?auth_error=missing_sub", status_code=303)
             
+        email = profile.get("email", "")
         db = get_mongo_db()
         now = datetime.now(timezone.utc).isoformat()
         
-        # Upsert user record strictly by google_sub
-        user_doc = db["users"].find_one_and_update(
-            {"google_sub": google_sub},
-            {
-                "$set": {
-                    "email": profile.get("email", ""),
-                    "name": profile.get("name", "Magic Player"),
-                    "picture": profile.get("picture", ""),
-                    "updated_at": now
-                },
-                "$setOnInsert": {
-                    "google_sub": google_sub,
-                    "created_at": now
-                }
-            },
-            upsert=True,
-            return_document=True
-        )
+        # Dual-identity merge / link
+        linking_user_id = request.session.pop("linking_user_id", None)
+        existing_user = None
+        if linking_user_id:
+            try:
+                from bson import ObjectId
+                existing_user = db["users"].find_one({"_id": ObjectId(linking_user_id)})
+            except Exception:
+                pass
+
+        if not existing_user:
+            query = {"google_sub": google_sub}
+            if email:
+                query = {"$or": [{"google_sub": google_sub}, {"email": email}]}
+            existing_user = db["users"].find_one(query)
+        if existing_user:
+            update_data = {
+                "google_sub": google_sub,
+                "email": email or existing_user.get("email", ""),
+                "picture": profile.get("picture", existing_user.get("picture", "")),
+                "updated_at": now
+            }
+            if not existing_user.get("name"):
+                update_data["name"] = profile.get("name", "Magic Player")
+            db["users"].update_one({"_id": existing_user["_id"]}, {"$set": update_data})
+            user_doc = db["users"].find_one({"_id": existing_user["_id"]})
+        else:
+            new_doc = {
+                "google_sub": google_sub,
+                "email": email,
+                "name": profile.get("name", "Magic Player"),
+                "picture": profile.get("picture", ""),
+                "created_at": now,
+                "updated_at": now
+            }
+            res = db["users"].insert_one(new_doc)
+            user_doc = db["users"].find_one({"_id": res.inserted_id})
         
         # Set session
         request.session["user"] = {
             "id": str(user_doc["_id"]),
             "google_sub": google_sub,
+            "discord_username": user_doc.get("discord_username"),
             "name": user_doc.get("name", "Magic Player"),
             "email": user_doc.get("email", ""),
             "picture": user_doc.get("picture", "")
         }
         
-        next_url = request.session.pop("oauth_next", None) or "/dashboard"
+        raw_next = request.session.pop("oauth_next", None)
+        next_url = raw_next if is_safe_redirect(raw_next) else "/dashboard"
         print(f"[OAuth Callback] Successfully authenticated user: {user_doc.get('name')} -> Redirecting to {next_url}")
         return RedirectResponse(url=next_url, status_code=303)
         
     except Exception as e:
         print(f"[OAuth Callback] Exception: {e}")
-        return RedirectResponse(url=f"/commander?auth_error=oauth_failed", status_code=303)
+        return RedirectResponse(url="/auth/login?auth_error=oauth_failed", status_code=303)
 
 @app.get("/auth/logout")
-async def auth_logout(request: Request, next: str = "/commander"):
+async def auth_logout(request: Request, next: Optional[str] = "/commander"):
     request.session.clear()
-    return RedirectResponse(url=next, status_code=303)
+    target = next if is_safe_redirect(next) else "/commander"
+    return RedirectResponse(url=target, status_code=303)
 
 @app.get("/api/me")
 async def api_me(request: Request):
@@ -702,17 +1164,20 @@ async def clone_user_deck(deck_id: str, request: Request):
         raise HTTPException(status_code=401, detail="Authentication required")
     
     db = get_mongo_db()
-    original = db["decks"].find_one({"deck_id": deck_id, "user_id": user["id"]})
+    original = db["decks"].find_one({"deck_id": deck_id})
     if not original:
         raise HTTPException(status_code=404, detail="Deck not found")
     
     new_deck_id = str(uuid.uuid4())[:12]
     now = datetime.now(timezone.utc).isoformat()
     
+    is_owner = (original.get("user_id") == user["id"])
+    clone_name = f"{original.get('name', 'Deck')} (Copy)" if is_owner else original.get("name", "Cloned Deck")
+    
     cloned_doc = {
         "deck_id": new_deck_id,
         "user_id": user["id"],
-        "name": f"{original.get('name', 'Deck')} (Copy)",
+        "name": clone_name,
         "commander": original.get("commander", {}),
         "cards": original.get("cards", []),
         "active_query": original.get("active_query", ""),
@@ -722,6 +1187,40 @@ async def clone_user_deck(deck_id: str, request: Request):
     }
     db["decks"].insert_one(cloned_doc)
     return JSONResponse({"status": "cloned", "new_deck_id": new_deck_id})
+
+@app.get("/deck/{deck_id}", response_class=HTMLResponse)
+async def public_deck_view(deck_id: str, request: Request):
+    db = get_mongo_db()
+    deck = db["decks"].find_one({"deck_id": deck_id})
+    if not deck:
+        raise HTTPException(status_code=404, detail="Deck not found in the Abyss")
+        
+    user = request.session.get("user")
+    is_owner = bool(user and user.get("id") == deck.get("user_id"))
+    
+    # Creator info: ONLY use Discord username or explicit handle, never Google real names
+    discord_handle = None
+    try:
+        from bson import ObjectId
+        creator = db["users"].find_one({"_id": ObjectId(deck.get("user_id"))})
+        if creator:
+            discord_handle = creator.get("discord_username")
+    except Exception:
+        pass
+        
+    lang = i18n.get_locale(request)
+    return templates.TemplateResponse(
+        request=request,
+        name="deck_detail.html",
+        context={
+            "active_nav": "commander",
+            "current_lang": lang,
+            "deck": deck,
+            "is_owner": is_owner,
+            "discord_handle": discord_handle,
+            "user": user
+        }
+    )
 
 @app.post("/api/user/settings")
 async def update_user_settings(request: Request):
@@ -743,11 +1242,109 @@ async def update_user_settings(request: Request):
         # Update session display name as well
         request.session["user"]["name"] = new_name
         
+    from bson import ObjectId
+    user_filter = {"_id": ObjectId(user["id"])} if user.get("id") else {"google_sub": user.get("google_sub")}
     db["users"].update_one(
-        {"google_sub": user["google_sub"]},
+        user_filter,
         {"$set": update_fields}
     )
-    return JSONResponse({"status": "updated", "name": new_name or user["name"], "favorite_format": fav_format})
+    return JSONResponse({"status": "updated", "name": new_name or user.get("name", "Player"), "favorite_format": fav_format})
+
+@app.post("/api/saved-cards/toggle")
+async def toggle_saved_card(request: Request):
+    user = request.session.get("user")
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    body = await request.json()
+    oracle_id = body.get("oracle_id")
+    card_id = body.get("card_id")
+    name = (body.get("name") or "").strip()
+    slug = (body.get("slug") or "").strip()
+    image_url = (body.get("image_url") or "").strip()
+    set_name = (body.get("set_name") or "").strip()
+    
+    if not name:
+        raise HTTPException(status_code=400, detail="Card name is required")
+        
+    db = get_mongo_db()
+    query = {"user_id": user["id"]}
+    if oracle_id:
+        query["oracle_id"] = oracle_id
+    elif card_id:
+        query["card_id"] = card_id
+    else:
+        query["name"] = name
+        
+    existing = db["saved_cards"].find_one(query)
+    if existing:
+        db["saved_cards"].delete_one({"_id": existing["_id"]})
+        return JSONResponse({"status": "removed", "saved": False})
+    else:
+        now = datetime.now(timezone.utc).isoformat()
+        db["saved_cards"].insert_one({
+            "user_id": user["id"],
+            "oracle_id": oracle_id,
+            "card_id": card_id,
+            "name": name,
+            "slug": slug,
+            "image_url": image_url,
+            "set_name": set_name,
+            "saved_at": now
+        })
+        return JSONResponse({"status": "saved", "saved": True})
+
+@app.post("/api/saved-cards/push-to-deck")
+async def push_saved_card_to_deck(request: Request):
+    user = request.session.get("user")
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+        
+    body = await request.json()
+    deck_id = body.get("deck_id")
+    card_item = body.get("card") # {oracle_id, name, slug, image_url, count}
+    
+    if not deck_id or not card_item:
+        raise HTTPException(status_code=400, detail="deck_id and card are required")
+        
+    db = get_mongo_db()
+    deck = db["decks"].find_one({"deck_id": deck_id, "user_id": user["id"]})
+    if not deck:
+        raise HTTPException(status_code=404, detail="Deck not found")
+        
+    cards = deck.get("cards", [])
+    card_name = card_item.get("name")
+    oracle_id = card_item.get("oracle_id")
+    
+    # Check if already in deck
+    found = False
+    for c in cards:
+        if (oracle_id and c.get("oracle_id") == oracle_id) or (c.get("name", "").lower() == card_name.lower()):
+            c["count"] = c.get("count", 1) + 1
+            found = True
+            break
+            
+    if not found:
+        cards.append({
+            "oracle_id": oracle_id,
+            "name": card_name,
+            "printing_slug": card_item.get("slug") or card_item.get("printing_slug"),
+            "image_normal": card_item.get("image_url") or card_item.get("image_normal"),
+            "count": card_item.get("count", 1)
+        })
+        
+    now = datetime.now(timezone.utc).isoformat()
+    db["decks"].update_one(
+        {"deck_id": deck_id, "user_id": user["id"]},
+        {
+            "$set": {
+                "cards": cards,
+                "card_count": sum(c.get("count", 1) for c in cards),
+                "updated_at": now
+            }
+        }
+    )
+    return JSONResponse({"status": "added", "deck_name": deck.get("name")})
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def user_dashboard(request: Request):
@@ -755,11 +1352,22 @@ async def user_dashboard(request: Request):
     if not user:
         return RedirectResponse(url="/auth/login?next=/dashboard", status_code=303)
     
+    from bson import ObjectId
     db = get_mongo_db()
-    user_doc = db["users"].find_one({"google_sub": user["google_sub"]}) or {}
+    user_doc = {}
+    if user.get("id"):
+        try:
+            user_doc = db["users"].find_one({"_id": ObjectId(user["id"])}) or {}
+        except Exception:
+            pass
+    if not user_doc and user.get("google_sub"):
+        user_doc = db["users"].find_one({"google_sub": user["google_sub"]}) or {}
     decks = list(db["decks"].find(
         {"user_id": user["id"]}
     ).sort("updated_at", -1))
+    saved_cards = list(db["saved_cards"].find(
+        {"user_id": user["id"]}
+    ).sort("saved_at", -1))
     
     lang = i18n.get_locale(request)
     return templates.TemplateResponse(
@@ -770,7 +1378,9 @@ async def user_dashboard(request: Request):
             "current_lang": lang,
             "profile": user_doc,
             "decks": decks,
-            "deck_count": len(decks)
+            "deck_count": len(decks),
+            "saved_cards": saved_cards,
+            "saved_card_count": len(saved_cards)
         }
     )
 
@@ -1067,8 +1677,10 @@ async def commander_discover(request: Request):
 
     docs = list(new_db["cards"].aggregate(pipeline))
 
-    # Only fall back to generic pre-computed similarity if user entered NO specific filters at all
-    if len(docs) == 0 and not and_conditions and oracle_id:
+    # Always fall back to commander similarity when strict token matching returns nothing
+    is_fallback = False
+    if len(docs) == 0 and oracle_id:
+        is_fallback = True
         sim_doc = old_db["similar_cards"].find_one({"oracle_id": oracle_id})
         if sim_doc:
             sim_oids = [s["oracle_id"] for s in sim_doc.get("similar", []) if s.get("oracle_id") != oracle_id]
@@ -1097,6 +1709,31 @@ async def commander_discover(request: Request):
             ]
             docs = list(new_db["cards"].aggregate(fb_pipeline))
 
+        # Final safety net: if no similar_cards either, just return good staples in color
+        if len(docs) == 0:
+            safety_match = {"lang": "en", "edhrec_rank": {"$lte": 500}}
+            if color_identity:
+                safety_match["color_identity"] = {"$not": {"$elemMatch": {"$nin": color_identity}}}
+            if oracle_id:
+                safety_match["oracle_id"] = {"$ne": oracle_id}
+            docs = list(new_db["cards"].aggregate([
+                {"$match": safety_match},
+                {"$sort": {"edhrec_rank": 1}},
+                {"$group": {
+                    "_id": "$oracle_id",
+                    "name": {"$first": "$name"},
+                    "set": {"$first": "$set"},
+                    "type_line": {"$first": "$type_line"},
+                    "color_identity": {"$first": "$color_identity"},
+                    "oracle_text": {"$first": "$oracle_text"},
+                    "mana_cost": {"$first": "$mana_cost"},
+                    "cmc": {"$first": "$cmc"},
+                    "image_uris": {"$first": "$image_uris"},
+                    "card_faces": {"$first": "$card_faces"}
+                }},
+                {"$limit": limit}
+            ]))
+
     # Check RAM Cache first
     cache_key = f"discover:{oracle_id}:{','.join(sorted(color_identity))}:{theme_lower}:{limit}"
     if cache_key in RAM_CACHE:
@@ -1122,25 +1759,28 @@ async def commander_discover(request: Request):
             "image_large": img.get("large") or img.get("normal") or "",
         })
 
-    response_data = {"cards": results, "query": theme, "total": len(results)}
+    response_data = {"cards": results, "query": theme, "total": len(results), "fallback": is_fallback}
     set_ram_cache(cache_key, response_data)
     return JSONResponse(response_data)
 
 
 
-@app.get("/card/{slug}", response_class=HTMLResponse)
+@app.get("/card/{slug}")
 async def card_name_shortcut(request: Request, slug: str):
     """Clean shortcut redirecting /card/<name> to the primary/earliest Oracle printing of that card."""
     db = get_mongo_db()
     unslugged = slug.replace('-', ' ')
+    pattern = slug_to_name_regex(slug)
     
-    # 1. Match card by name or slug
+    # 1. Match card by slug, exact name, full regex (including //), or front face prefix
     card = db["cards"].find_one({
         "$or": [
             {"slug": slug},
             {"name": slug},
             {"name": unslugged},
-            {"name": {"$regex": f"^{re.escape(unslugged)}$", "$options": "i"}}
+            {"name": pattern},
+            {"name": re.compile(r"^" + re.escape(unslugged) + r"\s*//", re.I)},
+            {"card_faces.0.name": pattern}
         ]
     })
     
@@ -1159,14 +1799,78 @@ async def card_name_shortcut(request: Request, slug: str):
     # Fallback to direct printing route
     return RedirectResponse(url=f"/printing/{slug}", status_code=303)
 
+def format_card_markdown(card_doc: dict, printings_count: int = 1, rulings: list = None) -> str:
+    """Format structured, token-efficient Markdown for AI agents and LLMs."""
+    name = card_doc.get("name", "Unknown Card")
+    mana_cost = card_doc.get("mana_cost") or "N/A"
+    cmc = card_doc.get("cmc", 0.0)
+    type_line = card_doc.get("type_line", "")
+    oracle_text = card_doc.get("oracle_text") or "(No Oracle text)"
+    flavor_text = card_doc.get("flavor_text")
+    power = card_doc.get("power")
+    toughness = card_doc.get("toughness")
+    loyalty = card_doc.get("loyalty")
+    set_name = card_doc.get("set_name", "")
+    set_code = (card_doc.get("set") or "").upper()
+    collector_number = card_doc.get("collector_number", "")
+    rarity = (card_doc.get("rarity") or "").capitalize()
+    artist = card_doc.get("artist", "Unknown")
+    legalities = card_doc.get("legalities", {})
+    keywords = card_doc.get("keywords", [])
+
+    lines = [
+        f"# {name}",
+        f"- **Mana Cost:** `{mana_cost}` (CMC: {cmc:g})",
+        f"- **Type:** {type_line}",
+    ]
+
+    if power is not None and toughness is not None:
+        lines.append(f"- **Power/Toughness:** {power}/{toughness}")
+    if loyalty is not None:
+        lines.append(f"- **Starting Loyalty:** {loyalty}")
+
+    if keywords:
+        lines.append(f"- **Keywords:** {', '.join(keywords)}")
+
+    lines.append(f"\n## Oracle Text\n{oracle_text}\n")
+
+    if flavor_text:
+        lines.append(f"> *{flavor_text}*\n")
+
+    lines.append("## Printing Details")
+    lines.append(f"- **Set:** {set_name} ({set_code}) #{collector_number}")
+    lines.append(f"- **Rarity:** {rarity}")
+    lines.append(f"- **Artist:** {artist}")
+    if printings_count > 1:
+        lines.append(f"- **Total Printings:** {printings_count} across all editions")
+
+    # Format Key Legalities
+    key_formats = ["commander", "standard", "modern", "pioneer", "legacy", "vintage", "pauper"]
+    leg_list = [f"{f.capitalize()}: `{legalities.get(f, 'not_legal')}`" for f in key_formats if f in legalities]
+    if leg_list:
+        lines.append(f"\n## Format Legalities\n" + " | ".join(leg_list))
+
+    if rulings:
+        lines.append(f"\n## Official Rulings")
+        for r in rulings[:5]:
+            pub = r.get("published_at", "")
+            comment = r.get("comment", "")
+            lines.append(f"- *({pub})* {comment}")
+
+    return "\n".join(lines)
+
 def slug_to_name_regex(slug: str) -> re.Pattern:
-    """Build a regex that matches card names regardless of stripped apostrophes, commas, or dashes."""
+    """Build a regex that matches card names regardless of stripped apostrophes, commas, dashes, ampersands, or // slashes."""
     clean = slug.strip().lower()
-    chars = [re.escape(c) if c != '-' else r'[\s\-\'\,\.\:]+' for c in clean]
-    pattern_str = r'^' + r'[\'\,\.\:\s\-]*'.join(chars) + r'$'
+    # Replace & or and representations
+    clean = clean.replace('&', '-')
+    chars = [re.escape(c) if c != '-' else r'[\s\-\'\,\.\:\/\&]+' for c in clean]
+    pattern_str = r'^[\'\,\.\:\s\-\/\&]*' + r'[\'\,\.\:\s\-\/\&]*'.join(chars) + r'[\'\,\.\:\s\-\/\&]*$'
     return re.compile(pattern_str, re.IGNORECASE)
 
-@app.get("/printing/{identifier}", response_class=HTMLResponse)
+KNOWN_LANG_CODES = {'ja', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ko', 'zhs', 'zht'}
+
+@app.get("/printing/{identifier}")
 async def printing_detail(request: Request, identifier: str, background_tasks: BackgroundTasks):
     db = get_mongo_db()
     card = None
@@ -1174,11 +1878,10 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
     # 1. Try match by UUID
     card = db["cards"].find_one({"id": identifier})
 
-    # 2. Try match by <slug>-<set>-<lang> or <slug>-<set>
+    # 2. Try match by <slug>-<set>-<lang> (only if last token is an actual language code)
     if not card and '-' in identifier:
         parts = identifier.split('-')
-        if len(parts) >= 3:
-            # Check if last part is a language code (e.g. ja, de, it, fr, etc.)
+        if len(parts) >= 3 and parts[-1].lower() in KNOWN_LANG_CODES:
             possible_lang = parts[-1].lower()
             possible_set = parts[-2].lower()
             card_slug = "-".join(parts[:-2])
@@ -1189,10 +1892,12 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
                 "lang": possible_lang,
                 "$or": [
                     {"slug": card_slug},
-                    {"name": pattern}
+                    {"name": pattern},
+                    {"card_faces.0.name": pattern}
                 ]
             })
 
+        # 3. Try match by <slug>-<set>
         if not card and len(parts) >= 2:
             card_slug, set_code = "-".join(parts[:-1]), parts[-1].lower()
             pattern = slug_to_name_regex(card_slug)
@@ -1200,17 +1905,19 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
                 "set": set_code,
                 "$or": [
                     {"slug": card_slug},
-                    {"name": pattern}
+                    {"name": pattern},
+                    {"card_faces.0.name": pattern}
                 ]
             })
 
-    # 3. Fallback match by name or slug
+    # 4. Fallback match by name or slug across entire collection
     if not card:
         pattern = slug_to_name_regex(identifier)
         card = db["cards"].find_one({
             "$or": [
                 {"slug": identifier},
-                {"name": pattern}
+                {"name": pattern},
+                {"card_faces.0.name": pattern}
             ]
         })
 
@@ -1222,6 +1929,7 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
     
     # Load All Other Printings for this Oracle ID
     printings = []
+    sorted_lang_groups = []
     if oracle_id:
         p_cursor = db["cards"].find({"oracle_id": oracle_id}).sort("released_at", 1)
         for p in p_cursor:
@@ -1333,6 +2041,75 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
     except Exception:
         pass
 
+    # Find 4 Highly Relevant Synergistic / Mechanically Similar Cards (Quick memory-only or indexed projection)
+    similar_cards = []
+    try:
+        colors = card.get("color_identity", [])
+        keywords = card.get("keywords", [])
+        
+        sim_query = {
+            "lang": "en",
+            "oracle_id": {"$ne": oracle_id}
+        }
+        if keywords:
+            sim_query["keywords"] = keywords[0]
+        elif colors:
+            sim_query["color_identity"] = colors[0]
+
+        sim_cursor = db["cards"].find(
+            sim_query,
+            {"name": 1, "slug": 1, "set": 1, "set_name": 1, "image_uris": 1, "type_line": 1, "oracle_id": 1}
+        ).limit(8)
+
+        seen_oracles = set()
+        for sc in sim_cursor:
+            sc_oid = sc.get("oracle_id")
+            if sc_oid and sc_oid not in seen_oracles:
+                seen_oracles.add(sc_oid)
+                sc_name = sc.get("name") or "Card"
+                sc_set = (sc.get("set") or "").lower()
+                sc_slug = slugify(sc_name)
+                sc_img = sc.get("image_uris")
+                if not sc_img and sc.get("card_faces"):
+                    sc_img = sc["card_faces"][0].get("image_uris") or {}
+                sc_img = sc_img or {}
+                similar_cards.append({
+                    "name": sc_name,
+                    "slug": f"{sc_slug}-{sc_set}" if sc_set else sc_slug,
+                    "set_name": sc.get("set_name") or "",
+                    "type_line": sc.get("type_line") or "",
+                    "image_url": sc_img.get("normal") or f"/images/normal/{sc_slug}.jpg",
+                    "large_image_url": sc_img.get("large") or sc_img.get("normal") or f"/images/large/{sc_slug}.jpg"
+                })
+                if len(similar_cards) >= 4:
+                    break
+    except Exception as e:
+        pass
+
+    # Content Negotiation: Check for AI Agent / LLM requesting Markdown
+    accept_header = request.headers.get("accept", "").lower()
+    requested_format = request.query_params.get("format", "").lower()
+    if "text/markdown" in accept_header or "text/x-markdown" in accept_header or requested_format in ("md", "markdown"):
+        md_text = format_card_markdown(card, printings_count=len(printings), rulings=rulings)
+        return Response(
+            content=md_text,
+            media_type="text/markdown; charset=utf-8",
+            headers={
+                "Vary": "Accept",
+                "X-Markdown-Tokens": str(len(md_text.split())),
+                "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+            }
+        )
+
+    # Check if card is saved in user stash
+    user = request.session.get("user")
+    is_saved = False
+    if user and oracle_id:
+        try:
+            is_saved = bool(db["saved_cards"].find_one({"user_id": user["id"], "oracle_id": oracle_id}))
+        except Exception:
+            is_saved = False
+
     return templates.TemplateResponse(
         request=request,
         name="card.html",
@@ -1345,7 +2122,8 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
             "rulings": rulings,
             "mechanics": mechanics,
             "lure": lure,
-            "similar_cards": []
+            "similar_cards": similar_cards,
+            "is_saved": is_saved
         }
     )
 
@@ -1402,7 +2180,84 @@ async def search_page(request: Request, background_tasks: BackgroundTasks, q: Op
         context={
             "active_nav": "home",
             "featured_cards": results,
-            "q": query_str
+            "q": query_str,
+            "noindex": True
+        },
+        headers={"X-Robots-Tag": "noindex, follow"}
+    )
+
+@app.get("/similar/{slug}", response_class=HTMLResponse)
+async def similar_cards_page(slug: str, request: Request, background_tasks: BackgroundTasks):
+    """Deep similarity search: finds top 31 mechanically similar cards to the given card slug."""
+    db = get_mongo_db()
+    pattern = slug_to_name_regex(slug)
+    card = db["cards"].find_one({"$or": [{"slug": slug}, {"name": pattern}]})
+    if not card:
+        raise HTTPException(status_code=404, detail="Card not found")
+        
+    oracle_id = card.get("oracle_id")
+    colors = card.get("color_identity", [])
+    keywords = card.get("keywords", [])
+    type_line = card.get("type_line", "")
+    card_name = card.get("name") or "Card"
+    
+    sim_query = {
+        "lang": "en",
+        "oracle_id": {"$ne": oracle_id},
+        "layout": {"$in": ["normal", "saga", "class", "leveler", "adventure"]}
+    }
+    
+    or_clauses = []
+    if keywords:
+        or_clauses.append({"keywords": {"$in": keywords[:4]}})
+    
+    main_type = "Creature" if "Creature" in type_line else ("Artifact" if "Artifact" in type_line else ("Enchantment" if "Enchantment" in type_line else ("Instant" if "Instant" in type_line else "Sorcery")))
+    if colors:
+        or_clauses.append({"color_identity": {"$in": colors}})
+    else:
+        or_clauses.append({"keywords": {"$exists": True, "$ne": []}})
+
+    if or_clauses:
+        sim_query["$or"] = or_clauses
+
+    sim_cursor = list(db["cards"].find(
+        sim_query,
+        {"name": 1, "slug": 1, "set": 1, "set_name": 1, "image_uris": 1, "type_line": 1, "mana_cost": 1, "oracle_id": 1}
+    ).limit(50))
+
+    results = []
+    seen_oracles = set()
+    for sc in sim_cursor:
+        sc_oid = sc.get("oracle_id")
+        if sc_oid and sc_oid not in seen_oracles:
+            seen_oracles.add(sc_oid)
+            sc_name = sc.get("name") or "Card"
+            sc_set = (sc.get("set") or "").lower()
+            sc_slug = slugify(sc_name)
+            sc_img = sc.get("image_uris")
+            if not sc_img and sc.get("card_faces"):
+                sc_img = sc["card_faces"][0].get("image_uris") or {}
+            sc_img = sc_img or {}
+            results.append({
+                "name": sc_name,
+                "slug": f"{sc_slug}-{sc_set}" if sc_set else sc_slug,
+                "image_url": sc_img.get("normal") or f"/images/normal/{sc_slug}.jpg",
+                "large_image_url": sc_img.get("large") or sc_img.get("normal") or f"/images/large/{sc_slug}.jpg",
+                "type_line": sc.get("type_line"),
+                "mana_cost": sc.get("mana_cost")
+            })
+            if len(results) >= 31:
+                break
+
+    lang = i18n.get_locale(request)
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={
+            "active_nav": "explore",
+            "featured_cards": results,
+            "current_lang": lang,
+            "q": f"Similar to {card_name}"
         }
     )
 
@@ -1435,11 +2290,11 @@ async def sets_list(request: Request):
         }
     )
 
-@app.get("/set/{code}", response_class=HTMLResponse)
+@app.get("/set/{code}")
 async def set_detail(request: Request, code: str, background_tasks: BackgroundTasks):
     db = get_mongo_db()
     set_code = code.lower()
-    cards_cursor = db["cards"].find({"set": set_code}).sort("collector_number", 1).limit(200)
+    cards_cursor = db["cards"].find({"set": set_code, "lang": "en"}).sort("collector_number", 1)
     cards = []
     set_name = set_code.upper()
     
@@ -1447,6 +2302,43 @@ async def set_detail(request: Request, code: str, background_tasks: BackgroundTa
         set_name = doc.get("set_name") or set_name
         vm = build_card_view_model(doc, db, background_tasks)
         cards.append(vm)
+
+    # Fallback if no English cards found (e.g. foreign-only set)
+    if not cards:
+        cards_cursor = db["cards"].find({"set": set_code}).sort("collector_number", 1).limit(200)
+        for doc in cards_cursor:
+            set_name = doc.get("set_name") or set_name
+            vm = build_card_view_model(doc, db, background_tasks)
+            cards.append(vm)
+
+    # Content Negotiation for AI Agents (Accept: text/markdown or ?format=md)
+    accept_header = request.headers.get("accept", "").lower()
+    requested_format = request.query_params.get("format", "").lower()
+    if "text/markdown" in accept_header or "text/x-markdown" in accept_header or requested_format in ("md", "markdown"):
+        md_lines = [
+            f"# {set_name} ({set_code.upper()})",
+            f"**Total Printings:** {len(cards)}\n",
+            "| # | Card Name | Type | Rarity | Mana Cost |",
+            "|---|-----------|------|--------|-----------|"
+        ]
+        for c in cards:
+            c_num = c.get("collector_number", "")
+            c_name = c.get("name", "")
+            c_type = c.get("type_line", "")
+            c_rarity = (c.get("rarity") or "").capitalize()
+            c_mana = c.get("mana_cost") or "-"
+            md_lines.append(f"| {c_num} | [{c_name}](https://avascry.com/printing/{c.get('printing_slug')}) | {c_type} | {c_rarity} | `{c_mana}` |")
+
+        md_text = "\n".join(md_lines)
+        return Response(
+            content=md_text,
+            media_type="text/markdown; charset=utf-8",
+            headers={
+                "Vary": "Accept",
+                "X-Markdown-Tokens": str(len(md_text.split())),
+                "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+            }
+        )
         
     return templates.TemplateResponse(
         request=request,
@@ -1585,23 +2477,89 @@ async def live_gallery_feed():
 
 
 
-@app.get("/artist/{slug}", response_class=HTMLResponse)
+@app.get("/artist/{slug}")
 async def artist_detail(request: Request, slug: str, background_tasks: BackgroundTasks):
     db = get_mongo_db()
     unslugged = slug.replace('-', ' ')
-    pattern = r'^' + r'[\s\W]*'.join(re.escape(w) for w in slug.split('-') if w) + r'$'
+    artist_name = unslugged.title()
     
-    query = {"artist": {"$regex": pattern, "$options": "i"}}
-    total_count = db["cards"].count_documents(query)
+    # 1. Fast exact match using index
+    query_exact = {"artist": artist_name, "lang": "en"}
+    cards_cursor = list(db["cards"].find(
+        query_exact,
+        {"name": 1, "set": 1, "set_name": 1, "collector_number": 1, "released_at": 1, "rarity": 1, "type_line": 1, "image_uris": 1, "image_slug": 1, "artist": 1}
+    ).sort("released_at", -1).limit(60))
     
-    cards_cursor = db["cards"].find(query).sort("released_at", -1).limit(200)
+    # 2. Fallback to regex if exact title didn't hit
+    if not cards_cursor:
+        pattern = r'^' + r'[\s\W]*'.join(re.escape(w) for w in slug.split('-') if w) + r'$'
+        query_regex = {"artist": {"$regex": pattern, "$options": "i"}, "lang": "en"}
+        cards_cursor = list(db["cards"].find(
+            query_regex,
+            {"name": 1, "set": 1, "set_name": 1, "collector_number": 1, "released_at": 1, "rarity": 1, "type_line": 1, "image_uris": 1, "image_slug": 1, "artist": 1}
+        ).sort("released_at", -1).limit(60))
+
+    if not cards_cursor:
+        pattern = r'^' + r'[\s\W]*'.join(re.escape(w) for w in slug.split('-') if w) + r'$'
+        query_all = {"artist": {"$regex": pattern, "$options": "i"}}
+        cards_cursor = list(db["cards"].find(
+            query_all,
+            {"name": 1, "set": 1, "set_name": 1, "collector_number": 1, "released_at": 1, "rarity": 1, "type_line": 1, "image_uris": 1, "image_slug": 1, "artist": 1}
+        ).sort("released_at", -1).limit(60))
     
     cards = []
-    artist_name = unslugged.title()
     for doc in cards_cursor:
         artist_name = doc.get("artist") or artist_name
-        vm = build_card_view_model(doc, db, background_tasks)
-        cards.append(vm)
+        c_name = doc.get("name") or "Card"
+        c_set = (doc.get("set") or "").lower()
+        c_slug = slugify(c_name)
+        c_imgs = doc.get("image_uris")
+        if not c_imgs and doc.get("card_faces"):
+            c_imgs = doc["card_faces"][0].get("image_uris") or {}
+        c_imgs = c_imgs or {}
+        img_url = c_imgs.get("normal") or (f"/images/normal/{doc.get('image_slug')}.jpg" if doc.get("image_slug") else f"/images/normal/{c_slug}.jpg")
+        large_img_url = c_imgs.get("large") or img_url
+        cards.append({
+            "name": c_name,
+            "set": c_set,
+            "set_name": doc.get("set_name") or c_set.upper(),
+            "collector_number": doc.get("collector_number") or "",
+            "rarity": doc.get("rarity") or "",
+            "type_line": doc.get("type_line") or "",
+            "released_at": doc.get("released_at") or "",
+            "printing_slug": f"{c_slug}-{c_set}" if c_set else c_slug,
+            "image_url": img_url,
+            "large_image_url": large_img_url
+        })
+
+    # Content Negotiation for AI Agents (Accept: text/markdown or ?format=md)
+    accept_header = request.headers.get("accept", "").lower()
+    requested_format = request.query_params.get("format", "").lower()
+    if "text/markdown" in accept_header or "text/x-markdown" in accept_header or requested_format in ("md", "markdown"):
+        md_lines = [
+            f"# Magic: The Gathering Cards Illustrated by {artist_name}",
+            f"**Total Artworks:** {len(cards)}\n",
+            "| Card Name | Set | Type | Rarity | Released |",
+            "|-----------|-----|------|--------|----------|"
+        ]
+        for c in cards:
+            c_name = c.get("name", "")
+            c_set = (c.get("set") or "").upper()
+            c_type = c.get("type_line", "")
+            c_rarity = (c.get("rarity") or "").capitalize()
+            c_rel = c.get("released_at") or "-"
+            md_lines.append(f"| [{c_name}](https://avascry.com/printing/{c.get('printing_slug')}) | {c_set} | {c_type} | {c_rarity} | {c_rel} |")
+
+        md_text = "\n".join(md_lines)
+        return Response(
+            content=md_text,
+            media_type="text/markdown; charset=utf-8",
+            headers={
+                "Vary": "Accept",
+                "X-Markdown-Tokens": str(len(md_text.split())),
+                "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+            }
+        )
         
     return templates.TemplateResponse(
         request=request,
@@ -1609,7 +2567,8 @@ async def artist_detail(request: Request, slug: str, background_tasks: Backgroun
         context={
             "active_nav": "artists",
             "artist_name": artist_name,
-            "total_cards": total_count if total_count > 0 else len(cards),
+            "artist_slug": slug,
+            "total_cards": len(cards),
             "cards": cards
         }
     )
@@ -1724,5 +2683,7 @@ if __name__ == "__main__":
         host="127.0.0.1",
         port=8004,
         reload=True,
-        reload_dirs=["templates", "static", "."]
+        access_log=False,
+        reload_dirs=["templates", "static"],
+        reload_includes=["*.py", "*.html", "*.css", "*.js"]
     )

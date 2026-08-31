@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block title %}{{ deck.name }} — Commander Deck | AvaScry{% endblock %}
+
+{% block meta %}
+  <meta name="description" content="Explore {{ deck.name }} ({{ deck.card_count or 0 }} cards) featuring {{ deck.commander.name if deck.commander else 'Commander' }}. High-res scans, historical printings, and deck export on AvaScry.">
+  <meta property="og:title" content="{{ deck.name }} — Commander Deck | AvaScry">
+  <meta property="og:description" content="Explore {{ deck.name }} ({{ deck.card_count or 0 }} cards) featuring {{ deck.commander.name if deck.commander else 'Commander' }}. High-res scans, historical printings, and deck export on AvaScry.">
+  {% if deck.commander and (deck.commander.image_art_crop or deck.commander.image_normal) %}
+    <meta property="og:image" content="{{ deck.commander.image_art_crop or deck.commander.image_normal }}">
+  {% endif %}
+  <meta property="og:type" content="website">
+  <link rel="canonical" href="https://avascry.com/deck/{{ deck.deck_id }}">
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 1.5rem auto 4rem; padding: 0 1rem;">
+
+  <!-- Commander Header Hero Banner -->
+  <div style="position: relative; border-radius: var(--radius-lg); overflow: hidden; border: 1.5px solid var(--border); background: var(--surface); margin-bottom: 2rem; box-shadow: 0 8px 30px rgba(0,0,0,0.25);">
+    
+    <!-- Background Art Overlay -->
+    {% if deck.commander and (deck.commander.image_art_crop or deck.commander.image_normal) %}
+      <div style="position: absolute; inset: 0; background-image: url('{{ deck.commander.image_art_crop or deck.commander.image_normal }}'); background-size: cover; background-position: center 25%; filter: blur(8px) brightness(0.35); transform: scale(1.08);"></div>
+    {% endif %}
+
+    <div style="position: relative; z-index: 1; padding: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem;">
+      
+      <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+        <!-- Commander Card Thumbnail -->
+        {% if deck.commander and (deck.commander.image_normal or deck.commander.image_art_crop) %}
+          <div style="width: 100px; aspect-ratio: 488/680; border-radius: 8px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.5); border: 2px solid var(--accent); flex-shrink: 0;">
+            <img src="{{ deck.commander.image_normal or deck.commander.image_art_crop }}" alt="{{ deck.commander.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+        {% endif %}
+
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; flex-wrap: wrap;">
+            <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.6);">{{ deck.name }}</h1>
+            <span style="background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.2); border-radius: var(--radius-pill); padding: 2px 10px; font-size: 0.75rem; color: #fff; font-weight: 700;">
+              {{ deck.card_count or 0 }} Cards
+            </span>
+          </div>
+
+          <div style="font-size: 0.95rem; color: rgba(255,255,255,0.85); margin-bottom: 0.6rem;">
+            {% if deck.commander and deck.commander.name %}
+              Commander: <strong style="color: #fff;">{{ deck.commander.name }}</strong>
+            {% endif %}
+            {% if discord_handle %}
+              &bull; Built by <strong style="color: var(--accent);">@{{ discord_handle }}</strong>
+            {% endif %}
+          </div>
+
+          <!-- Color Identity Pips -->
+          <div style="display: inline-flex; gap: 4px; background: rgba(0,0,0,0.65); border-radius: var(--radius-pill); padding: 3px 10px; border: 1px solid rgba(255,255,255,0.15);">
+            {% if deck.commander and deck.commander.color_identity %}
+              {% for c in deck.commander.color_identity %}
+                <span style="font-size: 0.9rem;">{% if c == 'W' %}☀️{% elif c == 'U' %}💧{% elif c == 'B' %}💀{% elif c == 'R' %}🔥{% elif c == 'G' %}🌲{% else %}💎{% endif %}</span>
+              {% endfor %}
+            {% else %}
+              <span style="font-size: 0.9rem;">💎</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+        {% if is_owner %}
+          <a href="/commander?deck={{ deck.deck_id }}" style="padding: 0.6rem 1.25rem; background: var(--accent); color: #fff; border-radius: var(--radius-pill); font-size: 0.88rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+            <span>✏️</span> Edit in Builder
+          </a>
+        {% else %}
+          <button id="btn-clone-deck" data-id="{{ deck.deck_id }}" style="padding: 0.6rem 1.25rem; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-pill); font-size: 0.88rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+            <span>⚔️</span> Clone to My Decks
+          </button>
+        {% endif %}
+
+        <button id="btn-copy-decklist" style="padding: 0.6rem 1.1rem; background: var(--surface); border: 1.5px solid var(--border); color: var(--text); border-radius: var(--radius-pill); font-size: 0.88rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;">
+          <span>📋</span> Copy List
+        </button>
+
+        <button id="btn-open-share-modal" style="padding: 0.6rem 1.25rem; background: var(--surface); border: 1.5px solid var(--accent); color: var(--accent); border-radius: var(--radius-pill); font-size: 0.88rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: var(--shadow-sm);">
+          <span>🔗</span> Share Deck
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Share Deck Modal -->
+  <div id="share-deck-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+    <div style="background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); width: 90%; max-width: 480px; padding: 1.5rem; box-shadow: 0 24px 60px rgba(0,0,0,0.5); position: relative; animation: modalFadeIn 0.15s ease;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3 style="margin: 0; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;">
+          <span>🔗</span> Share Deck
+        </h3>
+        <button id="btn-close-share-modal" style="background: transparent; border: none; font-size: 1.35rem; color: var(--muted); cursor: pointer; padding: 0.2rem 0.5rem;">✕</button>
+      </div>
+
+      <!-- Prepopulated Text Box -->
+      <div style="margin-bottom: 1.25rem;">
+        <label style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.5px;">Message Preview</label>
+        <div id="share-modal-preview-text" style="background: var(--bg); border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 0.85rem; font-size: 0.88rem; color: var(--text); line-height: 1.45; user-select: all; word-break: break-word;">
+        </div>
+      </div>
+
+      <!-- Copy Full Message Button (Discord / iMessage) -->
+      <button id="btn-modal-copy-all" style="width: 100%; padding: 0.75rem 1rem; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-pill); font-size: 0.92rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 14px rgba(0,0,0,0.25);">
+        <span>📋</span> Copy Message & Link (Discord / iMessage)
+      </button>
+
+      <!-- Platform Direct Share Buttons -->
+      <div style="border-top: 1px solid var(--border); padding-top: 1.25rem;">
+        <label style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--muted); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Direct Share</label>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem;">
+          
+          <button id="btn-modal-share-x" style="padding: 0.65rem 0.5rem; background: #000; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+            <span style="font-weight: 900;">𝕏</span> Post
+          </button>
+
+          <button id="btn-modal-share-reddit" style="padding: 0.65rem 0.5rem; background: #ff4500; color: #fff; border: none; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+            <span>🤖</span> r/EDH
+          </button>
+
+          <button id="btn-modal-share-fb" style="padding: 0.65rem 0.5rem; background: #1877f2; color: #fff; border: none; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+            <span>👥</span> Facebook
+          </button>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="deck-toast" style="display: none; position: fixed; bottom: 2rem; right: 2rem; z-index: 10000; background: var(--surface); color: var(--text); border: 1.5px solid var(--accent); border-radius: var(--radius-pill); padding: 0.75rem 1.4rem; font-size: 0.9rem; font-weight: 700; box-shadow: 0 8px 30px rgba(0,0,0,0.3); align-items: center; gap: 0.5rem;">
+    <span style="color: var(--accent);">✓</span>
+    <span id="deck-toast-msg">Copied!</span>
+  </div>
+
+  <!-- Decklist Cards Grid -->
+  <div style="margin-top: 2rem;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+      <h2 style="font-size: 1.3rem; font-weight: 800; margin: 0;">Cards in Deck ({{ deck.cards|length }})</h2>
+    </div>
+
+    {% if deck.cards and deck.cards|length > 0 %}
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.25rem;">
+        {% for c in deck.cards %}
+          <div style="background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.15s ease, border-color 0.15s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='var(--accent)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--border)';">
+            
+            <div style="aspect-ratio: 488 / 680; width: 100%; position: relative; background: var(--bg); overflow: hidden;">
+              <a href="/printing/{{ c.printing_slug or c.slug or slugify(c.name) }}" style="display: block; width: 100%; height: 100%;">
+                <img src="{{ c.image_normal or c.image_url or '/static/card-back.jpg' }}" alt="{{ c.name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+              </a>
+              {% if c.count and c.count > 1 %}
+                <span style="position: absolute; top: 6px; right: 6px; background: var(--accent); color: #fff; font-size: 0.75rem; font-weight: 800; border-radius: var(--radius-pill); padding: 2px 7px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+                  {{ c.count }}x
+                </span>
+              {% endif %}
+            </div>
+
+            <div style="padding: 0.75rem;">
+              <a href="/printing/{{ c.printing_slug or c.slug or slugify(c.name) }}" style="font-size: 0.88rem; font-weight: 700; color: var(--text); text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ c.name }}">
+                {{ c.name }}
+              </a>
+            </div>
+
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 4rem 1rem; background: var(--surface); border: 1.5px dashed var(--border); border-radius: var(--radius-lg); color: var(--muted);">
+        No cards added to this deck yet.
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showToast(msg) {
+  const toast = document.getElementById('deck-toast');
+  const toastMsg = document.getElementById('deck-toast-msg');
+  if (toast && toastMsg) {
+    toastMsg.textContent = msg;
+    toast.style.display = 'flex';
+    setTimeout(() => { toast.style.display = 'none'; }, 2200);
+  }
+}
+
+// 1. Copy Decklist Text Export
+document.getElementById('btn-copy-decklist')?.addEventListener('click', () => {
+  const lines = [];
+  {% if deck.commander and deck.commander.name %}
+    lines.push('// Commander');
+    lines.push('1 ' + {{ deck.commander.name | tojson }});
+    lines.push('');
+    lines.push('// Deck');
+  {% endif %}
+
+  {% for c in deck.cards %}
+    lines.push('{{ c.count or 1 }} ' + {{ c.name | tojson }});
+  {% endfor %}
+
+  const text = lines.join('\n');
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Decklist copied to clipboard!');
+  }).catch(() => {
+    prompt('Copy deck text:', text);
+  });
+});
+
+// 2. Clone Deck
+document.getElementById('btn-clone-deck')?.addEventListener('click', async () => {
+  const btn = document.getElementById('btn-clone-deck');
+  const deckId = btn.dataset.id;
+  btn.disabled = true;
+  btn.textContent = 'Cloning...';
+
+  try {
+    const res = await fetch(`/api/deck/${deckId}/clone`, { method: 'POST' });
+    if (res.status === 401) {
+      window.location.href = `/auth/login?next=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
+    if (res.ok) {
+      const data = await res.json();
+      window.location.href = `/commander?deck=${data.new_deck_id}`;
+    } else {
+      alert('Failed to clone deck.');
+      btn.disabled = false;
+      btn.textContent = '⚔️ Clone to My Decks';
+    }
+  } catch(e) {
+    console.error(e);
+    btn.disabled = false;
+    btn.textContent = '⚔️ Clone to My Decks';
+  }
+});
+
+// 3. Multi-Platform Share Modal Logic
+const count = {{ deck.card_count or 0 }};
+const commander = {{ (deck.commander.name if deck.commander else '') | tojson }};
+const deckName = {{ deck.name | tojson }};
+const currentUrl = window.location.href;
+
+let lines = [];
+lines.push(`# ⚔️ ${deckName}`);
+if (commander) {
+  lines.push(`**Commander:** 👑 *${commander}* (${count}/100 Cards)`);
+} else {
+  lines.push(`**Total Cards:** ${count}`);
+}
+lines.push('');
+
+const deckCards = [
+  {% for c in deck.cards[:6] %}
+    {{ c.name | tojson }},
+  {% endfor %}
+];
+
+if (deckCards.length > 0) {
+  lines.push('**Featured Cards in this Brew:**');
+  deckCards.forEach(cName => {
+    lines.push(`• 1x *${cName}*`);
+  });
+  {% if deck.cards|length > 6 %}
+    lines.push(`*...plus {{ deck.cards|length - 6 }} more cards*`);
+  {% endif %}
+  lines.push('');
+}
+
+lines.push('🔗 **Interactive Deck & Synergies on AvaScry:**');
+lines.push(currentUrl);
+
+const fullDiscordText = lines.join('\n');
+
+const shareModal = document.getElementById('share-deck-modal');
+const previewTextBox = document.getElementById('share-modal-preview-text');
+
+if (previewTextBox) {
+  previewTextBox.textContent = fullDiscordText;
+}
+
+function openShareModal() {
+  if (shareModal) shareModal.style.display = 'flex';
+}
+
+function closeShareModal() {
+  if (shareModal) shareModal.style.display = 'none';
+}
+
+document.getElementById('btn-open-share-modal')?.addEventListener('click', openShareModal);
+document.getElementById('btn-close-share-modal')?.addEventListener('click', closeShareModal);
+shareModal?.addEventListener('click', (e) => {
+  if (e.target === shareModal) closeShareModal();
+});
+
+// A. Copy Full Message & Link (Discord / iMessage)
+document.getElementById('btn-modal-copy-all')?.addEventListener('click', () => {
+  navigator.clipboard.writeText(fullDiscordText).then(() => {
+    showToast('Message & link copied for Discord / chat!');
+    const btn = document.getElementById('btn-modal-copy-all');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span>✓</span> Copied to Clipboard!';
+    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+  }).catch(() => {
+    prompt('Copy message:', fullDiscordText);
+  });
+});
+
+// B. Share to X (Twitter)
+document.getElementById('btn-modal-share-x')?.addEventListener('click', () => {
+  const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareHeadline)}&url=${encodeURIComponent(currentUrl)}&hashtags=MTG,MTGCommander,AvaScry`;
+  window.open(tweetUrl, '_blank', 'width=600,height=460');
+});
+
+// C. Post to Reddit (r/EDH)
+document.getElementById('btn-modal-share-reddit')?.addEventListener('click', () => {
+  const redditTitle = commander 
+    ? `[Deck Help] ${commander} — ${deckName} (${count}/100 cards)`
+    : `[Deck] ${deckName}`;
+  const redditUrl = `https://www.reddit.com/r/EDH/submit?url=${encodeURIComponent(currentUrl)}&title=${encodeURIComponent(redditTitle)}`;
+  window.open(redditUrl, '_blank');
+});
+
+// D. Share on Facebook
+document.getElementById('btn-modal-share-fb')?.addEventListener('click', () => {
+  const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`;
+  window.open(fbUrl, '_blank', 'width=600,height=500');
+});
+</script>
+{% endblock %}

@@ -109,7 +109,6 @@
       <!-- Left Column: Search Bar + 3-Cards Per Row Big Grid -->
       <div style="flex: 1; min-width: 320px;">
         
-        <!-- Prompt Box -->
         <div style="background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
           <div style="display: flex; gap: 0.75rem; align-items: center;">
             <input id="prompt-input" type="text"
@@ -119,21 +118,19 @@
               {{ t('cmd_find_cards', current_lang or 'en') }}
             </button>
           </div>
+        </div>
 
-          <!-- Quick suggestion chips -->
-          <div style="display: flex; gap: 0.4rem; margin-top: 0.75rem; flex-wrap: wrap;">
-            <span style="font-size: 0.75rem; color: var(--muted); line-height: 1.8;">{{ t('cmd_try', current_lang or 'en') }}</span>
-            <button class="chip" data-q="staples and synergies">Synergies</button>
-            <button class="chip" data-q="mana ramp artifacts">Ramp</button>
-            <button class="chip" data-q="card draw">Card Draw</button>
-            <button class="chip" data-q="removal and board wipes">Removal</button>
-            <button class="chip" data-q="utility lands">Lands</button>
-            <button class="chip" data-q="creatures with 3 mana">3-Mana Creatures</button>
+        <!-- Welcome / empty state shown before first search -->
+        <div id="search-welcome" style="text-align: center; padding: 3rem 1.5rem; color: var(--muted);">
+          <div style="font-size: 2rem; margin-bottom: 0.75rem;">🔮</div>
+          <div style="font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 0.5rem;">Describe what you're looking for</div>
+          <div style="font-size: 0.88rem; line-height: 1.6; max-width: 380px; margin: 0 auto;">
+            AvaScry uses AI to find cards that <em>feel right</em> for your deck — not just cards that literally match your words. A search for <em>"flying"</em> might surface a creature with reach. <em>"4-mana removal"</em> might return a 3-mana answer that's even better.
           </div>
         </div>
 
-        <!-- Status / Query header -->
-        <div id="results-status" style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.85rem; min-height: 1.2em; display: none;"></div>
+        <!-- Hidden status (only used for no-results) -->
+        <div id="results-status" style="display: none;"></div>
 
         <!-- Loading spinner -->
         <div id="loading-grid" style="display:none; text-align:center; padding: 4rem 0;">
@@ -162,10 +159,23 @@
 
         <div id="deck-actions" style="display: none; flex-direction: column; gap: 0.6rem;">
           
-          <!-- Standalone Print Button -->
-          <button id="btn-print-deck" style="width: 100%; padding: 0.6rem; background: var(--accent); border: none; border-radius: var(--radius-pill); color: #fff; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-            <span>🖨️</span> {{ t('cmd_print_deck', current_lang or 'en') }}
+          <!-- Primary: Share to Discord Button -->
+          <button id="btn-discord-share" style="width: 100%; padding: 0.65rem 1rem; background: #5865F2; border: none; border-radius: var(--radius-pill); color: #fff; font-size: 0.88rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 4px 14px rgba(88,101,242,0.35); transition: transform 0.15s ease, background 0.15s ease;" onmouseover="this.style.background='#4752c4';" onmouseout="this.style.background='#5865F2';">
+            <svg width="18" height="14" viewBox="0 0 127.14 96.36" fill="#fff" style="flex-shrink: 0;">
+              <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,45.91,53.92,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,45.91,96.15,53,91.08,65.69,84.69,65.69Z"/>
+            </svg>
+            {{ t('cmd_share_discord', current_lang or 'en') }}
           </button>
+
+          <!-- Secondary Utilities: Share Link & Proxy Print -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem;">
+            <button id="btn-share-deck-link" style="padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-pill); color: var(--text); font-size: 0.78rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.3rem;">
+              <span>🔗</span> Share Link
+            </button>
+            <button id="btn-print-deck" style="padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-pill); color: var(--text); font-size: 0.78rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.3rem;">
+              <span>🖨️</span> {{ t('cmd_print_deck', current_lang or 'en') }}
+            </button>
+          </div>
 
           <!-- Export Formats 3-Grid (Stacked Icons) -->
           <div style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.65rem 0.6rem;">
@@ -578,7 +588,7 @@ async function runDraftQuery(queryText) {
     const initialCards = allCards.slice(0, VISIBLE_SLOTS);
     candidatePool = allCards.slice(VISIBLE_SLOTS);
 
-    renderCardsGrid(initialCards, queryText);
+    renderCardsGrid(initialCards, queryText, !!data.fallback);
   } catch(e) {
     console.error(e);
     status.textContent = 'Failed to load cards. Please try another query.';
@@ -651,19 +661,37 @@ function createCardTileElement(c) {
   return tile;
 }
 
-function renderCardsGrid(cards, queryText) {
+function renderCardsGrid(cards, queryText, isFallback) {
   const grid = document.getElementById('cards-grid');
   const status = document.getElementById('results-status');
+  const welcome = document.getElementById('search-welcome');
   grid.innerHTML = '';
 
+  // Hide welcome state on first search
+  if (welcome) welcome.style.display = 'none';
+
   if (!cards.length) {
-    status.textContent = `No cards matched "${queryText}" within your commander's colors.`;
+    status.innerHTML = `<div style="text-align:center; padding: 2.5rem 1.5rem; color: var(--muted);">
+      <div style="font-size: 1.5rem; margin-bottom: 0.6rem;">🧙‍♂️</div>
+      <div style="font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.4rem;">Nothing surfaced this time</div>
+      <div style="font-size: 0.85rem; line-height: 1.5; max-width: 320px; margin: 0 auto;">
+        Try describing a strategy, theme, or feeling — like <em>"aggressive early drops"</em> or <em>"combo pieces that draw cards"</em>.
+      </div>
+    </div>`;
     status.style.display = 'block';
     return;
   }
 
-  status.textContent = `Showing top results for "${queryText}"`;
-  status.style.display = 'block';
+  // Soft fallback banner — no error energy, just a gentle note
+  if (isFallback) {
+    const cmdrName = commander ? commander.name : 'your commander';
+    status.innerHTML = `<div style="font-size: 0.82rem; color: var(--muted); margin-bottom: 0.75rem; padding: 0.6rem 0.85rem; background: var(--surface); border-radius: var(--radius-md); border: 1px solid var(--border); line-height: 1.45;">
+      Nothing jumped out for that search — here are some cards that tend to vibe well with <strong>${cmdrName}</strong>. 🔮
+    </div>`;
+    status.style.display = 'block';
+  } else {
+    status.style.display = 'none';
+  }
 
   cards.forEach(c => {
     const tile = createCardTileElement(c);
@@ -741,6 +769,64 @@ document.getElementById('btn-print-deck').addEventListener('click', () => {
   printWindow.document.close();
   printWindow.focus();
   setTimeout(() => { printWindow.print(); }, 250);
+});
+
+// Share to Discord
+document.getElementById('btn-discord-share')?.addEventListener('click', () => {
+  const cmdrName = commander ? commander.name : 'Commander';
+  const deckTitle = document.getElementById('deck-name-input')?.value.trim() || `${cmdrName} EDH`;
+  const count = (deck ? deck.size : 0) + (commander ? 1 : 0);
+  const deckUrl = (typeof currentDeckId !== 'undefined' && currentDeckId)
+    ? `${window.location.origin}/deck/${currentDeckId}`
+    : window.location.href;
+
+  let lines = [];
+  lines.push(`# ⚔️ ${deckTitle}`);
+  lines.push(`**Commander:** 👑 *${cmdrName}* (${count}/100 Cards)`);
+  lines.push('');
+
+  if (deck && deck.size > 0) {
+    lines.push('**Featured Cards in this Brew:**');
+    const cardArr = Array.from(deck.values());
+    const sample = cardArr.slice(0, 5);
+    sample.forEach(c => {
+      lines.push(`• 1x *${c.name}*`);
+    });
+    if (cardArr.length > 5) {
+      lines.push(`*...plus ${cardArr.length - 5} more cards*`);
+    }
+    lines.push('');
+  }
+
+  lines.push('🔗 **Interactive Deck & Synergies on AvaScry:**');
+  lines.push(deckUrl);
+
+  const msg = lines.join('\n');
+
+  navigator.clipboard.writeText(msg).then(() => {
+    const btn = document.getElementById('btn-discord-share');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span>✓</span> Copied for Discord!';
+    setTimeout(() => { btn.innerHTML = orig; }, 1600);
+  }).catch(() => {
+    prompt('Copy Discord Message:', msg);
+  });
+});
+
+// Share Deck Link
+document.getElementById('btn-share-deck-link')?.addEventListener('click', () => {
+  const deckUrl = (typeof currentDeckId !== 'undefined' && currentDeckId)
+    ? `${window.location.origin}/deck/${currentDeckId}`
+    : window.location.href;
+
+  navigator.clipboard.writeText(deckUrl).then(() => {
+    const btn = document.getElementById('btn-share-deck-link');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span>✓</span> Copied!';
+    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+  }).catch(() => {
+    prompt('Copy Deck Link:', deckUrl);
+  });
 });
 
 document.getElementById('btn-copy-deck').addEventListener('click', () => {

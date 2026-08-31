@@ -1,30 +1,68 @@
 {% extends "base.html" %}
 
-{% block title %}{{ set_doc.name }} ({{ set_doc.code|upper }}) | MTGAbyss{% endblock %}
-{% block meta_description %}All card printings from {{ set_doc.name }} on MTGAbyss.{% endblock %}
+{% block title %}{{ set_doc.name }} ({{ set_doc.code|upper }}) — MTG Set Checklist & Printings | AvaScry{% endblock %}
+{% block meta_description %}Explore all {{ total_cards }} Magic: The Gathering card printings, art variations, and card details from {{ set_doc.name }} ({{ set_doc.code|upper }}) on AvaScry.{% endblock %}
+
+{% block head_extra %}
+<link rel="canonical" href="https://avascry.com/set/{{ set_doc.code }}">
+<meta property="og:title" content="{{ set_doc.name }} ({{ set_doc.code|upper }}) — AvaScry">
+<meta property="og:description" content="Explore {{ total_cards }} cards and printings from {{ set_doc.name }} on AvaScry.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://avascry.com/set/{{ set_doc.code }}">
+{% if cards and cards[0] and cards[0].image_url %}
+<meta property="og:image" content="{{ cards[0].large_image_url or cards[0].image_url }}">
+{% endif %}
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "{{ set_doc.name }} ({{ set_doc.code|upper }})",
+  "description": "All Magic: The Gathering cards and printings from {{ set_doc.name }}.",
+  "url": "https://avascry.com/set/{{ set_doc.code }}",
+  "mainEntity": {
+    "@type": "ItemList",
+    "numberOfItems": {{ total_cards }},
+    "itemListElement": [
+      {% for card in cards[:30] %}
+      {
+        "@type": "ListItem",
+        "position": {{ loop.index }},
+        "name": "{{ card.name }}",
+        "url": "https://avascry.com/printing/{{ card.printing_slug }}"
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+}
+</script>
+{% endblock %}
 
 {% block content %}
-<section class="section-panel panel" style="margin-top: 1.5rem;">
-  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--abyss-border); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+<section class="section-panel panel" style="margin-top: 1.5rem; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 1rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;">
     <div>
-      <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--abyss-text);">{{ set_doc.name }}</h1>
-      <span class="set-code" style="margin-top: 0.4rem; display: inline-block;">{{ set_doc.code|upper }}</span>
+      <div style="display: flex; align-items: center; gap: 0.6rem;">
+        <h1 style="font-size: 1.85rem; font-weight: 800; margin: 0; color: var(--text);">{{ set_doc.name }}</h1>
+        <span style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.2rem 0.65rem; font-size: 0.8rem; font-weight: 700; color: var(--accent);">{{ set_doc.code|upper }}</span>
+      </div>
+      <div style="font-size: 0.82rem; color: var(--muted); margin-top: 0.3rem;">Magic: The Gathering Set Archive &bull; <a href="/sets" style="color: var(--muted); text-decoration: underline;">All Sets</a></div>
     </div>
-    <div style="font-size: 0.9rem; color: var(--abyss-muted);">
-      <strong>{{ total_cards }}</strong> printings
+    <div style="font-size: 0.9rem; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.35rem 0.9rem;">
+      <strong style="color: var(--text);">{{ total_cards }}</strong> Printings
     </div>
   </div>
 
-  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1.1rem;">
     {% for card in cards %}
-      <a href="/printing/{{ card.printing_slug }}" style="text-decoration: none; text-align: center;" title="{{ card.name }}">
-        <div class="card-image-wrapper" style="width: 100%; aspect-ratio: 63/88; border-radius: 4px; overflow: hidden; margin-bottom: 0.4rem;">
+      <a href="/printing/{{ card.printing_slug }}" style="text-decoration: none; text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.5rem; transition: transform 0.15s ease, border-color 0.15s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='var(--accent)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--border)';" title="{{ card.name }}">
+        <div class="card-image-wrapper" style="width: 100%; aspect-ratio: 63/88; border-radius: 6px; overflow: hidden; margin-bottom: 0.5rem; background: var(--bg);">
           <img src="{{ card.image_url }}" alt="{{ card.name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
-        <div style="font-size: 0.82rem; font-weight: 700; color: var(--abyss-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        <div style="font-size: 0.84rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
           {{ card.name }}
         </div>
-        <div style="font-size: 0.72rem; color: var(--abyss-muted);">
+        <div style="font-size: 0.72rem; color: var(--muted); margin-top: 0.2rem;">
           #{{ card.collector_number }} &bull; {{ card.rarity|capitalize }}
         </div>
       </a>
