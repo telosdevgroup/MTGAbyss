@@ -161,9 +161,13 @@ def classify_badge(badge: str, ip: str = "", path: str = "", ct: str = "") -> st
     bing_prefixes = ("40.77.", "157.55.", "20.171.", "13.66.", "52.167.", "20.36.", "20.247.")
     if "bing" in b or any(ip.startswith(p) for p in bing_prefixes):
         return "bing"
-    # 4. Other AI Crawlers
+    # 4. AI Crawlers & Agents
     if "meta:ai" in b or "meta-externalagent" in b:
         return "meta_ai"
+    if "meta:fetcher" in b or "meta-externalfetcher" in b:
+        return "meta_fetcher"
+    if "meta:catalog" in b or "meta-webindexer" in b or "facebookcatalog" in b:
+        return "meta_catalog"
     if "openai" in b or "gptbot" in b:
         return "openai"
     if "perplexity" in b:
@@ -177,13 +181,20 @@ def classify_badge(badge: str, ip: str = "", path: str = "", ct: str = "") -> st
         return "ad_scanners"
     if "cloud:spider" in b or "spider" in b:
         return "cloud_spiders"
-    # 6. Other Search & Scrapers
-    if "crawler:" in b:
-        return "other_crawlers"
-    if "social:meta" in b or "facebookexternalhit" in b:
-        return "meta_social"
+    # 6. Social Media & Messengers
+    if "social:whatsapp" in b or "whatsapp" in b:
+        return "whatsapp"
+    if "social:instagram" in b or "instagram" in b:
+        return "instagram"
+    if "social:threads" in b or "threads" in b or "barcelona" in b:
+        return "threads"
+    if "social:facebook" in b or "social:meta" in b or "facebookexternalhit" in b or "facebot" in b:
+        return "facebook"
     if "social:" in b or "socialbot" in b:
         return "social"
+    # 7. Other Search & Scrapers
+    if "crawler:" in b:
+        return "other_crawlers"
     if "scraper:" in b:
         return "scrapers"
     if "shield" in b:
@@ -334,7 +345,12 @@ FILTER_NAMES = {
     "claude": "🤖 ClaudeBot (Anthropic)",
     "openai": "🤖 OpenAI (GPTBot)",
     "meta_ai": "🤖 Meta AI (Llama Agent)",
-    "meta_social": "📘 Meta / Facebook Social",
+    "meta_fetcher": "⚡ Meta AI Real-Time Fetcher",
+    "meta_catalog": "🛍️ Meta Catalog Indexer",
+    "facebook": "📘 Facebook Embed",
+    "whatsapp": "💬 WhatsApp Preview",
+    "instagram": "📸 Instagram Embed",
+    "threads": "🧵 Threads Embed",
     "perplexity": "🤖 Perplexity AI",
     "dev_scripts": "🐍 Dev Scripts (Python/Curl)",
     "ad_scanners": "🛡️ Ad/Sec Scanners",
@@ -636,6 +652,12 @@ def render_dashboard(tracker: TrafficTracker):
             ("ClaudeBot", "claude", YELLOW),
             ("GPTBot", "openai", YELLOW),
             ("Meta AI", "meta_ai", YELLOW),
+            ("Meta Fetcher", "meta_fetcher", YELLOW),
+            ("Meta Catalog", "meta_catalog", YELLOW),
+            ("Facebook", "facebook", MAGENTA),
+            ("WhatsApp", "whatsapp", GREEN),
+            ("Instagram", "instagram", MAGENTA),
+            ("Threads", "threads", CYAN),
             ("Perplexity", "perplexity", YELLOW),
             ("Bingbot", "bing", BLUE),
             ("ByteSpider", "bytedance", YELLOW),
@@ -645,7 +667,6 @@ def render_dashboard(tracker: TrafficTracker):
             ("Ad/Sec Scanners", "ad_scanners", DIM),
             ("Cloud Spiders", "cloud_spiders", DIM),
             ("Other Search", "other_crawlers", CYAN),
-            ("Meta Social", "meta_social", MAGENTA),
             ("Social Embeds", "social", MAGENTA),
             ("Scrapers", "scrapers", DIM),
             ("Other Bots", "other_bots", DIM),
