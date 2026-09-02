@@ -817,9 +817,17 @@ def render_dashboard(tracker: TrafficTracker):
         output.append(f"{CYAN}--------------------------------------------------------------------------------{RESET}")
 
         # Filter live hits
+        USER_CITATION_BADGES = ("-user", "chatgpt-user", "claude-user", "perplexity-user")
+        def _cat_match(h, key):
+            if key == "all":
+                return True
+            if key == "citations":
+                return h.get("cat") == "citations" or any(k in h.get("badge", "").lower() for k in USER_CITATION_BADGES)
+            return h.get("cat") == key
+
         matching_hits = [
-            h for h in tracker.recent_hits 
-            if (filter_key == "all" or h.get("cat") == filter_key) and
+            h for h in tracker.recent_hits
+            if _cat_match(h, filter_key) and
                (route_key == "all" or h.get("route") == route_key) and
                (type_key == "all" or h.get("file_type") == type_key)
         ]
@@ -1081,9 +1089,17 @@ def render_dashboard(tracker: TrafficTracker):
         output.append(f"  {DIM}Pivot Keys: [c] Claude [g] Google [o] OpenAI [v] Vectors [s] Synergies [d] Markdown [j] JSON | [a] All{RESET}")
         output.append(f"{CYAN}----------------------------------------------------------------------------------------------------{RESET}")
 
+        USER_CITATION_BADGES = ("-user", "chatgpt-user", "claude-user", "perplexity-user")
+        def _cat_match_v4(h, key):
+            if key == "all":
+                return True
+            if key == "citations":
+                return h.get("cat") == "citations" or any(k in h.get("badge", "").lower() for k in USER_CITATION_BADGES)
+            return h.get("cat") == key
+
         matching_hits = [
             h for h in tracker.recent_hits
-            if (tracker.selected_filter == "all" or h.get("cat") == tracker.selected_filter) and
+            if _cat_match_v4(h, tracker.selected_filter) and
                (tracker.selected_route_filter == "all" or h.get("route") == tracker.selected_route_filter) and
                (tracker.selected_type_filter == "all" or h.get("file_type") == tracker.selected_type_filter)
         ]
