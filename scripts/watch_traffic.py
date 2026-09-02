@@ -162,6 +162,8 @@ def classify_badge(badge: str, ip: str = "", path: str = "", ct: str = "") -> st
     if "bing" in b or any(ip.startswith(p) for p in bing_prefixes):
         return "bing"
     # 4. Other AI Crawlers
+    if "meta:ai" in b or "meta-externalagent" in b:
+        return "meta_ai"
     if "openai" in b or "gptbot" in b:
         return "openai"
     if "perplexity" in b:
@@ -178,6 +180,8 @@ def classify_badge(badge: str, ip: str = "", path: str = "", ct: str = "") -> st
     # 6. Other Search & Scrapers
     if "crawler:" in b:
         return "other_crawlers"
+    if "social:meta" in b or "facebookexternalhit" in b:
+        return "meta_social"
     if "social:" in b or "socialbot" in b:
         return "social"
     if "scraper:" in b:
@@ -329,6 +333,8 @@ FILTER_NAMES = {
     "google_images": "🟢 Googlebot (Images)",
     "claude": "🤖 ClaudeBot (Anthropic)",
     "openai": "🤖 OpenAI (GPTBot)",
+    "meta_ai": "🤖 Meta AI (Llama Agent)",
+    "meta_social": "📘 Meta / Facebook Social",
     "perplexity": "🤖 Perplexity AI",
     "dev_scripts": "🐍 Dev Scripts (Python/Curl)",
     "ad_scanners": "🛡️ Ad/Sec Scanners",
@@ -629,6 +635,7 @@ def render_dashboard(tracker: TrafficTracker):
             ("Google Images", "google_images", GREEN),
             ("ClaudeBot", "claude", YELLOW),
             ("GPTBot", "openai", YELLOW),
+            ("Meta AI", "meta_ai", YELLOW),
             ("Perplexity", "perplexity", YELLOW),
             ("Bingbot", "bing", BLUE),
             ("ByteSpider", "bytedance", YELLOW),
@@ -638,6 +645,7 @@ def render_dashboard(tracker: TrafficTracker):
             ("Ad/Sec Scanners", "ad_scanners", DIM),
             ("Cloud Spiders", "cloud_spiders", DIM),
             ("Other Search", "other_crawlers", CYAN),
+            ("Meta Social", "meta_social", MAGENTA),
             ("Social Embeds", "social", MAGENTA),
             ("Scrapers", "scrapers", DIM),
             ("Other Bots", "other_bots", DIM),

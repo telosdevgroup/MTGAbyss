@@ -521,6 +521,8 @@ def get_caller_badge(request: Request) -> str:
         return "[Perplexity]"
     if any(o in ua for o in ("gptbot", "openai")):
         return "[GPTBot]"
+    if any(m in ua for m in ("meta-externalagent", "meta-externalfetcher")):
+        return "[Meta:AI]"
     if any(b in ua for b in ("bytespider", "bytedance")):
         return "[ByteSpider]"
     if any(a in ua for a in ("applebot", "applebot-extended", "apple-search")):
@@ -549,7 +551,7 @@ def get_caller_badge(request: Request) -> str:
         return "[Social:Discord]"
     if "twitterbot" in ua:
         return "[Social:Twitter]"
-    if "facebookexternalhit" in ua or "meta-externalagent" in ua:
+    if "facebookexternalhit" in ua:
         return "[Social:Meta]"
     if "telegrambot" in ua:
         return "[Social:Telegram]"
