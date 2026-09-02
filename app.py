@@ -2720,7 +2720,14 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
                 "json": f"https://avascry.com/printing/{canonical_printing_slug}.json"
             },
             "legalities": card.get("legalities") or {},
-            "rulings": rulings,
+            "rulings": [
+                {
+                    "source": r.get("source", "wotc"),
+                    "published_at": r.get("published_at", ""),
+                    "comment": r.get("comment", "")
+                }
+                for r in rulings
+            ],
             "printings_count": len(printings),
             "similar_cards": similar_cards[:6]
         }
