@@ -834,8 +834,8 @@ def render_dashboard(tracker: TrafficTracker):
                     ct_badge = f"{DIM}[OTHR]{RESET}"
                 
                 lat_val = f"{hit.get('lat', 0):3d}ms" if hit.get('lat') else "  - "
-                path_str = hit['path'][:46]
-                output.append(f"  {DIM}{hit['time']}{RESET}  {badge_str} ({lat_val}) {ct_badge} -> {path_str}")
+                path_str = hit['path'][:54]
+                output.append(f"  {badge_str} ({lat_val}) {ct_badge} -> {path_str}")
 
     # ==========================================
     # VIEW 2: 404 RADAR & BROKEN LINKS
@@ -1076,9 +1076,9 @@ def render_dashboard(tracker: TrafficTracker):
                 lg_badge = f"{BLUE}[{lg}]{RESET}"
 
                 lat_val = f"{hit.get('lat', 0):3d}ms" if hit.get('lat') else "  - "
-                path_str = hit['path'][:44]
+                path_str = hit['path'][:52]
 
-                output.append(f"  {DIM}{hit['time']}{RESET} {badge_str} {rt_badge} {ft_badge} {lg_badge} ({lat_val}) -> {path_str}")
+                output.append(f"  {badge_str} {rt_badge} {ft_badge} {lg_badge} ({lat_val}) -> {path_str}")
 
     output.append(f"{CYAN}{BOLD}===================================================================================================={RESET}")
 
