@@ -1,0 +1,180 @@
+# AvaScry — Magic: The Gathering Visual & Semantic Knowledge Corpus
+
+> AvaScry is an AI-native semantic knowledge corpus
+> Full 67-Commander Deep Knowledge Corpus: https://avascry.com/llms-full.txt and visual engine for Magic: The Gathering. Powered by 4096-dimensional Qwen 8B vector embeddings across 38,000+ Oracle cards, sub-millisecond card rendering, comprehensive rules layers, errata history, and format legalities.
+
+## Corpus Metadata & Versioning
+- **Corpus-Version:** 1.0
+- **Markdown-Schema:** 1.0
+- **Similarity-Model:** Qwen-8B-4096d
+- **Update-Frequency:** Daily
+- **Canonical-Host:** https://avascry.com
+
+## Machine Ingestion Guarantees
+- All `/printing/*.md` endpoints begin with structured YAML frontmatter.
+- All `/similar/*.md` endpoints provide 4096-dimensional nearest neighbors in ranked order.
+- All rules and errata align with the official Magic Comprehensive Rules (CR 117, 613, 614, 704).
+- Deterministic schema: Exact Oracle texts, Mana Values, Power/Toughness, and Legalities.
+
+## AI Agent Integration & Multimodal Endpoints
+
+AI agents, LLMs, Discord bots, and developers can retrieve token-efficient Markdown payloads or structured JSON across all surfaces:
+
+- **Card Printings:**
+  - Markdown: `https://avascry.com/printing/<card-slug>-<set>.md`
+  - JSON: `https://avascry.com/printing/<card-slug>-<set>.json`
+- **4096-Dim Neural Synergies:**
+  - Markdown: `https://avascry.com/similar/<card-slug>.md`
+  - JSON: `https://avascry.com/similar/<card-slug>.json`
+- **Artist Portfolios:**
+  - Markdown: `https://avascry.com/artist/<artist-slug>.md`
+  - JSON: `https://avascry.com/artist/<artist-slug>.json`
+- **Sets Directory:**
+  - Markdown: `https://avascry.com/sets.md`
+  - JSON: `https://avascry.com/set/<set-code>.json`
+- **Comprehensive Rules & Errata:**
+  - Markdown: `https://avascry.com/rules.md`
+  - JSON: `https://avascry.com/rules.json`
+- **Format Taxonomy & Banlists:**
+  - Markdown: `https://avascry.com/legalities.md`
+  - JSON: `https://avascry.com/legalities.json`
+- **Cockatrice Desktop Simulator Database:** `https://avascry.com/set/<set-code>/cockatrice.xml`
+- **Live RSS 2.0 Syndication Feeds:**
+  - Latest Sets Feed: `https://avascry.com/feed/sets.xml`
+  - Latest Rulings Feed: `https://avascry.com/feed/rulings.xml`
+- **Raw 4096-Dim Neural Vector Embeddings (Qwen 8B):** `https://avascry.com/vector/<card-slug>.json`
+- **Corpus Freshness & Polling Heartbeat:** `https://avascry.com/heartbeat.txt`
+- **Markdown Sitemap Index:** `https://avascry.com/sitemap.md`
+- **HTML Sitemap Directory:** `https://avascry.com/sitemap.html`
+- **XML Sitemap Index:** `https://avascry.com/sitemap.xml`
+- **AI Content Manifest:** `https://avascry.com/.well-known/ai-content`
+
+## High-Priority Seed Hubs & Long-Tail Anchors
+
+### Mox Diamond — Complete Multilingual Edition Suite
+- **English (Original Stronghold)**: [Markdown](https://avascry.com/printing/mox-diamond-sth.md) | [JSON](https://avascry.com/printing/mox-diamond-sth.json)
+- **English (From the Vault: Relics)**: [Markdown](https://avascry.com/printing/mox-diamond-v10.md) | [JSON](https://avascry.com/printing/mox-diamond-v10.json)
+- **English (Tempest Remastered)**: [Markdown](https://avascry.com/printing/mox-diamond-tpr.md) | [JSON](https://avascry.com/printing/mox-diamond-tpr.json)
+- **Japanese (日本語 - Stronghold)**: [Markdown](https://avascry.com/printing/mox-diamond-sth-ja.md) | [JSON](https://avascry.com/printing/mox-diamond-sth-ja.json)
+- **German (Deutsch - Stronghold)**: [Markdown](https://avascry.com/printing/mox-diamond-sth-de.md) | [JSON](https://avascry.com/printing/mox-diamond-sth-de.json)
+- **French (Français - Stronghold)**: [Markdown](https://avascry.com/printing/mox-diamond-sth-fr.md) | [JSON](https://avascry.com/printing/mox-diamond-sth-fr.json)
+- **Italian (Italiano - Stronghold)**: [Markdown](https://avascry.com/printing/mox-diamond-sth-it.md) | [JSON](https://avascry.com/printing/mox-diamond-sth-it.json)
+- **Spanish (Español - Stronghold)**: [Markdown](https://avascry.com/printing/mox-diamond-sth-es.md) | [JSON](https://avascry.com/printing/mox-diamond-sth-es.json)
+- **Portuguese (Português - Stronghold)**: [Markdown](https://avascry.com/printing/mox-diamond-sth-pt.md) | [JSON](https://avascry.com/printing/mox-diamond-sth-pt.json)
+- **Korean (한국어 - Stronghold)**: [Markdown](https://avascry.com/printing/mox-diamond-sth-ko.md) | [JSON](https://avascry.com/printing/mox-diamond-sth-ko.json)
+- **Simplified Chinese (简体中文 - Stronghold)**: [Markdown](https://avascry.com/printing/mox-diamond-sth-zhs.md) | [JSON](https://avascry.com/printing/mox-diamond-sth-zhs.json)
+- **Traditional Chinese (繁體中文 - Stronghold)**: [Markdown](https://avascry.com/printing/mox-diamond-sth-zht.md) | [JSON](https://avascry.com/printing/mox-diamond-sth-zht.json)
+
+### 67 Random Commander Discovery Seeds (Long-Tail Sample)
+1. **The Fifth Alias** (UNK): [Markdown](https://avascry.com/printing/the-fifth-alias-unk.md) | [JSON](https://avascry.com/printing/the-fifth-alias-unk.json) | [Synergies](https://avascry.com/similar/the-fifth-alias.md)
+2. **Shuri, the Black Panther** (MSC): [Markdown](https://avascry.com/printing/shuri-the-black-panther-msc.md) | [JSON](https://avascry.com/printing/shuri-the-black-panther-msc.json) | [Synergies](https://avascry.com/similar/shuri-the-black-panther.md)
+3. **The Master, Multiplied** (WHO): [Markdown](https://avascry.com/printing/the-master-multiplied-who.md) | [JSON](https://avascry.com/printing/the-master-multiplied-who.json) | [Synergies](https://avascry.com/similar/the-master-multiplied.md)
+4. **Doctor Doom, Unrivaled** (MSC): [Markdown](https://avascry.com/printing/doctor-doom-unrivaled-msc.md) | [JSON](https://avascry.com/printing/doctor-doom-unrivaled-msc.json) | [Synergies](https://avascry.com/similar/doctor-doom-unrivaled.md)
+5. **Gallowbraid** (WTH): [Markdown](https://avascry.com/printing/gallowbraid-wth.md) | [JSON](https://avascry.com/printing/gallowbraid-wth.json) | [Synergies](https://avascry.com/similar/gallowbraid.md)
+6. **Surtr, Fiery Jötun** (ACR): [Markdown](https://avascry.com/printing/surtr-fiery-jtun-acr.md) | [JSON](https://avascry.com/printing/surtr-fiery-jtun-acr.json) | [Synergies](https://avascry.com/similar/surtr-fiery-jtun.md)
+7. **Cormela, Glamour Thief** (SNC): [Markdown](https://avascry.com/printing/cormela-glamour-thief-snc.md) | [JSON](https://avascry.com/printing/cormela-glamour-thief-snc.json) | [Synergies](https://avascry.com/similar/cormela-glamour-thief.md)
+8. **Gyruda, Doom of Depths** (IKO): [Markdown](https://avascry.com/printing/gyruda-doom-of-depths-iko.md) | [JSON](https://avascry.com/printing/gyruda-doom-of-depths-iko.json) | [Synergies](https://avascry.com/similar/gyruda-doom-of-depths.md)
+9. **Alena, Kessig Trapper** (CMR): [Markdown](https://avascry.com/printing/alena-kessig-trapper-cmr.md) | [JSON](https://avascry.com/printing/alena-kessig-trapper-cmr.json) | [Synergies](https://avascry.com/similar/alena-kessig-trapper.md)
+10. **The Duke, Rebel Sentry** (TLE): [Markdown](https://avascry.com/printing/the-duke-rebel-sentry-tle.md) | [JSON](https://avascry.com/printing/the-duke-rebel-sentry-tle.json) | [Synergies](https://avascry.com/similar/the-duke-rebel-sentry.md)
+11. **Dan Lewis** (WHO): [Markdown](https://avascry.com/printing/dan-lewis-who.md) | [JSON](https://avascry.com/printing/dan-lewis-who.json) | [Synergies](https://avascry.com/similar/dan-lewis.md)
+12. **Glissa, the Traitor** (MBS): [Markdown](https://avascry.com/printing/glissa-the-traitor-mbs.md) | [JSON](https://avascry.com/printing/glissa-the-traitor-mbs.json) | [Synergies](https://avascry.com/similar/glissa-the-traitor.md)
+13. **Gisela, the Broken Blade** (INR): [Markdown](https://avascry.com/printing/gisela-the-broken-blade-inr.md) | [JSON](https://avascry.com/printing/gisela-the-broken-blade-inr.json) | [Synergies](https://avascry.com/similar/gisela-the-broken-blade.md)
+14. **A-Shessra, Death's Whisper** (AFR): [Markdown](https://avascry.com/printing/a-shessra-deaths-whisper-afr.md) | [JSON](https://avascry.com/printing/a-shessra-deaths-whisper-afr.json) | [Synergies](https://avascry.com/similar/a-shessra-deaths-whisper.md)
+15. **Krark, the Thumbless** (CMR): [Markdown](https://avascry.com/printing/krark-the-thumbless-cmr.md) | [JSON](https://avascry.com/printing/krark-the-thumbless-cmr.json) | [Synergies](https://avascry.com/similar/krark-the-thumbless.md)
+16. **Ixhel, Scion of Atraxa** (ONC): [Markdown](https://avascry.com/printing/ixhel-scion-of-atraxa-onc.md) | [JSON](https://avascry.com/printing/ixhel-scion-of-atraxa-onc.json) | [Synergies](https://avascry.com/similar/ixhel-scion-of-atraxa.md)
+17. **Kykar, Wind's Fury** (CMM): [Markdown](https://avascry.com/printing/kykar-winds-fury-cmm.md) | [JSON](https://avascry.com/printing/kykar-winds-fury-cmm.json) | [Synergies](https://avascry.com/similar/kykar-winds-fury.md)
+18. **Melek, Izzet Paragon** (CMM): [Markdown](https://avascry.com/printing/melek-izzet-paragon-cmm.md) | [JSON](https://avascry.com/printing/melek-izzet-paragon-cmm.json) | [Synergies](https://avascry.com/similar/melek-izzet-paragon.md)
+19. **Reya Dawnbringer** (UMA): [Markdown](https://avascry.com/printing/reya-dawnbringer-uma.md) | [JSON](https://avascry.com/printing/reya-dawnbringer-uma.json) | [Synergies](https://avascry.com/similar/reya-dawnbringer.md)
+20. **Xanathar, Guild Kingpin** (AFR): [Markdown](https://avascry.com/printing/xanathar-guild-kingpin-afr.md) | [JSON](https://avascry.com/printing/xanathar-guild-kingpin-afr.json) | [Synergies](https://avascry.com/similar/xanathar-guild-kingpin.md)
+21. **Meloku the Clouded Mirror** (CMR): [Markdown](https://avascry.com/printing/meloku-the-clouded-mirror-cmr.md) | [JSON](https://avascry.com/printing/meloku-the-clouded-mirror-cmr.json) | [Synergies](https://avascry.com/similar/meloku-the-clouded-mirror.md)
+22. **The Good Time Sleuth** (UNK): [Markdown](https://avascry.com/printing/the-good-time-sleuth-unk.md) | [JSON](https://avascry.com/printing/the-good-time-sleuth-unk.json) | [Synergies](https://avascry.com/similar/the-good-time-sleuth.md)
+23. **Miirym, Sentinel Wyrm** (CLB): [Markdown](https://avascry.com/printing/miirym-sentinel-wyrm-clb.md) | [JSON](https://avascry.com/printing/miirym-sentinel-wyrm-clb.json) | [Synergies](https://avascry.com/similar/miirym-sentinel-wyrm.md)
+24. **Arbaaz Mir** (ACR): [Markdown](https://avascry.com/printing/arbaaz-mir-acr.md) | [JSON](https://avascry.com/printing/arbaaz-mir-acr.json) | [Synergies](https://avascry.com/similar/arbaaz-mir.md)
+25. **Muxus, Goblin Grandee** (JMP): [Markdown](https://avascry.com/printing/muxus-goblin-grandee-jmp.md) | [JSON](https://avascry.com/printing/muxus-goblin-grandee-jmp.json) | [Synergies](https://avascry.com/similar/muxus-goblin-grandee.md)
+26. **Yargle and Multani** (MOM): [Markdown](https://avascry.com/printing/yargle-and-multani-mom.md) | [JSON](https://avascry.com/printing/yargle-and-multani-mom.json) | [Synergies](https://avascry.com/similar/yargle-and-multani.md)
+27. **Dralnu, Lich Lord** (TSR): [Markdown](https://avascry.com/printing/dralnu-lich-lord-tsr.md) | [JSON](https://avascry.com/printing/dralnu-lich-lord-tsr.json) | [Synergies](https://avascry.com/similar/dralnu-lich-lord.md)
+28. **Dark Leo & Shredder** (TMT): [Markdown](https://avascry.com/printing/dark-leo-shredder-tmt.md) | [JSON](https://avascry.com/printing/dark-leo-shredder-tmt.json) | [Synergies](https://avascry.com/similar/dark-leo-shredder.md)
+29. **Soramaro, First to Dream** (SOK): [Markdown](https://avascry.com/printing/soramaro-first-to-dream-sok.md) | [JSON](https://avascry.com/printing/soramaro-first-to-dream-sok.json) | [Synergies](https://avascry.com/similar/soramaro-first-to-dream.md)
+30. **Kotose, the Silent Spider** (NEO): [Markdown](https://avascry.com/printing/kotose-the-silent-spider-neo.md) | [JSON](https://avascry.com/printing/kotose-the-silent-spider-neo.json) | [Synergies](https://avascry.com/similar/kotose-the-silent-spider.md)
+31. **Lulu, Forgetful Hollyphant** (HBG): [Markdown](https://avascry.com/printing/lulu-forgetful-hollyphant-hbg.md) | [JSON](https://avascry.com/printing/lulu-forgetful-hollyphant-hbg.json) | [Synergies](https://avascry.com/similar/lulu-forgetful-hollyphant.md)
+32. **Eriette, the Beguiler** (OTJ): [Markdown](https://avascry.com/printing/eriette-the-beguiler-otj.md) | [JSON](https://avascry.com/printing/eriette-the-beguiler-otj.json) | [Synergies](https://avascry.com/similar/eriette-the-beguiler.md)
+33. **Mishra, Tamer of Mak Fawa** (BRO): [Markdown](https://avascry.com/printing/mishra-tamer-of-mak-fawa-bro.md) | [JSON](https://avascry.com/printing/mishra-tamer-of-mak-fawa-bro.json) | [Synergies](https://avascry.com/similar/mishra-tamer-of-mak-fawa.md)
+34. **Wydwen, the Biting Gale** (C20): [Markdown](https://avascry.com/printing/wydwen-the-biting-gale-c20.md) | [JSON](https://avascry.com/printing/wydwen-the-biting-gale-c20.json) | [Synergies](https://avascry.com/similar/wydwen-the-biting-gale.md)
+35. **Emil, Vastlands Roamer** (SOS): [Markdown](https://avascry.com/printing/emil-vastlands-roamer-sos.md) | [JSON](https://avascry.com/printing/emil-vastlands-roamer-sos.json) | [Synergies](https://avascry.com/similar/emil-vastlands-roamer.md)
+36. **Rashida Scalebane** (MIR): [Markdown](https://avascry.com/printing/rashida-scalebane-mir.md) | [JSON](https://avascry.com/printing/rashida-scalebane-mir.json) | [Synergies](https://avascry.com/similar/rashida-scalebane.md)
+37. **Jurin, Leading the Charge** (SLX): [Markdown](https://avascry.com/printing/jurin-leading-the-charge-slx.md) | [JSON](https://avascry.com/printing/jurin-leading-the-charge-slx.json) | [Synergies](https://avascry.com/similar/jurin-leading-the-charge.md)
+38. **Nathan Drake, Treasure Hunter** (SLD): [Markdown](https://avascry.com/printing/nathan-drake-treasure-hunter-sld.md) | [JSON](https://avascry.com/printing/nathan-drake-treasure-hunter-sld.json) | [Synergies](https://avascry.com/similar/nathan-drake-treasure-hunter.md)
+39. **Snow Villiers** (FIN): [Markdown](https://avascry.com/printing/snow-villiers-fin.md) | [JSON](https://avascry.com/printing/snow-villiers-fin.json) | [Synergies](https://avascry.com/similar/snow-villiers.md)
+40. **Titania, Protector of Argoth** (EOC): [Markdown](https://avascry.com/printing/titania-protector-of-argoth-eoc.md) | [JSON](https://avascry.com/printing/titania-protector-of-argoth-eoc.json) | [Synergies](https://avascry.com/similar/titania-protector-of-argoth.md)
+41. **Princess Lucrezia** (ME3): [Markdown](https://avascry.com/printing/princess-lucrezia-me3.md) | [JSON](https://avascry.com/printing/princess-lucrezia-me3.json) | [Synergies](https://avascry.com/similar/princess-lucrezia.md)
+42. **A-Lier, Disciple of the Drowned** (MID): [Markdown](https://avascry.com/printing/a-lier-disciple-of-the-drowned-mid.md) | [JSON](https://avascry.com/printing/a-lier-disciple-of-the-drowned-mid.json) | [Synergies](https://avascry.com/similar/a-lier-disciple-of-the-drowned.md)
+43. **Diaochan, Artful Beauty** (PTK): [Markdown](https://avascry.com/printing/diaochan-artful-beauty-ptk.md) | [JSON](https://avascry.com/printing/diaochan-artful-beauty-ptk.json) | [Synergies](https://avascry.com/similar/diaochan-artful-beauty.md)
+44. **Richlau, Headmaster** (YBRO): [Markdown](https://avascry.com/printing/richlau-headmaster-ybro.md) | [JSON](https://avascry.com/printing/richlau-headmaster-ybro.json) | [Synergies](https://avascry.com/similar/richlau-headmaster.md)
+45. **Gandalf the White** (LTR): [Markdown](https://avascry.com/printing/gandalf-the-white-ltr.md) | [JSON](https://avascry.com/printing/gandalf-the-white-ltr.json) | [Synergies](https://avascry.com/similar/gandalf-the-white.md)
+46. **Leela, Sevateem Warrior** (WHO): [Markdown](https://avascry.com/printing/leela-sevateem-warrior-who.md) | [JSON](https://avascry.com/printing/leela-sevateem-warrior-who.json) | [Synergies](https://avascry.com/similar/leela-sevateem-warrior.md)
+47. **Clavileño, First of the Blessed** (LCC): [Markdown](https://avascry.com/printing/clavileo-first-of-the-blessed-lcc.md) | [JSON](https://avascry.com/printing/clavileo-first-of-the-blessed-lcc.json) | [Synergies](https://avascry.com/similar/clavileo-first-of-the-blessed.md)
+48. **Flatman** (MSC): [Markdown](https://avascry.com/printing/flatman-msc.md) | [JSON](https://avascry.com/printing/flatman-msc.json) | [Synergies](https://avascry.com/similar/flatman.md)
+49. **Goldbug, Humanity's Ally // Goldbug, Scrappy Scout** (BOT): [Markdown](https://avascry.com/printing/goldbug-humanitys-ally-goldbug-scrappy-scout-bot.md) | [JSON](https://avascry.com/printing/goldbug-humanitys-ally-goldbug-scrappy-scout-bot.json) | [Synergies](https://avascry.com/similar/goldbug-humanitys-ally-goldbug-scrappy-scout.md)
+50. **Ultimecia, Temporal Threat** (FIN): [Markdown](https://avascry.com/printing/ultimecia-temporal-threat-fin.md) | [JSON](https://avascry.com/printing/ultimecia-temporal-threat-fin.json) | [Synergies](https://avascry.com/similar/ultimecia-temporal-threat.md)
+51. **Killmonger, Scourge of Wakanda** (MSH): [Markdown](https://avascry.com/printing/killmonger-scourge-of-wakanda-msh.md) | [JSON](https://avascry.com/printing/killmonger-scourge-of-wakanda-msh.json) | [Synergies](https://avascry.com/similar/killmonger-scourge-of-wakanda.md)
+52. **Lobelia Sackville-Baggins** (LTR): [Markdown](https://avascry.com/printing/lobelia-sackville-baggins-ltr.md) | [JSON](https://avascry.com/printing/lobelia-sackville-baggins-ltr.json) | [Synergies](https://avascry.com/similar/lobelia-sackville-baggins.md)
+53. **Jessica Jones, Private Eye** (MSH): [Markdown](https://avascry.com/printing/jessica-jones-private-eye-msh.md) | [JSON](https://avascry.com/printing/jessica-jones-private-eye-msh.json) | [Synergies](https://avascry.com/similar/jessica-jones-private-eye.md)
+54. **ED-E, Lonesome Eyebot** (PIP): [Markdown](https://avascry.com/printing/ed-e-lonesome-eyebot-pip.md) | [JSON](https://avascry.com/printing/ed-e-lonesome-eyebot-pip.json) | [Synergies](https://avascry.com/similar/ed-e-lonesome-eyebot.md)
+55. **Radha, Heir to Keld** (DMR): [Markdown](https://avascry.com/printing/radha-heir-to-keld-dmr.md) | [JSON](https://avascry.com/printing/radha-heir-to-keld-dmr.json) | [Synergies](https://avascry.com/similar/radha-heir-to-keld.md)
+56. **Anowon, the Ruin Thief** (ZNC): [Markdown](https://avascry.com/printing/anowon-the-ruin-thief-znc.md) | [JSON](https://avascry.com/printing/anowon-the-ruin-thief-znc.json) | [Synergies](https://avascry.com/similar/anowon-the-ruin-thief.md)
+57. **Trostani, Three Whispers** (MKM): [Markdown](https://avascry.com/printing/trostani-three-whispers-mkm.md) | [JSON](https://avascry.com/printing/trostani-three-whispers-mkm.json) | [Synergies](https://avascry.com/similar/trostani-three-whispers.md)
+58. **Raksha Golden Cub** (C17): [Markdown](https://avascry.com/printing/raksha-golden-cub-c17.md) | [JSON](https://avascry.com/printing/raksha-golden-cub-c17.json) | [Synergies](https://avascry.com/similar/raksha-golden-cub.md)
+59. **Endrek Sahr, Master Breeder** (CMM): [Markdown](https://avascry.com/printing/endrek-sahr-master-breeder-cmm.md) | [JSON](https://avascry.com/printing/endrek-sahr-master-breeder-cmm.json) | [Synergies](https://avascry.com/similar/endrek-sahr-master-breeder.md)
+60. **Alquist Proft, Master Sleuth** (MKM): [Markdown](https://avascry.com/printing/alquist-proft-master-sleuth-mkm.md) | [JSON](https://avascry.com/printing/alquist-proft-master-sleuth-mkm.json) | [Synergies](https://avascry.com/similar/alquist-proft-master-sleuth.md)
+61. **Hamza, Guardian of Arashin** (CMM): [Markdown](https://avascry.com/printing/hamza-guardian-of-arashin-cmm.md) | [JSON](https://avascry.com/printing/hamza-guardian-of-arashin-cmm.json) | [Synergies](https://avascry.com/similar/hamza-guardian-of-arashin.md)
+62. **Applejack** (SLD): [Markdown](https://avascry.com/printing/applejack-sld.md) | [JSON](https://avascry.com/printing/applejack-sld.json) | [Synergies](https://avascry.com/similar/applejack.md)
+63. **Zirda, the Dawnwaker** (IKO): [Markdown](https://avascry.com/printing/zirda-the-dawnwaker-iko.md) | [JSON](https://avascry.com/printing/zirda-the-dawnwaker-iko.json) | [Synergies](https://avascry.com/similar/zirda-the-dawnwaker.md)
+64. **Captain America, Team Leader** (MSC): [Markdown](https://avascry.com/printing/captain-america-team-leader-msc.md) | [JSON](https://avascry.com/printing/captain-america-team-leader-msc.json) | [Synergies](https://avascry.com/similar/captain-america-team-leader.md)
+65. **Durnan of the Yawning Portal** (CLB): [Markdown](https://avascry.com/printing/durnan-of-the-yawning-portal-clb.md) | [JSON](https://avascry.com/printing/durnan-of-the-yawning-portal-clb.json) | [Synergies](https://avascry.com/similar/durnan-of-the-yawning-portal.md)
+66. **Zahur, Glory's Past** (DFT): [Markdown](https://avascry.com/printing/zahur-glorys-past-dft.md) | [JSON](https://avascry.com/printing/zahur-glorys-past-dft.json) | [Synergies](https://avascry.com/similar/zahur-glorys-past.md)
+67. **Neriv, Heart of the Storm** (TDM): [Markdown](https://avascry.com/printing/neriv-heart-of-the-storm-tdm.md) | [JSON](https://avascry.com/printing/neriv-heart-of-the-storm-tdm.json) | [Synergies](https://avascry.com/similar/neriv-heart-of-the-storm.md)
+
+## Retrieval Examples
+
+### Content Negotiation Headers (Preferred)
+```bash
+# Fetch Token-Efficient Markdown (for LLM reasoning & crawling)
+curl -H "Accept: text/markdown" https://avascry.com/printing/combat-research-dmu
+
+# Fetch Structured JSON (for Discord bots, tools & apps)
+curl -H "Accept: application/json" https://avascry.com/printing/combat-research-dmu
+```
+
+### Direct Markdown & JSON URLs
+```bash
+# Markdown
+curl https://avascry.com/printing/combat-research-dmu.md
+curl https://avascry.com/similar/combat-research.md
+
+# JSON API
+curl https://avascry.com/printing/combat-research-dmu.json
+curl https://avascry.com/similar/combat-research.json
+curl https://avascry.com/artist/rebecca-guay.json
+curl https://avascry.com/set/dmu.json
+```
+
+### Python Retrieval
+```python
+import httpx
+client = httpx.Client()
+resp = client.get("https://avascry.com/printing/sol-ring-lea.md")
+print(resp.text)
+```
+
+## Preferred Crawl Sequence for Autonomous Agents
+1. `https://avascry.com/llms.txt` (This manifest)
+2. `https://avascry.com/rules.md` (Rules mechanics, continuous layers & priority)
+3. `https://avascry.com/legalities.md` (Format constraints & banlists)
+4. `https://avascry.com/sitemap.html` (Complete category crawl web)
+5. `https://avascry.com/similar/<slug>.md` (4096-dim synergy graph)
+6. `https://avascry.com/printing/<slug>.md` (Canonical card documents)
+
+## Crawling & Usage Policy
+- AI Search, Ingestion & Training: Allowed (GPTBot, OAI-SearchBot, ClaudeBot, Anthropic-AI, PerplexityBot, Applebot, Amazonbot, Googlebot, Bingbot)
+- Permitted Routes: `/`, `/printing/*`, `/similar/*`, `/artist/*`, `/set/*`, `/sets`, `/rules.md`, `/legalities.md`, `/commander`
+- Restricted Routes: `/api/*`, `/auth/*`, `/dashboard`
