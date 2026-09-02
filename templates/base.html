@@ -25,6 +25,10 @@
   <meta name="google-adsense-account" content="ca-pub-7283717447639840">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7283717447639840" crossorigin="anonymous"></script>
 
+  <!-- PWA Web App Manifest & Theme Color -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f172a">
+
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <link rel="alternate icon" href="/favicon.ico">
@@ -32,7 +36,7 @@
   <!-- Dark mode: default to dark, apply before paint to prevent flash -->
   <script>
     (function(){
-      var t = localStorage.getItem('avascry-theme') || 'dark';
+      var t = localStorage.getItem('avascry-theme') || localStorage.getItem('mtgabyss-theme') || 'dark';
       if (t === 'dark') {
         document.documentElement.setAttribute('data-theme','dark');
       } else {
@@ -80,19 +84,57 @@
   }
   </script>
 
+  <!-- Accessibility Skip Link & Utility Styles -->
+  <style>
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .skip-link {
+      position: absolute;
+      top: -60px;
+      left: 1rem;
+      background: var(--accent);
+      color: #fff;
+      padding: 0.6rem 1.2rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: var(--radius-sm);
+      z-index: 99999;
+      text-decoration: none;
+      box-shadow: var(--shadow-md);
+      transition: top 0.2s ease;
+    }
+    .skip-link:focus {
+      top: 1rem;
+      outline: 2px solid #fff;
+    }
+  </style>
+
   {% block head_extra %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
 
-  <header class="site-header">
+  <!-- Skip to Main Content for Screen Readers and Keyboard Nav -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <header class="site-header" role="banner">
     <div class="nav-container">
-      <a class="site-logo" href="/">AvaScry</a>
-      <nav itemscope itemtype="https://schema.org/SiteNavigationElement" style="display: flex; align-items: center; gap: 1.15rem;">
+      <a class="site-logo" href="/" aria-label="AvaScry Home">AvaScry</a>
+      <nav itemscope itemtype="https://schema.org/SiteNavigationElement" aria-label="Main Navigation" style="display: flex; align-items: center; gap: 1.15rem;">
         <a itemprop="url" href="/live-gallery" class="{% if active_nav == 'live-gallery' %}active{% endif %}"><span itemprop="name">{{ t('nav_live_gallery', current_lang or 'en') }}</span></a>
         <a itemprop="url" href="/commander" class="{% if active_nav == 'commander' %}active{% endif %}" title="SmartDeck — Intelligent Deck Completer"><span itemprop="name">{{ t('nav_deck_builder', current_lang or 'en') }}</span></a>
+        <a itemprop="url" href="/developers" class="{% if active_nav == 'developers' %}active{% endif %}" title="Developers &amp; AI Integration Hub"><span itemprop="name">{% set api_label = t('nav_api', current_lang or 'en') %}{{ 'API &amp; Docs' if api_label == 'nav_api' else api_label }}</span></a>
         <a itemprop="url" href="/random" title="Jump to a random card"><span itemprop="name">{{ t('nav_random', current_lang or 'en') }}</span></a>
         
-        <span style="display: inline-block; width: 1px; height: 16px; background: var(--border); margin: 0 0.15rem;"></span>
+        <span style="display: inline-block; width: 1px; height: 16px; background: var(--border); margin: 0 0.15rem;" aria-hidden="true"></span>
 
         <!-- User Auth Nav -->
         {% if user %}
@@ -107,11 +149,11 @@
                 {% if user.discord_username %}@{{ user.discord_username }}{% else %}{{ user.name }}{% endif %}
               </span>
             </a>
-            <a href="/auth/logout" title="Sign out" style="color: var(--muted); font-size: 0.75rem; text-decoration: none; padding: 0.2rem 0.4rem; border-radius: 50%;">✕</a>
+            <a href="/auth/logout" title="Sign out" aria-label="Sign out" style="color: var(--muted); font-size: 0.75rem; text-decoration: none; padding: 0.2rem 0.4rem; border-radius: 50%;">✕</a>
           </div>
         {% else %}
           <a href="/auth/login" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.85rem; border-radius: var(--radius-pill); background: var(--surface); border: 1.5px solid var(--border); color: var(--text); font-size: 0.82rem; font-weight: 700; text-decoration: none;">
-            <span>🧙‍♂️</span>
+            <span aria-hidden="true">🧙‍♂️</span>
             {{ t('nav_sign_in', current_lang or 'en') }}
           </a>
         {% endif %}
@@ -123,21 +165,21 @@
               <option value="{{ code }}" {% if (current_lang or 'en') == code %}selected{% endif %}>{{ lang_meta.flag }} {{ lang_meta.native }}</option>
             {% endfor %}
           </select>
-          <span style="position: absolute; right: 0.6rem; pointer-events: none; font-size: 0.65rem; color: var(--muted);">&#9660;</span>
+          <span style="position: absolute; right: 0.6rem; pointer-events: none; font-size: 0.65rem; color: var(--muted);" aria-hidden="true">&#9660;</span>
         </div>
 
-        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
-          <span id="theme-icon">&#9788;</span>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" role="button">
+          <span id="theme-icon" aria-hidden="true">&#9788;</span>
         </button>
       </nav>
     </div>
   </header>
 
-  <div class="page-wrapper">
+  <main class="page-wrapper" id="main-content" role="main" tabindex="-1">
     <div class="{% block container_class %}container{% endblock %}">
       {% block content %}{% endblock %}
     </div>
-  </div>
+  </main>
 
 
   <footer class="site-footer" style="margin-top: 5rem; border-top: 1px solid var(--border); background: var(--surface);">
@@ -164,6 +206,7 @@
           <li><a href="/sets" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Sets</a></li>
           <li><a href="/artists" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Artists</a></li>
           <li><a href="/random" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Random Card</a></li>
+          <li><a href="/sitemap.html" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">HTML Sitemap</a></li>
         </ul>
       </div>
 
@@ -174,6 +217,7 @@
           <li><a href="/commander" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">SmartDeck Builder</a></li>
           <li><a href="/search" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Card Search</a></li>
           <li><a href="/dashboard" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">My Decks</a></li>
+          <li><a href="/developers" style="font-size: 0.85rem; color: var(--accent, #38bdf8); text-decoration: none; font-weight: 600;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--accent, #38bdf8)';">⚡ Developers &amp; API</a></li>
         </ul>
       </div>
 
@@ -183,6 +227,7 @@
         <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem;">
           <li><a href="/privacy" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Privacy Policy</a></li>
           <li><a href="/terms" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Terms of Use</a></li>
+          <li><a href="/sitemap.html" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Site Index</a></li>
           <li><a href="mailto:telosdevgroup@gmail.com?subject=AvaScry.com%20Inquiry" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Contact Us</a></li>
         </ul>
       </div>
@@ -216,7 +261,7 @@
     (function(){
       var btn  = document.getElementById('theme-toggle');
       var icon = document.getElementById('theme-icon');
-      var cur  = localStorage.getItem('mtgabyss-theme') || 'dark';
+      var cur  = localStorage.getItem('avascry-theme') || localStorage.getItem('mtgabyss-theme') || 'dark';
 
       function apply(t) {
         if (t === 'dark') {
@@ -232,7 +277,7 @@
 
       btn.addEventListener('click', function(){
         cur = (cur === 'dark') ? 'light' : 'dark';
-        localStorage.setItem('mtgabyss-theme', cur);
+        localStorage.setItem('avascry-theme', cur);
         apply(cur);
       });
 

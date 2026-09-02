@@ -35,20 +35,24 @@ TRANSLATIONS = {
         'en': 'Random', 'ja': 'ランダム', 'fr': 'Aléatoire', 'de': 'Zufällig', 'es': 'Aleatorio',
         'it': 'Casuale', 'zhs': '随机卡牌', 'zht': '隨機卡牌', 'pt': 'Aleatório', 'ru': 'Случайная', 'ko': '무작위'
     },
+    'nav_api': {
+        'en': 'API & Docs', 'ja': 'API', 'fr': 'API', 'de': 'API', 'es': 'API',
+        'it': 'API', 'zhs': 'API 接口', 'zht': 'API 介面', 'pt': 'API', 'ru': 'API', 'ko': 'API'
+    },
     
     # Homepage Hero & Search
     'hero_title': {
-        'en': 'Become a smarter Magic player.',
-        'ja': 'よりスマートなマジックプレイヤーへ。',
-        'fr': 'Devenez un meilleur joueur de Magic.',
-        'de': 'Werde ein klügerer Magic-Spieler.',
-        'es': 'Conviértete en un jugador más inteligente de Magic.',
-        'it': 'Diventa un giocatore di Magic più esperto.',
-        'zhs': '成为更聪明的万智牌玩家。',
-        'zht': '成為更聰明的魔法風雲會玩家。',
-        'pt': 'Torne-se um jogador de Magic mais inteligente.',
-        'ru': 'Играйте в Magic разумнее.',
-        'ko': '더 똑똑한 매직 플레이어가 되세요.'
+        'en': 'Become a smarter Magic player',
+        'ja': 'よりスマートなマジックプレイヤーへ',
+        'fr': 'Devenez un meilleur joueur de Magic',
+        'de': 'Werde ein klügerer Magic-Spieler',
+        'es': 'Conviértete en un jugador más inteligente de Magic',
+        'it': 'Diventa un giocatore di Magic più esperto',
+        'zhs': '成为更聪明的万智牌玩家',
+        'zht': '成為更聰明的魔法風雲會玩家',
+        'pt': 'Torne-se um jogador de Magic mais inteligente',
+        'ru': 'Играйте в Magic разумнее',
+        'ko': '더 똑똑한 매직 플레이어가 되세요'
     },
     'hero_subtitle': {
         'en': 'Explore every printing, discover cards you’ve never seen, build Commander decks, and get lost in the art.',
@@ -493,9 +497,18 @@ TRANSLATIONS = {
         'it': '✓ Aggiunto', 'zhs': '✓ 已添加', 'zht': '✓ 已添加', 'pt': '✓ Adicionado', 'ru': '✓ Добавлено', 'ko': '✓ 추가됨'
     },
     'cmd_print_deck': {
-        'en': '🖨️ Print This Deck', 'ja': '🖨️ デッキを印刷', 'fr': '🖨️ Imprimer ce deck', 'de': '🖨️ Deck drucken',
-        'es': '🖨️ Imprimir este mazo', 'it': '🖨️ Stampa questo mazzo', 'zhs': '🖨️ 打印套牌', 'zht': '🖨️ 列印套牌',
-        'pt': '🖨️ Imprimir este deck', 'ru': '🖨️ Распечатать колоду', 'ko': '🖨️ 덱 인쇄하기'
+        'en': 'Print', 'ja': '印刷', 'fr': 'Imprimer', 'de': 'Drucken',
+        'es': 'Imprimir', 'it': 'Stampa', 'zhs': '打印', 'zht': '列印',
+        'pt': 'Imprimir', 'ru': 'Печать', 'ko': '인쇄'
+    },
+    'cmd_copy': {
+        'en': 'Text', 'ja': 'テキスト', 'fr': 'Texte', 'de': 'Text', 'es': 'Texto',
+        'it': 'Testo', 'zhs': '文本', 'zht': '文字', 'pt': 'Texto', 'ru': 'Текст', 'ko': '텍스트'
+    },
+    'cmd_share_discord': {
+        'en': 'Share to Discord', 'ja': 'Discordで共有', 'fr': 'Partager sur Discord', 'de': 'Auf Discord teilen',
+        'es': 'Compartir en Discord', 'it': 'Condividi su Discord', 'zhs': '分享至Discord', 'zht': '分享至Discord',
+        'pt': 'Compartilhar no Discord', 'ru': 'Поделиться в Discord', 'ko': 'Discord로 공유'
     },
     'cmd_export_deck': {
         'en': 'Export Deck', 'ja': 'デッキをエクスポート', 'fr': 'Exporter le deck', 'de': 'Deck exportieren',
@@ -601,6 +614,349 @@ TRANSLATIONS = {
         'de': 'Vom Konto abmelden', 'es': 'Cerrar sesión', 'it': 'Disconnettiti',
         'zhs': '退出登录', 'zht': '登出帳號', 'pt': 'Sair da conta',
         'ru': 'Выйти из аккаунта', 'ko': '계정 로그아웃'
+    },
+    
+    # Card Detail & Rulings
+    'card_rulings_title': {
+        'en': 'Official Rulings', 'ja': '公式ルール裁定', 'fr': 'Décisions officielles',
+        'de': 'Offizielle Regeln', 'es': 'Reglas oficiales', 'it': 'Regole ufficiali',
+        'zhs': '官方裁决', 'zht': '官方裁決', 'pt': 'Decisões oficiais',
+        'ru': 'Официальные правила', 'ko': '공식 판정'
+    },
+    'card_viewing_badge': {
+        'en': 'Viewing', 'ja': '表示中', 'fr': 'Affiché',
+        'de': 'Angezeigt', 'es': 'Viendo', 'it': 'In visualizzazione',
+        'zhs': '当前查看', 'zht': '當前查看', 'pt': 'Visualizando',
+        'ru': 'Просмотр', 'ko': '현재 표시'
+    },
+    'card_viewing_here': {
+        'en': 'Viewing Here', 'ja': 'ここで表示中', 'fr': 'Affiché ici',
+        'de': 'Hier angezeigt', 'es': 'Viendo aquí', 'it': 'In visione qui',
+        'zhs': '在此查看', 'zht': '在此查看', 'pt': 'Visualizando aqui',
+        'ru': 'Просматривается здесь', 'ko': '여기서 표시'
+    },
+    'card_languages_count': {
+        'en': 'Languages', 'ja': '言語', 'fr': 'Langues',
+        'de': 'Sprachen', 'es': 'Idiomas', 'it': 'Lingue',
+        'zhs': '种语言', 'zht': '種語言', 'pt': 'Idiomas',
+        'ru': 'Языков', 'ko': '개 언어'
+    },
+    'card_scan_missing_notice': {
+        'en': 'localized scan is not available from the archive. Displaying English printing.',
+        'ja': 'ローカライズされたスキャンは利用できません。英語版を表示しています。',
+        'fr': 'le scan localisé n\'est pas disponible. Affichage de la version anglaise.',
+        'de': 'Lokalisierter Scan nicht verfügbar. Englischer Druck wird angezeigt.',
+        'es': 'el escaneo localizado no está disponible. Mostrando la versión en inglés.',
+        'it': 'la scansione localizzata non è disponibile. Viene mostrata la versione inglese.',
+        'zhs': '本地化卡牌扫描图暂缺，正在显示英文版印刷。',
+        'zht': '本地化卡牌掃描圖暫缺，正在顯示英文版印刷。',
+        'pt': 'a digitalização localizada não está disponível. Exibindo versão em inglês.',
+        'ru': 'локализованный скан недоступен. Отображается версия на английском.',
+        'ko': '현지화된 카드 스캔본이 없어 영문 인쇄본을 표시합니다.'
+    },
+
+    # Mechanically Similar Cards
+    'sim_section_title': {
+        'en': 'Mechanically Similar Cards', 'ja': 'メカニズムが類似したカード', 'fr': 'Cartes aux mécaniques similaires',
+        'de': 'Mechanisch ähnliche Karten', 'es': 'Cartas mecánicamente similares', 'it': 'Carte meccanicamente simili',
+        'zhs': '机制相似卡牌', 'zht': '機制相似卡牌', 'pt': 'Cartas mecanicamente semelhantes',
+        'ru': 'Механически похожие карты', 'ko': '기제가 유사한 카드'
+    },
+    'sim_section_sub': {
+        'en': 'Cards that share similar playstyles, keywords, and mana synergies.',
+        'ja': 'プレイスタイル、キーワード、マナの相乗効果が類似したカード。',
+        'fr': 'Cartes partageant des styles de jeu, mots-clés et synergies similaires.',
+        'de': 'Karten mit ähnlichem Spielstil, Schlüsselwörtern und Manasynergien.',
+        'es': 'Cartas que comparten estilos de juego, palabras clave y sinergias similares.',
+        'it': 'Carte che condividono stili di gioco, parole chiave e sinergie simili.',
+        'zhs': '具有相似玩法、关键词和法术力配合的卡牌。',
+        'zht': '具有相似玩法、關鍵詞和魔法力配合的卡牌。',
+        'pt': 'Cartas que compartilham estilos de jogo, palavras-chave e sinergias semelhantes.',
+        'ru': 'Карты со схожим стилем игры, ключевыми словами и синергией.',
+        'ko': '플레이 스타일, 키워드, 마나 시너지가 유사한 카드입니다.'
+    },
+    'sim_more_link': {
+        'en': 'More like this', 'ja': '似たカードをもっと見る', 'fr': 'Plus de cartes similaires',
+        'de': 'Mehr wie diese', 'es': 'Más como esta', 'it': 'Altre carte simili',
+        'zhs': '更多类似卡牌', 'zht': '更多類似卡牌', 'pt': 'Mais como esta',
+        'ru': 'Еще похожие', 'ko': '유사한 카드 더보기'
+    },
+
+    # SmartDeck Seed CTA
+    'seed_builder_badge': {
+        'en': 'SmartDeck Builder', 'ja': 'SmartDeck ビルダー', 'fr': 'Constructeur SmartDeck',
+        'de': 'SmartDeck Deckbau', 'es': 'Constructor SmartDeck', 'it': 'Costruttore SmartDeck',
+        'zhs': 'SmartDeck 构筑器', 'zht': 'SmartDeck 構築器', 'pt': 'Construtor SmartDeck',
+        'ru': 'Конструктор SmartDeck', 'ko': 'SmartDeck 덱 빌더'
+    },
+    'seed_title_prefix': {
+        'en': 'Build a deck around', 'ja': 'を中心にデッキを構築', 'fr': 'Construire un deck autour de',
+        'de': 'Baue ein Deck um', 'es': 'Construye un mazo alrededor de', 'it': 'Crea un mazzo attorno a',
+        'zhs': '围绕核心构筑套牌', 'zht': '圍繞核心構築套牌', 'pt': 'Construa um deck em torno de',
+        'ru': 'Соберите колоду вокруг', 'ko': '중심으로 덱 구축'
+    },
+    'seed_subtitle': {
+        'en': 'Draft synergistic cards round-by-round, enforce commander color identity, and complete your 99 starting with',
+        'ja': '相乗効果のあるカードをラウンド毎にドラフトし、固有色を守り、99枚のデッキを完成させましょう：',
+        'fr': 'Draftez des cartes synergiques ronde par ronde, respectez l\'identité couleur et complétez vos 99 cartes avec',
+        'de': 'Wähle synergische Karten Runde für Runde, beachte die Farbidentität und vervollständige dein 99er-Deck mit',
+        'es': 'Elige cartas sinérgicas ronda por ronda, mantén la identidad de color y completa tu mazo de 99 empezando por',
+        'it': 'Scegli carte sinergiche round per round, rispetta l\'identità di colore e completa il tuo mazzo da 99 con',
+        'zhs': '逐轮挑选配合卡牌，锁定指挥官色彩标识，以此卡为核心完成 99 张套牌。',
+        'zht': '逐輪挑選配合卡牌，鎖定指揮官色彩標識，以此卡為核心完成 99 張套牌。',
+        'pt': 'Selecione cartas sinérgicas rodada por rodada, mantenha a identidade de cor e complete seu 99 com',
+        'ru': 'Выбирайте карты с синергией раунд за раундом, соблюдайте цветовую принадлежность и соберите 99 карт вокруг',
+        'ko': '라운드별로 시너지 카드를 드래프트하고, 커맨더 정체성을 유지하며 99장 덱을 완성하세요:'
+    },
+    'seed_btn_launch': {
+        'en': 'Build with SmartDeck', 'ja': 'SmartDeck で構築', 'fr': 'Construire avec SmartDeck',
+        'de': 'Mit SmartDeck bauen', 'es': 'Construir con SmartDeck', 'it': 'Costruisci con SmartDeck',
+        'zhs': '使用 SmartDeck 构筑', 'zht': '使用 SmartDeck 構築', 'pt': 'Construir com SmartDeck',
+        'ru': 'Собрать с SmartDeck', 'ko': 'SmartDeck으로 덱 빌드'
+    },
+
+    # AvaScry Partner / Developer CTA
+    'build_avascry_badge': {
+        'en': 'AvaScry', 'ja': 'AvaScry', 'fr': 'AvaScry',
+        'de': 'AvaScry', 'es': 'AvaScry', 'it': 'AvaScry',
+        'zhs': 'AvaScry', 'zht': 'AvaScry', 'pt': 'AvaScry',
+        'ru': 'AvaScry', 'ko': 'AvaScry'
+    },
+    'build_avascry_title': {
+        'en': 'Build with AvaScry', 'ja': 'AvaScry で開発・構築', 'fr': 'Développez avec AvaScry',
+        'de': 'Entwickeln mit AvaScry', 'es': 'Construye con AvaScry', 'it': 'Sviluppa con AvaScry',
+        'zhs': '与 AvaScry 合作构筑', 'zht': '與 AvaScry 合作構築', 'pt': 'Desenvolva com AvaScry',
+        'ru': 'Разрабатывайте с AvaScry', 'ko': 'AvaScry와 함께 구축하기'
+    },
+    'build_avascry_subtitle': {
+        'en': 'Interested in AvaScry\'s card data, semantic search, or other MTG technology?',
+        'ja': 'AvaScry のカードデータ、セマンティック検索、MTG テクノロジーの活用にご興味はありますか？',
+        'fr': 'Intéressé par les données de cartes, la recherche sémantique ou les technologies MTG d\'AvaScry ?',
+        'de': 'Interessiert an AvaScrys Kartendaten, semantischer Suche oder anderer MTG-Technologie?',
+        'es': '¿Interesado en los datos de cartas, búsqueda semántica u otra tecnología MTG de AvaScry?',
+        'it': 'Interessato ai dati delle carte, ricerca semantica o altra tecnologia MTG di AvaScry?',
+        'zhs': '对 AvaScry 的卡牌数据、语义搜索或其他万智牌技术感兴趣？',
+        'zht': '對 AvaScry 的卡牌數據、語義搜索或其他魔法風雲會技術感興趣？',
+        'pt': 'Interessado nos dados de cartas, busca semântica ou outra tecnologia MTG da AvaScry?',
+        'ru': 'Заинтересованы в данных карт, семантическом поиске или технологиях AvaScry для MTG?',
+        'ko': 'AvaScry의 카드 데이터, 시맨틱 검색 또는 MTG 기술 활용에 관심이 있으신가요?'
+    },
+    'build_avascry_btn': {
+        'en': 'Partner with AvaScry', 'ja': 'AvaScry と提携する', 'fr': 'Devenir partenaire AvaScry',
+        'de': 'Partner von AvaScry werden', 'es': 'Asociarse con AvaScry', 'it': 'Collabora con AvaScry',
+        'zhs': '与 AvaScry 合作', 'zht': '與 AvaScry 合作', 'pt': 'Faça parceria com AvaScry',
+        'ru': 'Партнерство с AvaScry', 'ko': 'AvaScry와 파트너십 맺기'
+    },
+
+    # Header Auth
+    'nav_sign_in': {
+        'en': 'Sign in', 'ja': 'ログイン', 'fr': 'Se connecter', 'de': 'Anmelden',
+        'es': 'Iniciar sesión', 'it': 'Accedi', 'zhs': '登录', 'zht': '登入',
+        'pt': 'Entrar', 'ru': 'Войти', 'ko': '로그인'
+    },
+
+    # Price Strip & Badges
+    'price_est_market': {
+        'en': 'Est. Market', 'ja': '推定市場価格', 'fr': 'Prix estimé', 'de': 'Geschätzter Marktpreis',
+        'es': 'Precio estimado', 'it': 'Prezzo stimato', 'zhs': '预估市价', 'zht': '預估市價',
+        'pt': 'Preço estimado', 'ru': 'Рыночная цена', 'ko': '예상 시세'
+    },
+    'price_regular': {
+        'en': 'Regular', 'ja': '通常版', 'fr': 'Normal', 'de': 'Normal',
+        'es': 'Normal', 'it': 'Normale', 'zhs': '平卡', 'zht': '平卡',
+        'pt': 'Normal', 'ru': 'Обычная', 'ko': '일반'
+    },
+    'price_foil': {
+        'en': 'Foil', 'ja': 'Foil版', 'fr': 'Foil', 'de': 'Foil',
+        'es': 'Foil', 'it': 'Foil', 'zhs': '闪卡', 'zht': '閃卡',
+        'pt': 'Foil', 'ru': 'Фойл', 'ko': '포일'
+    },
+    'price_etched': {
+        'en': 'Etched', 'ja': 'エッチング', 'fr': 'Gravé', 'de': 'Etched',
+        'es': 'Grabado', 'it': 'Incisa', 'zhs': '蚀刻', 'zht': '蝕刻',
+        'pt': 'Gravado', 'ru': 'Гравированная', 'ko': '에칭'
+    },
+    'price_euro': {
+        'en': 'Euro', 'ja': 'ユーロ', 'fr': 'Euro', 'de': 'Euro',
+        'es': 'Euro', 'it': 'Euro', 'zhs': '欧元', 'zht': '歐元',
+        'pt': 'Euro', 'ru': 'Евро', 'ko': '유로'
+    },
+    'price_disclaimer_pre': {
+        'en': 'Prices as of', 'ja': '価格時点:', 'fr': 'Prix au', 'de': 'Preise vom',
+        'es': 'Precios a fecha de', 'it': 'Prezzi al', 'zhs': '价格采集日期:', 'zht': '價格採集日期:',
+        'pt': 'Preços em', 'ru': 'Цены по состоянию на', 'ko': '시세 기준일:'
+    },
+    'price_disclaimer_post': {
+        'en': 'Market values fluctuate; double-check current pricing before purchasing.',
+        'ja': '市場価値は変動します。購入前に最新価格をご確認ください。',
+        'fr': 'Les valeurs du marché fluctuent ; vérifiez les prix actuels avant d\'acheter.',
+        'de': 'Marktwerte schwanken; vor dem Kauf aktuelle Preise prüfen.',
+        'es': 'Los valores fluctúan; consulta los precios actuales antes de comprar.',
+        'it': 'I valori di mercato fluttuano; ricontrolla i prezzi prima di acquistare.',
+        'zhs': '市场价格存在波动，购买前请核对商家最新报价。',
+        'zht': '市場價格存在波動，購買前請核對商家最新報價。',
+        'pt': 'Os valores de mercado flutuam; verifique os preços atuais antes de comprar.',
+        'ru': 'Рыночные цены колеблются; перед покупкой уточняйте актуальные цены.',
+        'ko': '시장 시세는 변동될 수 있으므로 구매 전 최신 가격을 다시 확인하세요.'
+    },
+
+    # Printings Count
+    'card_printing_sing': {
+        'en': 'Printing', 'ja': '版', 'fr': 'Impression', 'de': 'Druck',
+        'es': 'Impresión', 'it': 'Stampa', 'zhs': '份印刷', 'zht': '份印刷',
+        'pt': 'Impressão', 'ru': 'Издание', 'ko': '개 인쇄본'
+    },
+    'card_printing_plur': {
+        'en': 'Printings', 'ja': '版', 'fr': 'Impressions', 'de': 'Drucke',
+        'es': 'Impresiones', 'it': 'Stampe', 'zhs': '份印刷', 'zht': '份印刷',
+        'pt': 'Impressões', 'ru': 'Изданий', 'ko': '개 인쇄본'
+    },
+
+    # Save for Deckbuilding Button
+    'btn_save_deckbuilding': {
+        'en': 'Save for Deckbuilding', 'ja': 'デッキ構築用に保存', 'fr': 'Sauvegarder pour le deck',
+        'de': 'Für Deckbau speichern', 'es': 'Guardar para construir mazo', 'it': 'Salva per il mazzo',
+        'zhs': '暂存用于构筑套牌', 'zht': '暫存用於構築套牌', 'pt': 'Salvar para o deck',
+        'ru': 'Сохранить для колоды', 'ko': '덱 빌딩용으로 저장'
+    },
+    'btn_saved_deckbuilding': {
+        'en': 'Saved for Deckbuilding', 'ja': '保存済み', 'fr': 'Sauvegardé',
+        'de': 'Gespeichert', 'es': 'Guardado', 'it': 'Salvato',
+        'zhs': '已暂存', 'zht': '已暫存', 'pt': 'Salvo',
+        'ru': 'Сохранено', 'ko': '저장됨'
+    },
+    
+    # Developers & AI Integrations Hub
+    'dev_page_title': {
+        'en': 'Developers & AI Integrations Hub',
+        'es': 'Centro de Desarrolladores e Integraciones IA',
+        'ja': '開発者＆AI統合ハブ',
+        'fr': 'Hub Développeurs & Intégrations IA',
+        'de': 'Entwickler & KI-Integrations-Hub',
+        'it': 'Hub Sviluppatori e Integrazioni IA',
+        'pt': 'Hub de Desenvolvedores e Integrações de IA',
+        'ru': 'Центр разработчиков и интеграции ИИ',
+        'ko': '개발자 및 AI 통합 허브',
+        'zhs': '开发者与人工智能集成中心',
+        'zht': '開發者與人工智能集成中心'
+    },
+    'dev_hero_subtitle': {
+        'en': 'High-performance APIs, AI Markdown endpoints, 4096-dimensional vector embeddings, Cockatrice desktop databases, and live Discord RSS feeds.',
+        'es': 'APIs de alto rendimiento, endpoints Markdown para IA, embeddings vectoriales de 4096 dimensiones, bases de datos Cockatrice y feeds RSS para Discord.',
+        'ja': '高性能API、AI用Markdownエンドポイント、4096次元ベクトル埋め込み、Cockatrice用データベース、Discord用RSSフィード。',
+        'fr': 'APIs haute performance, endpoints Markdown pour l\'IA, embeddings vectoriels 4096D, bases de données Cockatrice et flux RSS Discord.',
+        'de': 'Hochleistungs-APIs, KI-Markdown-Endpunkte, 4096-dimensionale Vektoreinbettungen, Cockatrice-Datenbanken und Live-Discord-RSS-Feeds.',
+        'it': 'API ad alte prestazioni, endpoint Markdown per l\'IA, incorporamenti vettoriali 4096D, database Cockatrice e feed RSS Discord.',
+        'pt': 'APIs de alto desempenho, endpoints Markdown para IA, embeddings vetoriais de 4096 dimensões, bases de dados Cockatrice e feeds RSS para Discord.',
+        'ru': 'Высокопроизводительные API, Markdown для ИИ, 4096-мерные векторные эмбеддинги, базы Cockatrice и RSS-ленты для Discord.',
+        'ko': '고성능 API, AI 마크다운 엔드포인트, 4096차원 벡터 임베딩, Cockatrice 데스크톱 데이터베이스, 라이브 Discord RSS 피드.',
+        'zhs': '高性能 API、AI 原生 Markdown 端点、4096 维向量嵌入、Cockatrice 桌面数据库以及 Discord 实时 RSS 订阅源。',
+        'zht': '高性能 API、AI 原生 Markdown 端點、4096 維向量嵌入、Cockatrice 桌面數據庫以及 Discord 實時 RSS 訂閱源。'
+    },
+    'dev_tab_ai': {
+        'en': '🔮 AI & LLMs (Markdown)', 'es': '🔮 IA y LLMs (Markdown)', 'ja': '🔮 AI＆LLM (Markdown)',
+        'fr': '🔮 IA & LLMs (Markdown)', 'de': '🔮 KI & LLMs (Markdown)', 'it': '🔮 IA e LLM (Markdown)',
+        'pt': '🔮 IA e LLMs (Markdown)', 'ru': '🔮 ИИ и LLM (Markdown)', 'ko': '🔮 AI 및 LLM (Markdown)',
+        'zhs': '🔮 人工智能与大模型 (Markdown)', 'zht': '🔮 人工智能與大模型 (Markdown)'
+    },
+    'dev_tab_api': {
+        'en': '🟡 REST JSON API', 'es': '🟡 API REST JSON', 'ja': '🟡 REST JSON API',
+        'fr': '🟡 API REST JSON', 'de': '🟡 REST JSON API', 'it': '🟡 API REST JSON',
+        'pt': '🟡 API REST JSON', 'ru': '🟡 REST JSON API', 'ko': '🟡 REST JSON API',
+        'zhs': '🟡 REST JSON 接口', 'zht': '🟡 REST JSON 介面'
+    },
+    'dev_tab_vector': {
+        'en': '🧠 4096-d Vectors', 'es': '🧠 Vectores 4096D', 'ja': '🧠 4096次元ベクトル',
+        'fr': '🧠 Vecteurs 4096D', 'de': '🧠 4096D-Vektoren', 'it': '🧠 Vettori 4096D',
+        'pt': '🧠 Vetores 4096D', 'ru': '🧠 4096-мерные векторы', 'ko': '🧠 4096차원 벡터',
+        'zhs': '🧠 4096维神经向量', 'zht': '🧠 4096維神經向量'
+    },
+    'dev_tab_cockatrice': {
+        'en': '⚔️ Cockatrice XML', 'es': '⚔️ Cockatrice XML', 'ja': '⚔️ Cockatrice XML',
+        'fr': '⚔️ Cockatrice XML', 'de': '⚔️ Cockatrice XML', 'it': '⚔️ Cockatrice XML',
+        'pt': '⚔️ Cockatrice XML', 'ru': '⚔️ Cockatrice XML', 'ko': '⚔️ Cockatrice XML',
+        'zhs': '⚔️ Cockatrice 桌面数据库', 'zht': '⚔️ Cockatrice 桌面數據庫'
+    },
+    'dev_tab_rss': {
+        'en': '📡 Discord & RSS', 'es': '📡 Discord y RSS', 'ja': '📡 Discord＆RSS',
+        'fr': '📡 Discord & RSS', 'de': '📡 Discord & RSS', 'it': '📡 Discord e RSS',
+        'pt': '📡 Discord e RSS', 'ru': '📡 Discord и RSS', 'ko': '📡 Discord 및 RSS',
+        'zhs': '📡 Discord 与 RSS 订阅', 'zht': '📡 Discord 與 RSS 訂閱'
+    },
+    'dev_ai_desc': {
+        'en': 'Retrieve clean, structured Markdown with YAML frontmatter optimized for LLM context windows, tool calling, and RAG pipelines.',
+        'es': 'Recupera Markdown limpio y estructurado con YAML frontmatter, optimizado para ventanas de contexto de LLMs, tool calling y pipelines RAG.',
+        'ja': 'LLMのコンテキストウィンドウ、Tool Calling、およびRAGパイプライン向けに最適化された、YAMLフロントマター付きの構造化Markdownを取得できます。',
+        'fr': 'Récupérez du Markdown propre et structuré avec frontmatter YAML, optimisé pour les contextes de LLMs, le tool calling et les pipelines RAG.',
+        'de': 'Strukturiertes Markdown mit YAML-Frontmatter, optimiert für LLM-Kontextfenster, Tool-Calling und RAG-Pipelines.',
+        'it': 'Recupera Markdown pulito e strutturato con frontmatter YAML, ottimizzato per finestre di contesto LLM, tool calling e pipeline RAG.',
+        'pt': 'Obtenha Markdown limpo e estruturado com frontmatter YAML, otimizado para janelas de contexto de LLMs, tool calling e pipelines de RAG.',
+        'ru': 'Получайте структурированный Markdown с YAML frontmatter, оптимизированный для контекстных окон LLM, вызова функций и RAG-пайплайнов.',
+        'ko': 'LLM 컨텍스트 윈도우, Tool Calling 및 RAG 파이프라인에 최적화된 YAML 프론트매터 포함 구조화 마크다운을 제공합니다.',
+        'zhs': '获取带有 YAML 头部的结构化 Markdown，专为大模型上下文窗口、函数调用与 RAG 管道优化。',
+        'zht': '獲取帶有 YAML 頭部的結構化 Markdown，專為大模型上下文視窗、函數調用與 RAG 管道優化。'
+    },
+    'dev_api_desc': {
+        'en': 'Lightning-fast, unauthenticated JSON endpoints optimized for Discord bots, web applications, and tournament software with low-latency in-memory response times.',
+        'es': 'Endpoints JSON ultrarrápidos y sin autenticación, optimizados para bots de Discord, aplicaciones web y software de torneos con tiempos de respuesta de baja latencia.',
+        'ja': '認証不要で超高速なJSONエンドポイント。Discordボット、Webアプリ、トーナメントツール向けに低遅延インメモリ応答に最適化されています。',
+        'fr': 'Endpoints JSON ultra-rapides et sans clé d\'API, optimisés pour les bots Discord et les applications web avec des réponses à faible latence.',
+        'de': 'Blitzschnelle, unauthentifizierte JSON-Endpunkte, optimiert für Discord-Bots, Web-Apps und Turnier-Tools mit niedrigen Latenzzeiten.',
+        'it': 'Endpoint JSON ultra-rapidi e senza autenticazione, ottimizzati per bot Discord e applicazioni web con tempi di risposta a bassa latenza.',
+        'pt': 'Endpoints JSON extremamente rápidos e sem necessidade de autenticação, otimizados para bots do Discord e aplicativos web.',
+        'ru': 'Сверхбыстрые открытые JSON API для ботов Discord, веб-приложений и турнирных сервисов с низкой задержкой ответа.',
+        'ko': '인증 없이 초고속으로 작동하는 JSON 엔드포인트로 Discord 봇, 웹 애플리케이션 및 대회 도구에 최적화되어 낮은 지연 시간의 응답을 제공합니다.',
+        'zhs': '无需 API 密钥的高性能 JSON 端点，专为 Discord 机器人、Web 应用和套牌构建器优化，提供低延迟的内存级响应。',
+        'zht': '無需 API 金鑰的高性能 JSON 端點，專為 Discord 機器人、Web 應用和套牌構建器優化，提供低延遲的內存級響應。'
+    },
+    'dev_vector_desc': {
+        'en': 'Direct access to raw 4096-dimensional float vector embeddings generated by our fine-tuned Qwen 8B model for custom vector databases, cosine search, and neural RAG.',
+        'es': 'Acceso directo a embeddings vectoriales de 4096 dimensiones generados por Qwen 8B para bases de datos vectoriales personalizadas y búsqueda neuronal.',
+        'ja': 'ファインチューニングされたQwen 8Bモデルが生成した4096次元の浮動小数点ベクトル埋め込みに直接アクセスし、独自のコサイン検索やRAGを構築できます。',
+        'fr': 'Accès direct aux embeddings vectoriels 4096D générés par notre modèle Qwen 8B pour vos bases vectorielles personnalisées et recherche RAG.',
+        'de': 'Direkter Zugriff auf 4096-dimensionale Vektor-Embeddings unseres Qwen-8B-Modells für eigene Vektordatenbanken und neuronale RAG-Suchen.',
+        'it': 'Accesso diretto agli incorporamenti vettoriali 4096D generati dal modello Qwen 8B per database vettoriali personalizzati e ricerca RAG.',
+        'pt': 'Acesso direto a embeddings vetoriais de 4096 dimensões gerados pelo modelo Qwen 8B para bancos de dados vetoriais e buscas por similaridade.',
+        'ru': 'Прямой доступ к 4096-мерным векторным эмбеддингам модели Qwen 8B для собственных векторных баз данных и нейропоиска.',
+        'ko': '미세 조정된 Qwen 8B 모델이 생성한 4096차원 부동소수점 벡터 임베딩에 직접 접근하여 커스텀 벡터 검색 및 RAG 시스템을 구축할 수 있습니다.',
+        'zhs': '直接访问由微调 Qwen 8B 模型生成的 4096 维浮点向量嵌入，可用于构建自定义向量数据库和神经 RAG 检索。',
+        'zht': '直接訪問由微調 Qwen 8B 模型生成的 4096 維浮點向量嵌入，可用於構建自定義向量數據庫和神經 RAG 檢索。'
+    },
+    'dev_cockatrice_desc': {
+        'en': 'Import complete card expansion sets directly into Cockatrice desktop app with automatically downloading high-resolution card artwork from AvaScry.',
+        'es': 'Importa sets completos directamente en Cockatrice con descarga automática de imágenes en alta resolución desde los servidores de AvaScry.',
+        'ja': 'AvaScryから高解像度のカード画像を自動ダウンロードしながら、完全な拡張セットをCockatriceデスクトップアプリに直接インポートできます。',
+        'fr': 'Importez des extensions complètes dans Cockatrice avec téléchargement automatique des illustrations haute résolution depuis AvaScry.',
+        'de': 'Importieren Sie komplette Sets direkt in die Cockatrice-Desktop-App mit automatischem Download hochauflösender Kartenbilder von AvaScry.',
+        'it': 'Importa espansioni complete nell\'app Cockatrice con download automatico delle immagini delle carte in alta risoluzione da AvaScry.',
+        'pt': 'Importe coleções completas no aplicativo Cockatrice com download automático de ilustrações em alta resolução dos servidores AvaScry.',
+        'ru': 'Импортируйте полные выпуски карт в приложение Cockatrice с автоматической загрузкой иллюстраций высокого разрешения с серверов AvaScry.',
+        'ko': 'AvaScry의 고해상도 카드 이미지를 자동으로 다운로드하면서 완전한 확장팩 세트를 Cockatrice 데스크톱 앱에 직접 가져올 수 있습니다.',
+        'zhs': '直接将完整的卡牌扩展系列导入 Cockatrice 桌面模拟器，并自动从 AvaScry 高速服务器下载高清卡牌原画。',
+        'zht': '直接將完整的卡牌擴展系列導入 Cockatrice 桌面模擬器，並自動從 AvaScry 高速伺服器下載高清卡牌原畫。'
+    },
+    'dev_rss_desc': {
+        'en': 'Plug live Magic: The Gathering set checklists and official rulings updates directly into Discord server channels and news aggregators via RSS 2.0.',
+        'es': 'Conecta listas de sets y actualizaciones de reglas oficiales directamente a canales de Discord y lectores de noticias mediante RSS 2.0.',
+        'ja': 'RSS 2.0を介して、最新のカードセットや公式ルール更新をDiscordチャンネルやニュースリーダーに自動配信できます。',
+        'fr': 'Diffusez les nouveaux sets et les règles officielles directement dans vos canaux Discord et agrégateurs de flux via RSS 2.0.',
+        'de': 'Integrieren Sie Live-Sets und offizielle Regel-Updates über RSS 2.0 direkt in Discord-Server-Kanäle und News-Reader.',
+        'it': 'Collega nuovi set e aggiornamenti delle regole ufficiali direttamente nei canali del server Discord e lettori di notizie tramite RSS 2.0.',
+        'pt': 'Conecte novas coleções e atualizações de regras oficiais diretamente aos canais do Discord e leitores de notícias via RSS 2.0.',
+        'ru': 'Подключайте обновления выпусков карт и официальные правила прямо в каналы Discord и RSS-агрегаторы через RSS 2.0.',
+        'ko': 'RSS 2.0을 통해 새로운 세트 체크리스트와 공식 룰 업데이트를 Discord 채널 및 뉴스 리더에 실시간으로 연동할 수 있습니다.',
+        'zhs': '通过 RSS 2.0 将最新的万智牌系列清单和官方规则裁定实时推送至 Discord 频道与新闻聚合器。',
+        'zht': '通過 RSS 2.0 將最新的萬智牌系列清單和官方規則裁定實時推送至 Discord 頻道與新聞聚合器。'
+    },
+    'dev_copy': {
+        'en': 'Copy Code', 'es': 'Copiar Código', 'ja': 'コードをコピー', 'fr': 'Copier le code',
+        'de': 'Code kopieren', 'it': 'Copia codice', 'pt': 'Copiar código', 'ru': 'Копировать',
+        'ko': '코드 복사', 'zhs': '复制代码', 'zht': '複製代碼'
+    },
+    'dev_copied': {
+        'en': 'Copied!', 'es': '¡Copiado!', 'ja': 'コピーしました！', 'fr': 'Copié !',
+        'de': 'Kopiert!', 'it': 'Copiato!', 'pt': 'Copiado!', 'ru': 'Скопировано!',
+        'ko': '복사됨!', 'zhs': '已复制！', 'zht': '已複製！'
     }
 }
 

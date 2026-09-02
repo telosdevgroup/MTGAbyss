@@ -13,6 +13,7 @@
   <meta name="twitter:image" content="{{ card.large_image_url or card.image_url }}">
 
   <link rel="canonical" href="https://avascry.com/printing/{{ card.printing_slug }}">
+  <link rel="alternate" type="text/markdown" title="Markdown representation for AI Agents" href="/printing/{{ card.printing_slug or card.slug }}.md">
 
   <!-- Schema.org Structured Data for Google Images & Knowledge Graph -->
   <script type="application/ld+json">
@@ -121,7 +122,7 @@
          width="488"
          height="680"
          alt="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} - {{ card.set_name }} (#{{ card.collector_number }}){% if card.artist and card.artist != 'Unknown' %} - Illustrated by {{ card.artist }}{% endif %} - Magic: The Gathering Card"
-         title="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} - {{ card.set_name }} (#{{ card.collector_number }})">
+         title="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} card art — {{ card.set_name }}{% if card.artist and card.artist != 'Unknown' %} — {{ card.artist }}{% endif %}">
   </div>
 
   {% if card.has_image_note %}
@@ -166,7 +167,20 @@
     <h1>
       {{ card.printed_name }}{% if card.printed_name != card.name %} <span style="font-weight: 500; font-size: 1.25rem; color: var(--abyss-muted);">({{ card.name }})</span>{% endif %}
     </h1>
-    <div class="badges-row">
+
+    <!-- Screen Reader Full Card Details Summary (Accessible for non-sighted users) -->
+    <div class="sr-only">
+      <h2>Card Rules and Details</h2>
+      <p><strong>Card Type:</strong> {{ card.type_line }}</p>
+      {% if card.mana_cost %}<p><strong>Mana Cost:</strong> {{ card.mana_cost }}</p>{% endif %}
+      {% if card.power and card.toughness %}<p><strong>Power and Toughness:</strong> {{ card.power }}/{{ card.toughness }}</p>{% endif %}
+      {% if card.loyalty %}<p><strong>Starting Loyalty:</strong> {{ card.loyalty }}</p>{% endif %}
+      <p><strong>Oracle Rules Text:</strong> {{ card.oracle_text or 'No rules text' }}</p>
+      {% if card.flavor_text %}<p><strong>Flavor Text:</strong> {{ card.flavor_text }}</p>{% endif %}
+      <p><strong>Set:</strong> {{ card.set_name }} (#{{ card.collector_number }}), Rarity: {{ card.rarity|capitalize }}, Artist: {{ card.artist or 'Unknown' }}</p>
+    </div>
+
+    <div class="badges-row" aria-label="Card attributes and types">
       {% for badge in badges %}
         <span class="badge {{ badge.type }}">{{ badge.label }}</span>
       {% endfor %}
@@ -185,9 +199,21 @@
               data-slug="{{ card.printing_slug }}"
               data-image="{{ card.image_url }}"
               data-set="{{ card.set_name }}"
+              data-label-save="{% set l_save = t('btn_save_deckbuilding', current_lang or 'en') %}{{ 'Save for Deckbuilding' if l_save == 'btn_save_deckbuilding' else l_save }}"
+              data-label-saved="{% set l_saved = t('btn_saved_deckbuilding', current_lang or 'en') %}{{ 'Saved for Deckbuilding' if l_saved == 'btn_saved_deckbuilding' else l_saved }}"
+              aria-pressed="{% if is_saved %}true{% else %}false{% endif %}"
+              aria-label="{% if is_saved %}Card saved for deckbuilding. Click to remove.{% else %}Save {{ card.name }} for deckbuilding{% endif %}"
               style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.45rem 1.1rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; border: 1.5px solid var(--accent); background: {% if is_saved %}var(--accent){% else %}var(--surface){% endif %}; color: {% if is_saved %}#fff{% else %}var(--accent){% endif %}; box-shadow: var(--shadow-sm);">
-        <span id="save-stash-icon">{% if is_saved %}✓{% else %}➕{% endif %}</span>
-        <span id="save-stash-label">{% if is_saved %}Saved for Deckbuilding{% else %}Save for Deckbuilding{% endif %}</span>
+        <span id="save-stash-icon" aria-hidden="true">{% if is_saved %}✓{% else %}➕{% endif %}</span>
+        <span id="save-stash-label">
+          {% if is_saved %}
+            {% set l_saved = t('btn_saved_deckbuilding', current_lang or 'en') %}
+            {{ 'Saved for Deckbuilding' if l_saved == 'btn_saved_deckbuilding' else l_saved }}
+          {% else %}
+            {% set l_save = t('btn_save_deckbuilding', current_lang or 'en') %}
+            {{ 'Save for Deckbuilding' if l_save == 'btn_save_deckbuilding' else l_save }}
+          {% endif %}
+        </span>
       </button>
     </div>
   </div>
@@ -200,42 +226,44 @@
     
     <!-- Price Pills -->
     <div style="display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap;">
-      <span style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); display: flex; align-items: center; gap: 0.35rem;">
-        <span>💰</span> Est. Market
-      </span>
-
       {% if card.prices.usd %}
-      <div style="background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.35rem 0.75rem; text-align: center; min-width: 70px;">
-        <div style="font-size: 1.05rem; font-weight: 800; color: var(--text); line-height: 1.1;">${{ card.prices.usd }}</div>
-        <div style="font-size: 0.68rem; font-weight: 600; color: var(--muted); text-transform: uppercase;">Regular</div>
+      {% set t_reg = t('price_regular', current_lang or 'en') %}
+      <div style="background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.35rem 0.85rem; text-align: center; min-width: 80px;">
+        <div style="font-size: 1.1rem; font-weight: 800; color: var(--text); line-height: 1.1;">${{ card.prices.usd }}</div>
+        <div style="font-size: 0.68rem; font-weight: 600; color: var(--muted); text-transform: uppercase;">{{ 'Regular' if t_reg == 'price_regular' else t_reg }}</div>
       </div>
       {% endif %}
 
       {% if card.prices.usd_foil %}
-      <div style="background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.35rem 0.75rem; text-align: center; min-width: 70px;">
-        <div style="font-size: 1.05rem; font-weight: 800; color: #38bdf8; line-height: 1.1;">${{ card.prices.usd_foil }}</div>
-        <div style="font-size: 0.68rem; font-weight: 600; color: var(--muted); text-transform: uppercase;">✨ Foil</div>
+      {% set t_foil = t('price_foil', current_lang or 'en') %}
+      <div style="background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.35rem 0.85rem; text-align: center; min-width: 80px;">
+        <div style="font-size: 1.1rem; font-weight: 800; color: #38bdf8; line-height: 1.1;">${{ card.prices.usd_foil }}</div>
+        <div style="font-size: 0.68rem; font-weight: 600; color: var(--muted); text-transform: uppercase;">✨ {{ 'Foil' if t_foil == 'price_foil' else t_foil }}</div>
       </div>
       {% endif %}
 
       {% if card.prices.usd_etched %}
-      <div style="background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.35rem 0.75rem; text-align: center; min-width: 70px;">
-        <div style="font-size: 1.05rem; font-weight: 800; color: #a855f7; line-height: 1.1;">${{ card.prices.usd_etched }}</div>
-        <div style="font-size: 0.68rem; font-weight: 600; color: var(--muted); text-transform: uppercase;">Etched</div>
+      {% set t_etched = t('price_etched', current_lang or 'en') %}
+      <div style="background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.35rem 0.85rem; text-align: center; min-width: 80px;">
+        <div style="font-size: 1.1rem; font-weight: 800; color: #a855f7; line-height: 1.1;">${{ card.prices.usd_etched }}</div>
+        <div style="font-size: 0.68rem; font-weight: 600; color: var(--muted); text-transform: uppercase;">{{ 'Etched' if t_etched == 'price_etched' else t_etched }}</div>
       </div>
       {% endif %}
 
       {% if card.prices.eur %}
-      <div style="background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.35rem 0.75rem; text-align: center; min-width: 70px;">
-        <div style="font-size: 1.05rem; font-weight: 800; color: var(--text); line-height: 1.1;">€{{ card.prices.eur }}</div>
-        <div style="font-size: 0.68rem; font-weight: 600; color: var(--muted); text-transform: uppercase;">Euro</div>
+      {% set t_eur = t('price_euro', current_lang or 'en') %}
+      <div style="background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.35rem 0.85rem; text-align: center; min-width: 80px;">
+        <div style="font-size: 1.1rem; font-weight: 800; color: var(--text); line-height: 1.1;">€{{ card.prices.eur }}</div>
+        <div style="font-size: 0.68rem; font-weight: 600; color: var(--muted); text-transform: uppercase;">{{ 'Euro' if t_eur == 'price_euro' else t_eur }}</div>
       </div>
       {% endif %}
     </div>
 
     <!-- Timestamp & Retailer Disclaimer -->
+    {% set t_pre = t('price_disclaimer_pre', current_lang or 'en') %}
+    {% set t_post = t('price_disclaimer_post', current_lang or 'en') %}
     <div style="font-size: 0.75rem; color: var(--muted); line-height: 1.4; max-width: 320px; text-align: right;">
-      Prices as of {{ card.prices_as_of or 'recently' }}. Market values fluctuate; double-check current pricing before purchasing.
+      {{ 'Prices as of' if t_pre == 'price_disclaimer_pre' else t_pre }} {{ card.prices_as_of or 'recently' }}. {{ 'Market values fluctuate; double-check current pricing before purchasing.' if t_post == 'price_disclaimer_post' else t_post }}
     </div>
 
   </div>
@@ -245,9 +273,9 @@
 <!-- Printings Table Collapsible Accordion Panel -->
 {% if printings %}
 <div class="printings-accordion" id="printings-accordion-panel" style="margin-bottom: 1.5rem;">
-  <div class="printings-accordion-header" id="printings-accordion-btn" role="button" tabindex="0" aria-expanded="true">
+  <div class="printings-accordion-header" id="printings-accordion-btn" role="button" tabindex="0" aria-expanded="true" aria-controls="printings-accordion-content" aria-label="Toggle historical printings accordion">
     <div style="display: flex; align-items: center; gap: 0.6rem;">
-      <span class="accordion-icon" id="printings-accordion-icon">&#9662;</span>
+      <span class="accordion-icon" id="printings-accordion-icon" aria-hidden="true">&#9662;</span>
       <span class="panel-title" style="margin: 0; padding: 0; border: none;">{{ t('historical_printings', current_lang or 'en') }} ({{ printings|length }})</span>
     </div>
     <span class="badge" style="font-size: 0.72rem;">{{ lang_groups|length }} {{ t('card_languages_count', current_lang or 'en') }}</span>
@@ -262,29 +290,49 @@
                onclick="toggleLangAccordion('lang-panel-{{ g.lang_code }}', this)" 
                role="button" 
                tabindex="0"
+               aria-expanded="{% if g.has_current %}true{% else %}false{% endif %}"
+               aria-controls="lang-panel-{{ g.lang_code }}"
                style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--panel-bg); cursor: pointer; user-select: none;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <span class="lang-accordion-icon" style="transition: transform 0.2s ease; font-size: 0.8rem; color: var(--muted); transform: {% if g.lang_code == 'en' or g.has_current %}rotate(0deg){% else %}rotate(-90deg){% endif %};">&#9662;</span>
-              <strong style="font-size: 0.95rem; color: var(--text);">{{ g.lang_name }}</strong>
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <span class="lang-accordion-icon" aria-hidden="true" style="transition: transform 0.2s ease; font-size: 0.8rem; color: var(--muted); transform: {% if g.has_current %}rotate(0deg){% else %}rotate(-90deg){% endif %};">&#9662;</span>
+              <span style="display: inline-block; padding: 0.15rem 0.45rem; font-size: 0.68rem; font-weight: 800; border-radius: 4px; background: rgba(56, 189, 248, 0.12); color: var(--accent); border: 1px solid rgba(56, 189, 248, 0.25); letter-spacing: 0.05em; text-transform: uppercase;">{{ g.lang_code }}</span>
+              <strong style="font-size: 0.95rem; color: var(--text);">
+                {% if g.lang_code == 'en' %}English
+                {% elif g.lang_code == 'ja' %}日本語 (Japanese)
+                {% elif g.lang_code == 'de' %}Deutsch (German)
+                {% elif g.lang_code == 'fr' %}Français (French)
+                {% elif g.lang_code == 'it' %}Italiano (Italian)
+                {% elif g.lang_code == 'es' %}Español (Spanish)
+                {% elif g.lang_code == 'pt' %}Português (Portuguese)
+                {% elif g.lang_code == 'ru' %}Русский (Russian)
+                {% elif g.lang_code == 'ko' %}한국어 (Korean)
+                {% elif g.lang_code == 'zhs' %}简体中文 (Simplified Chinese)
+                {% elif g.lang_code == 'zht' %}繁體中文 (Traditional Chinese)
+                {% else %}{{ g.lang_name }}{% endif %}
+              </strong>
               {% if g.has_current %}
                 <span class="badge" style="font-size: 0.65rem; background-color: var(--accent); color: #fff; border-color: var(--accent);">{{ t('card_viewing_here', current_lang or 'en') }}</span>
               {% endif %}
             </div>
-            <span class="badge" style="font-size: 0.72rem;">{{ g.printings_list|length }} {{ 'printing' if g.printings_list|length == 1 else 'printings' }}</span>
+            {% set t_sing = t('card_printing_sing', current_lang or 'en') %}
+            {% set t_plur = t('card_printing_plur', current_lang or 'en') %}
+            <span class="badge" style="font-size: 0.72rem;">
+              {{ g.printings_list|length }} {% if g.printings_list|length == 1 %}{{ 'Printing' if t_sing == 'card_printing_sing' else t_sing }}{% else %}{{ 'Printings' if t_plur == 'card_printing_plur' else t_plur }}{% endif %}
+            </span>
           </div>
 
           <div class="lang-accordion-content" 
                id="lang-panel-{{ g.lang_code }}" 
-               style="display: {% if g.lang_code == 'en' or g.has_current %}block{% else %}none{% endif %}; overflow-x: auto; border-top: 1px solid var(--border);">
+               style="display: {% if g.has_current %}block{% else %}none{% endif %}; overflow-x: auto; border-top: 1px solid var(--border);">
             <table class="printings-table" style="width: 100%; margin: 0;">
               <thead>
                 <tr>
-                  <th style="width: 56px;"></th>
-                  <th>{{ t('th_set_name', current_lang or 'en') }}</th>
-                  <th>{{ t('th_code', current_lang or 'en') }}</th>
-                  <th>{{ t('th_rarity', current_lang or 'en') }}</th>
-                  <th>{{ t('th_artist', current_lang or 'en') }}</th>
-                  <th>{{ t('th_released', current_lang or 'en') }}</th>
+                  <th scope="col" style="width: 56px;"><span class="sr-only">Thumbnail</span></th>
+                  <th scope="col">{{ t('th_set_name', current_lang or 'en') }}</th>
+                  <th scope="col">{{ t('th_code', current_lang or 'en') }}</th>
+                  <th scope="col">{{ t('th_rarity', current_lang or 'en') }}</th>
+                  <th scope="col">{{ t('th_artist', current_lang or 'en') }}</th>
+                  <th scope="col">{{ t('th_released', current_lang or 'en') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -296,7 +344,7 @@
                       <a href="/printing/{{ p.printing_slug }}" class="printing-thumb-link" data-preview-src="{{ p.large_image_url or p.image_url }}" data-card-title="{{ p.printed_name or p.name }} — {{ p.set_name }}" style="display: inline-block;">
                         <img src="{{ p.image_url }}" 
                              alt="{{ p.printed_name or p.name }} - {{ p.set_name }} MTG card scan" 
-                             title="{{ p.printed_name or p.name }} — {{ p.set_name }}"
+                             title="{{ p.printed_name or p.name }} card art — {{ p.set_name }}{% if p.artist and p.artist != 'Unknown' %} — {{ p.artist }}{% endif %}"
                              loading="lazy" 
                              onerror="this.style.display='none';"
                              style="width: 46px; height: 64px; border-radius: 4px; object-fit: cover; box-shadow: 0 2px 6px rgba(0,0,0,0.18); display: inline-block; vertical-align: middle;">
@@ -318,8 +366,7 @@
                     <td>
                       {% if p.artist and p.artist != 'Unknown' %}
                         <a href="/artist/{{ p.artist_slug }}" 
-                           onclick="event.stopPropagation();" 
-                           style="color: var(--accent); text-decoration: none; font-weight: 500;"
+                           style="color: var(--accent); text-decoration: none; font-weight: 500; position: relative; z-index: 2;"
                            onmouseover="this.style.textDecoration='underline';"
                            onmouseout="this.style.textDecoration='none';">
                           {{ p.artist }}
@@ -391,9 +438,9 @@
        onmouseout="this.style.transform='none'; this.style.borderColor='var(--border)'; this.style.boxShadow='none';">
       
       <div style="width: 100%; aspect-ratio: 488/680; border-radius: 6px; overflow: hidden; background: #000; margin-bottom: 0.75rem;">
-        <img src="{{ sim.image_url }}" 
+        <img src="{{ sim.image_url or (sim.image_uris and sim.image_uris.normal) or (sim.image_uris and sim.image_uris.large) }}" 
              alt="{{ sim.name }} - {{ sim.set_name }} Magic card"
-             title="{{ sim.name }}"
+             title="{{ sim.name }} card art — {{ sim.set_name }}"
              loading="lazy" 
              style="width: 100%; height: 100%; object-fit: cover; display: block;">
       </div>
@@ -411,9 +458,11 @@
 {% endif %}
 
 <!-- ======================================================= -->
-<!-- SECTION: BUILD AROUND THIS CARD (SMARTDECK SEED CTA)    -->
+<!-- SECTION: CONDITIONAL BOTTOM CTA (SMARTDECK VS PARTNER)   -->
 <!-- ======================================================= -->
 <section style="margin: 3.5rem 0 4.5rem;">
+  {% if card.is_commander %}
+  <!-- Commander Consumer CTA: SmartDeck Builder -->
   <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 2.35rem 2.5rem; display: flex; align-items: center; justify-content: space-between; gap: 2.5rem; flex-wrap: wrap; box-shadow: 0 16px 36px rgba(0,0,0,0.25);">
     
     <!-- Left Copy -->
@@ -440,6 +489,35 @@
     </div>
 
   </div>
+  {% else %}
+  <!-- Non-Commander Business CTA: Build with AvaScry -->
+  <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 2.35rem 2.5rem; display: flex; align-items: center; justify-content: space-between; gap: 2.5rem; flex-wrap: wrap; box-shadow: 0 16px 36px rgba(0,0,0,0.25);">
+    
+    <!-- Left Copy -->
+    <div style="flex: 1; min-width: 280px;">
+      <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(168, 85, 247, 0.15); color: #c084fc; font-size: 0.75rem; font-weight: 700; padding: 0.28rem 0.85rem; border-radius: var(--radius-pill); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        {{ t('build_avascry_badge', current_lang or 'en') }}
+      </div>
+      <h3 style="font-size: 1.45rem; font-weight: 800; color: var(--text); margin-bottom: 0.4rem; line-height: 1.25;">
+        {{ t('build_avascry_title', current_lang or 'en') }}
+      </h3>
+      <p style="font-size: 0.9rem; color: var(--muted); line-height: 1.55; margin: 0; max-width: 580px;">
+        {{ t('build_avascry_subtitle', current_lang or 'en') }}
+      </p>
+    </div>
+
+    <!-- Right Action Button -->
+    <div style="flex-shrink: 0;">
+      <a href="mailto:partners@avascry.com" 
+         class="btn-hero-primary"
+         style="display: inline-flex; align-items: center; gap: 0.55rem; text-decoration: none; padding: 0.9rem 2rem; font-size: 1rem; font-weight: 800; border-radius: var(--radius-pill); background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%); box-shadow: 0 4px 20px rgba(147, 51, 234, 0.45);">
+        <span>{{ t('build_avascry_btn', current_lang or 'en') }}</span>
+        <span style="font-size: 1.1rem;">&rarr;</span>
+      </a>
+    </div>
+
+  </div>
+  {% endif %}
 </section>
 {% endblock %}
 
@@ -619,16 +697,18 @@
 
       if (res.ok) {
         const data = await res.json();
+        const saveLabel = btn.dataset.labelSave || 'Save for Deckbuilding';
+        const savedLabel = btn.dataset.labelSaved || 'Saved for Deckbuilding';
         if (data.saved) {
           btn.style.background = 'var(--accent)';
           btn.style.color = '#fff';
           icon.textContent = '✓';
-          label.textContent = 'Saved for Deckbuilding';
+          label.textContent = savedLabel;
         } else {
           btn.style.background = 'var(--surface)';
           btn.style.color = 'var(--accent)';
           icon.textContent = '➕';
-          label.textContent = 'Save for Deckbuilding';
+          label.textContent = saveLabel;
         }
       }
     } catch(e) {

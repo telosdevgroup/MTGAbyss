@@ -10,11 +10,6 @@
         <div style="font-size: 0.8rem; font-weight: 600; color: var(--abyss-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
           {{ s.name }}
         </div>
-        {% if s.score %}
-          <div style="font-size: 0.7rem; color: var(--sakura-deep);">
-            {{ (s.score * 100)|round|int }}% Match
-          </div>
-        {% endif %}
       </a>
     {% endfor %}
   </div>

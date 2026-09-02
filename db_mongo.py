@@ -1,12 +1,20 @@
 import os
 import pymongo
 
+_CLIENT = None
+
 def get_mongo_db():
+    global _CLIENT
     mongo_uri = os.environ.get("MONGODB_URI", "mongodb://192.168.1.213:27017")
     db_name = os.environ.get("MONGODB_DB", "mtgabyss")
-    client = pymongo.MongoClient(mongo_uri)
-    db = client[db_name]
-    return db
+    if _CLIENT is None:
+        _CLIENT = pymongo.MongoClient(mongo_uri)
+        try:
+            # Enforce 73GB (Prime!) WiredTiger in-memory cache on connection startup
+            _CLIENT.admin.command({"setParameter": 1, "wiredTigerEngineRuntimeConfig": "cache_size=73G"})
+        except Exception:
+            pass
+    return _CLIENT[db_name]
 
 def get_old_db():
     """Returns the mtgabyss database (card_embeddings, similar_cards)."""
