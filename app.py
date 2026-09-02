@@ -115,6 +115,10 @@ async def robots_txt():
 async def llms_txt():
     return FileResponse("public/llms.txt", media_type="text/plain; charset=utf-8")
 
+@app.get("/llms-full.txt", include_in_schema=False)
+async def llms_full_txt():
+    return FileResponse("public/llms-full.txt", media_type="text/plain; charset=utf-8")
+
 @app.get("/heartbeat.txt", include_in_schema=False)
 async def heartbeat_txt():
     return FileResponse("public/heartbeat.txt", media_type="text/plain; charset=utf-8")
