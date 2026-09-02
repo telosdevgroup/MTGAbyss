@@ -144,10 +144,12 @@ def classify_badge(badge: str, ip: str = "", path: str = "", ct: str = "") -> st
         return "watchlist"
 
     # 0. Real-Time Live AI User Groundings & Citations (Lucky 7)
-    if any(k in b for k in ("-user", "-search", "chatgpt-user", "claude-user", "perplexity-user", "claude-search", "oai-search")):
+    if any(k in b for k in ("-user", "chatgpt-user", "claude-user", "perplexity-user")):
         return "citations"
 
-    # 1. Anthropic PBC / ClaudeBot
+    # 1. Anthropic PBC (Split Claude-Search from standard ClaudeBot)
+    if "claude-search" in b or "claudesearch" in b:
+        return "claude_search"
     anthropic_prefixes = ("216.73.216.", "216.73.217.", "216.73.218.", "216.73.219.")
     if "claude" in b or any(ip.startswith(p) for p in anthropic_prefixes):
         return "claude"
@@ -340,9 +342,10 @@ FILTER_NAMES = {
     "all": "All Traffic",
     "citations": "⭐ AI Citations (Real-Time Users)",
     "watchlist": "👁️ Watched Scrapers",
+    "claude_search": "🔍 Claude Search (Anthropic)",
+    "claude": "🤖 ClaudeBot (Anthropic)",
     "google": "🟢 Googlebot (Search)",
     "google_images": "🟢 Googlebot (Images)",
-    "claude": "🤖 ClaudeBot (Anthropic)",
     "openai": "🤖 OpenAI (GPTBot)",
     "meta_ai": "🤖 Meta AI (Llama Agent)",
     "meta_fetcher": "⚡ Meta AI Real-Time Fetcher",
@@ -647,9 +650,11 @@ def render_dashboard(tracker: TrafficTracker):
         output.append(f"  {'-'*19} {'-'*9} | {'-'*19} {'-'*9} | {'-'*19} {'-'*9}")
         
         crawler_rows = [
+            ("⭐ AI Citations", "citations", YELLOW),
+            ("Claude Search", "claude_search", YELLOW),
+            ("ClaudeBot", "claude", YELLOW),
             ("Googlebot", "google", GREEN),
             ("Google Images", "google_images", GREEN),
-            ("ClaudeBot", "claude", YELLOW),
             ("GPTBot", "openai", YELLOW),
             ("Meta AI", "meta_ai", YELLOW),
             ("Meta Fetcher", "meta_fetcher", YELLOW),
@@ -823,7 +828,7 @@ def render_dashboard(tracker: TrafficTracker):
             output.append(f"\n  {DIM}No recent requests matching current filters...{RESET}\n")
         else:
             for hit in matching_hits[:20]:
-                is_cit = (hit.get("cat") == "citations" or any(k in hit['badge'].lower() for k in ("-user", "-search", "chatgpt-user", "claude-user", "perplexity-user", "claude-search", "oai-search")))
+                is_cit = any(k in hit['badge'].lower() for k in ("-user", "chatgpt-user", "claude-user", "perplexity-user"))
                 if is_cit:
                     badge_str = f"{YELLOW}{BOLD}⭐ {hit['badge']:<15}{RESET}"
                 elif "watch:" in hit['badge'].lower():
@@ -1087,7 +1092,7 @@ def render_dashboard(tracker: TrafficTracker):
             output.append(f"\n  {DIM}No recent requests matching active pivot filter...{RESET}\n")
         else:
             for hit in matching_hits[:18]:
-                is_cit = (hit.get("cat") == "citations" or any(k in hit['badge'].lower() for k in ("-user", "-search", "chatgpt-user", "claude-user", "perplexity-user", "claude-search", "oai-search")))
+                is_cit = any(k in hit['badge'].lower() for k in ("-user", "chatgpt-user", "claude-user", "perplexity-user"))
                 if is_cit:
                     badge_str = f"{YELLOW}{BOLD}⭐ {hit['badge']:<12}{RESET}"
                 elif "watch:" in hit['badge'].lower():
