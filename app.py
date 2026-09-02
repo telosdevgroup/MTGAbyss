@@ -2402,9 +2402,21 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
     if not card:
         card = db["cards"].find_one({"slug": identifier})
 
-    # 2. Try match by <slug>-<set>-<lang> (only if last token is an actual language code)
-    if not card and '-' in identifier:
-        parts = identifier.split('-')
+    # 2. De-duplicate double-slugs (e.g. urabrasks-forge-urabrasks-forge-aone -> urabrasks-forge-aone)
+    clean_ident = identifier
+    if '-' in clean_ident:
+        tokens = clean_ident.split('-')
+        half = len(tokens) // 2
+        for l in range(half, 0, -1):
+            if tokens[:l] == tokens[l:2*l]:
+                clean_ident = "-".join(tokens[l:])
+                break
+
+    # 3. Try match by <slug>-<set>-<lang> or <slug>-<set>
+    if not card and '-' in clean_ident:
+        parts = clean_ident.split('-')
+        
+        # 3a. Check <slug>-<set>-<lang>
         if len(parts) >= 3 and parts[-1].lower() in KNOWN_LANG_CODES:
             possible_lang = parts[-1].lower()
             possible_set = parts[-2].lower()
@@ -2420,8 +2432,19 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
                     {"card_faces.0.name": pattern}
                 ]
             })
+            # Fall back to English print for that set
+            if not card:
+                card = db["cards"].find_one({
+                    "set": possible_set,
+                    "lang": "en",
+                    "$or": [
+                        {"slug": card_slug},
+                        {"name": pattern},
+                        {"card_faces.0.name": pattern}
+                    ]
+                })
 
-        # 3. Try match by <slug>-<set>
+        # 3b. Check <slug>-<set>
         if not card and len(parts) >= 2:
             card_slug, set_code = "-".join(parts[:-1]), parts[-1].lower()
             pattern = slug_to_name_regex(card_slug)
@@ -2434,11 +2457,32 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
                 ]
             })
 
-    # 4. Fallback match by name or slug across entire collection
+    # 4. Fallback match by stripping set/lang tokens and searching card name / slug
+    if not card and '-' in clean_ident:
+        parts = clean_ident.split('-')
+        # Try progressively stripping trailing set / language codes
+        for num_trailing in (2, 1):
+            if len(parts) > num_trailing:
+                base_slug = "-".join(parts[:-num_trailing])
+                pattern = slug_to_name_regex(base_slug)
+                card = db["cards"].find_one({
+                    "$or": [
+                        {"slug": base_slug, "lang": "en"},
+                        {"name": pattern, "lang": "en"},
+                        {"slug": base_slug},
+                        {"name": pattern}
+                    ]
+                })
+                if card:
+                    break
+
+    # 5. Fallback match across whole collection by raw identifier
     if not card:
-        pattern = slug_to_name_regex(identifier)
+        pattern = slug_to_name_regex(clean_ident)
         card = db["cards"].find_one({
             "$or": [
+                {"name": pattern, "lang": "en"},
+                {"card_faces.0.name": pattern, "lang": "en"},
                 {"name": pattern},
                 {"card_faces.0.name": pattern}
             ]
