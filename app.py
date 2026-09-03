@@ -133,8 +133,8 @@ async def vector_embedding(identifier: str):
 
     db = get_mongo_db()
 
-    # 1. Match by oracle_id or slug in card_embeddings_8b
-    doc = db["card_embeddings_8b"].find_one({
+    # 1. Match by oracle_id or slug in card_embeddings
+    doc = db["card_embeddings"].find_one({
         "$or": [
             {"oracle_id": clean_id},
             {"slug": clean_id},
@@ -147,7 +147,7 @@ async def vector_embedding(identifier: str):
         pattern = slug_to_name_regex(clean_id)
         card_doc = db["cards"].find_one({"$or": [{"slug": clean_id}, {"name": pattern}]})
         if card_doc and card_doc.get("oracle_id"):
-            doc = db["card_embeddings_8b"].find_one({"oracle_id": card_doc["oracle_id"]})
+            doc = db["card_embeddings"].find_one({"oracle_id": card_doc["oracle_id"]})
 
     if not doc:
         raise HTTPException(status_code=404, detail="Vector embedding not found")
@@ -3282,6 +3282,9 @@ async def set_detail(request: Request, code: str, background_tasks: BackgroundTa
             }
         )
         
+    from spotlight_data import build_set_spotlight
+    spotlight = build_set_spotlight(set_code, set_name, cards)
+
     return templates.TemplateResponse(
         request=request,
         name="set_detail.html",
@@ -3289,7 +3292,8 @@ async def set_detail(request: Request, code: str, background_tasks: BackgroundTa
             "active_nav": "sets",
             "set_doc": {"code": set_code, "name": set_name},
             "total_cards": len(cards),
-            "cards": cards
+            "cards": cards,
+            "spotlight": spotlight
         },
         headers={
             "Link": f'</set/{set_code}.md>; rel="alternate"; type="text/markdown", </set/{set_code}.json>; rel="alternate"; type="application/json"'
@@ -3757,6 +3761,9 @@ async def artist_detail(request: Request, slug: str, background_tasks: Backgroun
             }
         )
         
+    from spotlight_data import build_artist_spotlight
+    spotlight = build_artist_spotlight(artist_name, slug, cards)
+
     return templates.TemplateResponse(
         request=request,
         name="artist_detail.html",
@@ -3765,7 +3772,8 @@ async def artist_detail(request: Request, slug: str, background_tasks: Backgroun
             "artist_name": artist_name,
             "artist_slug": slug,
             "total_cards": len(cards),
-            "cards": cards
+            "cards": cards,
+            "spotlight": spotlight
         },
         headers={
             "Link": f'</artist/{slug}.md>; rel="alternate"; type="text/markdown", </artist/{slug}.json>; rel="alternate"; type="application/json"'
