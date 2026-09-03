@@ -647,7 +647,7 @@ async def request_logger_middleware(request: Request, call_next):
     else:
         type_tag = ""
     
-    log_line = f"{ip:<15} {badge:<18} {status} ({duration_ms:>4.0f}ms) {type_tag:<6} -> {method} {path}"
+    log_line = f"{ip:<28} {badge:<18} {status} ({duration_ms:>4.0f}ms) {type_tag:<6} -> {method} {path}"
     print(log_line, flush=True)
 
     try:
