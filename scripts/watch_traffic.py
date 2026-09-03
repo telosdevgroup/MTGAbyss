@@ -1163,7 +1163,12 @@ def check_keyboard_input(tracker: TrafficTracker):
                     render_dashboard(tracker)
                 # Crawler Focus Filters
                 elif ch in (b'7',):
-                    tracker.selected_filter = "all" if tracker.selected_filter == "citations" else "citations"
+                    if tracker.selected_filter == "citations":
+                        tracker.selected_filter = "all"
+                    else:
+                        tracker.selected_filter = "citations"
+                        tracker.selected_route_filter = "all"
+                        tracker.selected_type_filter = "all"
                     render_dashboard(tracker)
                 elif ch in (b'a', b'A'):
                     tracker.selected_filter = "all"
@@ -1238,7 +1243,32 @@ def tail_log_file(tracker: TrafficTracker, from_now: bool = False):
 
     with open(LOG_FILE, "r", encoding="utf-8", errors="ignore") as f:
         if from_now:
+            # Read last ~64KB to pre-seed recent buffer with latest context
             f.seek(0, os.SEEK_END)
+            file_size = f.tell()
+            seek_pos = max(0, file_size - 65536)
+            f.seek(seek_pos)
+            if seek_pos > 0:
+                # Discard partial line
+                f.readline()
+            for seed_line in f:
+                seed_line = seed_line.strip()
+                if not seed_line:
+                    continue
+                m = LOG_REGEX.match(seed_line)
+                if m:
+                    try:
+                        ts = datetime.fromisoformat(m.group("ts"))
+                    except Exception:
+                        ts = datetime.now(timezone.utc)
+                    ip = m.group("ip")
+                    badge = m.group("badge")
+                    status = int(m.group("status"))
+                    path = m.group("path")
+                    ct = m.group("ct") or ""
+                    cat = classify_badge(badge, ip, path, ct)
+                    lat_val = int(m.group("lat")) if m.group("lat") else 0
+                    tracker.add_request(ts, cat, status, path, ip, badge, ct, lat_val)
         while True:
             line = f.readline()
             if line:
