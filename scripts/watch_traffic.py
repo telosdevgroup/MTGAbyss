@@ -13,7 +13,7 @@ import re
 import time
 import glob
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from collections import deque, defaultdict
 
 if hasattr(sys.stdout, 'reconfigure'):
@@ -27,6 +27,33 @@ try:
     import msvcrt
 except ImportError:
     msvcrt = None
+
+# Global ANSI Color Codes
+CYAN = "\033[96m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+RED = "\033[91m"
+BLUE = "\033[94m"
+MAGENTA = "\033[95m"
+BOLD = "\033[1m"
+DIM = "\033[2m"
+RESET = "\033[0m"
+
+# Color-coded 4-letter route surface codes
+ROUTE_BADGES = {
+    "printing":  f"{GREEN}{BOLD}[PRIN]{RESET}",
+    "similar":   f"{MAGENTA}{BOLD}[SYN ]{RESET}",
+    "vector":    f"{CYAN}{BOLD}[VECT]{RESET}",
+    "commander": f"{YELLOW}{BOLD}[CMDR]{RESET}",
+    "artist":    f"{BLUE}{BOLD}[ARTS]{RESET}",
+    "set":       f"{YELLOW}[SETS]{RESET}",
+    "images":    f"{BLUE}[IMG ]{RESET}",
+    "sitemap":   f"{YELLOW}[MAP ]{RESET}",
+    "home":      f"{CYAN}[HOME]{RESET}",
+    "decks":     f"{MAGENTA}[DECK]{RESET}",
+    "assets":    f"{DIM}[ASST]{RESET}",
+    "other":     f"{DIM}[OTHR]{RESET}"
+}
 
 LOG_FILE = os.environ.get("ACCESS_LOG_PATH", r"C:\avascry_data\logs\access.log")
 
@@ -51,6 +78,20 @@ MONGO_STATS = {
     "wt_cache_mb": 0.0,
     "wt_max_mb": 0.0,
     "last_check": "Init..."
+}
+
+WEEKLY_STATS = {
+    "status": "idle", # idle, loading, done
+    "total_reqs": 0,
+    "start_ts": None,
+    "end_ts": None,
+    "citations": [],
+    "cat_counts": defaultdict(int),
+    "route_counts": defaultdict(int),
+    "type_counts": defaultdict(int),
+    "status_counts": defaultdict(int),
+    "top_404s": defaultdict(int),
+    "last_loaded": ""
 }
 
 LANG_FLAGS = {
@@ -170,6 +211,8 @@ def classify_badge(badge: str, ip: str = "", path: str = "", ct: str = "") -> st
         return "meta_fetcher"
     if "meta:catalog" in b or "meta-webindexer" in b or "facebookcatalog" in b:
         return "meta_catalog"
+    if "oai-search" in b or "oaisearch" in b:
+        return "oai_search"
     if "openai" in b or "gptbot" in b:
         return "openai"
     if "perplexity" in b:
@@ -338,11 +381,151 @@ def generate_sparkline(history: list, length: int = 30) -> str:
         chars.append(SPARK_CHARS[idx])
     return "".join(chars)
 
+def load_weekly_stats_worker():
+    """Background worker to aggregate 7-day traffic summary instantly from RAM."""
+    global WEEKLY_STATS
+    if WEEKLY_STATS["status"] == "loading":
+        return
+    WEEKLY_STATS["status"] = "loading"
+    try:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+        cutoff_iso = cutoff.isoformat()
+        c_counts = defaultdict(int)
+        r_counts = defaultdict(int)
+        f_counts = defaultdict(int)
+        s_counts = defaultdict(int)
+        top_404s = defaultdict(int)
+        citations = []
+        total = 0
+        earliest_ts_str = None
+        latest_ts_str = None
+
+        if os.path.exists(LOG_FILE):
+            with open(LOG_FILE, "r", encoding="utf-8", errors="ignore") as f:
+                # Fast binary search seek for 7-day cutoff point
+                f.seek(0, os.SEEK_END)
+                file_size = f.tell()
+                low, high, seek_pos = 0, file_size, 0
+                while low <= high:
+                    mid = (low + high) // 2
+                    f.seek(mid)
+                    if mid > 0:
+                        f.readline()
+                    pos = f.tell()
+                    probe_line = f.readline().strip()
+                    if not probe_line:
+                        high = mid - 1
+                        continue
+                    ts_token = probe_line.split(" ", 1)[0]
+                    if ts_token >= cutoff_iso:
+                        seek_pos = pos
+                        high = mid - 1
+                    else:
+                        low = mid + 1
+
+                f.seek(seek_pos)
+                # Slurp remaining 7-day slice into RAM and iterate
+                raw_chunk = f.read()
+
+            for line in raw_chunk.splitlines():
+                if not line or " -> " not in line:
+                    continue
+                left, right = line.split(" -> ", 1)
+                left_tokens = left.split()
+                if len(left_tokens) < 4:
+                    continue
+                
+                ts_str = left_tokens[0]
+                if ts_str < cutoff_iso:
+                    continue
+
+                if earliest_ts_str is None:
+                    earliest_ts_str = ts_str
+                latest_ts_str = ts_str
+
+                ip = left_tokens[1]
+                badge = left_tokens[2]
+                status_str = left_tokens[3]
+                if not status_str.isdigit():
+                    continue
+                status = int(status_str)
+
+                # Latency & optional ct badge
+                lat = 0
+                ct = ""
+                for tok in left_tokens[4:]:
+                    if tok.endswith("ms)"):
+                        num_part = tok[:-3].lstrip("(")
+                        if num_part.isdigit():
+                            lat = int(num_part)
+                    elif tok.startswith("[") and tok.endswith("]"):
+                        ct = tok
+
+                # Right side: METHOD PATH
+                r_parts = right.split()
+                if len(r_parts) >= 2:
+                    path = r_parts[1]
+                elif len(r_parts) == 1:
+                    path = r_parts[0]
+                else:
+                    path = "/"
+
+                total += 1
+                cat = classify_badge(badge, ip, path, ct)
+                route = classify_route(path)
+                ft = classify_file_type(path, ct)
+
+                c_counts[cat] += 1
+                r_counts[route] += 1
+                f_counts[ft] += 1
+                s_counts[status] += 1
+
+                if status == 404:
+                    clean_p = path.split("?")[0]
+                    top_404s[clean_p] += 1
+
+                if cat == "citations" or any(k in badge.lower() for k in ("-user", "chatgpt-user", "claude-user", "perplexity-user")):
+                    # Quick format timestamp: "2026-09-03 04:33:40"
+                    t_display = ts_str[:19].replace("T", " ")
+                    citations.append({
+                        "time": t_display,
+                        "badge": badge,
+                        "status": status,
+                        "path": path,
+                        "ip": ip,
+                        "lat": lat,
+                        "route": route,
+                        "file_type": ft
+                    })
+
+        def _fmt_ts(iso_str):
+            if not iso_str: return "N/A"
+            try:
+                dt = datetime.fromisoformat(iso_str)
+                return dt.strftime("%b %d, %H:%M UTC")
+            except Exception:
+                return iso_str[:16]
+
+        WEEKLY_STATS["total_reqs"] = total
+        WEEKLY_STATS["start_ts"] = _fmt_ts(earliest_ts_str)
+        WEEKLY_STATS["end_ts"] = _fmt_ts(latest_ts_str)
+        WEEKLY_STATS["citations"] = sorted(citations, key=lambda x: x["time"], reverse=True)
+        WEEKLY_STATS["cat_counts"] = c_counts
+        WEEKLY_STATS["route_counts"] = r_counts
+        WEEKLY_STATS["type_counts"] = f_counts
+        WEEKLY_STATS["status_counts"] = s_counts
+        WEEKLY_STATS["top_404s"] = top_404s
+        WEEKLY_STATS["last_loaded"] = datetime.now().strftime("%H:%M:%S")
+        WEEKLY_STATS["status"] = "done"
+    except Exception as e:
+        WEEKLY_STATS["status"] = f"error: {e}"
+
 FILTER_NAMES = {
     "all": "All Traffic",
     "citations": "⭐ AI Citations (Real-Time Users)",
     "watchlist": "👁️ Watched Scrapers",
     "claude_search": "🔍 Claude Search (Anthropic)",
+    "oai_search": "🔍 OpenAI Search (OAI-Search)",
     "claude": "🤖 ClaudeBot (Anthropic)",
     "google": "🟢 Googlebot (Search)",
     "google_images": "🟢 Googlebot (Images)",
@@ -424,6 +607,7 @@ class TrafficTracker:
         self.status_counts = defaultdict(int)
         self.all_404s = {} # path -> {"count": int, "first_seen": str, "last_seen": str, "last_badge": str, "last_epoch": float}
         self.recent_hits = deque(maxlen=250) # large buffer for focused filtering
+        self.citation_hits = deque(maxlen=250) # dedicated buffer for user citations to prevent eviction
         self.recent_latencies = deque(maxlen=300) # rolling latencies for stats
         
         # Second-by-second ring buffer for 60s sparklines and RPM/RPS
@@ -454,6 +638,7 @@ class TrafficTracker:
         self.status_counts = defaultdict(int)
         self.all_404s = {}
         self.recent_hits.clear()
+        self.citation_hits.clear()
         self.recent_latencies.clear()
         self.sec_history.clear()
         self.current_sec_count = 0
@@ -502,7 +687,7 @@ class TrafficTracker:
             self.current_sec_count = 1
         
         # Add to live feed
-        self.recent_hits.appendleft({
+        hit_record = {
             "time": dt.strftime("%H:%M:%S"),
             "badge": badge,
             "status": status,
@@ -514,7 +699,10 @@ class TrafficTracker:
             "file_type": file_type,
             "lang": lang,
             "lat": lat
-        })
+        }
+        self.recent_hits.appendleft(hit_record)
+        if cat == "citations" or any(k in badge.lower() for k in ("-user", "chatgpt-user", "claude-user", "perplexity-user")):
+            self.citation_hits.appendleft(hit_record)
 
         # 404 Radar tracking
         if status == 404:
@@ -604,10 +792,10 @@ def render_dashboard(tracker: TrafficTracker):
 
     # Top Menu Navigation Bar
     tab1 = f"{BOLD}{CYAN}[1] Spectrum{RESET}" if tracker.current_view == 1 else f"{DIM}[1] Spectrum{RESET}"
-    tab2 = f"{BOLD}{CYAN}[2] 404 Radar ({len(tracker.all_404s)}){RESET}" if tracker.current_view == 2 else f"{DIM}[2] 404s ({len(tracker.all_404s)}){RESET}"
-    tab3 = f"{BOLD}{CYAN}[3] Storage & Database{RESET}" if tracker.current_view == 3 else f"{DIM}[3] Storage & DB{RESET}"
-    tab4 = f"{BOLD}{CYAN}[4] Global Locales ({len(LANG_FLAGS)}){RESET}" if tracker.current_view == 4 else f"{DIM}[4] Locales ({len(LANG_FLAGS)}){RESET}"
-    tab5 = f"{BOLD}{CYAN}[5] Pivot & Facets{RESET}" if tracker.current_view == 5 else f"{DIM}[5] Pivot & Facets{RESET}"
+    tab2 = f"{BOLD}{CYAN}[2] Storage & DB{RESET}" if tracker.current_view == 2 else f"{DIM}[2] Storage & DB{RESET}"
+    tab3 = f"{BOLD}{CYAN}[3] Global Locales ({len(LANG_FLAGS)}){RESET}" if tracker.current_view == 3 else f"{DIM}[3] Locales ({len(LANG_FLAGS)}){RESET}"
+    tab4 = f"{BOLD}{CYAN}[4] Pivot & Facets{RESET}" if tracker.current_view == 4 else f"{DIM}[4] Pivot & Facets{RESET}"
+    tab5 = f"{BOLD}{YELLOW}[5] 7-Day Digest{RESET}" if tracker.current_view == 5 else f"{DIM}[5] 7-Day Digest{RESET}"
 
     output = []
     output.append(f"{CYAN}{BOLD}===================================================================================================={RESET}")
@@ -626,7 +814,7 @@ def render_dashboard(tracker: TrafficTracker):
         # Determine active counts for Column 1 (Source), Column 2 (Route), Column 3 (Format)
         if tracker.selected_filter != "all":
             # Filtered by Source (e.g. ClaudeBot)
-            c_counts = {k: (tracker.cat_counts[k] if k == tracker.selected_filter else 0) for k in tracker.cat_counts}
+            c_counts = defaultdict(int, {tracker.selected_filter: tracker.cat_counts[tracker.selected_filter]})
             r_counts = tracker.source_route_counts[tracker.selected_filter]
             f_counts = tracker.source_format_counts[tracker.selected_filter]
         elif tracker.selected_route_filter != "all":
@@ -652,6 +840,7 @@ def render_dashboard(tracker: TrafficTracker):
         crawler_rows = [
             ("⭐ AI Citations", "citations", YELLOW),
             ("Claude Search", "claude_search", YELLOW),
+            ("OAI Search", "oai_search", YELLOW),
             ("ClaudeBot", "claude", YELLOW),
             ("Googlebot", "google", GREEN),
             ("Google Images", "google_images", GREEN),
@@ -778,14 +967,6 @@ def render_dashboard(tracker: TrafficTracker):
 
                 output.append(f"  {col1} | {col2} | {col3}")
         
-        # Status code summary line
-        st200 = st[200]
-        st404 = st[404]
-        st3xx = sum(v for k, v in st.items() if str(k).startswith("3"))
-        st5xx = sum(v for k, v in st.items() if str(k).startswith("5"))
-        
-        output.append(f"{CYAN}--------------------------------------------------------------------------------{RESET}")
-        output.append(f"  {BOLD}HTTP Status:{RESET}  {GREEN}200 OK: {st200:,}{RESET}  |  {BLUE}3xx: {st3xx}{RESET}  |  {RED if st404 else RESET}404: {st404}{RESET}  |  {RED if st5xx else RESET}5xx: {st5xx}{RESET}")
         output.append(f"{CYAN}--------------------------------------------------------------------------------{RESET}")
         
         # Filter Status Header
@@ -825,8 +1006,9 @@ def render_dashboard(tracker: TrafficTracker):
                 return h.get("cat") == "citations" or any(k in h.get("badge", "").lower() for k in USER_CITATION_BADGES)
             return h.get("cat") == key
 
+        source_buffer = tracker.citation_hits if filter_key == "citations" else tracker.recent_hits
         matching_hits = [
-            h for h in tracker.recent_hits
+            h for h in source_buffer
             if _cat_match(h, filter_key) and
                (route_key == "all" or h.get("route") == route_key) and
                (type_key == "all" or h.get("file_type") == type_key)
@@ -835,7 +1017,8 @@ def render_dashboard(tracker: TrafficTracker):
         if not matching_hits:
             output.append(f"\n  {DIM}No recent requests matching current filters...{RESET}\n")
         else:
-            for hit in matching_hits[:20]:
+            limit = len(matching_hits) if filter_key == "citations" else 20
+            for hit in matching_hits[:limit]:
                 is_cit = any(k in hit['badge'].lower() for k in ("-user", "chatgpt-user", "claude-user", "perplexity-user"))
                 if is_cit:
                     badge_str = f"{YELLOW}{BOLD}⭐ {hit['badge']:<15}{RESET}"
@@ -845,61 +1028,17 @@ def render_dashboard(tracker: TrafficTracker):
                     badge_str = f"{hit['badge']:<18}"
                 col = GREEN if hit['status'] == 200 else (BLUE if str(hit['status']).startswith('3') else RED)
                 
-                ft = hit.get("file_type", "")
-                if ft == "vector":
-                    ct_badge = f"{GREEN}{BOLD}[VEC] {RESET}"
-                elif ft == "md":
-                    ct_badge = f"{MAGENTA}{BOLD}[MD]  {RESET}"
-                elif ft == "html":
-                    ct_badge = f"{CYAN}[HTML]{RESET}"
-                elif ft == "json":
-                    ct_badge = f"{YELLOW}[JSON]{RESET}"
-                elif ft == "img":
-                    ct_badge = f"{BLUE}[IMG] {RESET}"
-                elif ft == "xml":
-                    ct_badge = f"{YELLOW}{BOLD}[XML] {RESET}"
-                elif ft == "txt":
-                    ct_badge = f"{YELLOW}[TXT] {RESET}"
-                elif ft == "rss":
-                    ct_badge = f"{CYAN}{BOLD}[RSS] {RESET}"
-                elif ft == "css":
-                    ct_badge = f"{BLUE}[CSS] {RESET}"
-                elif ft == "js":
-                    ct_badge = f"{BLUE}[JS]  {RESET}"
-                elif ft == "font":
-                    ct_badge = f"{MAGENTA}[FONT]{RESET}"
-                elif ft == "csv":
-                    ct_badge = f"{GREEN}[CSV] {RESET}"
-                elif ft == "zip":
-                    ct_badge = f"{RED}[ZIP] {RESET}"
-                else:
-                    ct_badge = f"{DIM}[OTHR]{RESET}"
+                rt = hit.get("route", "other")
+                rt_badge = ROUTE_BADGES.get(rt, f"{DIM}[OTHR]{RESET}")
                 
                 lat_val = f"{hit.get('lat', 0):3d}ms" if hit.get('lat') else "  - "
                 path_str = hit['path'][:54]
-                output.append(f"  {badge_str} ({lat_val}) {ct_badge} -> {path_str}")
+                output.append(f"  {badge_str} ({lat_val}) {rt_badge} -> {path_str}")
 
     # ==========================================
-    # VIEW 2: 404 RADAR & BROKEN LINKS
+    # VIEW 2: STORAGE & DATABASE METER
     # ==========================================
     elif tracker.current_view == 2:
-        st404_all = len(tracker.all_404s)
-        output.append(f"  {BOLD}🚨 404 RADAR — UNRESOLVED ROUTES ({st404_all} unique paths | Press 'c' to Clear):{RESET}\n")
-        
-        if not tracker.all_404s:
-            output.append(f"  {GREEN}{BOLD}✓ Clean Sheet! Zero 404 errors recorded in this session.{RESET}")
-        else:
-            sorted_404s = sorted(tracker.all_404s.items(), key=lambda x: x[1]['count'], reverse=True)
-            output.append(f"  {'HITS':>5}  {'LAST SEEN':<10}  {'LAST CALLER':<20}  PATH")
-            output.append(f"  {'-'*5}  {'-'*10}  {'-'*20}  {'-'*36}")
-            for p, d in sorted_404s[:20]:
-                badge_cleaned = d['last_badge'].strip("[]")
-                output.append(f"  {RED}{BOLD}{d['count']:>5}{RESET}  {DIM}{d['last_seen']:<10}{RESET}  {YELLOW}{badge_cleaned:<20}{RESET}  {p}")
-
-    # ==========================================
-    # VIEW 3: STORAGE & DATABASE METER
-    # ==========================================
-    elif tracker.current_view == 3:
         output.append(f"  {BOLD}🗄️ STORAGE, IMAGE DISK CACHE & MONGODB ENGINE:{RESET}\n")
         
         # Disk image caches
@@ -917,9 +1056,9 @@ def render_dashboard(tracker: TrafficTracker):
         output.append(f"    - WiredTiger RAM Cache: {BOLD}{CYAN}{MONGO_STATS['wt_cache_mb']:.1f} MB{RESET} / {MONGO_STATS['wt_max_mb']:.1f} MB ({MONGO_STATS['wt_cache_mb']/1024:.1f} GB pinned)")
 
     # ==========================================
-    # VIEW 4: GLOBAL LOCALES (11 LANGUAGES)
+    # VIEW 3: GLOBAL LOCALES (11 LANGUAGES)
     # ==========================================
-    elif tracker.current_view == 4:
+    elif tracker.current_view == 3:
         tot_langs = sum(tracker.lang_counts.values()) or 1
         output.append(f"  {BOLD}🌍 GLOBAL LOCALES & MULTI-LANGUAGE INTELLIGENCE ({len(LANG_FLAGS)} Magic Languages | {tot_langs:,} total):{RESET}\n")
         output.append(f"  {'FLAG & LANGUAGE':<26} {'REQUESTS':>10} {'GLOBAL SHARE':>14}   {'TOP FORMAT':<18} {'PRIMARY BOT'}")
@@ -963,9 +1102,15 @@ def render_dashboard(tracker: TrafficTracker):
                 top_b_cnt = b_counts[top_b_key]
                 top_b_pct = (top_b_cnt / cnt * 100) if cnt > 0 else 0
                 raw_b_name = FILTER_NAMES.get(top_b_key, top_b_key)
-                for emo in ("🤖", "🟢", "🔵", "⭐", "👾", "👤", "🛡️"):
+                for emo in ("🤖", "🟢", "🔵", "⭐", "👾", "👤", "🛡️", "🔍", "⚡", "🛍️", "📘", "💬", "📸", "🧵", "🐍", "👁️"):
                     raw_b_name = raw_b_name.replace(emo, "")
                 top_b_name = raw_b_name.strip().split()[0]
+                if top_b_key == "claude_search":
+                    top_b_name = "Claude"
+                elif top_b_key == "oai_search":
+                    top_b_name = "OAI"
+                elif top_b_key == "meta_ai":
+                    top_b_name = "Meta"
                 top_b_str = f"{top_b_name} ({top_b_pct:.0f}%)"
             else:
                 top_b_str = "ClaudeBot (95%)"
@@ -978,9 +1123,9 @@ def render_dashboard(tracker: TrafficTracker):
         output.append(f"  {DIM}* All 11 Magic languages rendered from RAM with deterministic localized typography.{RESET}")
 
     # ==========================================
-    # VIEW 5: DIMENSIONAL PIVOT & FACET ANALYTICS (SUITEANALYTICS STYLE)
+    # VIEW 4: DIMENSIONAL PIVOT & FACET ANALYTICS (SUITEANALYTICS STYLE)
     # ==========================================
-    elif tracker.current_view == 5:
+    elif tracker.current_view == 4:
         # Determine active pivot
         if tracker.selected_filter != "all":
             pivot_type = "SOURCE"
@@ -1097,8 +1242,9 @@ def render_dashboard(tracker: TrafficTracker):
                 return h.get("cat") == "citations" or any(k in h.get("badge", "").lower() for k in USER_CITATION_BADGES)
             return h.get("cat") == key
 
+        source_buffer_v4 = tracker.citation_hits if tracker.selected_filter == "citations" else tracker.recent_hits
         matching_hits = [
-            h for h in tracker.recent_hits
+            h for h in source_buffer_v4
             if _cat_match_v4(h, tracker.selected_filter) and
                (tracker.selected_route_filter == "all" or h.get("route") == tracker.selected_route_filter) and
                (tracker.selected_type_filter == "all" or h.get("file_type") == tracker.selected_type_filter)
@@ -1130,6 +1276,84 @@ def render_dashboard(tracker: TrafficTracker):
 
                 output.append(f"  {badge_str} {rt_badge} {ft_badge} {lg_badge} ({lat_val}) -> {path_str}")
 
+    # ==========================================
+    # VIEW 5: 7-DAY WEEKLY DIGEST & CITATION LEDGER
+    # ==========================================
+    elif tracker.current_view == 5:
+        output.append("")
+        st = WEEKLY_STATS["status"]
+        if st == "idle":
+            output.append(f"  {YELLOW}{BOLD}⏳ 7-Day Digest has not been generated yet.{RESET}")
+            output.append(f"  {CYAN}Press {BOLD}[5]{RESET}{CYAN} or {BOLD}[w]{RESET}{CYAN} to begin background aggregation of the last 7 days of traffic.{RESET}")
+            threading.Thread(target=load_weekly_stats_worker, daemon=True).start()
+        elif st == "loading":
+            output.append(f"  {YELLOW}{BOLD}⏳ Aggregating last 7 days of traffic logs in background... please wait...{RESET}")
+        elif st.startswith("error"):
+            output.append(f"  {RED}{BOLD}⚠️ Error loading 7-day logs:{RESET} {st}")
+        else:
+            # Done - render clean weekly digest
+            total = WEEKLY_STATS["total_reqs"]
+            s_ts = WEEKLY_STATS["start_ts"]
+            e_ts = WEEKLY_STATS["end_ts"]
+            updated = WEEKLY_STATS["last_loaded"]
+            cits = WEEKLY_STATS["citations"]
+            c_cnts = WEEKLY_STATS["cat_counts"]
+            r_cnts = WEEKLY_STATS["route_counts"]
+            f_cnts = WEEKLY_STATS["type_counts"]
+            top_404 = WEEKLY_STATS["top_404s"]
+
+            output.append(f"  {BOLD}🗓️ 7-DAY PERIOD:{RESET} {CYAN}{s_ts} → {e_ts}{RESET}  |  {BOLD}TOTAL REQUESTS:{RESET} {GREEN}{total:>10,}{RESET}  |  {DIM}(Loaded at {updated} - Press [w] to Refresh){RESET}")
+            output.append(f"{CYAN}----------------------------------------------------------------------------------------------------{RESET}")
+
+            # 3-Column Summary: Top Crawlers | Top Routes | Top Formats
+            output.append(f"  {BOLD}{'TOP CRAWLERS (7-DAY)':<31} | {'TOP SURFACES / ROUTES':<31} | {'CONTENT FORMATS':<31}{RESET}")
+            output.append(f"  {'-'*31} | {'-'*31} | {'-'*31}")
+
+            top_c = sorted([item for item in c_cnts.items() if item[1] > 0], key=lambda x: x[1], reverse=True)[:8]
+            top_r = sorted([item for item in r_cnts.items() if item[1] > 0], key=lambda x: x[1], reverse=True)[:8]
+            top_f = sorted([item for item in f_cnts.items() if item[1] > 0], key=lambda x: x[1], reverse=True)[:8]
+
+            max_len = max(len(top_c), len(top_r), len(top_f), 1)
+            for i in range(max_len):
+                if i < len(top_c):
+                    cat_k, cat_v = top_c[i]
+                    lbl = FILTER_NAMES.get(cat_k, cat_k)
+                    if len(lbl) > 19: lbl = lbl[:18] + "…"
+                    col1 = f"{pad_display(lbl, 20)} {cat_v:>10,}"
+                else:
+                    col1 = " " * 31
+
+                if i < len(top_r):
+                    rt_k, rt_v = top_r[i]
+                    lbl = ROUTE_FILTER_NAMES.get(rt_k, rt_k)
+                    if len(lbl) > 19: lbl = lbl[:18] + "…"
+                    col2 = f"{pad_display(lbl, 20)} {rt_v:>10,}"
+                else:
+                    col2 = " " * 31
+
+                if i < len(top_f):
+                    ft_k, ft_v = top_f[i]
+                    lbl = TYPE_FILTER_NAMES.get(ft_k, ft_k)
+                    if len(lbl) > 19: lbl = lbl[:18] + "…"
+                    col3 = f"{pad_display(lbl, 20)} {ft_v:>10,}"
+                else:
+                    col3 = " " * 31
+
+                output.append(f"  {col1} | {col2} | {col3}")
+
+            output.append(f"{CYAN}----------------------------------------------------------------------------------------------------{RESET}")
+            if not cits:
+                output.append(f"  {DIM}No AI citations recorded in the past 7 days.{RESET}")
+            else:
+                for cit in cits:
+                    b_str = f"{YELLOW}{BOLD}⭐ {cit['badge']:<14}{RESET}"
+                    t_str = f"{DIM}{cit['time']}{RESET}"
+                    lat_str = f"({cit['lat']:3d}ms)" if cit.get('lat') else "  -   "
+                    rt = cit.get("route", classify_route(cit.get("path", "")))
+                    rt_badge = ROUTE_BADGES.get(rt, f"{DIM}[OTHR]{RESET}")
+                    path_str = cit['path'][:56]
+                    output.append(f"  {t_str} {b_str} {lat_str} {rt_badge} -> {path_str}")
+
     output.append(f"{CYAN}{BOLD}===================================================================================================={RESET}")
 
     # Clear terminal screen and print buffer
@@ -1160,6 +1384,13 @@ def check_keyboard_input(tracker: TrafficTracker):
                     render_dashboard(tracker)
                 elif ch == b'5':
                     tracker.current_view = 5
+                    if WEEKLY_STATS["status"] == "idle":
+                        threading.Thread(target=load_weekly_stats_worker, daemon=True).start()
+                    render_dashboard(tracker)
+                elif ch in (b'w', b'W', b'6'):
+                    if tracker.current_view != 5:
+                        tracker.current_view = 5
+                    threading.Thread(target=load_weekly_stats_worker, daemon=True).start()
                     render_dashboard(tracker)
                 # Crawler Focus Filters
                 elif ch in (b'7',):
@@ -1184,13 +1415,20 @@ def check_keyboard_input(tracker: TrafficTracker):
                         tracker.selected_filter = "google"
                     render_dashboard(tracker)
                 elif ch in (b'c', b'C'):
-                    if tracker.current_view == 2:
-                        tracker.all_404s.clear()
+                    if tracker.selected_filter == "claude":
+                        tracker.selected_filter = "claude_search"
+                    elif tracker.selected_filter == "claude_search":
+                        tracker.selected_filter = "all"
                     else:
-                        tracker.selected_filter = "all" if tracker.selected_filter == "claude" else "claude"
+                        tracker.selected_filter = "claude"
                     render_dashboard(tracker)
                 elif ch in (b'o', b'O'):
-                    tracker.selected_filter = "all" if tracker.selected_filter == "openai" else "openai"
+                    if tracker.selected_filter == "openai":
+                        tracker.selected_filter = "oai_search"
+                    elif tracker.selected_filter == "oai_search":
+                        tracker.selected_filter = "all"
+                    else:
+                        tracker.selected_filter = "openai"
                     render_dashboard(tracker)
                 elif ch in (b'p', b'P'):
                     tracker.selected_filter = "all" if tracker.selected_filter == "perplexity" else "perplexity"
@@ -1243,14 +1481,37 @@ def tail_log_file(tracker: TrafficTracker, from_now: bool = False):
 
     with open(LOG_FILE, "r", encoding="utf-8", errors="ignore") as f:
         if from_now:
-            # Read last ~64KB to pre-seed recent buffer with latest context
+            # Fast binary search seek for rolling 11-hour cutoff window
+            cutoff = datetime.now(timezone.utc) - timedelta(hours=11)
             f.seek(0, os.SEEK_END)
             file_size = f.tell()
-            seek_pos = max(0, file_size - 65536)
+            low, high, seek_pos = 0, file_size, 0
+            while low <= high:
+                mid = (low + high) // 2
+                f.seek(mid)
+                if mid > 0:
+                    f.readline()
+                pos = f.tell()
+                probe_line = f.readline().strip()
+                if not probe_line:
+                    high = mid - 1
+                    continue
+                m = LOG_REGEX.match(probe_line)
+                if not m:
+                    high = mid - 1
+                    continue
+                try:
+                    probe_ts = datetime.fromisoformat(m.group("ts"))
+                except Exception:
+                    high = mid - 1
+                    continue
+                if probe_ts >= cutoff:
+                    seek_pos = pos
+                    high = mid - 1
+                else:
+                    low = mid + 1
+
             f.seek(seek_pos)
-            if seek_pos > 0:
-                # Discard partial line
-                f.readline()
             for seed_line in f:
                 seed_line = seed_line.strip()
                 if not seed_line:
