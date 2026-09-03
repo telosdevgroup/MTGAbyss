@@ -42,7 +42,7 @@ RESET = "\033[0m"
 # Color-coded 4-letter route surface codes
 ROUTE_BADGES = {
     "printing":  f"{GREEN}{BOLD}[PRIN]{RESET}",
-    "similar":   f"{MAGENTA}{BOLD}[SYN ]{RESET}",
+    "similar":   f"{MAGENTA}{BOLD}[SIM ]{RESET}",
     "vector":    f"{CYAN}{BOLD}[VECT]{RESET}",
     "commander": f"{YELLOW}{BOLD}[CMDR]{RESET}",
     "artist":    f"{BLUE}{BOLD}[ARTS]{RESET}",
