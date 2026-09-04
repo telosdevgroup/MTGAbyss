@@ -20,33 +20,33 @@
   {
     "@context": "https://schema.org",
     "@type": "ImageObject",
-    "name": "{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} - {{ card.set_name }}",
-    "caption": "Magic: The Gathering card {{ card.name }} from {{ card.set_name }} (#{{ card.collector_number }}), illustrated by {{ card.artist or 'Unknown' }}",
-    "contentUrl": "{{ card.large_image_url or card.image_url }}",
-    "thumbnailUrl": "{{ card.image_url }}",
+    "name": {{ (card.printed_name ~ (' (' ~ card.name ~ ')' if card.printed_name != card.name else '') ~ ' - ' ~ card.set_name) | tojson }},
+    "caption": {{ ('Magic: The Gathering card ' ~ card.name ~ ' from ' ~ card.set_name ~ ' (#' ~ card.collector_number ~ '), illustrated by ' ~ (card.artist or 'Unknown')) | tojson }},
+    "contentUrl": {{ (card.large_image_url or card.image_url) | tojson }},
+    "thumbnailUrl": {{ card.image_url | tojson }},
     "encodingFormat": "image/jpeg",
     "width": 672,
     "height": 936,
     "creator": {
       "@type": "Person",
-      "name": "{{ card.artist or 'Unknown' }}"
+      "name": {{ (card.artist or 'Unknown') | tojson }}
     },
-    "creditText": "Illustrated by {{ card.artist or 'Unknown' }} / Wizards of the Coast",
+    "creditText": {{ ('Illustrated by ' ~ (card.artist or 'Unknown') ~ ' / Wizards of the Coast') | tojson }},
     "copyrightNotice": "© Wizards of the Coast / Hasbro",
     "license": "https://company.wizards.com/en/legal/fancontentpolicy",
-    "acquireLicensePage": "https://avascry.com/printing/{{ card.printing_slug }}",
+    "acquireLicensePage": {{ ("https://avascry.com/printing/" ~ card.printing_slug) | tojson }},
     "copyrightHolder": {
       "@type": "Organization",
       "name": "Wizards of the Coast"
     },
-    "keywords": [
+    "keywords": {{ [
       "Magic: The Gathering",
       "MTG",
-      "{{ card.name }}",
-      "{{ card.set_name }}",
-      "{{ card.type_line }}",
-      "{{ card.artist }}"
-    ]
+      card.name,
+      card.set_name,
+      card.type_line,
+      card.artist
+    ] | tojson }}
   }
   </script>
 
@@ -65,14 +65,14 @@
       {
         "@type": "ListItem",
         "position": 2,
-        "name": "{{ card.set_name }}",
-        "item": "https://avascry.com/set/{{ card.set }}"
+        "name": {{ card.set_name | tojson }},
+        "item": {{ ("https://avascry.com/set/" ~ card.set) | tojson }}
       },
       {
         "@type": "ListItem",
         "position": 3,
-        "name": "{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %}",
-        "item": "https://avascry.com/printing/{{ card.printing_slug }}"
+        "name": {{ (card.printed_name ~ (' (' ~ card.name ~ ')' if card.printed_name != card.name else '')) | tojson }},
+        "item": {{ ("https://avascry.com/printing/" ~ card.printing_slug) | tojson }}
       }
     ]
   }
@@ -88,10 +88,10 @@
       {% for r in rulings %}
       {
         "@type": "Question",
-        "name": "{{ card.name }} ruling ({{ r.published_at }})",
+        "name": {{ (card.name ~ " ruling (" ~ r.published_at ~ ")") | tojson }},
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "{{ r.comment | replace('"', '\\"') | replace('\n', ' ') }}"
+          "text": {{ r.comment | tojson }}
         }
       }{% if not loop.last %},{% endif %}
       {% endfor %}

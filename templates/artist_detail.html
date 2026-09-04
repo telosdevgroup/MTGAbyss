@@ -18,13 +18,13 @@
 {
   "@context": "https://schema.org",
   "@type": "ProfilePage",
-  "name": "Cards Illustrated by {{ artist_name }}",
-  "url": "https://avascry.com/artist/{{ artist_slug }}",
+  "name": {{ ("Cards Illustrated by " ~ artist_name) | tojson }},
+  "url": {{ ("https://avascry.com/artist/" ~ artist_slug) | tojson }},
   "mainEntity": {
     "@type": "Person",
-    "name": "{{ artist_name }}",
+    "name": {{ artist_name | tojson }},
     "jobTitle": "Magic: The Gathering Card Illustrator",
-    "sameAs": "https://avascry.com/artist/{{ artist_slug }}",
+    "sameAs": {{ ("https://avascry.com/artist/" ~ artist_slug) | tojson }},
     "knowsAbout": "Magic: The Gathering Fantasy Art"
   }
 }
@@ -32,20 +32,102 @@
 {% endblock %}
 
 {% block content %}
-<section class="section-panel panel" style="margin-top: 1.5rem; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 1rem;">
-  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;">
+<div style="max-width: 1200px; margin: 1.5rem auto 3rem; padding: 0 1rem;">
+
+  <!-- Header Section -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;">
     <div>
       <div style="display: flex; align-items: center; gap: 0.6rem;">
         <h1 style="font-size: 1.85rem; font-weight: 800; margin: 0; color: var(--text);">{{ artist_name }}</h1>
         <span style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.2rem 0.65rem; font-size: 0.8rem; font-weight: 700; color: var(--accent);">Card Illustrator</span>
       </div>
-      <div style="font-size: 0.82rem; color: var(--muted); margin-top: 0.3rem;">Magic: The Gathering Artist Archive &bull; <a href="/artists" style="color: var(--muted); text-decoration: underline;">All Artists</a></div>
+      <div style="font-size: 0.82rem; color: var(--muted); margin-top: 0.3rem;">Magic: The Gathering &bull; <a href="/artists" style="color: var(--muted); text-decoration: underline;">All Artists</a></div>
     </div>
-    <div style="font-size: 0.9rem; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.35rem 0.9rem;">
-      <strong style="color: var(--text);">{{ total_cards }}</strong> Artworks
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <a href="/live-gallery" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.85rem; font-size: 0.82rem; font-weight: 600; border-radius: var(--radius-pill); text-decoration: none; border: 1px solid var(--border); background: var(--surface); color: var(--text);" title="Explore live visual feed in Live Gallery">
+        <span>🎨</span> Live Gallery
+      </a>
+      <div style="font-size: 0.9rem; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.35rem 0.9rem;">
+        <strong style="color: var(--text);">{{ total_cards }}</strong> Artworks
+      </div>
     </div>
   </div>
 
+  <!-- Composed Artist Spotlight Module -->
+  {% if spotlight %}
+  <section class="spotlight-block" style="background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.75rem; margin-bottom: 2.75rem; box-shadow: 0 12px 30px rgba(0,0,0,0.25);">
+    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem;">
+      <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); padding: 0.2rem 0.65rem; border-radius: var(--radius-pill);">
+        🎨 Artist Spotlight
+      </span>
+      <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--text); margin: 0;">{{ spotlight.title }}</h2>
+    </div>
+
+    <!-- Desktop Grid: Left Blurb & Facts, Right Hero Card -->
+    <div style="display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: start;" class="spotlight-grid">
+      <div>
+        <p style="font-size: 0.95rem; line-height: 1.65; color: var(--text); opacity: 0.92; margin: 0 0 1.25rem 0;">
+          {{ spotlight.blurb }}
+        </p>
+        
+        <!-- Fact Chips -->
+        <div style="display: flex; flex-wrap: wrap; gap: 0.65rem; margin-bottom: 1.5rem;">
+          {% for chip in spotlight.chips %}
+          <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.3rem 0.8rem; font-size: 0.78rem; font-weight: 600; color: var(--muted); display: inline-flex; align-items: center; gap: 0.4rem;">
+            <span aria-hidden="true">{{ chip.icon }}</span>
+            <span>{{ chip.label }}</span>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Supporting Works Callout Mini-Rail -->
+        {% if spotlight.supporting %}
+        <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.15rem;">
+          <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 0.85rem;">
+            Notable Works & Printings
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem;">
+            {% for sc in spotlight.supporting %}
+            <a href="/printing/{{ sc.printing_slug }}" style="display: flex; align-items: center; gap: 0.6rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.4rem 0.55rem; text-decoration: none; transition: border-color 0.15s ease;" onmouseover="this.style.borderColor='var(--accent)';" onmouseout="this.style.borderColor='var(--border)';" title="{{ sc.name }} — {{ sc.tag }}">
+              <img src="{{ sc.image_url }}" alt="{{ sc.name }}" loading="lazy" style="width: 32px; height: 44px; border-radius: 3px; object-fit: cover; flex-shrink: 0;">
+              <div style="min-width: 0;">
+                <div style="font-size: 0.78rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ sc.name }}</div>
+                <div style="font-size: 0.68rem; color: var(--accent); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ sc.tag }}</div>
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Hero Card Artwork Showcase -->
+      {% if spotlight.hero %}
+      <div style="width: 220px; text-align: center; flex-shrink: 0;" class="spotlight-hero-container">
+        <a href="/printing/{{ spotlight.hero.printing_slug }}" style="display: block; text-decoration: none; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.03)';" onmouseout="this.style.transform='none';">
+          <div style="aspect-ratio: 63/88; border-radius: 8px; overflow: hidden; box-shadow: 0 14px 28px rgba(0,0,0,0.45); border: 1.5px solid var(--border); margin-bottom: 0.5rem; background: #000;">
+            <img src="{{ spotlight.hero.image_url }}" alt="{{ spotlight.hero.name }}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+          </div>
+          <div style="font-size: 0.88rem; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            {{ spotlight.hero.name }}
+          </div>
+          <div style="font-size: 0.72rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.15rem;">
+            {{ spotlight.hero.tag }}
+          </div>
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Archive Section Header -->
+  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid var(--border); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
+    <h2 style="font-size: 1.35rem; font-weight: 800; margin: 0; color: var(--text);">All Works by {{ artist_name }}</h2>
+    <span style="font-size: 0.82rem; color: var(--muted);">{{ total_cards }} total</span>
+  </div>
+
+  <!-- Full Archive Card Grid -->
   <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1.1rem;">
     {% for card in cards %}
       <a href="/printing/{{ card.printing_slug }}" style="text-decoration: none; text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.5rem; transition: transform 0.15s ease, border-color 0.15s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='var(--accent)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--border)';" title="{{ card.name }} ({{ card.set_name }})">
@@ -61,5 +143,18 @@
       </a>
     {% endfor %}
   </div>
-</section>
+</div>
+
+<style>
+@media (max-width: 768px) {
+  .spotlight-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .spotlight-hero-container {
+    width: 160px !important;
+    margin: 0 auto 1.5rem !important;
+    order: -1;
+  }
+}
+</style>
 {% endblock %}

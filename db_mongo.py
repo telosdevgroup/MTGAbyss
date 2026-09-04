@@ -6,7 +6,7 @@ _CLIENT = None
 def get_mongo_db():
     global _CLIENT
     mongo_uri = os.environ.get("MONGODB_URI", "mongodb://192.168.1.213:27017")
-    db_name = os.environ.get("MONGODB_DB", "mtgabyss")
+    db_name = os.environ.get("MONGODB_DB", "mtgabyss_next")
     if _CLIENT is None:
         _CLIENT = pymongo.MongoClient(mongo_uri)
         try:
@@ -15,12 +15,6 @@ def get_mongo_db():
         except Exception:
             pass
     return _CLIENT[db_name]
-
-def get_old_db():
-    """Returns the mtgabyss database (card_embeddings, similar_cards)."""
-    mongo_uri = os.environ.get("MONGODB_URI", "mongodb://localhost:27017")
-    client = pymongo.MongoClient(mongo_uri)
-    return client["mtgabyss"]
 
 def ensure_indexes(db):
     # Cards collection indexes
