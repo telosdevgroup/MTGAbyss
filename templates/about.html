@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}About — AvaScry{% endblock %}
+{% block meta_description %}Learn about AvaScry: Next-generation Magic: The Gathering card exploration powered by neural embeddings, visual intelligence, and automated deck synergy.{% endblock %}
+
+{% block content %}
+<div style=max-width: 860px; margin: 2rem auto 5rem; padding: 0 1rem; line-height: 1.7; color: var(--text);>
+  
+  <!-- Hero Section -->
+  <header style=margin-bottom: 3rem; border-bottom: 1px solid var(--border); padding-bottom: 2rem;>
+    <div style=display: inline-block; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); padding: 0.2rem 0.75rem; border-radius: var(--radius-pill); margin-bottom: 0.75rem;>
+      Behind the Project
+    </div>
+    <h1 style=font-size: 2.4rem; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 0.75rem 0; color: var(--text);>About AvaScry</h1>
+    <p style=font-size: 1.15rem; color: var(--muted); margin: 0; line-height: 1.6;>
+      Neural discovery, visual galleries, and intelligent Commander deck synergy for <em>Magic: The Gathering</em> players, collectors, and deckbuilders.
+    </p>
+  </header>
+
+  <!-- Section 1: Beyond Card Dumps -->
+  <section style=margin-bottom: 2.75rem;>
+    <h2 style=font-size: 1.45rem; font-weight: 700; color: var(--text); margin-bottom: 0.85rem;>Why AvaScry Exists</h2>
+    <p style=color: var(--muted); margin-bottom: 1rem;>
+      Traditional card search engines excel at rigid text lookups: syntax filters for exact mana costs, rules keywords, or collector numbers. But building real Magic decks requires understanding <em>synergy</em>, <em>flavor</em>, <em>gameplay texture</em>, and <em>artistic lineage</em>—qualities that rigid database schemas cannot easily capture.
+    </p>
+    <p style=color: var(--muted);>
+      AvaScry was created to bridge this gap. Rather than serving as a plain database duplicate, AvaScry blends deep semantic analysis with modern web performance to help players discover cards they would otherwise never have found.
+    </p>
+  </section>
+
+  <!-- Section 2: Core Value-Add Features -->
+  <section style=margin-bottom: 2.75rem;>
+    <h2 style=font-size: 1.45rem; font-weight: 700; color: var(--text); margin-bottom: 1rem;>Core Features &amp; Capabilities</h2>
+    <div style=display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.25rem;>
+      
+      <div style=background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem;>
+        <div style=font-size: 1.3rem; margin-bottom: 0.4rem;>🧠</div>
+        <h3 style=font-size: 1.05rem; font-weight: 700; margin: 0 0 0.5rem 0; color: var(--text);>Neural Similar Engine</h3>
+        <p style=font-size: 0.88rem; color: var(--muted); margin: 0; line-height: 1.55;>
+          Powered by 4,096-dimensional high-parameter embeddings that parse rules mechanics, card role, tempo, and card-type interactions to recommend contextually resonant alternatives.
+        </p>
+      </div>
+
+      <div style=background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem;>
+        <div style=font-size: 1.3rem; margin-bottom: 0.4rem;>⚡</div>
+        <h3 style=font-size: 1.05rem; font-weight: 700; margin: 0 0 0.5rem 0; color: var(--text);>SmartDeck Builder</h3>
+        <p style=font-size: 0.88rem; color: var(--muted); margin: 0; line-height: 1.55;>
+          An automated Commander archetype synthesizer that evaluates curve, mana fixing, draw engines, interaction packages, and win-conditions tailored directly to your commander's strategy.
+        </p>
+      </div>
+
+      <div style=background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem;>
+        <div style=font-size: 1.3rem; margin-bottom: 0.4rem;>🎨</div>
+        <h3 style=font-size: 1.05rem; font-weight: 700; margin: 0 0 0.5rem 0; color: var(--text);>Live Art Gallery</h3>
+        <p style=font-size: 0.88rem; color: var(--muted); margin: 0; line-height: 1.55;>
+          A cinematic, full-bleed artwork experience celebrating the illustrators behind three decades of fantasy art, with comprehensive artist catalogs and curated set spotlights.
+        </p>
+      </div>
+
+      <div style=background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem;>
+        <div style=font-size: 1.3rem; margin-bottom: 0.4rem;>🤖</div>
+        <h3 style=font-size: 1.05rem; font-weight: 700; margin: 0 0 0.5rem 0; color: var(--text);>AI &amp; Open Machine Access</h3>
+        <p style=font-size: 0.88rem; color: var(--muted); margin: 0; line-height: 1.55;>
+          First-class content negotiation providing pristine Markdown (<code>.md</code>) and JSON (<code>.json</code>) representations for LLMs, autonomous agents, and third-party tools.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Section 3: Technology & Attribution -->
+  <section style=margin-bottom: 2.75rem;>
+    <h2 style=font-size: 1.45rem; font-weight: 700; color: var(--text); margin-bottom: 0.85rem;>Data &amp; Attributions</h2>
+    <p style=color: var(--muted); margin-bottom: 0.85rem;>
+      AvaScry relies on open data sources and public APIs maintained by <a href=https://scryfall.com target=_blank rel=noopener noreferrer style=color: var(--accent); font-weight: 600; text-decoration: underline;>Scryfall</a>. We are deeply grateful to the community archivists and engineers who make card metadata and high-resolution scans accessible to fans worldwide.
+    </p>
+    <p style=color: var(--muted);>
+      Magic: The Gathering, including card names, mechanics, expansion symbols, and artistic assets, is copyright &copy; Wizards of the Coast LLC. AvaScry is unofficial Fan Content created under the Wizards of the Coast Fan Content Policy.
+    </p>
+  </section>
+
+  <!-- Section 4: Who We Are -->
+  <section>
+    <h2 style=font-size: 1.45rem; font-weight: 700; color: var(--text); margin-bottom: 0.85rem;>Team &amp; Inquiries</h2>
+    <p style=color: var(--muted); margin-bottom: 1rem;>
+      AvaScry is built and maintained by <strong>Telos Development Group LLC</strong>. We build specialized software at the intersection of information retrieval, visual design, and machine intelligence.
+    </p>
+    <p style=color: var(--muted);>
+      Have feedback, feature requests, or editorial suggestions? Check out our <a href=/contact style=color: var(--accent); font-weight: 600; text-decoration: underline;>Contact Page</a> or reach out directly to <a href=mailto:telosdevgroup@gmail.com?subject=AvaScry.com%20Feedback style=color: var(--accent); font-weight: 600; text-decoration: underline;>telosdevgroup@gmail.com</a>.
+    </p>
+  </section>
+
+</div>
+{% endblock %}

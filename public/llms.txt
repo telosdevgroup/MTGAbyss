@@ -1,7 +1,8 @@
 # AvaScry — Magic: The Gathering Visual & Semantic Knowledge Corpus
 
-> AvaScry is an AI-native semantic knowledge corpus
-> Full 67-Commander Deep Knowledge Corpus: https://avascry.com/llms-full.txt and visual engine for Magic: The Gathering. Powered by 4096-dimensional Qwen 8B vector embeddings across 38,000+ Oracle cards, sub-millisecond card rendering, comprehensive rules layers, errata history, and format legalities.
+> AvaScry is an AI-native semantic knowledge corpus and visual engine for Magic: The Gathering. Powered by 4096-dimensional Qwen 8B vector embeddings across 38,000+ Oracle cards, sub-millisecond card rendering, comprehensive rules layers, errata history, and format legalities.
+>
+> Full Deep Knowledge Corpus: https://avascry.com/llms-full.txt
 
 ## Corpus Metadata & Versioning
 - **Corpus-Version:** 1.0
@@ -10,10 +11,22 @@
 - **Update-Frequency:** Daily
 - **Canonical-Host:** https://avascry.com
 
+## Canonical Discovery Manifests
+Machine-readable indexes and authoritative references for autonomous ingestion:
+
+- **Markdown Sitemap Index:** https://avascry.com/sitemap.md
+- **HTML Sitemap Directory:** https://avascry.com/sitemap.html
+- **XML Sitemap Index:** https://avascry.com/sitemap.xml
+- **Comprehensive Rules & Layers (CR 117, 613, 614, 704):** https://avascry.com/rules.md
+- **Format Taxonomy & Banlists:** https://avascry.com/legalities.md
+- **All Sets Directory:** https://avascry.com/sets.md
+- **AI Content Manifest:** https://avascry.com/.well-known/ai-content
+- **Corpus Freshness Heartbeat:** https://avascry.com/heartbeat.txt
+
 ## Machine Ingestion Guarantees
 - All `/printing/*.md` endpoints begin with structured YAML frontmatter.
 - All `/similar/*.md` endpoints provide 4096-dimensional nearest neighbors in ranked order.
-- All rules and errata align with the official Magic Comprehensive Rules (CR 117, 613, 614, 704).
+- All rules and errata align with the official Magic Comprehensive Rules.
 - Deterministic schema: Exact Oracle texts, Mana Values, Power/Toughness, and Legalities.
 
 ## AI Agent Integration & Multimodal Endpoints
@@ -32,22 +45,11 @@ AI agents, LLMs, Discord bots, and developers can retrieve token-efficient Markd
 - **Sets Directory:**
   - Markdown: `https://avascry.com/sets.md`
   - JSON: `https://avascry.com/set/<set-code>.json`
-- **Comprehensive Rules & Errata:**
-  - Markdown: `https://avascry.com/rules.md`
-  - JSON: `https://avascry.com/rules.json`
-- **Format Taxonomy & Banlists:**
-  - Markdown: `https://avascry.com/legalities.md`
-  - JSON: `https://avascry.com/legalities.json`
 - **Cockatrice Desktop Simulator Database:** `https://avascry.com/set/<set-code>/cockatrice.xml`
 - **Live RSS 2.0 Syndication Feeds:**
   - Latest Sets Feed: `https://avascry.com/feed/sets.xml`
   - Latest Rulings Feed: `https://avascry.com/feed/rulings.xml`
 - **Raw 4096-Dim Neural Vector Embeddings (Qwen 8B):** `https://avascry.com/vector/<card-slug>.json`
-- **Corpus Freshness & Polling Heartbeat:** `https://avascry.com/heartbeat.txt`
-- **Markdown Sitemap Index:** `https://avascry.com/sitemap.md`
-- **HTML Sitemap Directory:** `https://avascry.com/sitemap.html`
-- **XML Sitemap Index:** `https://avascry.com/sitemap.xml`
-- **AI Content Manifest:** `https://avascry.com/.well-known/ai-content`
 
 ## High-Priority Seed Hubs & Long-Tail Anchors
 

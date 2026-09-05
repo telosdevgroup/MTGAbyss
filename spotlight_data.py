@@ -3,6 +3,7 @@ spotlight_data.py — Curated and data-driven spotlight overlays for AvaScry Set
 """
 
 from typing import Dict, Any, Optional, List
+from collections import Counter
 
 # Curated sets with authentic editorial blurbs and card callouts
 CURATED_SETS: Dict[str, Dict[str, Any]] = {
@@ -133,37 +134,30 @@ CURATED_ARTISTS: Dict[str, Dict[str, Any]] = {
 }
 
 
-def build_set_spotlight(set_code: str, set_name: str, cards: List[Dict[str, Any]]) -> Dict[str, Any]:
+def build_set_spotlight(set_code: str, set_name: str, cards: List[Dict[str, Any]], db=None) -> Dict[str, Any]:
     """
-    Builds a composed spotlight dictionary for a set.
-    Uses curated data if present; otherwise derives an honest, factual summary from cards.
+    Generate dynamic spotlight metadata for a set.
+    Prefers generated blurb & commander staples from db['sets'] if available,
+    otherwise falls back to curated/data-driven synthesis.
     """
-    code_lower = set_code.lower()
-    curated = CURATED_SETS.get(code_lower)
+    code_clean = set_code.lower()
+    curated = CURATED_SETS.get(code_clean)
 
-    # Calculate factual stats
     total_printings = len(cards)
-    
-    # Release years represented
-    years = sorted(list({str(c.get("released_at", ""))[:4] for c in cards if c.get("released_at")}))
-    release_year = years[0] if years else ""
-    
-    # Rarity breakdown
-    rarities = {}
-    for c in cards:
-        r = (c.get("rarity") or "").capitalize()
-        if r:
-            rarities[r] = rarities.get(r, 0) + 1
 
-    # Main card types represented
-    types_count = {}
+    years = sorted(list({str(c.get("released_at", ""))[:4] for c in cards if c.get("released_at") and str(c.get("released_at", ""))[:4].isdigit()}))
+    release_year = years[0] if years else ""
+
+    types_counter = Counter()
     for c in cards:
-        t_line = c.get("type_line") or ""
-        for t in ["Creature", "Instant", "Sorcery", "Enchantment", "Artifact", "Land", "Planeswalker"]:
+        t_line = c.get("type_line", "")
+        for t in ["Creature", "Instant", "Sorcery", "Enchantment", "Artifact", "Planeswalker", "Land"]:
             if t in t_line:
-                types_count[t] = types_count.get(t, 0) + 1
-    top_types = sorted(types_count.items(), key=lambda x: x[1], reverse=True)[:3]
-    top_types_str = ", ".join(f"{t[0]}s" for t in top_types) if top_types else "Various Types"
+                types_counter[t] += 1
+                break
+
+    top_types = [f"{t}s" for t, _ in types_counter.most_common(2)]
+    top_types_str = " & ".join(top_types) if top_types else ""
 
     chips = []
     if release_year:
@@ -172,10 +166,64 @@ def build_set_spotlight(set_code: str, set_name: str, cards: List[Dict[str, Any]
     if top_types_str:
         chips.append({"label": top_types_str, "icon": "⚔️"})
 
-    # Determine Hero and Supporting Cards
     card_by_name = {c.get("name"): c for c in cards}
 
-    if curated:
+    # Check for generated blurb & staples in db["sets"]
+    set_meta = None
+    if db is not None:
+        try:
+            set_meta = db["sets"].find_one({"code": code_clean}, {"blurb": 1, "commander_staples": 1})
+        except Exception:
+            pass
+
+    if set_meta and set_meta.get("blurb"):
+        title = curated.get("title") if curated else f"Inside {set_name}"
+        full_blurb = set_meta["blurb"]
+        blurb = full_blurb.split("\n\n")[0]
+        hero_tag = "Commander Staple"
+
+        staples = set_meta.get("commander_staples") or []
+        hero_card = None
+        supporting = []
+
+        if staples:
+            first_staple = staples[0]
+            hero_card = card_by_name.get(first_staple.get("name"))
+            for s in staples[1:5]:
+                s_name = s.get("name")
+                sc = card_by_name.get(s_name)
+                if sc:
+                    supporting.append({
+                        "name": sc.get("name"),
+                        "printing_slug": sc.get("printing_slug"),
+                        "image_url": sc.get("image_url") or f"https://avascry.com/images/normal/{sc.get('image_slug')}.jpg",
+                        "tag": "Commander Staple"
+                    })
+
+        if not hero_card:
+            for c in cards:
+                if c.get("rarity") in ("Mythic", "Rare"):
+                    hero_card = c
+                    break
+            if not hero_card and cards:
+                hero_card = cards[0]
+
+        if not supporting:
+            used_names = {hero_card.get("name")} if hero_card else set()
+            for c in cards:
+                c_name = c.get("name")
+                if c_name not in used_names:
+                    used_names.add(c_name)
+                    supporting.append({
+                        "name": c_name,
+                        "printing_slug": c.get("printing_slug"),
+                        "image_url": c.get("image_url") or f"https://avascry.com/images/normal/{c.get('image_slug')}.jpg",
+                        "tag": c.get("rarity") or "Notable"
+                    })
+                    if len(supporting) >= 4:
+                        break
+
+    elif curated:
         title = curated.get("title", f"Inside {set_name}")
         blurb = curated.get("blurb", "")
         hero_card = card_by_name.get(curated.get("hero_name"))
@@ -239,10 +287,11 @@ def build_set_spotlight(set_code: str, set_name: str, cards: List[Dict[str, Any]
     }
 
 
-def build_artist_spotlight(artist_name: str, artist_slug: str, cards: List[Dict[str, Any]]) -> Dict[str, Any]:
+def build_artist_spotlight(artist_name: str, artist_slug: str, cards: List[Dict[str, Any]], db=None) -> Dict[str, Any]:
     """
-    Builds a composed spotlight dictionary for an artist.
-    Factual and data-driven overview of their cataloged Magic illustrations.
+    Generate dynamic spotlight metadata for an artist portfolio.
+    Prefers generated blurb & commander staples from db['artists'] if available,
+    otherwise falls back to curated/data-driven synthesis.
     """
     slug_clean = artist_slug.lower()
     curated = CURATED_ARTISTS.get(slug_clean)
@@ -265,7 +314,62 @@ def build_artist_spotlight(artist_name: str, artist_slug: str, cards: List[Dict[
 
     card_by_name = {c.get("name"): c for c in cards}
 
-    if curated:
+    # Check for generated blurb & staples in db["artists"]
+    artist_meta = None
+    if db is not None:
+        try:
+            artist_meta = db["artists"].find_one({"slug": slug_clean}, {"blurb": 1, "commander_staples": 1})
+        except Exception:
+            pass
+
+    if artist_meta and artist_meta.get("blurb"):
+        title = f"Illustrations by {artist_name}"
+        full_blurb = artist_meta["blurb"]
+        blurb = full_blurb.split("\n\n")[0]
+        hero_tag = "Commander Staple"
+
+        staples = artist_meta.get("commander_staples") or []
+        hero_card = None
+        supporting = []
+
+        if staples:
+            first_staple = staples[0]
+            hero_card = card_by_name.get(first_staple.get("name"))
+            for s in staples[1:5]:
+                s_name = s.get("name")
+                sc = card_by_name.get(s_name)
+                if sc:
+                    supporting.append({
+                        "name": sc.get("name"),
+                        "printing_slug": sc.get("printing_slug"),
+                        "image_url": sc.get("image_url") or f"https://avascry.com/images/normal/{sc.get('image_slug')}.jpg",
+                        "tag": "Commander Staple"
+                    })
+
+        if not hero_card:
+            for c in cards:
+                if c.get("rarity") in ("Mythic", "Rare"):
+                    hero_card = c
+                    break
+            if not hero_card and cards:
+                hero_card = cards[0]
+
+        if not supporting:
+            used_names = {hero_card.get("name")} if hero_card else set()
+            for c in cards:
+                c_name = c.get("name")
+                if c_name not in used_names:
+                    used_names.add(c_name)
+                    supporting.append({
+                        "name": c_name,
+                        "printing_slug": c.get("printing_slug"),
+                        "image_url": c.get("image_url") or f"https://avascry.com/images/normal/{c.get('image_slug')}.jpg",
+                        "tag": c.get("rarity") or c.get("set", "").upper()
+                    })
+                    if len(supporting) >= 4:
+                        break
+
+    elif curated:
         title = curated.get("title", f"Illustrations by {artist_name}")
         blurb = curated.get("blurb", "")
         hero_card = card_by_name.get(curated.get("hero_name"))

@@ -22,6 +22,10 @@ if hasattr(sys.stdout, 'reconfigure'):
     except Exception:
         pass
 
+# Enable Windows ANSI / Virtual Terminal Processing
+if os.name == 'nt':
+    os.system('')
+
 # Windows non-blocking keyboard input
 try:
     import msvcrt
@@ -58,8 +62,39 @@ ROUTE_BADGES = {
 LOG_FILE = os.environ.get("ACCESS_LOG_PATH", r"C:\avascry_data\logs\access.log")
 
 LOG_REGEX = re.compile(
-    r'^(?P<ts>\S+)\s+(?P<ip>\S+)\s+(?P<badge>\[[^\]]+\])\s+(?P<status>\d{3})\s+\(\s*(?P<lat>\d+)ms\)(?:\s+(?P<ct>\[[A-Z]+\]))?\s+->\s+(?P<method>\S+)\s+(?P<path>\S+)'
+    r'^(?P<ts>\S+)\s+(?P<ip>\S+)\s+(?P<badge>\[[^\]]+\])\s+(?P<status>\d{3})\s+\(\s*(?P<lat>\d+)ms\)(?P<tags>(?:\s+\[[^\]]*\])*)\s+->\s+(?P<method>\S+)\s+(?P<path>\S+)(?:\s+"(?P<ua>[^"]*)")?'
 )
+
+SURFACE_CODE_TO_ROUTE = {
+    "PRIN": "printing",
+    "SIM": "similar",
+    "VECT": "vector",
+    "CMDR": "commander",
+    "ARTS": "artist",
+    "SETS": "set",
+    "IMG": "images",
+    "MAP": "sitemap",
+    "HOME": "home",
+    "DECK": "decks",
+    "ASST": "assets",
+    "OTHR": "other"
+}
+
+def parse_log_tags(tags_str: str):
+    """Parse optional surface and content-type/format tags from log line."""
+    if not tags_str:
+        return "", ""
+    raw_tags = [t.strip() for t in re.findall(r'\[([^\]]*)\]', tags_str)]
+    tags = [t for t in raw_tags if t]
+    if not tags:
+        return "", ""
+    if len(tags) >= 2:
+        return tags[0], tags[1]
+    tag = tags[0]
+    fmt_names = {"HTML", "MD", "JSON", "TXT", "XML", "RSS", "CSS", "JS", "FONT", "CSV", "ZIP"}
+    if tag.upper() in fmt_names:
+        return "", tag
+    return tag, ""
 
 SPARK_CHARS = [" ", " ", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
 
@@ -95,17 +130,17 @@ WEEKLY_STATS = {
 }
 
 LANG_FLAGS = {
-    "en": "🇺🇸 EN",
-    "es": "🇪🇸 ES",
-    "ja": "🇯🇵 JA",
-    "fr": "🇫🇷 FR",
-    "de": "🇩🇪 DE",
-    "it": "🇮🇹 IT",
-    "pt": "🇧🇷 PT",
-    "ru": "🇷🇺 RU",
-    "ko": "🇰🇷 KO",
-    "zhs": "🇨🇳 ZHS",
-    "zht": "🇹🇼 ZHT"
+    "en": "[EN]",
+    "es": "[ES]",
+    "ja": "[JA]",
+    "fr": "[FR]",
+    "de": "[DE]",
+    "it": "[IT]",
+    "pt": "[PT]",
+    "ru": "[RU]",
+    "ko": "[KO]",
+    "zhs": "[ZHS]",
+    "zht": "[ZHT]"
 }
 
 def update_image_cache_stats_worker():
@@ -185,7 +220,7 @@ def classify_badge(badge: str, ip: str = "", path: str = "", ct: str = "") -> st
         return "watchlist"
 
     # 0. Real-Time Live AI User Groundings & Citations (Lucky 7)
-    if any(k in b for k in ("-user", "chatgpt-user", "claude-user", "perplexity-user")):
+    if any(k in b for k in ("-user", "chatgpt-user", "claude-user", "perplexity-user", "shap-user")):
         return "citations"
 
     # 1. Anthropic PBC (Split Claude-Search from standard ClaudeBot)
@@ -219,9 +254,19 @@ def classify_badge(badge: str, ip: str = "", path: str = "", ct: str = "") -> st
         return "perplexity"
     if "bytedance" in b or "bytespider" in b:
         return "bytedance"
+    if "applebot" in b or "amazonbot" in b or "apple-search" in b:
+        return "apple_amazon"
+    if "shapbot" in b or "shap" in b:
+        return "shapbot"
+    if any(k in b for k in ("ai:deepseek", "ai:mistral", "ai:diffbot", "ai:youbot", "ai:imagesift", "ai:commoncrawl", "ai:other", "cohere")):
+        return "ai_other"
     # 5. Developer Scripts, Scanners & Spiders
-    if "dev:script" in b or "python" in b or "curl" in b or "requests" in b or "go-http" in b:
+    if "siteblaster" in b or "ava9001" in b:
+        return "siteblaster"
+    if any(k in b for k in ("dev:script", "python", "curl", "requests", "go-http", "cachewarmer")):
         return "dev_scripts"
+    if "feedfetcher" in b or "feed:" in b:
+        return "feed_fetcher"
     if "scanner:" in b or "ads.txt" in path or "security.txt" in path:
         return "ad_scanners"
     if "cloud:spider" in b or "spider" in b:
@@ -278,7 +323,7 @@ def classify_route(path: str) -> str:
 def classify_file_type(path: str, ct_badge: str = "") -> str:
     """Classify pure MIME serialization format (HTML, MD, JSON, IMG, XML, TXT, etc.)."""
     if ct_badge:
-        cb = ct_badge.upper().strip("[]")
+        cb = ct_badge.upper().strip("[] ").strip()
         if cb == "MD":
             return "md"
         elif cb == "HTML":
@@ -450,16 +495,25 @@ def load_weekly_stats_worker():
                     continue
                 status = int(status_str)
 
-                # Latency & optional ct badge
+                # Latency & optional ct/surface badges
                 lat = 0
-                ct = ""
-                for tok in left_tokens[4:]:
-                    if tok.endswith("ms)"):
-                        num_part = tok[:-3].lstrip("(")
-                        if num_part.isdigit():
-                            lat = int(num_part)
-                    elif tok.startswith("[") and tok.endswith("]"):
-                        ct = tok
+                lat_m = re.search(r'\(\s*(\d+)ms\)', left)
+                if lat_m:
+                    lat = int(lat_m.group(1))
+
+                all_brackets = [b.strip() for b in re.findall(r'\[([^\]]*)\]', left)]
+                tag_brackets = all_brackets[1:] if len(all_brackets) > 1 else []
+                surface_tag, fmt_tag = "", ""
+                if len(tag_brackets) >= 2:
+                    surface_tag, fmt_tag = tag_brackets[0], tag_brackets[1]
+                elif len(tag_brackets) == 1:
+                    tag = tag_brackets[0]
+                    if tag.upper() in {"HTML", "MD", "JSON", "TXT", "XML", "RSS", "CSS", "JS", "FONT", "CSV", "ZIP"}:
+                        fmt_tag = tag
+                    else:
+                        surface_tag = tag
+
+                ct = f"[{fmt_tag}]" if fmt_tag else ""
 
                 # Right side: METHOD PATH
                 r_parts = right.split()
@@ -472,7 +526,7 @@ def load_weekly_stats_worker():
 
                 total += 1
                 cat = classify_badge(badge, ip, path, ct)
-                route = classify_route(path)
+                route = SURFACE_CODE_TO_ROUTE.get(surface_tag.upper()) or classify_route(path)
                 ft = classify_file_type(path, ct)
 
                 c_counts[cat] += 1
@@ -522,7 +576,7 @@ def load_weekly_stats_worker():
 
 FILTER_NAMES = {
     "all": "All Traffic",
-    "citations": "⭐ AI Citations (Real-Time Users)",
+    "citations": "AI Citations (Real-Time Users)",
     "watchlist": "👁️ Watched Scrapers",
     "claude_search": "🔍 Claude Search (Anthropic)",
     "oai_search": "🔍 OpenAI Search (OAI-Search)",
@@ -538,9 +592,17 @@ FILTER_NAMES = {
     "instagram": "📸 Instagram Embed",
     "threads": "🧵 Threads Embed",
     "perplexity": "🤖 Perplexity AI",
+    "apple_amazon": "🍎 Apple & Amazon",
+    "shapbot": "🤖 ShapBot",
+    "ai_other": "🤖 Other AI (DeepSeek/CommonCrawl)",
+    "siteblaster": "💥 SiteBlaster 9001",
     "dev_scripts": "🐍 Dev Scripts (Python/Curl)",
+    "feed_fetcher": "📡 RSS / Feed Fetchers",
     "ad_scanners": "🛡️ Ad/Sec Scanners",
     "cloud_spiders": "☁️ Cloud Spiders",
+    "other_crawlers": "🌐 Other Search Engines",
+    "social": "💬 Social Embeds",
+    "scrapers": "🕷️ SEO Scrapers",
     "other_bots": "👾 Other Bots",
     "browser": "👤 Headless & Unbranded",
     "bing": "🔵 Bingbot",
@@ -644,11 +706,11 @@ class TrafficTracker:
         self.current_sec_count = 0
         self.last_hit_epoch = time.time()
 
-    def add_request(self, dt: datetime, cat: str, status: int, path: str, ip: str, badge: str, ct: str = "", lat: int = 0):
+    def add_request(self, dt: datetime, cat: str, status: int, path: str, ip: str, badge: str, ct: str = "", lat: int = 0, surf_tag: str = ""):
         now_epoch = dt.timestamp()
         self.last_hit_epoch = time.time()
         
-        route = classify_route(path)
+        route = SURFACE_CODE_TO_ROUTE.get(surf_tag.upper()) or classify_route(path)
         file_type = classify_file_type(path, ct)
         lang = classify_language(path)
 
@@ -838,7 +900,7 @@ def render_dashboard(tracker: TrafficTracker):
         output.append(f"  {'-'*19} {'-'*9} | {'-'*19} {'-'*9} | {'-'*19} {'-'*9}")
         
         crawler_rows = [
-            ("⭐ AI Citations", "citations", YELLOW),
+            ("AI Citations", "citations", YELLOW),
             ("Claude Search", "claude_search", YELLOW),
             ("OAI Search", "oai_search", YELLOW),
             ("ClaudeBot", "claude", YELLOW),
@@ -855,9 +917,13 @@ def render_dashboard(tracker: TrafficTracker):
             ("Perplexity", "perplexity", YELLOW),
             ("Bingbot", "bing", BLUE),
             ("ByteSpider", "bytedance", YELLOW),
-            ("Applebot", "apple_amazon", YELLOW),
+            ("Apple & Amazon", "apple_amazon", YELLOW),
+            ("ShapBot", "shapbot", YELLOW),
+            ("Other AI Bots", "ai_other", YELLOW),
+            ("SiteBlaster 9001", "siteblaster", RED),
             ("Watched Bots", "watchlist", MAGENTA),
             ("Dev Scripts", "dev_scripts", GREEN),
+            ("Feed Readers", "feed_fetcher", CYAN),
             ("Ad/Sec Scanners", "ad_scanners", DIM),
             ("Cloud Spiders", "cloud_spiders", DIM),
             ("Other Search", "other_crawlers", CYAN),
@@ -993,12 +1059,12 @@ def render_dashboard(tracker: TrafficTracker):
             filter_summary = f"{BOLD}ALL TRAFFIC & SURFACES ({tot:,} total){RESET}"
 
         output.append(f"  {BOLD}⚡ LIVE STREAM FEED — {filter_summary}")
-        output.append(f"  {DIM}Bot Keys: {YELLOW}[7] ⭐ Citations{RESET} | {DIM}[g] Google [c] Claude [o] OpenAI [p] Perplexity [h] Headless{RESET}")
+        output.append(f"  {DIM}Bot Keys: {YELLOW}[7] Citations{RESET} | {YELLOW}[0] ShapBot{RESET} | {RED}[9] SiteBlaster{RESET} | {DIM}[g] Google [c] Claude [o] OpenAI [p] Perplexity [h] Headless{RESET}")
         output.append(f"  {DIM}Surface Keys: [v] Vectors [s] Synergies [k] Checklists | Format Keys: [d] Markdown [t] HTML [j] JSON [i] Image{RESET}")
         output.append(f"{CYAN}--------------------------------------------------------------------------------{RESET}")
 
         # Filter live hits
-        USER_CITATION_BADGES = ("-user", "chatgpt-user", "claude-user", "perplexity-user")
+        USER_CITATION_BADGES = ("-user", "chatgpt-user", "claude-user", "perplexity-user", "shap-user")
         def _cat_match(h, key):
             if key == "all":
                 return True
@@ -1060,24 +1126,24 @@ def render_dashboard(tracker: TrafficTracker):
     # ==========================================
     elif tracker.current_view == 3:
         tot_langs = sum(tracker.lang_counts.values()) or 1
-        output.append(f"  {BOLD}🌍 GLOBAL LOCALES & MULTI-LANGUAGE INTELLIGENCE ({len(LANG_FLAGS)} Magic Languages | {tot_langs:,} total):{RESET}\n")
-        output.append(f"  {'FLAG & LANGUAGE':<26} {'REQUESTS':>10} {'GLOBAL SHARE':>14}   {'TOP FORMAT':<18} {'PRIMARY BOT'}")
+        output.append(f"  {BOLD}🌐 GLOBAL LOCALES & MULTI-LANGUAGE INTELLIGENCE ({len(LANG_FLAGS)} Magic Languages | {tot_langs:,} total):{RESET}\n")
+        output.append(f"  {'LOCALE & LANGUAGE':<26} {'REQUESTS':>10} {'GLOBAL SHARE':>14}   {'TOP FORMAT':<18} {'PRIMARY BOT'}")
         output.append(f"  {'-'*26} {'-'*10} {'-'*14}   {'-'*18} {'-'*20}")
         
         sorted_locales = sorted(LANG_FLAGS.keys(), key=lambda k: tracker.lang_counts[k], reverse=True)
         
         LOCALE_FULL_NAMES = {
-            "en": "🇺🇸 US English (en)",
-            "ja": "🇯🇵 JP 日本語 (ja)",
-            "de": "🇩🇪 DE Deutsch (de)",
-            "it": "🇮🇹 IT Italiano (it)",
-            "es": "🇪🇸 ES Español (es)",
-            "fr": "🇫🇷 FR Français (fr)",
-            "pt": "🇧🇷 BR Português (pt)",
-            "zhs": "🇨🇳 CN 简体中文 (zhs)",
-            "ru": "🇷🇺 RU Русский (ru)",
-            "zht": "🇹🇼 TW 繁體中文 (zht)",
-            "ko": "🇰🇷 KR 한국어 (ko)"
+            "en": "US English (en)",
+            "ja": "JP 日本語 (ja)",
+            "de": "DE Deutsch (de)",
+            "it": "IT Italiano (it)",
+            "es": "ES Español (es)",
+            "fr": "FR Français (fr)",
+            "pt": "BR Português (pt)",
+            "zhs": "CN 简体中文 (zhs)",
+            "ru": "RU Русский (ru)",
+            "zht": "TW 繁體中文 (zht)",
+            "ko": "KR 한국어 (ko)"
         }
         
         for l_code in sorted_locales:
@@ -1346,7 +1412,7 @@ def render_dashboard(tracker: TrafficTracker):
                 output.append(f"  {DIM}No AI citations recorded in the past 7 days.{RESET}")
             else:
                 for cit in cits:
-                    b_str = f"{YELLOW}{BOLD}⭐ {cit['badge']:<14}{RESET}"
+                    b_str = f"{YELLOW}{BOLD}[CIT] {cit['badge']:<12}{RESET}"
                     t_str = f"{DIM}{cit['time']}{RESET}"
                     lat_str = f"({cit['lat']:3d}ms)" if cit.get('lat') else "  -   "
                     rt = cit.get("route", classify_route(cit.get("path", "")))
@@ -1398,6 +1464,22 @@ def check_keyboard_input(tracker: TrafficTracker):
                         tracker.selected_filter = "all"
                     else:
                         tracker.selected_filter = "citations"
+                        tracker.selected_route_filter = "all"
+                        tracker.selected_type_filter = "all"
+                    render_dashboard(tracker)
+                elif ch in (b'9',):
+                    if tracker.selected_filter == "siteblaster":
+                        tracker.selected_filter = "all"
+                    else:
+                        tracker.selected_filter = "siteblaster"
+                        tracker.selected_route_filter = "all"
+                        tracker.selected_type_filter = "all"
+                    render_dashboard(tracker)
+                elif ch in (b'0',):
+                    if tracker.selected_filter == "shapbot":
+                        tracker.selected_filter = "all"
+                    else:
+                        tracker.selected_filter = "shapbot"
                         tracker.selected_route_filter = "all"
                         tracker.selected_type_filter = "all"
                     render_dashboard(tracker)
@@ -1496,12 +1578,9 @@ def tail_log_file(tracker: TrafficTracker, from_now: bool = False):
                 if not probe_line:
                     high = mid - 1
                     continue
-                m = LOG_REGEX.match(probe_line)
-                if not m:
-                    high = mid - 1
-                    continue
+                ts_token = probe_line.split(" ", 1)[0]
                 try:
-                    probe_ts = datetime.fromisoformat(m.group("ts"))
+                    probe_ts = datetime.fromisoformat(ts_token)
                 except Exception:
                     high = mid - 1
                     continue
@@ -1526,10 +1605,11 @@ def tail_log_file(tracker: TrafficTracker, from_now: bool = False):
                     badge = m.group("badge")
                     status = int(m.group("status"))
                     path = m.group("path")
-                    ct = m.group("ct") or ""
+                    surf_tag, fmt_tag = parse_log_tags(m.group("tags"))
+                    ct = f"[{fmt_tag}]" if fmt_tag else ""
                     cat = classify_badge(badge, ip, path, ct)
                     lat_val = int(m.group("lat")) if m.group("lat") else 0
-                    tracker.add_request(ts, cat, status, path, ip, badge, ct, lat_val)
+                    tracker.add_request(ts, cat, status, path, ip, badge, ct, lat_val, surf_tag)
         while True:
             line = f.readline()
             if line:
@@ -1546,10 +1626,11 @@ def tail_log_file(tracker: TrafficTracker, from_now: bool = False):
                         status = int(m.group("status"))
                         method = m.group("method")
                         path = m.group("path")
-                        ct = m.group("ct") or ""
+                        surf_tag, fmt_tag = parse_log_tags(m.group("tags"))
+                        ct = f"[{fmt_tag}]" if fmt_tag else ""
                         cat = classify_badge(badge, ip, path, ct)
                         lat_val = int(m.group("lat")) if m.group("lat") else 0
-                        tracker.add_request(ts, cat, status, path, ip, badge, ct, lat_val)
+                        tracker.add_request(ts, cat, status, path, ip, badge, ct, lat_val, surf_tag)
             else:
                 time.sleep(0.1)
 

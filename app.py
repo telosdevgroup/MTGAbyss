@@ -2,6 +2,8 @@ import os
 import glob
 import re
 import json
+import csv
+import io
 import asyncio
 import secrets
 import random
@@ -145,8 +147,7 @@ async def vector_embedding(identifier: str):
 
     # 2. Resolve oracle_id via cards prints collection if identifier was printing-slug or name
     if not doc:
-        pattern = slug_to_name_regex(clean_id)
-        card_doc = db["cards"].find_one({"$or": [{"slug": clean_id}, {"name": pattern}]})
+        card_doc = find_card_by_slug(db, clean_id)
         if card_doc and card_doc.get("oracle_id"):
             doc = db["card_embeddings_8b"].find_one({"oracle_id": card_doc["oracle_id"]})
 
@@ -291,6 +292,9 @@ async def serve_image(rest_of_path: str):
         def _lookup_card():
             db = get_mongo_db()
             return db["cards"].find_one(
+                {"lang": "en", "$or": [{"slug": slug_or_name}, {"name": clean_name}]},
+                {"image_uris": 1, "card_faces": 1, "raw": 1}
+            ) or db["cards"].find_one(
                 {"$or": [{"slug": slug_or_name}, {"name": clean_name}]},
                 {"image_uris": 1, "card_faces": 1, "raw": 1}
             )
@@ -499,6 +503,8 @@ def get_caller_badge(request: Request) -> str:
         return "[ChatGPT-User]"
     if "perplexity-user" in ua:
         return "[Perplexity-User]"
+    if "shap-user" in ua:
+        return "[Shap-User]"
     if "claude-searchbot" in ua or "claude-search" in ua:
         return "[Claude-Search]"
     if "oai-searchbot" in ua or "oai-search" in ua:
@@ -538,9 +544,23 @@ def get_caller_badge(request: Request) -> str:
         return "[Applebot]"
     if "amazonbot" in ua:
         return "[Amazonbot]"
+    if "shapbot" in ua or "parallel" in ua:
+        return "[AI:ShapBot]"
     if any(c in ua for c in ("cohere-ai", "cohere")):
         return "[Cohere]"
-    if any(d in ua for d in ("deepseek", "mistral")):
+    if "ccbot" in ua or "commoncrawl" in ua:
+        return "[AI:CommonCrawl]"
+    if "diffbot" in ua:
+        return "[AI:Diffbot]"
+    if "youbot" in ua:
+        return "[AI:YouBot]"
+    if "imagesift" in ua:
+        return "[AI:Imagesift]"
+    if "deepseek" in ua:
+        return "[AI:DeepSeek]"
+    if "mistral" in ua:
+        return "[AI:Mistral]"
+    if any(d in ua for d in ("ai2bot", "anthropic")):
         return "[AI:Other]"
 
     # 4. Search Engines & Web Crawlers
@@ -554,6 +574,12 @@ def get_caller_badge(request: Request) -> str:
         return "[Crawler:Sogou]"
     if "seznam" in ua:
         return "[Crawler:Seznam]"
+    if "petalbot" in ua:
+        return "[Crawler:Petal]"
+    if "yeti" in ua or "naver" in ua:
+        return "[Crawler:Naver]"
+    if "archive.org_bot" in ua or "ia_archiver" in ua:
+        return "[Crawler:ArchiveOrg]"
 
     # 5. Social Media Embed & Link Preview Crawlers
     if "discordbot" in ua:
@@ -581,6 +607,9 @@ def get_caller_badge(request: Request) -> str:
     if "mj12bot" in ua:
         return "[Scraper:MJ12]"
 
+    if any(f in ua for f in ("feedbin", "inoreader", "newsblur", "feedly")):
+        return "[FeedFetcher]"
+
     if "avascry-cachewarmer" in ua:
         return "[CacheWarmer]"
         
@@ -590,6 +619,8 @@ def get_caller_badge(request: Request) -> str:
     path_req = request.url.path.lower()
     if any(p in path_req for p in ("/ads.txt", "/app-ads.txt", "/sellers.json", "/security.txt")):
         return "[Scanner:Ad/Sec]"
+    if any(s in ua for s in ("censys", "shodan", "netcraft", "qualys", "zgrab")):
+        return "[Scanner:Sec]"
 
     if any(s in ua for s in ("python", "requests", "aiohttp", "curl", "wget", "httpclient", "go-http-client", "node-fetch", "urllib", "axios", "postman")):
         return "[Dev:Script]"
@@ -622,41 +653,77 @@ async def request_logger_middleware(request: Request, call_next):
     status = response.status_code
     
     res_ct = response.headers.get("content-type", "").lower()
-    if path.startswith("/vector") or "/vector/" in path:
-        type_tag = "[VEC]"
-    elif "text/markdown" in res_ct or path.endswith(".md"):
-        type_tag = "[MD]"
-    elif "text/html" in res_ct:
-        type_tag = "[HTML]"
-    elif "/feed/" in path or "rss" in res_ct or path.endswith(".rss"):
-        type_tag = "[RSS]"
-    elif "xml" in res_ct or path.endswith(".xml"):
-        type_tag = "[XML]"
-    elif "application/json" in res_ct or path.endswith(".json"):
-        type_tag = "[JSON]"
-    elif "text/css" in res_ct or path.endswith(".css"):
-        type_tag = "[CSS]"
-    elif "javascript" in res_ct or path.endswith(".js"):
-        type_tag = "[JS]"
-    elif "font" in res_ct or path.endswith((".woff", ".woff2", ".ttf", ".eot", ".otf")):
-        type_tag = "[FONT]"
-    elif "text/csv" in res_ct or path.endswith((".csv", ".tsv")):
-        type_tag = "[CSV]"
-    elif path.endswith((".zip", ".tar.gz", ".gz", ".tar")):
-        type_tag = "[ZIP]"
-    elif "image/" in res_ct or path.endswith((".jpg", ".jpeg", ".png", ".webp", ".gif", ".ico", ".svg")):
-        type_tag = "[IMG]"
-    elif "text/plain" in res_ct or path.endswith(".txt") or "/robots.txt" in path or "/llms.txt" in path:
-        type_tag = "[TXT]"
-    else:
-        type_tag = ""
     
-    log_line = f"{ip:<28} {badge:<18} {status} ({duration_ms:>4.0f}ms) {type_tag:<6} -> {method} {path}"
-    print(log_line, flush=True)
+    # Classify surface and assign color-coded 4-letter badges
+    clean_p = path.lower().split("?")[0]
+    if "image/" in res_ct or clean_p.startswith(("/images/", "/image/")) or clean_p.endswith((".jpg", ".jpeg", ".png", ".webp", ".gif", ".ico", ".svg")):
+        type_badge = "\033[94m[IMG ]\033[0m"
+        raw_type = "[IMG ]"
+    elif clean_p.startswith(("/printing/", "/card/")):
+        type_badge = "\033[92m\033[1m[PRIN]\033[0m"
+        raw_type = "[PRIN]"
+    elif clean_p.startswith("/similar"):
+        type_badge = "\033[95m\033[1m[SIM ]\033[0m"
+        raw_type = "[SIM ]"
+    elif clean_p.startswith("/vector"):
+        type_badge = "\033[96m\033[1m[VECT]\033[0m"
+        raw_type = "[VECT]"
+    elif clean_p.startswith("/commander"):
+        type_badge = "\033[93m\033[1m[CMDR]\033[0m"
+        raw_type = "[CMDR]"
+    elif clean_p.startswith("/artist"):
+        type_badge = "\033[94m\033[1m[ARTS]\033[0m"
+        raw_type = "[ARTS]"
+    elif clean_p.startswith("/set"):
+        type_badge = "\033[93m[SETS]\033[0m"
+        raw_type = "[SETS]"
+    elif clean_p.startswith(("/sitemap", "/robots.txt", "/llms")) or clean_p.endswith((".xml", ".txt")):
+        type_badge = "\033[93m[MAP ]\033[0m"
+        raw_type = "[MAP ]"
+    elif clean_p.startswith("/deck"):
+        type_badge = "\033[95m[DECK]\033[0m"
+        raw_type = "[DECK]"
+    elif clean_p in ("/", ""):
+        type_badge = "\033[96m[HOME]\033[0m"
+        raw_type = "[HOME]"
+    elif clean_p.endswith((".css", ".js", ".woff", ".woff2", ".ttf")):
+        type_badge = "\033[2m[ASST]\033[0m"
+        raw_type = "[ASST]"
+    else:
+        type_badge = "\033[97m[PAGE]\033[0m"
+        raw_type = "[PAGE]"
+    # Format tag (HTML, MD, JSON, IMG, etc.)
+    if "text/markdown" in res_ct or clean_p.endswith(".md"):
+        fmt_tag = "\033[95m[MD  ]\033[0m"
+        raw_fmt = "[MD  ]"
+    elif "application/json" in res_ct or clean_p.endswith(".json"):
+        fmt_tag = "\033[93m[JSON]\033[0m"
+        raw_fmt = "[JSON]"
+    elif "image/" in res_ct or clean_p.endswith((".jpg", ".jpeg", ".png", ".webp", ".gif", ".ico", ".svg")):
+        fmt_tag = "\033[94m[IMG ]\033[0m"
+        raw_fmt = "[IMG ]"
+    elif "text/plain" in res_ct or clean_p.endswith(".txt"):
+        fmt_tag = "\033[93m[TXT ]\033[0m"
+        raw_fmt = "[TXT ]"
+    elif clean_p.endswith((".xml", ".rss")):
+        fmt_tag = "\033[93m[XML ]\033[0m"
+        raw_fmt = "[XML ]"
+    elif clean_p.endswith((".css", ".js", ".woff", ".woff2", ".ttf")):
+        fmt_tag = "\033[2m[ASST]\033[0m"
+        raw_fmt = "[ASST]"
+    else:
+        fmt_tag = "\033[96m[HTML]\033[0m"
+        raw_fmt = "[HTML]"
+    
+    raw_ua = request.headers.get("user-agent", "").replace("\r", " ").replace("\n", " ").strip()
+    ua_suffix = f' "{raw_ua}"' if raw_ua else ""
+    full_audit_line = f"{ip:<28} {badge:<18} {status} ({duration_ms:>4.0f}ms) {raw_type:<6} {raw_fmt:<6} -> {method} {path}"
+    console_line = f"{ip:<22} {badge:<16} {type_badge} {fmt_tag} {path}"
+    print(console_line, flush=True)
 
     try:
         with open(ACCESS_LOG_PATH, "a", encoding="utf-8") as f_log:
-            f_log.write(f"{datetime.now(timezone.utc).isoformat()} {log_line}\n")
+            f_log.write(f"{datetime.now(timezone.utc).isoformat()} {full_audit_line}{ua_suffix}\n")
     except Exception:
         pass
     return response
@@ -795,15 +862,39 @@ async def background_cache_card_images(slug_name: str, normal_url: Optional[str]
 def resolve_card_images(card_doc: dict, background_tasks: Optional[BackgroundTasks] = None) -> Tuple[str, str, str]:
     """
     Check if local images exist on disk.
-    If yes -> return local paths (/images/normal/..., /images/large/...).
-    If no  -> return Scryfall direct CDN URLs (small, normal, large).
+    Prioritizes exact set-specific printing images ({card_slug}-{set_name}* or {card_slug}-{set_code}*),
+    falling back to generic card slug, and finally Scryfall direct CDN URLs.
     """
     card_faces = card_doc.get("card_faces") or card_doc.get("raw", {}).get("card_faces", [])
     has_faces = bool(card_faces)
     slug_name = get_image_slug(card_doc, has_faces)
 
-    normal_local_file = f"public/images/normal/{slug_name}"
-    large_local_file = f"public/images/large/{slug_name}"
+    # 1. Check for set-specific printing match via in-memory prefix map
+    c_slug = slugify(card_doc.get("name") or "")
+    set_slug = slugify(card_doc.get("set_name") or "")
+    set_code = (card_doc.get("set") or "").lower()
+    c_num = str(card_doc.get("collector_number") or "").strip()
+
+    normal_filename = None
+    large_filename = None
+
+    for prefix_try in [
+        f"{c_slug}-{set_slug}-{c_num}" if c_num else None,
+        f"{c_slug}-{set_code}-{c_num}" if c_num else None,
+        f"{c_slug}-{set_slug}",
+        f"{c_slug}-{set_code}"
+    ]:
+        if not prefix_try:
+            continue
+        if not normal_filename and prefix_try in IMAGE_PREFIX_MAP.get("normal", {}):
+            normal_filename = IMAGE_PREFIX_MAP["normal"][prefix_try]
+        if not large_filename and prefix_try in IMAGE_PREFIX_MAP.get("large", {}):
+            large_filename = IMAGE_PREFIX_MAP["large"][prefix_try]
+        if normal_filename and large_filename:
+            break
+
+    normal_local_file = f"public/images/normal/{normal_filename or slug_name}"
+    large_local_file = f"public/images/large/{large_filename or slug_name}"
 
     normal_exists = os.path.exists(normal_local_file)
     large_exists = os.path.exists(large_local_file)
@@ -812,7 +903,7 @@ def resolve_card_images(card_doc: dict, background_tasks: Optional[BackgroundTas
     scryfall_small, scryfall_normal, scryfall_large = get_scryfall_direct_uris(card_doc)
 
     # Schedule background caching if Scryfall URLs exist
-    if background_tasks and (scryfall_normal or scryfall_large):
+    if background_tasks and not normal_exists and (scryfall_normal or scryfall_large):
         background_tasks.add_task(
             background_cache_card_images,
             slug_name,
@@ -821,8 +912,8 @@ def resolve_card_images(card_doc: dict, background_tasks: Optional[BackgroundTas
         )
 
     # Return local if that specific file exists, else hotlink CDN URL, else placeholder
-    img_url = f"/images/normal/{slug_name}" if normal_exists else (scryfall_normal or f"/images/normal/{slug_name}")
-    large_img_url = f"/images/large/{slug_name}" if large_exists else (scryfall_large or img_url)
+    img_url = f"/images/normal/{normal_filename or slug_name}" if normal_exists else (scryfall_normal or f"/images/normal/{slug_name}")
+    large_img_url = f"/images/large/{large_filename or slug_name}" if large_exists else (scryfall_large or img_url)
     small_img_url = scryfall_small or img_url
 
     return small_img_url, img_url, large_img_url
@@ -1715,6 +1806,24 @@ async def commander_chooser(request: Request):
         }
     )
 
+@app.get("/about", response_class=HTMLResponse)
+async def about_page(request: Request):
+    lang = i18n.get_locale(request)
+    return templates.TemplateResponse(
+        request=request,
+        name="about.html",
+        context={"current_lang": lang, "active_nav": "about"}
+    )
+
+@app.get("/contact", response_class=HTMLResponse)
+async def contact_page(request: Request):
+    lang = i18n.get_locale(request)
+    return templates.TemplateResponse(
+        request=request,
+        name="contact.html",
+        context={"current_lang": lang, "active_nav": "contact"}
+    )
+
 @app.get("/privacy", response_class=HTMLResponse)
 async def privacy_policy(request: Request):
     lang = i18n.get_locale(request)
@@ -2239,6 +2348,13 @@ async def commander_discover(request: Request):
 @app.get("/card/{slug}")
 async def card_name_shortcut(request: Request, slug: str):
     """Clean shortcut redirecting /card/<name> to the primary/earliest Oracle printing of that card."""
+    ext = ""
+    for check_ext in (".json", ".md", ".xml", ".csv"):
+        if slug.lower().endswith(check_ext):
+            ext = check_ext
+            slug = slug[:-len(check_ext)]
+            break
+
     db = get_mongo_db()
     unslugged = slug.replace('-', ' ')
     pattern = slug_to_name_regex(slug)
@@ -2255,7 +2371,11 @@ async def card_name_shortcut(request: Request, slug: str):
             if not card:
                 card = db["cards"].find_one({"slug": card_slug})
     if not card:
+        card = db["cards"].find_one({"name": unslugged.title()})
+    if not card:
         card = db["cards"].find_one({"name": unslugged})
+    if not card:
+        card = db["cards"].find_one({"name": pattern})
     
     if card:
         oracle_id = card.get("oracle_id")
@@ -2268,10 +2388,10 @@ async def card_name_shortcut(request: Request, slug: str):
                 oracle_card = card
             c_slug = slugify(oracle_card.get("name") or "")
             c_set = (oracle_card.get("set") or "").lower()
-            return RedirectResponse(url=f"/printing/{c_slug}-{c_set}", status_code=303)
+            return RedirectResponse(url=f"/printing/{c_slug}-{c_set}{ext}", status_code=303)
             
     # Fallback to direct printing route
-    return RedirectResponse(url=f"/printing/{slug}", status_code=303)
+    return RedirectResponse(url=f"/printing/{slug}{ext}", status_code=303)
 
 def format_card_markdown(card_doc: dict, printings_count: int = 1, rulings: list = None, similar_cards: list = None) -> str:
     """Format structured, machine-native Markdown with YAML frontmatter for AI agents and LLMs."""
@@ -2378,6 +2498,117 @@ def format_card_markdown(card_doc: dict, printings_count: int = 1, rulings: list
 
     return "\n".join(lines)
 
+def format_card_cockatrice_xml(card: dict) -> bytes:
+    """Export single card printing as Cockatrice v4 XML database for desktop MTG simulators."""
+    set_code = (card.get("set") or "unk").strip().upper()
+    set_name = card.get("set_name") or set_code
+    released_at = card.get("released_at") or "2026-01-01"
+
+    root = ET.Element("cockatrice_carddatabase", version="4")
+    sets_elem = ET.SubElement(root, "sets")
+    set_elem = ET.SubElement(sets_elem, "set")
+    ET.SubElement(set_elem, "name").text = set_code
+    ET.SubElement(set_elem, "longname").text = set_name
+    ET.SubElement(set_elem, "settype").text = "Expansion"
+    ET.SubElement(set_elem, "releasedate").text = str(released_at)
+
+    cards_elem = ET.SubElement(root, "cards")
+    card_elem = ET.SubElement(cards_elem, "card")
+    c_name = card.get("printed_name") or card.get("name") or "Card"
+    ET.SubElement(card_elem, "name").text = c_name
+
+    text = card.get("oracle_text") or card.get("printed_text")
+    if not text and card.get("card_faces"):
+        text = "\n//\n".join(f.get("oracle_text", "") or f.get("printed_text", "") for f in card["card_faces"])
+    ET.SubElement(card_elem, "text").text = text or ""
+
+    prop = ET.SubElement(card_elem, "prop")
+    type_line = card.get("type_line") or ""
+    ET.SubElement(prop, "type").text = type_line
+    main_type = type_line.split("—")[0].strip().split()[-1] if type_line else "Card"
+    ET.SubElement(prop, "maintype").text = main_type
+
+    mana_cost = card.get("mana_cost")
+    if not mana_cost and card.get("card_faces"):
+        mana_cost = " // ".join(f.get("mana_cost", "") for f in card["card_faces"])
+    ET.SubElement(prop, "manacost").text = mana_cost or ""
+    ET.SubElement(prop, "cmc").text = str(int(card.get("cmc", 0.0)))
+    ET.SubElement(prop, "colors").text = "".join(card.get("colors") or [])
+
+    pt = f"{card.get('power')}/{card.get('toughness')}" if card.get("power") is not None else ""
+    ET.SubElement(prop, "pt").text = pt
+    ET.SubElement(prop, "loyalty").text = str(card.get("loyalty") or "")
+
+    legalities = card.get("legalities") or {}
+    for fmt in ["standard", "commander", "modern", "pioneer", "legacy", "vintage", "pauper"]:
+        status = legalities.get(fmt, "not_legal")
+        ET.SubElement(prop, f"format-{fmt}").text = "legal" if status == "legal" else ("banned" if status == "banned" else "not_legal")
+
+    c_slug = card.get("slug") or slugify(card.get("name") or c_name)
+    img_slug = card.get("image_slug") or f"{c_slug}-{set_code.lower()}"
+    img_url = f"https://avascry.com/images/normal/{img_slug}.jpg"
+    set_tag = ET.SubElement(card_elem, "set", picURL=img_url)
+    set_tag.text = set_code
+
+    t_low = type_line.lower()
+    if "land" in t_low:
+        tablerow = "0"
+    elif "creature" in t_low:
+        tablerow = "2"
+    elif "planeswalker" in t_low or "battle" in t_low:
+        tablerow = "3"
+    else:
+        tablerow = "1"
+    ET.SubElement(card_elem, "tablerow").text = tablerow
+
+    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
+
+def format_card_csv(card: dict) -> str:
+    """Format single card printing as standard RFC 4180 CSV."""
+    output = io.StringIO()
+    writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
+    headers = [
+        "name", "set", "set_name", "collector_number", "rarity",
+        "mana_cost", "cmc", "type_line", "oracle_text",
+        "power", "toughness", "loyalty", "artist",
+        "image_url", "canonical_url"
+    ]
+    writer.writerow(headers)
+
+    c_name = card.get("name") or "Card"
+    set_code = (card.get("set") or "").upper()
+    set_name = card.get("set_name") or set_code
+    collector_number = card.get("collector_number") or ""
+    rarity = (card.get("rarity") or "common").capitalize()
+    mana_cost = card.get("mana_cost") or ""
+    if not mana_cost and card.get("card_faces"):
+        mana_cost = " // ".join(f.get("mana_cost", "") for f in card["card_faces"])
+    cmc = card.get("cmc", 0.0)
+    type_line = card.get("type_line") or ""
+    oracle_text = card.get("oracle_text") or ""
+    if not oracle_text and card.get("card_faces"):
+        oracle_text = " // ".join(f.get("oracle_text", "") for f in card["card_faces"])
+    power = str(card.get("power") or "")
+    toughness = str(card.get("toughness") or "")
+    loyalty = str(card.get("loyalty") or "")
+    artist = card.get("artist") or "Unknown"
+
+    slug = card.get("slug") or slugify(c_name)
+    set_lower = set_code.lower()
+    printing_slug = f"{slug}-{set_lower}" if set_lower else slug
+    img_slug = card.get("image_slug") or printing_slug
+    img_url = f"https://avascry.com/images/normal/{img_slug}.jpg"
+    canonical_url = f"https://avascry.com/printing/{printing_slug}"
+
+    writer.writerow([
+        c_name, set_code, set_name, collector_number, rarity,
+        mana_cost, cmc, type_line, oracle_text,
+        power, toughness, loyalty, artist,
+        img_url, canonical_url
+    ])
+    return output.getvalue()
+
+
 def slug_to_name_regex(slug: str) -> re.Pattern:
     """Build a regex that matches card names regardless of stripped apostrophes, exclamation points, question marks, commas, dashes, ampersands, or // slashes."""
     clean = slug.strip().lower()
@@ -2385,6 +2616,47 @@ def slug_to_name_regex(slug: str) -> re.Pattern:
     chars = [re.escape(c) if c != '-' else r'[\s\W_]+' for c in clean]
     pattern_str = r'^[\s\W_]*' + r'[\s\W_]*'.join(chars) + r'[\s\W_]*$'
     return re.compile(pattern_str, re.IGNORECASE)
+
+def find_card_by_slug(db, slug: str) -> Optional[dict]:
+    """
+    High-performance multi-tier card lookup in MongoDB:
+    1. Exact Title Case (1ms on indexed name)
+    2. Exact unslugged as-is (1ms)
+    3. Direct slug match (1ms)
+    4. Comma/punctuation variants (e.g. 'Jace, the Mind Sculptor') (1-2ms)
+    5. Fallback to unanchored regex (only for uncommon punctuation)
+    """
+    clean = slug.strip()
+    unslugged = clean.replace('-', ' ')
+    title_name = unslugged.title()
+    
+    # 1. Exact Title Case
+    card = db["cards"].find_one({"name": title_name})
+    if card:
+        return card
+        
+    # 2. Exact unslugged
+    if unslugged != title_name:
+        card = db["cards"].find_one({"name": unslugged})
+        if card:
+            return card
+
+    # 3. Direct slug match
+    card = db["cards"].find_one({"slug": clean})
+    if card:
+        return card
+        
+    # 4. Comma variants (e.g. "Jace, the Mind Sculptor", "Urza, Lord High Artificer")
+    words = clean.split('-')
+    if len(words) >= 2:
+        rest = " ".join(w if w.lower() in ("the", "of", "in", "to", "at", "for", "and", "a", "an") else w.capitalize() for w in words[1:])
+        card = db["cards"].find_one({"name": f"{words[0].capitalize()}, {rest}"})
+        if card:
+            return card
+            
+    # 5. Fallback to full regex
+    pattern = slug_to_name_regex(clean)
+    return db["cards"].find_one({"name": pattern})
 
 KNOWN_LANG_CODES = {'ja', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ko', 'zhs', 'zht'}
 
@@ -2396,15 +2668,26 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
 
     is_md = False
     is_json = False
+    is_xml = False
+    is_csv = False
     if identifier.lower().endswith(".md"):
         identifier = identifier[:-3]
         is_md = True
     elif identifier.lower().endswith(".json"):
         identifier = identifier[:-5]
         is_json = True
+    elif identifier.lower().endswith(".xml"):
+        identifier = identifier[:-4]
+        is_xml = True
+    elif identifier.lower().endswith(".csv"):
+        identifier = identifier[:-4]
+        is_csv = True
 
     identifier = identifier.strip()
     if not identifier or identifier in ("", ".", "..", "-"):
+        raise HTTPException(status_code=404, detail="Card printing not found")
+    # Guard against punctuation-only strings unless it's the genuine unhinged card '_____'
+    if not re.search(r'[a-zA-Z0-9]', identifier) and identifier != "_____":
         raise HTTPException(status_code=404, detail="Card printing not found")
 
     # 1. Direct indexed match by printing_slug or id or slug
@@ -2469,18 +2752,28 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
                     ]
                 })
 
-        # 3b. Check <slug>-<set>
+        # 3b. Check <slug>-<set> (prefer English)
         if not card and len(parts) >= 2:
             card_slug, set_code = "-".join(parts[:-1]), parts[-1].lower()
             pattern = slug_to_name_regex(card_slug)
             card = db["cards"].find_one({
                 "set": set_code,
+                "lang": "en",
                 "$or": [
                     {"slug": card_slug},
                     {"name": pattern},
                     {"card_faces.0.name": pattern}
                 ]
             })
+            if not card:
+                card = db["cards"].find_one({
+                    "set": set_code,
+                    "$or": [
+                        {"slug": card_slug},
+                        {"name": pattern},
+                        {"card_faces.0.name": pattern}
+                    ]
+                })
 
         # 3c. If set-specific match was not in cards, check card_prints (which contains all historical printings)
         if not card and len(parts) >= 2:
@@ -2497,7 +2790,7 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
                 cp_doc = db["card_prints"].find_one({"set": set_code, "name": pattern, "lang": "en"})
 
             if cp_doc and cp_doc.get("oracle_id"):
-                oracle_card = db["cards"].find_one({"oracle_id": cp_doc["oracle_id"]})
+                oracle_card = db["cards"].find_one({"oracle_id": cp_doc["oracle_id"], "lang": "en"}) or db["cards"].find_one({"oracle_id": cp_doc["oracle_id"]})
                 if oracle_card:
                     merged = dict(oracle_card)
                     for k in ["id", "set", "set_name", "collector_number", "released_at", "lang", "image_uris", "image_slug", "card_faces", "printed_name", "flavor_text", "printed_text", "rarity", "artist"]:
@@ -2505,7 +2798,7 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
                             merged[k] = cp_doc[k]
                     card = merged
 
-    # 4. Fallback match by stripping set/lang tokens and searching card name / slug
+    # 4. Fallback match by stripping set/lang tokens and searching card name / slug (prefer English)
     if not card and '-' in clean_ident:
         parts = clean_ident.split('-')
         # Try progressively stripping trailing set / language codes
@@ -2514,6 +2807,13 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
                 base_slug = "-".join(parts[:-num_trailing])
                 pattern = slug_to_name_regex(base_slug)
                 card = db["cards"].find_one({
+                    "lang": "en",
+                    "$or": [
+                        {"slug": base_slug},
+                        {"name": pattern},
+                        {"card_faces.0.name": pattern}
+                    ]
+                }) or db["cards"].find_one({
                     "$or": [
                         {"slug": base_slug},
                         {"name": pattern},
@@ -2523,10 +2823,16 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
                 if card:
                     break
 
-    # 5. Whole collection search by name
+    # 5. Whole collection search by name (prefer English)
     if not card:
         pattern = slug_to_name_regex(clean_ident)
         card = db["cards"].find_one({
+            "lang": "en",
+            "$or": [
+                {"name": pattern},
+                {"card_faces.0.name": pattern}
+            ]
+        }) or db["cards"].find_one({
             "$or": [
                 {"name": pattern},
                 {"card_faces.0.name": pattern}
@@ -2844,7 +3150,9 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
                         "links": {
                             "html": f"https://avascry.com/printing/{sc_p_slug}",
                             "markdown": f"https://avascry.com/printing/{sc_p_slug}.md",
-                            "json": f"https://avascry.com/printing/{sc_p_slug}.json"
+                            "json": f"https://avascry.com/printing/{sc_p_slug}.json",
+                            "xml": f"https://avascry.com/printing/{sc_p_slug}.xml",
+                            "csv": f"https://avascry.com/printing/{sc_p_slug}.csv"
                         }
                     })
                     if len(similar_cards) >= 8:
@@ -2852,13 +3160,21 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
     except Exception as e:
         pass
 
-    # Content Negotiation: Check for AI Agent / LLM requesting Markdown or JSON
+    # Content Negotiation: Check for AI Agent / LLM requesting Markdown, JSON, XML, or CSV
     accept_header = request.headers.get("accept", "").lower()
     requested_format = request.query_params.get("format", "").lower()
     canonical_printing_slug = card.get("printing_slug") or card_vm.get("printing_slug") or identifier
     safe_canonical_slug = safe_header_segment(canonical_printing_slug)
+    link_header_val = (
+        f'</printing/{safe_canonical_slug}.md>; rel="alternate"; type="text/markdown", '
+        f'</printing/{safe_canonical_slug}.json>; rel="alternate"; type="application/json", '
+        f'</printing/{safe_canonical_slug}.xml>; rel="alternate"; type="application/xml", '
+        f'</printing/{safe_canonical_slug}.csv>; rel="alternate"; type="text/csv"'
+    )
 
-    if is_json or "application/json" in accept_header or requested_format == "json":
+    # ONLY return raw data formats if explicitly requested via extension (.json, .md, .xml, .csv) or ?format=
+    # All regular page visits (including browsers sending wildcards or application/xml) MUST receive HTML by default.
+    if is_json or requested_format == "json":
         card_set = (card.get("set") or "").lower()
         card_set_name = card.get("set_name") or card_set.upper()
         card_norm = card_vm.get("image_url") or f"/images/normal/{canonical_printing_slug}.jpg"
@@ -2895,7 +3211,9 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
             "links": {
                 "html": f"https://avascry.com/printing/{canonical_printing_slug}",
                 "markdown": f"https://avascry.com/printing/{canonical_printing_slug}.md",
-                "json": f"https://avascry.com/printing/{canonical_printing_slug}.json"
+                "json": f"https://avascry.com/printing/{canonical_printing_slug}.json",
+                "xml": f"https://avascry.com/printing/{canonical_printing_slug}.xml",
+                "csv": f"https://avascry.com/printing/{canonical_printing_slug}.csv"
             },
             "legalities": card.get("legalities") or {},
             "rulings": [
@@ -2913,12 +3231,12 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
             content=card_json,
             headers={
                 "Vary": "Accept",
-                "Link": f'</printing/{safe_canonical_slug}.md>; rel="alternate"; type="text/markdown", </printing/{safe_canonical_slug}.json>; rel="alternate"; type="application/json"',
+                "Link": link_header_val,
                 "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
             }
         )
 
-    if is_md or "text/markdown" in accept_header or "text/x-markdown" in accept_header or requested_format in ("md", "markdown"):
+    if is_md or requested_format in ("md", "markdown"):
         md_text = format_card_markdown(card, printings_count=len(printings), rulings=rulings, similar_cards=similar_cards)
         return Response(
             content=md_text,
@@ -2926,7 +3244,33 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
             headers={
                 "Vary": "Accept",
                 "X-Markdown-Tokens": str(len(md_text.split())),
-                "Link": f'</printing/{safe_canonical_slug}.json>; rel="alternate"; type="application/json"',
+                "Link": link_header_val,
+                "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+            }
+        )
+
+    if is_xml or requested_format in ("xml", "cockatrice"):
+        xml_bytes = format_card_cockatrice_xml(card)
+        return Response(
+            content=xml_bytes,
+            media_type="application/xml",
+            headers={
+                "Vary": "Accept",
+                "Link": link_header_val,
+                "Content-Disposition": f'inline; filename="{safe_canonical_slug}_cockatrice.xml"',
+                "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+            }
+        )
+
+    if is_csv or requested_format == "csv":
+        csv_text = format_card_csv(card)
+        return Response(
+            content=csv_text,
+            media_type="text/csv; charset=utf-8",
+            headers={
+                "Vary": "Accept",
+                "Link": link_header_val,
+                "Content-Disposition": f'inline; filename="{safe_canonical_slug}.csv"',
                 "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
             }
         )
@@ -2956,7 +3300,7 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
             "is_saved": is_saved
         },
         headers={
-            "Link": f'</printing/{safe_canonical_slug}.md>; rel="alternate"; type="text/markdown", </printing/{safe_canonical_slug}.json>; rel="alternate"; type="application/json"'
+            "Link": link_header_val
         }
     )
 
@@ -2970,6 +3314,18 @@ async def printing_detail_markdown(request: Request, slug: str, background_tasks
 @app.head("/printing/{slug}.json")
 async def printing_detail_json(request: Request, slug: str, background_tasks: BackgroundTasks):
     request.scope["query_string"] = b"format=json"
+    return await printing_detail(request, slug, background_tasks)
+
+@app.get("/printing/{slug}.xml")
+@app.head("/printing/{slug}.xml")
+async def printing_detail_xml(request: Request, slug: str, background_tasks: BackgroundTasks):
+    request.scope["query_string"] = b"format=xml"
+    return await printing_detail(request, slug, background_tasks)
+
+@app.get("/printing/{slug}.csv")
+@app.head("/printing/{slug}.csv")
+async def printing_detail_csv(request: Request, slug: str, background_tasks: BackgroundTasks):
+    request.scope["query_string"] = b"format=csv"
     return await printing_detail(request, slug, background_tasks)
 
 @app.head("/printing/{identifier}")
@@ -3054,8 +3410,7 @@ async def similar_cards_page(slug: str, request: Request, background_tasks: Back
     if not slug or slug in ("", ".", "..", "-"):
         raise HTTPException(status_code=404, detail="Card not found")
 
-    pattern = slug_to_name_regex(slug)
-    card = db["cards"].find_one({"$or": [{"slug": slug}, {"name": pattern}]})
+    card = find_card_by_slug(db, slug)
     if not card:
         raise HTTPException(status_code=404, detail="Card not found")
         
@@ -3081,7 +3436,7 @@ async def similar_cards_page(slug: str, request: Request, background_tasks: Back
         
         c_docs = list(db["cards"].find(
             {"oracle_id": {"$in": sim_oids[:60]}, "lang": "en"},
-            {"name": 1, "slug": 1, "set": 1, "image_uris": 1, "card_faces": 1, "type_line": 1, "mana_cost": 1, "oracle_id": 1, "image_slug": 1, "raw": 1}
+            {"name": 1, "slug": 1, "set": 1, "set_name": 1, "collector_number": 1, "image_uris": 1, "card_faces": 1, "type_line": 1, "mana_cost": 1, "oracle_id": 1, "image_slug": 1}
         ))
         
         doc_by_oid = {}
@@ -3342,6 +3697,9 @@ async def set_detail(request: Request, code: str, background_tasks: BackgroundTa
     if not cards_cursor:
         cards_cursor = list(db["cards"].find({"set": set_code}, projection).limit(300))
 
+    if not cards_cursor:
+        raise HTTPException(status_code=404, detail=f"Set '{set_code}' not found")
+
     cards = []
     set_name = set_code.upper()
     for doc in cards_cursor:
@@ -3388,9 +3746,12 @@ async def set_detail(request: Request, code: str, background_tasks: BackgroundTa
         formatted_set_cards = []
         for c in cards:
             c_slug = c.get("printing_slug") or slugify(c.get("name") or "card")
-            img_slug = c.get("image_slug") or c_slug
-            c_norm = f"https://avascry.com/images/normal/{img_slug}.jpg"
-            c_large = f"https://avascry.com/images/large/{img_slug}.jpg"
+            c_norm = c.get("image_url") or (c.get("image_uris") and c["image_uris"].get("normal"))
+            if c_norm and c_norm.startswith("/"):
+                c_norm = f"https://avascry.com{c_norm}"
+            c_large = c.get("large_image_url") or (c.get("image_uris") and c["image_uris"].get("large"))
+            if c_large and c_large.startswith("/"):
+                c_large = f"https://avascry.com{c_large}"
                 
             formatted_set_cards.append({
                 "name": c.get("name"),
@@ -3411,17 +3772,25 @@ async def set_detail(request: Request, code: str, background_tasks: BackgroundTa
                 }
             })
 
+        set_info = {
+            "code": set_code,
+            "name": set_name,
+            "links": {
+                "html": f"https://avascry.com/set/{set_code}",
+                "markdown": f"https://avascry.com/set/{set_code}.md",
+                "json": f"https://avascry.com/set/{set_code}.json"
+            }
+        }
+        set_meta = db["sets"].find_one({"code": set_code}, {"blurb": 1, "commander_staples": 1})
+        if set_meta:
+            if set_meta.get("blurb"):
+                set_info["blurb"] = set_meta["blurb"]
+            if set_meta.get("commander_staples"):
+                set_info["commander_staples"] = set_meta["commander_staples"]
+
         return JSONResponse(
             content={
-                "set": {
-                    "code": set_code,
-                    "name": set_name,
-                    "links": {
-                        "html": f"https://avascry.com/set/{set_code}",
-                        "markdown": f"https://avascry.com/set/{set_code}.md",
-                        "json": f"https://avascry.com/set/{set_code}.json"
-                    }
-                },
+                "set": set_info,
                 "total_cards": len(formatted_set_cards),
                 "cards": formatted_set_cards
             },
@@ -3433,6 +3802,9 @@ async def set_detail(request: Request, code: str, background_tasks: BackgroundTa
         )
 
     if is_md or "text/markdown" in accept_header or "text/x-markdown" in accept_header or requested_format in ("md", "markdown"):
+        set_meta = db["sets"].find_one({"code": set_code}, {"blurb": 1})
+        set_blurb = set_meta.get("blurb") if set_meta else None
+
         md_lines = [
             "---",
             f"set_name: \"{set_name}\"",
@@ -3444,10 +3816,15 @@ async def set_detail(request: Request, code: str, background_tasks: BackgroundTa
             f"\n# {set_name} ({set_code.upper()})\n",
             f"- **Set Code:** `{set_code.upper()}`",
             f"- **Total Printings:** {len(cards)}",
-            f"- **JSON API:** https://avascry.com/set/{set_code}.json\n",
+            f"- **JSON API:** https://avascry.com/set/{set_code}.json\n"
+        ]
+        if set_blurb:
+            md_lines.append(f"{set_blurb}\n")
+
+        md_lines.extend([
             "| # | Card Name | Type | Rarity | Mana Cost |",
             "|---|-----------|------|--------|-----------|"
-        ]
+        ])
         for c in cards:
             c_num = c.get("collector_number", "")
             c_name = c.get("name", "")
@@ -3469,7 +3846,7 @@ async def set_detail(request: Request, code: str, background_tasks: BackgroundTa
         )
         
     from spotlight_data import build_set_spotlight
-    spotlight = build_set_spotlight(set_code, set_name, cards)
+    spotlight = build_set_spotlight(set_code, set_name, cards, db=db)
 
     return templates.TemplateResponse(
         request=request,
@@ -3777,9 +4154,9 @@ async def live_gallery_feed():
     # Return a shuffled slice of 40 cards from the 301 cached Oracle cards
     if all_cached:
         shuffled = random.sample(all_cached, min(40, len(all_cached)))
-        return JSONResponse(content={"items": shuffled})
+        return JSONResponse(content={"items": shuffled, "cards": shuffled})
         
-    return JSONResponse(content={"items": []})
+    return JSONResponse(content={"items": [], "cards": []})
 
 
 
@@ -3824,19 +4201,17 @@ async def artist_detail(request: Request, slug: str, background_tasks: Backgroun
             query_all,
             {"name": 1, "set": 1, "set_name": 1, "collector_number": 1, "released_at": 1, "rarity": 1, "type_line": 1, "mana_cost": 1, "image_uris": 1, "image_slug": 1, "artist": 1}
         ).sort("released_at", -1).limit(60))
-    
+
+    if not cards_cursor:
+        raise HTTPException(status_code=404, detail=f"Artist '{artist_name}' not found")
+
     cards = []
     for doc in cards_cursor:
         artist_name = doc.get("artist") or artist_name
         c_name = doc.get("name") or "Card"
         c_set = (doc.get("set") or "").lower()
         c_slug = slugify(c_name)
-        c_imgs = doc.get("image_uris")
-        if not c_imgs and doc.get("card_faces"):
-            c_imgs = doc["card_faces"][0].get("image_uris") or {}
-        c_imgs = c_imgs or {}
-        img_url = c_imgs.get("normal") or (f"/images/normal/{doc.get('image_slug')}.jpg" if doc.get("image_slug") else f"/images/normal/{c_slug}.jpg")
-        large_img_url = c_imgs.get("large") or img_url
+        small_url, norm_url, large_url = resolve_card_images(doc, background_tasks)
         cards.append({
             "name": c_name,
             "set": c_set,
@@ -3847,8 +4222,13 @@ async def artist_detail(request: Request, slug: str, background_tasks: Backgroun
             "mana_cost": doc.get("mana_cost") or "",
             "released_at": doc.get("released_at") or "",
             "printing_slug": f"{c_slug}-{c_set}" if c_set else c_slug,
-            "image_url": img_url,
-            "large_image_url": large_img_url
+            "image_url": norm_url,
+            "large_image_url": large_url,
+            "image_uris": {
+                "small": small_url,
+                "normal": norm_url,
+                "large": large_url
+            }
         })
 
     # Content Negotiation for AI Agents (Accept: text/markdown, application/json, or ?format=)
@@ -3887,17 +4267,25 @@ async def artist_detail(request: Request, slug: str, background_tasks: Backgroun
                 }
             })
 
+        artist_info = {
+            "name": artist_name,
+            "slug": slug,
+            "links": {
+                "html": f"https://avascry.com/artist/{slug}",
+                "markdown": f"https://avascry.com/artist/{slug}.md",
+                "json": f"https://avascry.com/artist/{slug}.json"
+            }
+        }
+        artist_meta = db["artists"].find_one({"slug": slug}, {"blurb": 1, "commander_staples": 1})
+        if artist_meta:
+            if artist_meta.get("blurb"):
+                artist_info["blurb"] = artist_meta["blurb"]
+            if artist_meta.get("commander_staples"):
+                artist_info["commander_staples"] = artist_meta["commander_staples"]
+
         return JSONResponse(
             content={
-                "artist": {
-                    "name": artist_name,
-                    "slug": slug,
-                    "links": {
-                        "html": f"https://avascry.com/artist/{slug}",
-                        "markdown": f"https://avascry.com/artist/{slug}.md",
-                        "json": f"https://avascry.com/artist/{slug}.json"
-                    }
-                },
+                "artist": artist_info,
                 "total_artworks": len(formatted_artist_cards),
                 "cards": formatted_artist_cards
             },
@@ -3909,6 +4297,9 @@ async def artist_detail(request: Request, slug: str, background_tasks: Backgroun
         )
 
     if is_md or "text/markdown" in accept_header or "text/x-markdown" in accept_header or requested_format in ("md", "markdown"):
+        artist_meta = db["artists"].find_one({"slug": slug}, {"blurb": 1})
+        artist_blurb = artist_meta.get("blurb") if artist_meta else None
+
         md_lines = [
             "---",
             f"artist: \"{artist_name}\"",
@@ -3920,10 +4311,15 @@ async def artist_detail(request: Request, slug: str, background_tasks: Backgroun
             f"\n# Magic: The Gathering Cards Illustrated by {artist_name}\n",
             f"- **Illustrator:** {artist_name}",
             f"- **Total Artworks Cataloged:** {len(cards)}",
-            f"- **JSON API:** https://avascry.com/artist/{slug}.json\n",
+            f"- **JSON API:** https://avascry.com/artist/{slug}.json\n"
+        ]
+        if artist_blurb:
+            md_lines.append(f"{artist_blurb}\n")
+
+        md_lines.extend([
             "| # | Card Name | Set | Type | Rarity | Mana Cost | Released |",
             "|---|-----------|-----|------|--------|-----------|----------|"
-        ]
+        ])
         for c in cards:
             c_num = c.get("collector_number") or "-"
             c_name = c.get("name", "")
@@ -3947,7 +4343,7 @@ async def artist_detail(request: Request, slug: str, background_tasks: Backgroun
         )
         
     from spotlight_data import build_artist_spotlight
-    spotlight = build_artist_spotlight(artist_name, slug, cards)
+    spotlight = build_artist_spotlight(artist_name, slug, cards, db=db)
 
     return templates.TemplateResponse(
         request=request,

@@ -4,6 +4,20 @@
 > Canonical URI: https://avascry.com/llms-full.txt
 > Compact Index: https://avascry.com/llms.txt
 
+## Canonical Discovery Manifests
+Machine-readable indexes and authoritative references for autonomous ingestion:
+
+- **Markdown Sitemap Index:** https://avascry.com/sitemap.md
+- **HTML Sitemap Directory:** https://avascry.com/sitemap.html
+- **XML Sitemap Index:** https://avascry.com/sitemap.xml
+- **Comprehensive Rules & Layers (CR 117, 613, 614, 704):** https://avascry.com/rules.md
+- **Format Taxonomy & Banlists:** https://avascry.com/legalities.md
+- **All Sets Directory:** https://avascry.com/sets.md
+- **AI Content Manifest:** https://avascry.com/.well-known/ai-content
+- **Corpus Freshness Heartbeat:** https://avascry.com/heartbeat.txt
+
+## AI Agent Integration & Multimodal Endpoints
+
 AI agents, LLMs, Discord bots, and developers can retrieve token-efficient Markdown payloads or structured JSON across all surfaces:
 
 - **Card Printings:**
@@ -18,22 +32,11 @@ AI agents, LLMs, Discord bots, and developers can retrieve token-efficient Markd
 - **Sets Directory:**
   - Markdown: `https://avascry.com/sets.md`
   - JSON: `https://avascry.com/set/<set-code>.json`
-- **Comprehensive Rules & Errata:**
-  - Markdown: `https://avascry.com/rules.md`
-  - JSON: `https://avascry.com/rules.json`
-- **Format Taxonomy & Banlists:**
-  - Markdown: `https://avascry.com/legalities.md`
-  - JSON: `https://avascry.com/legalities.json`
 - **Cockatrice Desktop Simulator Database:** `https://avascry.com/set/<set-code>/cockatrice.xml`
 - **Live RSS 2.0 Syndication Feeds:**
   - Latest Sets Feed: `https://avascry.com/feed/sets.xml`
   - Latest Rulings Feed: `https://avascry.com/feed/rulings.xml`
 - **Raw 4096-Dim Neural Vector Embeddings (Qwen 8B):** `https://avascry.com/vector/<card-slug>.json`
-- **Corpus Freshness & Polling Heartbeat:** `https://avascry.com/heartbeat.txt`
-- **Markdown Sitemap Index:** `https://avascry.com/sitemap.md`
-- **HTML Sitemap Directory:** `https://avascry.com/sitemap.html`
-- **XML Sitemap Index:** `https://avascry.com/sitemap.xml`
-- **AI Content Manifest:** `https://avascry.com/.well-known/ai-content`
 
 ## High-Priority Seed Hubs & Long-Tail Anchors
 

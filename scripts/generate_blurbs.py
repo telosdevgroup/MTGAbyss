@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import urllib.request
 from collections import Counter
 import argparse
+import threading
 
 # Ensure project root is importable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -15,7 +16,7 @@ from db_mongo import get_mongo_db
 # CONFIGURATION
 # ==========================================
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
-DEFAULT_MODEL = os.environ.get("OLLAMA_MODEL", "mistral-small3.2:24b")
+DEFAULT_MODEL = os.environ.get("OLLAMA_MODEL", "mistral-nemo:latest")
 
 # Generic evergreen mechanics to exclude from "signature set mechanics"
 GENERIC_KEYWORDS = {
@@ -42,8 +43,9 @@ def call_ollama(prompt: str, model: str = DEFAULT_MODEL, temperature: float = 0.
         "stream": False,
         "keep_alive": "1h",
         "options": {
+            "num_ctx": 2048,
             "temperature": temperature,
-            "num_predict": 350
+            "num_predict": 250
         }
     }
     req = urllib.request.Request(
@@ -367,9 +369,10 @@ Rules:
     p2 = format_notable_cards_paragraph(context['notable_cards'], mode=context.get('notable_mode', 'generic'), artist_name=context['artist_name'])
     return f"{p1}\n\n{p2}"
 
-def process_sets(db, limit: int = None, dry_run: bool = False, model: str = DEFAULT_MODEL, as_json: bool = False, force: bool = False):
+def process_sets(db, limit: int = None, dry_run: bool = False, model: str = DEFAULT_MODEL, as_json: bool = False, force: bool = False, concurrency: int = 1):
     """Iterate over sets missing blurbs (or all sets if force=True) and populate."""
     import time
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     pipeline = [
         {"$group": {"_id": "$set", "name": {"$first": "$set_name"}, "count": {"$sum": 1}}},
         {"$sort": {"count": -1}}
@@ -387,35 +390,53 @@ def process_sets(db, limit: int = None, dry_run: bool = False, model: str = DEFA
                 continue
         pending.append((set_code, item.get("name") or set_code.upper()))
 
-    total_pending = len(pending)
-    print(f"\nFound {total_pending} sets to process{' (force overwrite active)' if force else ''}.")
-    count = 0
+    if limit:
+        pending = pending[:limit]
 
-    for idx, (set_code, fallback_name) in enumerate(pending, 1):
+    total_pending = len(pending)
+    print(f"\nFound {total_pending} sets to process{' (force overwrite active)' if force else ''} with concurrency={concurrency}.")
+    
+    completed_count = 0
+    lock = threading.Lock()
+
+    def worker(idx, set_code, fallback_name):
+        nonlocal completed_count
         t0 = time.time()
         try:
             ctx = build_set_context(db, set_code)
             if not ctx:
-                continue
-
-            print(f"\n[SET] ({idx}/{total_pending}) Generating blurb for {ctx['set_name']} ({ctx['set_code']})...")
+                return
             blurb = generate_set_blurb(ctx, model=model)
             elapsed = time.time() - t0
             now_iso = datetime.now(timezone.utc).isoformat()
-            remaining = total_pending - idx
+
+            with lock:
+                completed_count += 1
+                curr_done = completed_count
+                remaining = total_pending - curr_done
+
+            commander_staples = [
+                {
+                    "name": c["name"],
+                    "slug": c["slug"],
+                    "url": f"https://avascry.com/card/{c['slug']}"
+                }
+                for c in ctx.get("notable_cards", [])
+            ]
 
             result_obj = {
                 "code": set_code,
                 "name": ctx["set_name"],
                 "blurb": blurb,
+                "commander_staples": commander_staples,
                 "blurb_model": model,
                 "blurb_generated_at": now_iso
             }
 
             if as_json:
-                print(f"[BLURB - {elapsed:.3f} sec | {remaining} left]:\n{json.dumps(result_obj, indent=2)}\n")
+                out_msg = f"[BLURB {curr_done}/{total_pending} - {elapsed:.3f} sec | {remaining} left]:\n{json.dumps(result_obj, indent=2)}\n"
             else:
-                print(f"[BLURB - {elapsed:.3f} sec | {remaining} left]:\n{blurb}\n")
+                out_msg = f"[BLURB {curr_done}/{total_pending} - {elapsed:.3f} sec | {remaining} left]:\n{blurb}\n"
 
             if not dry_run:
                 db["sets"].update_one(
@@ -423,18 +444,29 @@ def process_sets(db, limit: int = None, dry_run: bool = False, model: str = DEFA
                     {"$set": result_obj},
                     upsert=True
                 )
-                print(f"✓ Saved blurb for set {ctx['set_code']}")
+                out_msg += f"[OK] Saved blurb for set {ctx['set_code']}\n"
 
-            count += 1
-            if limit and count >= limit:
-                break
+            with lock:
+                print(out_msg, flush=True)
+
         except Exception as e:
             elapsed = time.time() - t0
-            print(f"✗ Error generating blurb for set {set_code} ({elapsed:.3f} sec): {e}")
+            with lock:
+                print(f"[ERROR] Error generating blurb for set {set_code} ({elapsed:.3f} sec): {e}", flush=True)
 
-def process_artists(db, limit: int = None, dry_run: bool = False, model: str = DEFAULT_MODEL, as_json: bool = False, force: bool = False):
+    if concurrency > 1:
+        with ThreadPoolExecutor(max_workers=concurrency) as executor:
+            futures = [executor.submit(worker, i, sc, fn) for i, (sc, fn) in enumerate(pending, 1)]
+            for f in as_completed(futures):
+                pass
+    else:
+        for i, (sc, fn) in enumerate(pending, 1):
+            worker(i, sc, fn)
+
+def process_artists(db, limit: int = None, dry_run: bool = False, model: str = DEFAULT_MODEL, as_json: bool = False, force: bool = False, concurrency: int = 1):
     """Iterate over artists missing blurbs (or all artists if force=True) and populate."""
     import time
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     pipeline = [
         {"$match": {"artist": {"$exists": True, "$ne": None, "$ne": ""}}},
         {"$group": {"_id": "$artist", "count": {"$sum": 1}}},
@@ -454,35 +486,53 @@ def process_artists(db, limit: int = None, dry_run: bool = False, model: str = D
                 continue
         pending.append((artist_name, artist_slug))
 
-    total_pending = len(pending)
-    print(f"\nFound {total_pending} artists to process{' (force overwrite active)' if force else ''}.")
-    count = 0
+    if limit:
+        pending = pending[:limit]
 
-    for idx, (artist_name, artist_slug) in enumerate(pending, 1):
+    total_pending = len(pending)
+    print(f"\nFound {total_pending} artists to process{' (force overwrite active)' if force else ''} with concurrency={concurrency}.")
+    
+    completed_count = 0
+    lock = threading.Lock()
+
+    def worker(idx, artist_name, artist_slug):
+        nonlocal completed_count
         t0 = time.time()
         try:
             ctx = build_artist_context(db, artist_name)
             if not ctx:
-                continue
-
-            print(f"\n[ARTIST] ({idx}/{total_pending}) Generating blurb for {ctx['artist_name']}...")
+                return
             blurb = generate_artist_blurb(ctx, model=model)
             elapsed = time.time() - t0
             now_iso = datetime.now(timezone.utc).isoformat()
-            remaining = total_pending - idx
+
+            with lock:
+                completed_count += 1
+                curr_done = completed_count
+                remaining = total_pending - curr_done
+
+            commander_staples = [
+                {
+                    "name": c["name"],
+                    "slug": c["slug"],
+                    "url": f"https://avascry.com/card/{c['slug']}"
+                }
+                for c in ctx.get("notable_cards", [])
+            ]
 
             result_obj = {
                 "name": artist_name,
                 "slug": artist_slug,
                 "blurb": blurb,
+                "commander_staples": commander_staples,
                 "blurb_model": model,
                 "blurb_generated_at": now_iso
             }
 
             if as_json:
-                print(f"[BLURB - {elapsed:.3f} sec | {remaining} left]:\n{json.dumps(result_obj, indent=2)}\n")
+                out_msg = f"[BLURB {curr_done}/{total_pending} - {elapsed:.3f} sec | {remaining} left]:\n{json.dumps(result_obj, indent=2)}\n"
             else:
-                print(f"[BLURB - {elapsed:.3f} sec | {remaining} left]:\n{blurb}\n")
+                out_msg = f"[BLURB {curr_done}/{total_pending} - {elapsed:.3f} sec | {remaining} left]:\n{blurb}\n"
 
             if not dry_run:
                 db["artists"].update_one(
@@ -490,14 +540,24 @@ def process_artists(db, limit: int = None, dry_run: bool = False, model: str = D
                     {"$set": result_obj},
                     upsert=True
                 )
-                print(f"✓ Saved blurb for artist {ctx['artist_name']}")
+                out_msg += f"[OK] Saved blurb for artist {ctx['artist_name']}\n"
 
-            count += 1
-            if limit and count >= limit:
-                break
+            with lock:
+                print(out_msg, flush=True)
+
         except Exception as e:
             elapsed = time.time() - t0
-            print(f"✗ Error generating blurb for artist {artist_name} ({elapsed:.3f} sec): {e}")
+            with lock:
+                print(f"[ERROR] Error generating blurb for artist {artist_name} ({elapsed:.3f} sec): {e}", flush=True)
+
+    if concurrency > 1:
+        with ThreadPoolExecutor(max_workers=concurrency) as executor:
+            futures = [executor.submit(worker, i, an, aslug) for i, (an, aslug) in enumerate(pending, 1)]
+            for f in as_completed(futures):
+                pass
+    else:
+        for i, (an, aslug) in enumerate(pending, 1):
+            worker(i, an, aslug)
 
 def main():
     parser = argparse.ArgumentParser(description="Lean, durable blurb generator for sets & artists.")
@@ -507,25 +567,27 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Print blurb to console without updating MongoDB")
     parser.add_argument("--json", action="store_true", help="Display final generated blurb payload as JSON")
     parser.add_argument("--force", action="store_true", help="Force overwrite existing blurbs")
+    parser.add_argument("-c", "--concurrency", type=int, default=1, help="Number of concurrent workers (e.g. 2 or 3)")
     args = parser.parse_args()
 
-    print(f"Connecting to MongoDB...")
+    print(f"Connecting to MongoDB...", flush=True)
     db = get_mongo_db()
 
-    print(f"Target Model: {args.model}")
-    print(f"Mode: {args.mode}")
-    print(f"Dry Run: {args.dry_run}")
-    print(f"Limit: {args.limit}")
-    print(f"Format: {'JSON' if args.json else 'Text'}")
-    print(f"Force Overwrite: {args.force}")
+    print(f"Target Model: {args.model}", flush=True)
+    print(f"Mode: {args.mode}", flush=True)
+    print(f"Dry Run: {args.dry_run}", flush=True)
+    print(f"Limit: {args.limit}", flush=True)
+    print(f"Format: {'JSON' if args.json else 'Text'}", flush=True)
+    print(f"Force Overwrite: {args.force}", flush=True)
+    print(f"Concurrency: {args.concurrency}", flush=True)
 
     if args.mode in ("sets", "all"):
-        process_sets(db, limit=args.limit, dry_run=args.dry_run, model=args.model, as_json=args.json, force=args.force)
+        process_sets(db, limit=args.limit, dry_run=args.dry_run, model=args.model, as_json=args.json, force=args.force, concurrency=args.concurrency)
 
     if args.mode in ("artists", "all"):
-        process_artists(db, limit=args.limit, dry_run=args.dry_run, model=args.model, as_json=args.json, force=args.force)
+        process_artists(db, limit=args.limit, dry_run=args.dry_run, model=args.model, as_json=args.json, force=args.force, concurrency=args.concurrency)
 
-    print("\nProcessing complete.")
+    print("\nProcessing complete.", flush=True)
 
 if __name__ == "__main__":
     main()

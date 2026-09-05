@@ -14,6 +14,9 @@
 
   <link rel="canonical" href="https://avascry.com/printing/{{ card.printing_slug }}">
   <link rel="alternate" type="text/markdown" title="Markdown representation for AI Agents" href="/printing/{{ card.printing_slug or card.slug }}.md">
+  <link rel="alternate" type="application/json" title="JSON representation" href="/printing/{{ card.printing_slug or card.slug }}.json">
+  <link rel="alternate" type="application/xml" title="Cockatrice XML representation" href="/printing/{{ card.printing_slug or card.slug }}.xml">
+  <link rel="alternate" type="text/csv" title="CSV representation" href="/printing/{{ card.printing_slug or card.slug }}.csv">
 
   <!-- Schema.org Structured Data for Google Images & Knowledge Graph -->
   <script type="application/ld+json">
@@ -190,7 +193,7 @@
         {% endfor %}
       {% endif %}
     </div>
-    <div style="margin-top: 0.95rem;">
+    <div style="margin-top: 0.95rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
       <button id="btn-save-stash" 
               onclick="toggleSaveCard(this)"
               data-oracle-id="{{ card.oracle_id }}"
@@ -215,6 +218,48 @@
           {% endif %}
         </span>
       </button>
+
+      <!-- Multi-format Export Dropdown -->
+      <div class="export-dropdown-wrapper" style="position: relative; display: inline-block;">
+        <button id="btn-export-dropdown" 
+                type="button" 
+                aria-haspopup="true" 
+                aria-expanded="false" 
+                onclick="toggleExportDropdown(event)"
+                aria-label="Export card data in various formats"
+                style="display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 1.05rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm);">
+          <span aria-hidden="true">⬇</span>
+          <span>Export</span>
+          <span style="font-size: 0.65rem; opacity: 0.7;">▼</span>
+        </button>
+        <div id="export-dropdown-menu" 
+             style="display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 100; min-width: 220px; background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-lg, 0 10px 25px rgba(0,0,0,0.3)); padding: 0.4rem; flex-direction: column; gap: 0.25rem;">
+          <a href="/printing/{{ card.printing_slug or card.slug }}.json" target="_blank" download
+             style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); text-decoration: none; color: var(--text); font-size: 0.85rem; transition: background 0.15s;"
+             onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+            <span style="font-weight: 700;">JSON</span>
+            <span style="font-size: 0.75rem; color: var(--muted);">API Data</span>
+          </a>
+          <a href="/printing/{{ card.printing_slug or card.slug }}.md" target="_blank" download
+             style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); text-decoration: none; color: var(--text); font-size: 0.85rem; transition: background 0.15s;"
+             onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+            <span style="font-weight: 700;">Markdown</span>
+            <span style="font-size: 0.75rem; color: var(--muted);">LLM / Notes</span>
+          </a>
+          <a href="/printing/{{ card.printing_slug or card.slug }}.xml" target="_blank" download
+             style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); text-decoration: none; color: var(--text); font-size: 0.85rem; transition: background 0.15s;"
+             onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+            <span style="font-weight: 700;">XML</span>
+            <span style="font-size: 0.75rem; color: var(--muted);">Cockatrice</span>
+          </a>
+          <a href="/printing/{{ card.printing_slug or card.slug }}.csv" target="_blank" download
+             style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); text-decoration: none; color: var(--text); font-size: 0.85rem; transition: background 0.15s;"
+             onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+            <span style="font-weight: 700;">CSV</span>
+            <span style="font-size: 0.75rem; color: var(--muted);">Spreadsheet</span>
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 </header>
@@ -715,6 +760,27 @@
       console.error('Failed to toggle save card:', e);
     }
   }
+
+  function toggleExportDropdown(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('export-dropdown-menu');
+    const btn = document.getElementById('btn-export-dropdown');
+    if (!menu || !btn) return;
+    const isOpen = menu.style.display === 'flex';
+    menu.style.display = isOpen ? 'none' : 'flex';
+    btn.setAttribute('aria-expanded', !isOpen);
+  }
+
+  document.addEventListener('click', function(e) {
+    const menu = document.getElementById('export-dropdown-menu');
+    const btn = document.getElementById('btn-export-dropdown');
+    if (menu && menu.style.display === 'flex') {
+      if (!menu.contains(e.target) && e.target !== btn) {
+        menu.style.display = 'none';
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      }
+    }
+  });
 </script>
 {% endblock %}
 

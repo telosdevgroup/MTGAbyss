@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 """
-site_doctor.py — SiteBlaster 9000: Real-entity AvaScry integration & invariant tester.
+site_blaster.py — SiteBlaster 9001: Real-entity AvaScry integration & invariant tester.
 
 Hardened non-destructive inspection runner that exercises live/ASGI application routes,
 Mongo corpus data, Markdown representations, 4096-dim vectors, similarity graphs,
 rendered Commander CTAs, set/artist blurbs, machine discovery manifests, and 404 boundaries.
 
 Usage:
-    python scripts/site_doctor.py --quick
-    python scripts/site_doctor.py --deep
-    python scripts/site_doctor.py --quick --seed 42
-    python scripts/site_doctor.py --quick --base-url http://127.0.0.1:8000
+    python scripts/site_blaster.py --quick
+    python scripts/site_blaster.py --deep
+    python scripts/site_blaster.py --quick --seed 42
+    python scripts/site_blaster.py --quick --base-url http://127.0.0.1:8000
 """
 
 import sys
 import os
 import re
+import html
 import time
 import math
 import random
@@ -40,8 +41,8 @@ from db_mongo import get_mongo_db
 from app import app, is_commander_eligible, slugify
 
 
-class SiteDoctor:
-    USER_AGENT = "Ava9001/1.0 (SiteBlaster 9001; AvaScry Site Doctor; ISO-9001-Certified; Over-9000-Compliant; +https://avascry.com)"
+class SiteBlaster:
+    USER_AGENT = "Ava9001/1.0 (SiteBlaster 9001; AvaScry Site Blaster; ISO-9001-Certified; Over-9000-Compliant; +https://avascry.com)"
 
     def __init__(self, base_url: Optional[str] = None, deep: bool = False, seed: int = 1337):
         self.deep = deep
@@ -138,6 +139,8 @@ class SiteDoctor:
             ("/sets", 200),
             ("/artists", 200),
             ("/developers", 200),
+            ("/about", 200),
+            ("/contact", 200),
             ("/privacy", 200),
             ("/terms", 200),
             ("/llms.txt", 200),
@@ -153,6 +156,8 @@ class SiteDoctor:
             ("/printing/sol-ring-lea", 200),
             ("/set/lea", 200),
             ("/artist/christopher-rush", 200),
+            ("/live-gallery", 200),
+            ("/api/live-gallery/feed", 200),
         ]
         for route, expected_status in routes:
             try:
@@ -197,7 +202,8 @@ class SiteDoctor:
             try:
                 resp_html = self.get(f"/printing/{p_slug}")
                 if resp_html.status_code == 200:
-                    if name.lower() in resp_html.text.lower():
+                    resp_text = resp_html.text.lower()
+                    if name.lower() in resp_text or name.lower() in html.unescape(resp_text):
                         self.log_pass("entity card HTML", f"{name} ({p_slug})")
                     else:
                         self.log_warn("entity card HTML", f"{name} ({p_slug})", "Card name missing from HTML response",
@@ -242,6 +248,32 @@ class SiteDoctor:
                                   {"printing_slug": p_slug, "oracle_id": oracle_id, "status": resp_json.status_code})
             except Exception as e:
                 self.log_fail("entity card JSON", f"/printing/{p_slug}.json", str(e), {"printing_slug": p_slug, "oracle_id": oracle_id})
+
+            # 4. Cockatrice XML representation
+            try:
+                resp_xml = self.get(f"/printing/{p_slug}.xml")
+                if resp_xml.status_code == 200 and "application/xml" in resp_xml.headers.get("content-type", ""):
+                    if "cockatrice_carddatabase" in resp_xml.text:
+                        self.log_pass("entity card XML", f"{name} ({p_slug}.xml)")
+                    else:
+                        self.log_fail("entity card XML", f"/printing/{p_slug}.xml", "missing cockatrice_carddatabase tag")
+                else:
+                    self.log_fail("entity card XML", f"/printing/{p_slug}.xml", f"status {resp_xml.status_code}")
+            except Exception as e:
+                self.log_fail("entity card XML", f"/printing/{p_slug}.xml", str(e))
+
+            # 5. CSV representation
+            try:
+                resp_csv = self.get(f"/printing/{p_slug}.csv")
+                if resp_csv.status_code == 200 and "text/csv" in resp_csv.headers.get("content-type", ""):
+                    if "canonical_url" in resp_csv.text:
+                        self.log_pass("entity card CSV", f"{name} ({p_slug}.csv)")
+                    else:
+                        self.log_fail("entity card CSV", f"/printing/{p_slug}.csv", "missing CSV headers")
+                else:
+                    self.log_fail("entity card CSV", f"/printing/{p_slug}.csv", f"status {resp_csv.status_code}")
+            except Exception as e:
+                self.log_fail("entity card CSV", f"/printing/{p_slug}.csv", str(e))
 
         # Sample Sets deterministically
         all_sets = list(self.db["cards"].aggregate([
@@ -1037,6 +1069,250 @@ class SiteDoctor:
                 self.log_fail("set random target", f"/random?set={set_code}", str(e))
 
     # =========================================================================
+    # 16. AD CONTAMINATION INVARIANT (Machine Surfaces Must Remain 100% Ad/Script Free)
+    # =========================================================================
+    def test_machine_ad_contamination(self):
+        """Ensure machine endpoints (.md, .json, .txt, .xml, /vector/*) never contain ad tags or tracking scripts."""
+        sample_machine_routes = [
+            "/printing/sol-ring-lea.md",
+            "/printing/sol-ring-lea.json",
+            "/similar/sol-ring.md",
+            "/similar/sol-ring.json",
+            "/vector/sol-ring.json",
+            "/set/lea.md",
+            "/set/lea.json",
+            "/artist/christopher-rush.md",
+            "/artist/christopher-rush.json",
+            "/llms.txt",
+            "/llms-full.txt",
+            "/rules.md",
+            "/legalities.md",
+            "/sets.md",
+            "/sitemap.md",
+            "/sitemap.xml",
+            "/heartbeat.txt",
+        ]
+
+        if self.deep:
+            # Add extra sampled cards and sets in deep mode
+            extra_cards = ["black-lotus-lea", "counterspell-lea", "dark-ritual-lea", "lightning-bolt-lea"]
+            for ec in extra_cards:
+                sample_machine_routes.extend([
+                    f"/printing/{ec}.md",
+                    f"/printing/{ec}.json",
+                    f"/vector/{ec}.json"
+                ])
+
+        banned_ad_tokens = [
+            "<script",
+            "adsbygoogle",
+            "pagead2.googlesyndication.com",
+            "googletagmanager.com",
+            "clarity.ms",
+            "google-adsense-account",
+            "ca-pub-",
+        ]
+
+        for route in sample_machine_routes:
+            try:
+                resp = self.get(route)
+                if resp.status_code == 200:
+                    text_lower = resp.text.lower()
+                    found = [tok for tok in banned_ad_tokens if tok in text_lower]
+                    if found:
+                        self.log_fail("machine ad-free", route, "CRITICAL: Ad/tracker token found in machine surface!",
+                                      {"route": route, "tokens_found": found})
+                    else:
+                        self.log_pass("machine ad-free", f"{route} (clean of all ad/tracker scripts)")
+                else:
+                    self.log_warn("machine ad-free", route, f"status {resp.status_code}")
+            except Exception as e:
+                self.log_fail("machine ad-free", route, str(e))
+
+    # =========================================================================
+    # 17. LEGITIMACY & LEGAL CONTENT INTEGRITY
+    # =========================================================================
+    def test_legitimacy_content(self):
+        """Verify About, Contact, Privacy, and Terms pages render authentic content and disclaimers."""
+        checks = [
+            ("/about", [
+                "About AvaScry",
+                "Neural",
+                "SmartDeck",
+                "Scryfall",
+                "Wizards of the Coast",
+                "Fan Content Policy"
+            ]),
+            ("/contact", [
+                "Contact",
+                "Support",
+                "Telos Development Group",
+                "telosdevgroup@gmail.com"
+            ]),
+            ("/privacy", [
+                "Privacy Policy",
+                "Information We Collect",
+                "telosdevgroup@gmail.com"
+            ]),
+            ("/terms", [
+                "Terms of Service",
+                "Fan Content Policy",
+                "Wizards of the Coast",
+                "Scryfall"
+            ])
+        ]
+
+        for route, required_snippets in checks:
+            try:
+                resp = self.get(route)
+                if resp.status_code == 200:
+                    html_text = resp.text
+                    missing = [snip for snip in required_snippets if snip.lower() not in html_text.lower()]
+                    if missing:
+                        self.log_fail("legitimacy content", route, "missing required legitimacy tokens",
+                                      {"route": route, "missing": missing})
+                    else:
+                        self.log_pass("legitimacy content", f"{route} ({len(required_snippets)}/{len(required_snippets)} compliance tokens verified)")
+                else:
+                    self.log_fail("legitimacy content", route, f"status {resp.status_code}")
+            except Exception as e:
+                self.log_fail("legitimacy content", route, str(e))
+
+    # =========================================================================
+    # 18. FOOTER NAVIGATION COHERENCE
+    # =========================================================================
+    def test_footer_coherence(self):
+        """Verify that human entry points render the unified footer with legitimacy links."""
+        sample_pages = [
+            ("/", "Homepage"),
+            ("/sets", "Sets Index"),
+            ("/artists", "Artists Index"),
+            ("/live-gallery", "Live Gallery"),
+            ("/printing/sol-ring-lea", "Card Detail"),
+            ("/set/lea", "Set Detail"),
+            ("/artist/christopher-rush", "Artist Detail"),
+        ]
+
+        expected_links = [
+            'href="/about"',
+            'href="/contact"',
+            'href="/privacy"',
+            'href="/terms"',
+        ]
+
+        for route, label in sample_pages:
+            try:
+                resp = self.get(route)
+                if resp.status_code == 200:
+                    html_text = resp.text
+                    missing_links = [link for link in expected_links if link not in html_text]
+                    if missing_links:
+                        self.log_fail("footer coherence", f"{label} ({route})", "missing footer legitimacy link(s)",
+                                      {"missing": missing_links})
+                    else:
+                        self.log_pass("footer coherence", f"{label} ({route}) has complete legitimacy footer")
+                else:
+                    self.log_fail("footer coherence", f"{label} ({route})", f"status {resp.status_code}")
+            except Exception as e:
+                self.log_fail("footer coherence", f"{label} ({route})", str(e))
+
+    # =========================================================================
+    # 19. EDITORIAL SPOTLIGHT & ANTI-CARD-DUMP INVARIANT
+    # =========================================================================
+    def test_editorial_spotlight(self):
+        """Verify that curated sets and artists provide rich editorial spotlights, not bare database dumps."""
+        curated_sets = [
+            ("lea", "Limited Edition Alpha", "Where Magic Began"),
+            ("rav", "Ravnica: City of Guilds", "The City of Guilds"),
+            ("isd", "Innistrad", "Gothic Horror Unleashed"),
+        ]
+        for set_code, set_name, expected_title in curated_sets:
+            try:
+                resp = self.get(f"/set/{set_code}")
+                if resp.status_code == 200:
+                    html_text = resp.text
+                    has_block = "spotlight-block" in html_text or "Set Spotlight" in html_text
+                    has_title = expected_title in html_text
+                    if has_block and has_title:
+                        self.log_pass("editorial set", f"/set/{set_code} -> spotlight '{expected_title}' present")
+                    else:
+                        self.log_fail("editorial set", f"/set/{set_code}", "editorial spotlight missing or incomplete",
+                                      {"has_block": has_block, "has_title": has_title, "expected_title": expected_title})
+                else:
+                    self.log_fail("editorial set", f"/set/{set_code}", f"status {resp.status_code}")
+            except Exception as e:
+                self.log_fail("editorial set", f"/set/{set_code}", str(e))
+
+        curated_artists = [
+            ("christopher-rush", "Christopher Rush"),
+            ("rebecca-guay", "Rebecca Guay"),
+        ]
+        for artist_slug, artist_name in curated_artists:
+            try:
+                resp = self.get(f"/artist/{artist_slug}")
+                if resp.status_code == 200:
+                    html_text = resp.text
+                    has_spotlight = "spotlight-block" in html_text or "Artist Spotlight" in html_text or "Total Artworks" in html_text
+                    if has_spotlight:
+                        self.log_pass("editorial artist", f"/artist/{artist_slug} -> rich artist profile verified")
+                    else:
+                        self.log_fail("editorial artist", f"/artist/{artist_slug}", "missing artist spotlight profile")
+                else:
+                    self.log_fail("editorial artist", f"/artist/{artist_slug}", f"status {resp.status_code}")
+            except Exception as e:
+                self.log_fail("editorial artist", f"/artist/{artist_slug}", str(e))
+
+    # =========================================================================
+    # 20. LIVE GALLERY & IMMERSIVE ART SLIDESHOW
+    # =========================================================================
+    def test_live_gallery(self):
+        """Verify Live Gallery UI and API feed invariants, including browser Accept header card links."""
+        # 1. Page test
+        try:
+            resp = self.get("/live-gallery")
+            if resp.status_code == 200 and "slideshow-stage" in resp.text:
+                self.log_pass("live gallery", "/live-gallery rendered with slideshow stage")
+            else:
+                self.log_fail("live gallery", "/live-gallery", f"status {resp.status_code} or missing stage element")
+        except Exception as e:
+            self.log_fail("live gallery", "/live-gallery", str(e))
+
+        # 2. Feed test
+        feed_items = []
+        try:
+            resp = self.get("/api/live-gallery/feed")
+            if resp.status_code == 200:
+                data = resp.json()
+                feed_items = data.get("items") or []
+                if len(feed_items) > 0:
+                    self.log_pass("live gallery", f"/api/live-gallery/feed returned {len(feed_items)} cards")
+                else:
+                    self.log_fail("live gallery", "/api/live-gallery/feed", "feed returned empty items list")
+            else:
+                self.log_fail("live gallery", "/api/live-gallery/feed", f"status {resp.status_code}")
+        except Exception as e:
+            self.log_fail("live gallery", "/api/live-gallery/feed", str(e))
+
+        # 3. Card click link verification (ensure browser Accept headers receive HTML, not raw XML)
+        if feed_items:
+            sample_size = min(len(feed_items), 8 if self.deep else 2)
+            sample = self.rng.sample(feed_items, sample_size)
+            browser_headers = {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"}
+            for item in sample:
+                p_slug = item.get("printing_slug")
+                if not p_slug:
+                    continue
+                try:
+                    card_resp = self.get(f"/printing/{p_slug}", headers=browser_headers)
+                    ct = card_resp.headers.get("content-type", "")
+                    if card_resp.status_code == 200 and "text/html" in ct:
+                        self.log_pass("live gallery link", f"/printing/{p_slug} [browser Accept -> HTML]")
+                    else:
+                        self.log_fail("live gallery link", f"/printing/{p_slug}", f"expected text/html, got {ct} (status {card_resp.status_code})")
+                except Exception as e:
+                    self.log_fail("live gallery link", f"/printing/{p_slug}", str(e))
+
+    # =========================================================================
     # MAIN RUNNER
     # =========================================================================
     def run_all(self) -> int:
@@ -1049,6 +1325,7 @@ class SiteDoctor:
         print(f"========================================================\n")
 
         self.test_core_routes()
+        self.test_live_gallery()
         self.test_commander_correctness()
         self.test_404_boundaries()
         self.test_random_routes()
@@ -1063,6 +1340,10 @@ class SiteDoctor:
         self.test_unicode_boundary_fixtures()
         self.test_localization_invariants()
         self.test_cta_targets()
+        self.test_machine_ad_contamination()
+        self.test_legitimacy_content()
+        self.test_footer_coherence()
+        self.test_editorial_spotlight()
 
         elapsed = time.time() - self.start_time
 
@@ -1087,7 +1368,7 @@ class SiteDoctor:
                     print(f"       \033[90m{k} = {v}\033[0m")
 
         print(f"\n========================================================")
-        print(f"SiteDoctor Summary: {self.passed} passed | {self.failed} failed | {self.warnings} warnings ({elapsed:.2f}s)")
+        print(f"SiteBlaster Summary: {self.passed} passed | {self.failed} failed | {self.warnings} warnings ({elapsed:.2f}s)")
         if self.failed == 0:
             print(f"\033[92m\nAVASCRY LIVES. POWER LEVEL > 9000.\033[0m\n")
         else:
@@ -1098,7 +1379,7 @@ class SiteDoctor:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="AvaScry Site Doctor — SiteBlaster 9001")
+    parser = argparse.ArgumentParser(description="AvaScry SiteBlaster 9001 — Invariant & Route Tester")
     parser.add_argument("--deep", action="store_true", help="Run comprehensive deep suite with larger sample sizes")
     parser.add_argument("--quick", action="store_true", help="Run fast quick suite with targeted sample sizes (default)")
     parser.add_argument("--seed", type=int, default=1337, help="Deterministic random seed (default: 1337)")
@@ -1106,8 +1387,8 @@ def main():
     args = parser.parse_args()
 
     is_deep = bool(args.deep)
-    doctor = SiteDoctor(base_url=args.base_url, deep=is_deep, seed=args.seed)
-    exit_code = doctor.run_all()
+    blaster = SiteBlaster(base_url=args.base_url, deep=is_deep, seed=args.seed)
+    exit_code = blaster.run_all()
     sys.exit(exit_code)
 
 
