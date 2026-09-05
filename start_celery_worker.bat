@@ -31,9 +31,10 @@ echo Select the worker type to start:
 echo [1] GPU/Embedding Worker (queue: gpu-tasks, pool: solo)
 echo [2] AI Lure/Mistral Worker (queue: ai-lures, pool: solo)
 echo [3] Builder/Pi Worker (queue: builder-tasks, pool: eventlet, concurrency 2)
+echo [4] Vision-Language / Qwen-VL Worker (queue: vl, pool: solo)
 echo.
 
-set /p choice="Enter choice (1-3): "
+set /p choice="Enter choice (1-4): "
 
 if "%choice%"=="1" (
     echo Starting GPU/Embedding Worker...
@@ -44,6 +45,9 @@ if "%choice%"=="1" (
 ) else if "%choice%"=="3" (
     echo Starting Builder/Pi Worker...
     %PYTHON_CMD% -m celery -A celery_app worker -Q builder-tasks -P eventlet -c 2 --loglevel=info
+) else if "%choice%"=="4" (
+    echo Starting Vision-Language Worker on queue: vl...
+    %PYTHON_CMD% -m celery -A celery_app worker -Q vl -P solo --loglevel=info
 ) else (
     echo Invalid choice. Exiting.
 )

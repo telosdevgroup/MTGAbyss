@@ -93,6 +93,19 @@ def ensure_indexes(db):
     card_prints.create_index("lang")
     card_prints.create_index("base_priority")
 
+    # Vision-Language art analysis collection indexes
+    vl_art = db["vl_art_analysis"]
+    vl_art.create_index(
+        [
+            ("illustration_id", pymongo.ASCENDING),
+            ("model", pymongo.ASCENDING),
+            ("prompt_version", pymongo.ASCENDING)
+        ],
+        unique=True
+    )
+    vl_art.create_index("status")
+    vl_art.create_index("source.oracle_id")
+
 
 
 

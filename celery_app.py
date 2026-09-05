@@ -40,9 +40,12 @@ app.conf.update(
     accept_content=["json"],
     timezone="UTC",
     enable_utc=True,
+    worker_prefetch_multiplier=1,
+    task_acks_late=True,
     
     # Task routing configuration
     task_routes={
+        "tasks.process_art_vl": {"queue": "vl"},
         "tasks.generate_embedding": {"queue": "gpu-tasks"},
         "tasks.generate_lure": {"queue": "ai-lures"},
         "tasks.precompute_similar_cards": {"queue": "builder-tasks"},

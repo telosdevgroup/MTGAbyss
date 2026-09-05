@@ -212,3 +212,212 @@ def generate_and_deploy_page(search_term, deploy=True):
     print(log_entry)
     sys.stdout.flush()
     return log_entry
+
+
+REQUIRED_VL_FIELDS = [
+    "visual_summary",
+    "subjects",
+    "setting",
+    "dominant_colors",
+    "lighting",
+    "composition",
+    "style_descriptors",
+    "visible_objects",
+    "mood_keywords",
+    "uncertain_elements",
+]
+
+BLINDED_VL_PROMPT = """You are an objective visual analyst. Inspect only the visual pixels of this image.
+Describe literally what is depicted without guessing card names, named characters, or game lore.
+Return valid JSON matching this schema:
+{
+  "visual_summary": "1-2 literal, objective sentences describing what is visible in the frame",
+  "subjects": ["major distinct depicted focal entities or groups only; for crowded scenes group them (e.g. 'crowd of armored figures'); if a pure landscape/environment with no focal subject, use empty list []"],
+  "setting": ["environment type", "background features"],
+  "dominant_colors": ["color1", "color2", "color3"],
+  "lighting": "visible illumination, highlights, shadows, contrast, and apparent direction of light; do not claim an object is the light source unless visually unambiguous",
+  "composition": "focal point, perspective angle, framing (e.g. close-up, wide shot), foreground/midground/background depth",
+  "style_descriptors": ["visible aesthetic/stylistic qualities only (e.g. textured, painterly, geometric, surreal, high-contrast, soft-edged, line-heavy, minimalist, flat-color); do NOT guess physical medium, digital tools, scanner artifacts, compression, or printing process (avoid 'oil painting', 'digital art', 'acrylic', 'scanned', 'pixels')"],
+  "visible_objects": ["discernible items, props, garments, weapons, architectural elements, natural elements"],
+  "mood_keywords": ["atmospheric or emotional tone only (e.g. serene, foreboding, chaotic, whimsical, somber); do NOT use visual-quality or style terms like 'detailed' or 'digital'"],
+  "uncertain_elements": ["ambiguous, obscured, or cropped shapes/features that cannot be definitively identified; leave as empty list [] if none"]
+}"""
+
+
+def _clean_json_fence(text: str) -> str:
+    cleaned = text.strip()
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[7:]
+    elif cleaned.startswith("```"):
+        cleaned = cleaned[3:]
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    return cleaned.strip()
+
+
+def _extract_card_art_info(card_doc: dict):
+    raw = card_doc.get("raw", {})
+    image_url = None
+    image_uris = raw.get("image_uris") or card_doc.get("image_uris")
+    if image_uris and isinstance(image_uris, dict):
+        image_url = image_uris.get("art_crop") or image_uris.get("normal") or image_uris.get("large")
+
+    if not image_url:
+        card_faces = raw.get("card_faces") or card_doc.get("card_faces")
+        if card_faces and isinstance(card_faces, list) and len(card_faces) > 0:
+            face_uris = card_faces[0].get("image_uris")
+            if face_uris and isinstance(face_uris, dict):
+                image_url = face_uris.get("art_crop") or face_uris.get("normal") or face_uris.get("large")
+
+    meta = {
+        "illustration_id": raw.get("illustration_id") or card_doc.get("illustration_id"),
+        "oracle_id": raw.get("oracle_id") or card_doc.get("oracle_id"),
+        "card_name": card_doc.get("name") or raw.get("name", "Unknown"),
+        "artist": card_doc.get("artist") or raw.get("artist", "Unknown"),
+        "set": card_doc.get("set") or raw.get("set", "").upper(),
+        "collector_number": card_doc.get("collector_number") or raw.get("collector_number", ""),
+        "image_url": image_url,
+    }
+    return image_url, meta
+
+
+@app.task(bind=True, max_retries=3, default_retry_delay=15)
+def process_art_vl(self, illustration_id: str, force: bool = False, model: str = None, prompt_version: int = 1):
+    """
+    Blinded Vision-Language processing on MTG card artwork using local Qwen3-VL.
+    Runs on the dedicated 'vl' queue across all worker nodes.
+    Results are saved into MongoDB collection 'vl_art_analysis'.
+    """
+    import base64
+    import time
+    from urllib.error import URLError, HTTPError
+
+    vl_model = model or os.environ.get("OLLAMA_VL_MODEL", "qwen3-vl:latest")
+    db = get_mongo_db()
+    vl_collection = db["vl_art_analysis"]
+
+    # 1. Skip if completed result already exists for illustration_id + model + prompt_version
+    if not force:
+        existing = vl_collection.find_one({
+            "illustration_id": illustration_id,
+            "model": vl_model,
+            "prompt_version": prompt_version,
+            "status": "complete"
+        })
+        if existing:
+            return f"Illustration {illustration_id} already analyzed (status=complete). Skipping."
+
+    # 2. Query representative English printing with art crop
+    card_doc = db["cards"].find_one({
+        "$or": [
+            {"illustration_id": illustration_id, "lang": "en"},
+            {"raw.illustration_id": illustration_id, "lang": "en"},
+            {"illustration_id": illustration_id},
+            {"raw.illustration_id": illustration_id},
+        ]
+    })
+    if not card_doc:
+        raise ValueError(f"No card found in DB matching illustration_id: {illustration_id}")
+
+    image_url, meta = _extract_card_art_info(card_doc)
+    if not image_url:
+        raise ValueError(f"No image URL found for illustration_id: {illustration_id}")
+
+    card_name = meta.get("card_name", "Unknown")
+    print(f"[VL START] {card_name} | {illustration_id[:8]}...")
+    sys.stdout.flush()
+
+    # 3. Load or download art crop into base64
+    try:
+        if os.path.exists(image_url):
+            with open(image_url, "rb") as f:
+                image_bytes = f.read()
+        else:
+            req = urllib.request.Request(
+                image_url,
+                headers={"User-Agent": "AvaScry-VL-Worker/1.0"}
+            )
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                image_bytes = resp.read()
+        image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+    except (URLError, TimeoutError, ConnectionError) as e:
+        print(f"[VL FAIL ] illustration_id={illustration_id} | download error: {e} | retry {self.request.retries + 1}/3")
+        raise self.retry(exc=e)
+
+    # 4. Call local Qwen3-VL via Ollama
+    ollama_url = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
+    api_url = f"{ollama_url}/api/generate"
+
+    payload = {
+        "model": vl_model,
+        "prompt": BLINDED_VL_PROMPT,
+        "images": [image_b64],
+        "stream": False,
+        "keep_alive": "1h",
+        "options": {
+            "temperature": 0.1,
+            "num_ctx": 4096
+        }
+    }
+
+    start_time = time.time()
+    try:
+        req = urllib.request.Request(
+            api_url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=300) as response:
+            res_data = json.loads(response.read().decode("utf-8"))
+            raw_text = res_data.get("response", "").strip()
+    except (URLError, HTTPError, TimeoutError, ConnectionError) as e:
+        print(f"[VL FAIL ] illustration_id={illustration_id} | Ollama error: {e} | retry {self.request.retries + 1}/3")
+        raise self.retry(exc=e)
+
+    gen_duration = time.time() - start_time
+
+    # 5. Parse and validate required JSON fields
+    cleaned_json = _clean_json_fence(raw_text)
+    try:
+        observations = json.loads(cleaned_json)
+    except Exception as e:
+        print(f"[VL FAIL ] illustration_id={illustration_id} | invalid JSON: {e} | retry {self.request.retries + 1}/3")
+        raise self.retry(exc=e)
+
+    missing_fields = [f for f in REQUIRED_VL_FIELDS if f not in observations]
+    if missing_fields:
+        print(f"[VL FAIL ] illustration_id={illustration_id} | missing fields {missing_fields} | retry {self.request.retries + 1}/3")
+        raise self.retry(exc=ValueError(f"Missing fields: {missing_fields}"))
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+
+    # 6. Upsert into vl_art_analysis collection
+    vl_collection.update_one(
+        {
+            "illustration_id": illustration_id,
+            "model": vl_model,
+            "prompt_version": prompt_version
+        },
+        {
+            "$set": {
+                "illustration_id": illustration_id,
+                "model": vl_model,
+                "prompt_version": prompt_version,
+                "status": "complete",
+                "source": meta,
+                "vision_observations": observations,
+                "duration_seconds": round(gen_duration, 2),
+                "generated_at": now,
+            }
+        },
+        upsert=True
+    )
+
+    subj_count = len(observations.get("subjects", []))
+    obj_count = len(observations.get("visible_objects", []))
+    msg = f"[VL DONE ] {card_name} | {gen_duration:.1f}s | subjects={subj_count} objects={obj_count}"
+    print(msg)
+    sys.stdout.flush()
+    return msg
+
