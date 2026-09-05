@@ -346,6 +346,27 @@ def process_art_vl(self, illustration_id: str, force: bool = False, model: str =
 
     # 4. Call local Qwen3-VL via Ollama
     ollama_url = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
+
+    # Pre-flight check: ensure Ollama is up and the model is actually installed
+    try:
+        tags_req = urllib.request.Request(f"{ollama_url}/api/tags", method="GET")
+        with urllib.request.urlopen(tags_req, timeout=5) as tags_resp:
+            installed = json.loads(tags_resp.read().decode("utf-8")).get("models", [])
+            installed_names = [m.get("name") for m in installed if m.get("name")]
+            # Match both with or without tag (e.g. qwen3-vl:latest vs qwen3-vl)
+            base_model = vl_model.split(":")[0]
+            matched = any(vl_model == name or f"{base_model}:latest" == name or name.startswith(f"{vl_model}:") for name in installed_names)
+            if not matched:
+                err_msg = f"[VL ERROR] Model '{vl_model}' is NOT installed in Ollama at {ollama_url}! Run: 'ollama pull {vl_model}' on that machine. Installed: {installed_names}"
+                print(err_msg)
+                sys.stdout.flush()
+                raise RuntimeError(err_msg)
+    except (URLError, ConnectionError) as conn_err:
+        err_msg = f"[VL ERROR] Cannot connect to Ollama at {ollama_url}: {conn_err}"
+        print(err_msg)
+        sys.stdout.flush()
+        raise self.retry(exc=conn_err)
+
     api_url = f"{ollama_url}/api/generate"
 
     payload = {
