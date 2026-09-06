@@ -348,6 +348,8 @@ def process_art_vl(self, illustration_id: str, force: bool = False, model: str =
     ollama_url = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
     api_url = f"{ollama_url}/api/generate"
 
+    ollama_timeout = int(os.environ.get("OLLAMA_TIMEOUT", "600"))
+
     payload = {
         "model": vl_model,
         "prompt": BLINDED_VL_PROMPT,
@@ -357,8 +359,8 @@ def process_art_vl(self, illustration_id: str, force: bool = False, model: str =
         "keep_alive": "1h",
         "options": {
             "temperature": 0.1,
-            "num_ctx": 4096,
-            "num_predict": 1536
+            "num_ctx": 2048,
+            "num_predict": 512
         }
     }
 
@@ -370,7 +372,7 @@ def process_art_vl(self, illustration_id: str, force: bool = False, model: str =
             headers={"Content-Type": "application/json"},
             method="POST"
         )
-        with urllib.request.urlopen(req, timeout=300) as response:
+        with urllib.request.urlopen(req, timeout=ollama_timeout) as response:
             res_data = json.loads(response.read().decode("utf-8"))
             raw_text = res_data.get("response", "").strip()
     except (URLError, HTTPError, TimeoutError, ConnectionError) as e:
