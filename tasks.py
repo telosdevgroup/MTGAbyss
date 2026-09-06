@@ -356,7 +356,8 @@ def process_art_vl(self, illustration_id: str, force: bool = False, model: str =
         "keep_alive": "1h",
         "options": {
             "temperature": 0.1,
-            "num_ctx": 4096
+            "num_ctx": 4096,
+            "num_predict": 1536
         }
     }
 
@@ -379,11 +380,23 @@ def process_art_vl(self, illustration_id: str, force: bool = False, model: str =
 
     # 5. Parse and validate required JSON fields
     cleaned_json = _clean_json_fence(raw_text)
+    observations = None
     try:
         observations = json.loads(cleaned_json)
-    except Exception as e:
-        print(f"[VL FAIL ] illustration_id={illustration_id} | invalid JSON: {e} | retry {self.request.retries + 1}/3")
-        raise self.retry(exc=e)
+    except Exception:
+        # Fallback repair: if string was truncated mid-sentence by token boundary, close quote and braces
+        try:
+            repaired = cleaned_json.rstrip()
+            if repaired.count('"') % 2 != 0:
+                repaired += '"'
+            if not repaired.endswith("}"):
+                if repaired.count("[") > repaired.count("]"):
+                    repaired += "]"
+                repaired += "\n}"
+            observations = json.loads(repaired)
+        except Exception as e:
+            print(f"[VL FAIL ] illustration_id={illustration_id} | invalid JSON: {e} | retry {self.request.retries + 1}/3")
+            raise self.retry(exc=e)
 
     missing_fields = [f for f in REQUIRED_VL_FIELDS if f not in observations]
     if missing_fields:
