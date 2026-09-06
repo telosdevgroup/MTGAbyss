@@ -246,13 +246,21 @@ Return valid JSON matching this schema:
 
 def _clean_json_fence(text: str) -> str:
     cleaned = text.strip()
+    # If wrapped in markdown code fence, strip it
     if cleaned.startswith("```json"):
         cleaned = cleaned[7:]
     elif cleaned.startswith("```"):
         cleaned = cleaned[3:]
     if cleaned.endswith("```"):
         cleaned = cleaned[:-3]
-    return cleaned.strip()
+    cleaned = cleaned.strip()
+    
+    # Robust extraction: locate outermost curly braces
+    start_idx = cleaned.find("{")
+    end_idx = cleaned.rfind("}")
+    if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+        return cleaned[start_idx:end_idx + 1]
+    return cleaned
 
 
 def _extract_card_art_info(card_doc: dict):
