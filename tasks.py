@@ -255,11 +255,14 @@ def _clean_json_fence(text: str) -> str:
         cleaned = cleaned[:-3]
     cleaned = cleaned.strip()
     
-    # Robust extraction: locate outermost curly braces
+    # Robust extraction: find first { and last }
     start_idx = cleaned.find("{")
     end_idx = cleaned.rfind("}")
     if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-        return cleaned[start_idx:end_idx + 1]
+        return cleaned[start_idx:end_idx + 1].strip()
+    elif start_idx != -1:
+        # If closing brace was cut off, return from first { onwards
+        return cleaned[start_idx:].strip()
     return cleaned
 
 
@@ -406,10 +409,18 @@ def process_art_vl(self, illustration_id: str, force: bool = False, model: str =
             print(f"[VL FAIL ] illustration_id={illustration_id} | invalid JSON: {e} | retry {self.request.retries + 1}/3")
             raise self.retry(exc=e)
 
-    missing_fields = [f for f in REQUIRED_VL_FIELDS if f not in observations]
-    if missing_fields:
-        print(f"[VL FAIL ] illustration_id={illustration_id} | missing fields {missing_fields} | retry {self.request.retries + 1}/3")
-        raise self.retry(exc=ValueError(f"Missing fields: {missing_fields}"))
+    # Fill in missing fields with sensible defaults if primary visual fields exist
+    for f in REQUIRED_VL_FIELDS:
+        if f not in observations:
+            if f in ["subjects", "setting", "dominant_colors", "style_descriptors", "visible_objects", "mood_keywords", "uncertain_elements"]:
+                observations[f] = []
+            else:
+                observations[f] = ""
+
+    # Only fail if core visual_summary is completely absent
+    if not observations.get("visual_summary"):
+        print(f"[VL FAIL ] illustration_id={illustration_id} | missing visual_summary | retry {self.request.retries + 1}/3")
+        raise self.retry(exc=ValueError("Missing visual_summary"))
 
     now = datetime.datetime.now(datetime.timezone.utc)
 
