@@ -98,10 +98,13 @@ def main():
 
     print(f"[*] Enqueuing {to_queue:,} jobs to Celery queue 'vl'...")
     for idx, ill_id in enumerate(remaining_ids, 1):
-        process_art_vl.delay(
-            illustration_id=ill_id,
-            model=args.model,
-            prompt_version=args.prompt_version
+        process_art_vl.apply_async(
+            args=[ill_id],
+            kwargs={
+                "model": args.model,
+                "prompt_version": args.prompt_version
+            },
+            queue="vl"
         )
         if idx % 1000 == 0 or idx == to_queue:
             print(f"    Enqueued {idx:,}/{to_queue:,}...")

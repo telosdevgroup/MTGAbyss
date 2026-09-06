@@ -281,7 +281,7 @@ def _extract_card_art_info(card_doc: dict):
     return image_url, meta
 
 
-@app.task(bind=True, max_retries=3, default_retry_delay=15)
+@app.task(bind=True, queue="vl", max_retries=3, default_retry_delay=15)
 def process_art_vl(self, illustration_id: str, force: bool = False, model: str = None, prompt_version: int = 1):
     """
     Blinded Vision-Language processing on MTG card artwork using local Qwen3-VL.
