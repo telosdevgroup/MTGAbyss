@@ -180,7 +180,10 @@ def main():
     with open(master_sitemap_path, "w", encoding="utf-8") as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         f.write('<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
-        for sitemap_name in ["sitemap-similar.xml", "sitemap-cards.xml", "sitemap-artists.xml", "sitemap-sets.xml", "sitemap-legalities.xml", "sitemap-rules.xml"]:
+        sitemap_list = ["sitemap-similar.xml", "sitemap-cards.xml", "sitemap-artists.xml", "sitemap-sets.xml", "sitemap-legalities.xml", "sitemap-rules.xml"]
+        if os.path.exists(os.path.join(PUBLIC_DIR, "sitemap-citations.xml")):
+            sitemap_list.insert(0, "sitemap-citations.xml")
+        for sitemap_name in sitemap_list:
             f.write("  <sitemap>\n")
             f.write(f"    <loc>https://avascry.com/{sitemap_name}</loc>\n")
             f.write(f"    <lastmod>{today_str}</lastmod>\n")

@@ -239,6 +239,9 @@ def classify_badge(badge: str, ip: str = "", path: str = "", ct: str = "") -> st
     bing_prefixes = ("40.77.", "157.55.", "20.171.", "13.66.", "52.167.", "20.36.", "20.247.")
     if "bing" in b or any(ip.startswith(p) for p in bing_prefixes):
         return "bing"
+    # 3b. Yandex
+    if "yandex" in b:
+        return "yandex"
     # 4. AI Crawlers & Agents
     if "meta:ai" in b or "meta-externalagent" in b:
         return "meta_ai"
@@ -254,8 +257,10 @@ def classify_badge(badge: str, ip: str = "", path: str = "", ct: str = "") -> st
         return "perplexity"
     if "bytedance" in b or "bytespider" in b:
         return "bytedance"
-    if "applebot" in b or "amazonbot" in b or "apple-search" in b:
-        return "apple_amazon"
+    if "applebot" in b or "apple-search" in b:
+        return "apple"
+    if "amazonbot" in b or "amazon" in b:
+        return "amazon"
     if "shapbot" in b or "shap" in b:
         return "shapbot"
     if any(k in b for k in ("ai:deepseek", "ai:mistral", "ai:diffbot", "ai:youbot", "ai:imagesift", "ai:commoncrawl", "ai:other", "cohere")):
@@ -524,8 +529,10 @@ def load_weekly_stats_worker():
                 else:
                     path = "/"
 
-                total += 1
                 cat = classify_badge(badge, ip, path, ct)
+                if cat == "siteblaster":
+                    continue
+                total += 1
                 route = SURFACE_CODE_TO_ROUTE.get(surface_tag.upper()) or classify_route(path)
                 ft = classify_file_type(path, ct)
 
@@ -579,7 +586,7 @@ FILTER_NAMES = {
     "citations": "AI Citations (Real-Time Users)",
     "watchlist": "👁️ Watched Scrapers",
     "claude_search": "🔍 Claude Search (Anthropic)",
-    "oai_search": "🔍 OpenAI Search (OAI-Search)",
+    "oai_search": "🔍 OpenAI-Search",
     "claude": "🤖 ClaudeBot (Anthropic)",
     "google": "🟢 Googlebot (Search)",
     "google_images": "🟢 Googlebot (Images)",
@@ -592,10 +599,10 @@ FILTER_NAMES = {
     "instagram": "📸 Instagram Embed",
     "threads": "🧵 Threads Embed",
     "perplexity": "🤖 Perplexity AI",
-    "apple_amazon": "🍎 Apple & Amazon",
+    "apple": "🍎 Applebot",
+    "amazon": "📦 Amazonbot",
     "shapbot": "🤖 ShapBot",
     "ai_other": "🤖 Other AI (DeepSeek/CommonCrawl)",
-    "siteblaster": "💥 SiteBlaster 9001",
     "dev_scripts": "🐍 Dev Scripts (Python/Curl)",
     "feed_fetcher": "📡 RSS / Feed Fetchers",
     "ad_scanners": "🛡️ Ad/Sec Scanners",
@@ -606,6 +613,7 @@ FILTER_NAMES = {
     "other_bots": "👾 Other Bots",
     "browser": "👤 Headless & Unbranded",
     "bing": "🔵 Bingbot",
+    "yandex": "🔴 Yandex",
     "shield": "🛡️ Shield Probes"
 }
 
@@ -811,7 +819,7 @@ def render_dashboard(tracker: TrafficTracker):
     rps = last_10s_reqs / 10.0
     rpm = int(rps * 60)
 
-    ai_reqs = cats["claude"] + cats["openai"] + cats["perplexity"] + cats["bytedance"] + cats["apple_amazon"]
+    ai_reqs = cats["claude"] + cats["openai"] + cats["perplexity"] + cats["bytedance"] + cats["apple"] + cats["amazon"]
     web_reqs = max(0, tot - ai_reqs)
     ai_pct = (ai_reqs / tot * 100) if tot > 0 else 0
     web_pct = (web_reqs / tot * 100) if tot > 0 else 0
@@ -902,7 +910,7 @@ def render_dashboard(tracker: TrafficTracker):
         crawler_rows = [
             ("AI Citations", "citations", YELLOW),
             ("Claude Search", "claude_search", YELLOW),
-            ("OAI Search", "oai_search", YELLOW),
+            ("OpenAI-Search", "oai_search", YELLOW),
             ("ClaudeBot", "claude", YELLOW),
             ("Googlebot", "google", GREEN),
             ("Google Images", "google_images", GREEN),
@@ -916,11 +924,12 @@ def render_dashboard(tracker: TrafficTracker):
             ("Threads", "threads", CYAN),
             ("Perplexity", "perplexity", YELLOW),
             ("Bingbot", "bing", BLUE),
+            ("Yandex", "yandex", RED),
             ("ByteSpider", "bytedance", YELLOW),
-            ("Apple & Amazon", "apple_amazon", YELLOW),
+            ("Applebot", "apple", YELLOW),
+            ("Amazonbot", "amazon", YELLOW),
             ("ShapBot", "shapbot", YELLOW),
             ("Other AI Bots", "ai_other", YELLOW),
-            ("SiteBlaster 9001", "siteblaster", RED),
             ("Watched Bots", "watchlist", MAGENTA),
             ("Dev Scripts", "dev_scripts", GREEN),
             ("Feed Readers", "feed_fetcher", CYAN),
@@ -1059,7 +1068,7 @@ def render_dashboard(tracker: TrafficTracker):
             filter_summary = f"{BOLD}ALL TRAFFIC & SURFACES ({tot:,} total){RESET}"
 
         output.append(f"  {BOLD}⚡ LIVE STREAM FEED — {filter_summary}")
-        output.append(f"  {DIM}Bot Keys: {YELLOW}[7] Citations{RESET} | {YELLOW}[0] ShapBot{RESET} | {RED}[9] SiteBlaster{RESET} | {DIM}[g] Google [c] Claude [o] OpenAI [p] Perplexity [h] Headless{RESET}")
+        output.append(f"  {DIM}Bot Keys: {YELLOW}[7] Citations{RESET} | {YELLOW}[0] ShapBot{RESET} | {DIM}[g] Google [c] Claude [o] OpenAI [p] Perplexity [y] Yandex [h] Headless{RESET}")
         output.append(f"  {DIM}Surface Keys: [v] Vectors [s] Synergies [k] Checklists | Format Keys: [d] Markdown [t] HTML [j] JSON [i] Image{RESET}")
         output.append(f"{CYAN}--------------------------------------------------------------------------------{RESET}")
 
@@ -1467,14 +1476,6 @@ def check_keyboard_input(tracker: TrafficTracker):
                         tracker.selected_route_filter = "all"
                         tracker.selected_type_filter = "all"
                     render_dashboard(tracker)
-                elif ch in (b'9',):
-                    if tracker.selected_filter == "siteblaster":
-                        tracker.selected_filter = "all"
-                    else:
-                        tracker.selected_filter = "siteblaster"
-                        tracker.selected_route_filter = "all"
-                        tracker.selected_type_filter = "all"
-                    render_dashboard(tracker)
                 elif ch in (b'0',):
                     if tracker.selected_filter == "shapbot":
                         tracker.selected_filter = "all"
@@ -1520,6 +1521,9 @@ def check_keyboard_input(tracker: TrafficTracker):
                     render_dashboard(tracker)
                 elif ch in (b'b', b'B'):
                     tracker.selected_filter = "all" if tracker.selected_filter == "bing" else "bing"
+                    render_dashboard(tracker)
+                elif ch in (b'y', b'Y'):
+                    tracker.selected_filter = "all" if tracker.selected_filter == "yandex" else "yandex"
                     render_dashboard(tracker)
                 # Surface / Route Focus Filters
                 elif ch in (b'v', b'V'):
@@ -1608,6 +1612,8 @@ def tail_log_file(tracker: TrafficTracker, from_now: bool = False):
                     surf_tag, fmt_tag = parse_log_tags(m.group("tags"))
                     ct = f"[{fmt_tag}]" if fmt_tag else ""
                     cat = classify_badge(badge, ip, path, ct)
+                    if cat == "siteblaster":
+                        continue
                     lat_val = int(m.group("lat")) if m.group("lat") else 0
                     tracker.add_request(ts, cat, status, path, ip, badge, ct, lat_val, surf_tag)
         while True:
@@ -1629,6 +1635,8 @@ def tail_log_file(tracker: TrafficTracker, from_now: bool = False):
                         surf_tag, fmt_tag = parse_log_tags(m.group("tags"))
                         ct = f"[{fmt_tag}]" if fmt_tag else ""
                         cat = classify_badge(badge, ip, path, ct)
+                        if cat == "siteblaster":
+                            continue
                         lat_val = int(m.group("lat")) if m.group("lat") else 0
                         tracker.add_request(ts, cat, status, path, ip, badge, ct, lat_val, surf_tag)
             else:

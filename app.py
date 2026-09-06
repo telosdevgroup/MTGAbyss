@@ -422,10 +422,38 @@ PROBE_SENSITIVE_PATTERNS = (
     "api/env", "api/config", "docker-compose", "web.config", "phpinfo"
 )
 
+SCRAPER_USER_AGENTS = (
+    "meta-externalagent", "meta-externalfetcher", "shapbot", "bytespider", "bytedance",
+    "gptbot", "oai-search", "cohere-ai", "diffbot", "ccbot", "commoncrawl", "amazonbot"
+)
+_SCRAPER_SEMAPHORE = None
+
+def get_scraper_semaphore() -> asyncio.Semaphore:
+    global _SCRAPER_SEMAPHORE
+    if _SCRAPER_SEMAPHORE is None:
+        _SCRAPER_SEMAPHORE = asyncio.Semaphore(2)
+    return _SCRAPER_SEMAPHORE
+
 @app.middleware("http")
 async def bot_probe_shield_middleware(request: Request, call_next):
     raw_path = request.url.path.lower()
     norm_path = re.sub(r'/+', '/', raw_path)
+
+    ua = request.headers.get("user-agent", "").lower()
+    is_scraper = any(s in ua for s in SCRAPER_USER_AGENTS)
+    if is_scraper:
+        sem = get_scraper_semaphore()
+        if sem.locked():
+            return Response(
+                content="Rate limit exceeded. Please back off.",
+                status_code=429,
+                headers={"Retry-After": "1", "X-Shield": "The-Abyss-RateLimit"}
+            )
+        try:
+            sem._value -= 1
+            return await call_next(request)
+        finally:
+            sem._value += 1
 
     # 1. CMS & WordPress Exploit Scanners -> Trap & Honeypot
     is_cms_probe = any(k in norm_path for k in PROBE_KEYWORDS)
@@ -566,7 +594,7 @@ def get_caller_badge(request: Request) -> str:
     # 4. Search Engines & Web Crawlers
     if "duckduckbot" in ua:
         return "[Crawler:DuckDuckGo]"
-    if "yandexbot" in ua:
+    if "yandex" in ua:
         return "[Crawler:Yandex]"
     if "baiduspider" in ua:
         return "[Crawler:Baidu]"
@@ -1178,6 +1206,34 @@ async def auth_login_choice(request: Request, next: Optional[str] = None):
         }
     )
 
+async def send_discord_notification(title: str, description: str, color: int = 0x5865F2, fields: Optional[List[Dict[str, Any]]] = None, image_url: Optional[str] = None):
+    """Fire-and-forget Discord webhook notification with rich embed."""
+    webhook_url = os.environ.get("DISCORD_WEBHOOK_URL", "").strip()
+    if not webhook_url:
+        return
+    
+    embed = {
+        "title": title,
+        "description": description,
+        "color": color,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    if fields:
+        embed["fields"] = fields
+    if image_url:
+        embed["image"] = {"url": image_url}
+
+    payload = {
+        "username": "AvaScry Bot",
+        "embeds": [embed]
+    }
+    
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            await client.post(webhook_url, json=payload)
+    except Exception as exc:
+        print(f"[Discord Webhook] Failed to send notification: {exc}")
+
 @app.get("/auth/discord/login")
 async def auth_discord_login(request: Request, next: Optional[str] = None):
     client_id = os.environ.get("DISCORD_CLIENT_ID", "").strip()
@@ -1306,6 +1362,15 @@ async def auth_discord_callback(request: Request, code: Optional[str] = None, st
             }
             res = db["users"].insert_one(new_doc)
             user_doc = db["users"].find_one({"_id": res.inserted_id})
+            asyncio.create_task(send_discord_notification(
+                title="✨ New User Signup (Discord)",
+                description=f"**{discord_username}** joined AvaScry via Discord OAuth!",
+                color=0x5865F2,
+                fields=[
+                    {"name": "Username", "value": discord_username, "inline": True},
+                    {"name": "Account ID", "value": str(res.inserted_id), "inline": True}
+                ]
+            ))
             
         request.session["user"] = {
             "id": str(user_doc["_id"]),
@@ -1451,6 +1516,16 @@ async def auth_google_callback(request: Request, code: Optional[str] = None, sta
             }
             res = db["users"].insert_one(new_doc)
             user_doc = db["users"].find_one({"_id": res.inserted_id})
+            google_name = profile.get("name", "Magic Player")
+            asyncio.create_task(send_discord_notification(
+                title="✨ New User Signup (Google)",
+                description=f"**{google_name}** joined AvaScry via Google!",
+                color=0x4285F4,
+                fields=[
+                    {"name": "Name", "value": google_name, "inline": True},
+                    {"name": "Account ID", "value": str(res.inserted_id), "inline": True}
+                ]
+            ))
         
         # Set session
         request.session["user"] = {
@@ -1543,7 +1618,7 @@ async def save_user_deck(request: Request):
         "updated_at": now
     }
     
-    db["decks"].update_one(
+    upsert_res = db["decks"].update_one(
         {"deck_id": deck_id, "user_id": user["id"]},
         {
             "$set": deck_doc,
@@ -1551,6 +1626,22 @@ async def save_user_deck(request: Request):
         },
         upsert=True
     )
+    
+    if upsert_res.upserted_id is not None:
+        user_display = user.get("name") or user.get("discord_username") or "Planeswalker"
+        commander_name = commander_data.get("name", "None") if commander_data else "None"
+        card_count = deck_doc["card_count"]
+        asyncio.create_task(send_discord_notification(
+            title="🃏 New Deck Created",
+            description=f"**{user_display}** created a new deck: **{name}**!",
+            color=0x2ECC71,
+            fields=[
+                {"name": "Deck Name", "value": name, "inline": True},
+                {"name": "Commander", "value": commander_name, "inline": True},
+                {"name": "Cards", "value": str(card_count), "inline": True},
+                {"name": "Deck ID", "value": deck_id, "inline": True}
+            ]
+        ))
     
     return JSONResponse({"status": "saved", "deck_id": deck_id, "updated_at": now})
 
@@ -2346,8 +2437,13 @@ async def commander_discover(request: Request):
 
 
 @app.get("/card/{slug}")
+@app.head("/card/{slug}")
 async def card_name_shortcut(request: Request, slug: str):
     """Clean shortcut redirecting /card/<name> to the primary/earliest Oracle printing of that card."""
+    slug_clean = slug.strip().lower()
+    if slug_clean in ("null", "undefined", "none") or slug_clean.startswith(("null.", "undefined.", "none.")):
+        return RedirectResponse(url="/", status_code=301)
+
     ext = ""
     for check_ext in (".json", ".md", ".xml", ".csv"):
         if slug.lower().endswith(check_ext):
@@ -2356,26 +2452,22 @@ async def card_name_shortcut(request: Request, slug: str):
             break
 
     db = get_mongo_db()
-    unslugged = slug.replace('-', ' ')
-    pattern = slug_to_name_regex(slug)
     
-    # 1. Fast indexed match by printing_slug or slug
-    card = db["cards"].find_one({"printing_slug": slug})
-    if not card:
-        card = db["cards"].find_one({"slug": slug})
+    # 1. Fast direct lookup by slug, printing_slug, or card name
+    card = db["cards"].find_one({"slug": slug}) or db["cards"].find_one({"printing_slug": slug})
+    
+    # 2. Check if slug has a set code suffix (e.g. "scrib-nibblers-wwk" -> base="scrib-nibblers", set="wwk")
     if not card and '-' in slug:
         parts = slug.split('-')
-        if len(parts) >= 2:
+        if len(parts) >= 2 and len(parts[-1]) in (3, 4):
             card_slug, set_code = "-".join(parts[:-1]), parts[-1].lower()
-            card = db["cards"].find_one({"set": set_code, "slug": card_slug})
-            if not card:
-                card = db["cards"].find_one({"slug": card_slug})
+            base_card = find_card_by_slug(db, card_slug)
+            if base_card and base_card.get("oracle_id"):
+                card = db["cards"].find_one({"oracle_id": base_card["oracle_id"], "set": set_code}) or base_card
+
+    # 3. Lookup full slug
     if not card:
-        card = db["cards"].find_one({"name": unslugged.title()})
-    if not card:
-        card = db["cards"].find_one({"name": unslugged})
-    if not card:
-        card = db["cards"].find_one({"name": pattern})
+        card = find_card_by_slug(db, slug)
     
     if card:
         oracle_id = card.get("oracle_id")
@@ -2630,33 +2722,58 @@ def find_card_by_slug(db, slug: str) -> Optional[dict]:
     unslugged = clean.replace('-', ' ')
     title_name = unslugged.title()
     
-    # 1. Exact Title Case
-    card = db["cards"].find_one({"name": title_name})
-    if card:
-        return card
-        
-    # 2. Exact unslugged
-    if unslugged != title_name:
-        card = db["cards"].find_one({"name": unslugged})
-        if card:
-            return card
+    # Check RAM Cache first
+    cache_key = f"slug_card:{clean.lower()}"
+    if cache_key in RAM_CACHE:
+        return RAM_CACHE[cache_key]
 
-    # 3. Direct slug match
-    card = db["cards"].find_one({"slug": clean})
-    if card:
-        return card
+    # 1. Exact Title Case & Unslugged
+    card = db["cards"].find_one({"name": title_name})
+    if not card and unslugged != title_name:
+        card = db["cards"].find_one({"name": unslugged})
+
+    # 1b. Standard MTG Title Casing (e.g. "Vanguard of the Rose", "Lord of the Undead")
+    if not card and '-' in clean:
+        words = clean.split('-')
+        mtg_title = " ".join(
+            w.lower() if (i > 0 and w.lower() in ("the", "of", "in", "to", "at", "for", "and", "a", "an", "on", "by", "with", "from")) else w.capitalize()
+            for i, w in enumerate(words)
+        )
+        if mtg_title not in (title_name, unslugged):
+            card = db["cards"].find_one({"name": mtg_title})
         
-    # 4. Comma variants (e.g. "Jace, the Mind Sculptor", "Urza, Lord High Artificer")
+    # 2. Direct slug match
+    if not card:
+        card = db["cards"].find_one({"slug": clean})
+
+    # 3. Direct hyphenated card names (e.g. "Investi-Gate")
+    if not card:
+        hyphen_title = "-".join(w.capitalize() for w in clean.split('-'))
+        card = db["cards"].find_one({"name": hyphen_title})
+        
+    # 4. Comma & Apostrophe variants (e.g. "Jace, the Mind Sculptor", "Hero's Uncle")
     words = clean.split('-')
-    if len(words) >= 2:
-        rest = " ".join(w if w.lower() in ("the", "of", "in", "to", "at", "for", "and", "a", "an") else w.capitalize() for w in words[1:])
-        card = db["cards"].find_one({"name": f"{words[0].capitalize()}, {rest}"})
-        if card:
-            return card
+    if not card and len(words) >= 2:
+        # 4a. Possessive apostrophes (Hero's Uncle, Gaea's Cradle)
+        apos_cand = " ".join(
+            (w[:-1].capitalize() + "'s") if (w.endswith('s') and not w.endswith('ss') and len(w) > 2) else w.capitalize()
+            for w in words
+        )
+        card = db["cards"].find_one({"name": apos_cand})
+        
+        # 4b. Comma separated (Jace, the Mind Sculptor)
+        if not card:
+            rest = " ".join(w if w.lower() in ("the", "of", "in", "to", "at", "for", "and", "a", "an") else w.capitalize() for w in words[1:])
+            card = db["cards"].find_one({"name": f"{words[0].capitalize()}, {rest}"})
             
     # 5. Fallback to full regex
-    pattern = slug_to_name_regex(clean)
-    return db["cards"].find_one({"name": pattern})
+    if not card:
+        pattern = slug_to_name_regex(clean)
+        card = db["cards"].find_one({"name": pattern})
+
+    if card:
+        set_ram_cache(cache_key, card)
+    return card
 
 KNOWN_LANG_CODES = {'ja', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ko', 'zhs', 'zht'}
 
@@ -2684,14 +2801,22 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
         is_csv = True
 
     identifier = identifier.strip()
+    if identifier.lower() in ("null", "undefined", "none"):
+        return RedirectResponse(url="/", status_code=301)
     if not identifier or identifier in ("", ".", "..", "-"):
         raise HTTPException(status_code=404, detail="Card printing not found")
     # Guard against punctuation-only strings unless it's the genuine unhinged card '_____'
     if not re.search(r'[a-zA-Z0-9]', identifier) and identifier != "_____":
         raise HTTPException(status_code=404, detail="Card printing not found")
 
+    # Check RAM Cache first for resolved printing detail
+    cache_key = f"print_card:{identifier.lower()}"
+    if cache_key in RAM_CACHE:
+        card = RAM_CACHE[cache_key]
+
     # 1. Direct indexed match by printing_slug or id or slug
-    card = db["cards"].find_one({"printing_slug": identifier})
+    if not card:
+        card = db["cards"].find_one({"printing_slug": identifier})
     if not card:
         card = db["cards"].find_one({"id": identifier})
     if not card:
@@ -2699,7 +2824,7 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
 
     # 2. De-duplicate double-slugs (e.g. urabrasks-forge-urabrasks-forge-aone -> urabrasks-forge-aone)
     clean_ident = identifier
-    if '-' in clean_ident:
+    if not card and '-' in clean_ident:
         tokens = clean_ident.split('-')
         half = len(tokens) // 2
         for l in range(half, 0, -1):
@@ -2707,7 +2832,7 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
                 clean_ident = "-".join(tokens[l:])
                 break
 
-    # 3. Try match by <slug>-<set>-<lang> or <slug>-<set>
+    # 3. Fast indexed lookup by oracle_id: <slug>-<set>-<lang> or <slug>-<set>
     if not card and '-' in clean_ident:
         parts = clean_ident.split('-')
         
@@ -2716,87 +2841,70 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
             possible_lang = parts[-1].lower()
             possible_set = parts[-2].lower()
             card_slug = "-".join(parts[:-2])
-            pattern = slug_to_name_regex(card_slug)
             
-            card = db["cards"].find_one({
-                "set": possible_set,
-                "lang": possible_lang,
-                "$or": [
-                    {"slug": card_slug},
-                    {"name": pattern},
-                    {"card_faces.0.name": pattern}
-                ]
-            })
-
-            # Check card_prints for the requested language before falling back to English
-            if not card:
-                cp_doc = db["card_prints"].find_one({"set": possible_set, "name": pattern, "lang": possible_lang})
-                if cp_doc and cp_doc.get("oracle_id"):
-                    oracle_card = db["cards"].find_one({"oracle_id": cp_doc["oracle_id"]})
-                    if oracle_card:
-                        merged = dict(oracle_card)
+            # Fast-path: Resolve base card via indexed slug/name to get oracle_id in 1ms
+            base_card = find_card_by_slug(db, card_slug)
+            if base_card and base_card.get("oracle_id"):
+                oid = base_card["oracle_id"]
+                # 1. Direct match on cards (indexed oracle_id + lang)
+                card = db["cards"].find_one({"oracle_id": oid, "set": possible_set, "lang": possible_lang})
+                if not card:
+                    # 2. Match on card_prints (contains historical / localized prints)
+                    cp_doc = db["card_prints"].find_one({"oracle_id": oid, "set": possible_set, "lang": possible_lang})
+                    if cp_doc:
+                        card = dict(base_card)
                         for k in ["id", "set", "set_name", "collector_number", "released_at", "lang", "image_uris", "image_slug", "card_faces", "printed_name", "flavor_text", "printed_text", "rarity", "artist"]:
                             if k in cp_doc and cp_doc[k] is not None:
-                                merged[k] = cp_doc[k]
-                        card = merged
-
-            # Fall back to English print for that set
-            if not card:
-                card = db["cards"].find_one({
-                    "set": possible_set,
-                    "lang": "en",
-                    "$or": [
-                        {"slug": card_slug},
-                        {"name": pattern},
-                        {"card_faces.0.name": pattern}
-                    ]
-                })
+                                card[k] = cp_doc[k]
+                if not card:
+                    # 3. Fallback to English print in that set
+                    card = db["cards"].find_one({"oracle_id": oid, "set": possible_set, "lang": "en"})
 
         # 3b. Check <slug>-<set> (prefer English)
         if not card and len(parts) >= 2:
             card_slug, set_code = "-".join(parts[:-1]), parts[-1].lower()
-            pattern = slug_to_name_regex(card_slug)
-            card = db["cards"].find_one({
-                "set": set_code,
-                "lang": "en",
-                "$or": [
-                    {"slug": card_slug},
-                    {"name": pattern},
-                    {"card_faces.0.name": pattern}
-                ]
-            })
-            if not card:
-                card = db["cards"].find_one({
-                    "set": set_code,
-                    "$or": [
-                        {"slug": card_slug},
-                        {"name": pattern},
-                        {"card_faces.0.name": pattern}
-                    ]
-                })
+            base_card = find_card_by_slug(db, card_slug)
+            if base_card and base_card.get("oracle_id"):
+                oid = base_card["oracle_id"]
+                card = db["cards"].find_one({"oracle_id": oid, "set": set_code, "lang": "en"}) or db["cards"].find_one({"oracle_id": oid, "set": set_code})
+                if not card:
+                    cp_doc = db["card_prints"].find_one({"oracle_id": oid, "set": set_code})
+                    if cp_doc:
+                        card = dict(base_card)
+                        for k in ["id", "set", "set_name", "collector_number", "released_at", "lang", "image_uris", "image_slug", "card_faces", "printed_name", "flavor_text", "printed_text", "rarity", "artist"]:
+                            if k in cp_doc and cp_doc[k] is not None:
+                                card[k] = cp_doc[k]
+                if not card:
+                    card = base_card
 
-        # 3c. If set-specific match was not in cards, check card_prints (which contains all historical printings)
+        # 3c. Fallback regex match if slug didn't resolve to known card
         if not card and len(parts) >= 2:
             possible_lang = parts[-1].lower() if len(parts) >= 3 and parts[-1].lower() in KNOWN_LANG_CODES else None
             set_code = parts[-2].lower() if possible_lang else parts[-1].lower()
             card_slug = "-".join(parts[:-2]) if possible_lang else "-".join(parts[:-1])
             pattern = slug_to_name_regex(card_slug)
 
-            cp_query = {"set": set_code, "name": pattern}
             if possible_lang:
-                cp_query["lang"] = possible_lang
-            cp_doc = db["card_prints"].find_one(cp_query)
-            if not cp_doc and possible_lang:
-                cp_doc = db["card_prints"].find_one({"set": set_code, "name": pattern, "lang": "en"})
+                card = db["cards"].find_one({"set": set_code, "lang": possible_lang, "name": pattern})
+            if not card:
+                card = db["cards"].find_one({"set": set_code, "lang": "en", "name": pattern})
 
-            if cp_doc and cp_doc.get("oracle_id"):
-                oracle_card = db["cards"].find_one({"oracle_id": cp_doc["oracle_id"], "lang": "en"}) or db["cards"].find_one({"oracle_id": cp_doc["oracle_id"]})
-                if oracle_card:
-                    merged = dict(oracle_card)
-                    for k in ["id", "set", "set_name", "collector_number", "released_at", "lang", "image_uris", "image_slug", "card_faces", "printed_name", "flavor_text", "printed_text", "rarity", "artist"]:
-                        if k in cp_doc and cp_doc[k] is not None:
-                            merged[k] = cp_doc[k]
-                    card = merged
+            if not card:
+                cp_query = {"set": set_code, "name": pattern}
+                if possible_lang:
+                    cp_query["lang"] = possible_lang
+                cp_doc = db["card_prints"].find_one(cp_query)
+                if not cp_doc and possible_lang:
+                    cp_doc = db["card_prints"].find_one({"set": set_code, "name": pattern, "lang": "en"})
+
+                if cp_doc and cp_doc.get("oracle_id"):
+                    oracle_card = db["cards"].find_one({"oracle_id": cp_doc["oracle_id"], "lang": "en"}) or db["cards"].find_one({"oracle_id": cp_doc["oracle_id"]})
+                    if oracle_card:
+                        merged = dict(oracle_card)
+                        for k in ["id", "set", "set_name", "collector_number", "released_at", "lang", "image_uris", "image_slug", "card_faces", "printed_name", "flavor_text", "printed_text", "rarity", "artist"]:
+                            if k in cp_doc and cp_doc[k] is not None:
+                                merged[k] = cp_doc[k]
+                        card = merged
 
     # 4. Fallback match by stripping set/lang tokens and searching card name / slug (prefer English)
     if not card and '-' in clean_ident:
@@ -2805,6 +2913,10 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
         for num_trailing in (2, 1):
             if len(parts) > num_trailing:
                 base_slug = "-".join(parts[:-num_trailing])
+                base_card = find_card_by_slug(db, base_slug)
+                if base_card:
+                    card = base_card
+                    break
                 pattern = slug_to_name_regex(base_slug)
                 card = db["cards"].find_one({
                     "lang": "en",
@@ -2974,50 +3086,71 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
     if not card:
         raise HTTPException(status_code=404, detail="Printing not found in the Abyss")
         
+    set_ram_cache(cache_key, card)
     oracle_id = card.get("oracle_id")
     card_vm = build_card_view_model(card, db, background_tasks)
     
-    # Load All Other Printings for this Oracle ID
+    # Load All Other Printings for this Oracle ID (cached by oracle_id in RAM_CACHE)
     printings = []
     sorted_lang_groups = []
     if oracle_id:
-        p_cursor = list(db["card_prints"].find({"oracle_id": oracle_id}).sort("released_at", 1))
-        if not p_cursor:
-            p_cursor = list(db["cards"].find({"oracle_id": oracle_id}).sort("released_at", 1))
-        for p in p_cursor:
-            p_name = p.get("name") or card.get("name") or "card"
-            p_printed_name = p.get("printed_name") or p_name
-            p_set = (p.get("set") or "").lower()
-            p_slug = slugify(p_name)
-            p_lang = (p.get("lang") or "en").lower()
-            p_printing_slug = f"{p_slug}-{p_set}-{p_lang}" if p_lang != "en" else (f"{p_slug}-{p_set}" if p_set else p.get("id"))
-            p_small_url, p_img_url, p_large_url = resolve_card_images(p, None)
-            p_rarity = p.get("rarity") or card.get("rarity") or ""
-            p_artist = p.get("artist") or card.get("artist") or "Unknown"
-            FLAGS = {
-                'en': '🇺🇸', 'ja': '🇯🇵', 'fr': '🇫🇷', 'de': '🇩🇪',
-                'es': '🇪🇸', 'it': '🇮🇹', 'zhs': '🇨🇳', 'zht': '🇹🇼',
-                'pt': '🇧🇷', 'ru': '🇷🇺', 'ko': '🇰🇷'
-            }
-            printings.append({
-                "id": p.get("id"),
-                "printing_slug": p_printing_slug,
-                "name": p_name,
-                "printed_name": p_printed_name,
-                "set_name": p.get("set_name", "Unknown"),
-                "set": p_set,
-                "collector_number": p.get("collector_number", "N/A"),
-                "rarity": p_rarity,
-                "lang": p_lang,
-                "lang_flag": FLAGS.get(p_lang, '🌐'),
-                "artist": p_artist,
-                "artist_slug": slugify(p_artist),
-                "released_at": p.get("released_at", ""),
-                "image_url": p_small_url or p_img_url,
-                "large_image_url": p_large_url or p_img_url,
-                "is_current": (p.get("id") == card.get("id"))
-            })
+        raw_p_cache_key = f"raw_printings:{oracle_id}"
+        if raw_p_cache_key in RAM_CACHE:
+            raw_printings = RAM_CACHE[raw_p_cache_key]
+        else:
+            # If a card has thousands of printings (e.g. Basic Lands), cap cursor to the most recent 120 per language
+            p_cursor = list(db["card_prints"].find({"oracle_id": oracle_id}).sort("released_at", -1))
+            if not p_cursor:
+                p_cursor = list(db["cards"].find({"oracle_id": oracle_id}).sort("released_at", -1))
+            
+            # Capping printings per language to max 30 for massive print lists (e.g. Forest, Island) to keep Jinja fast
+            lang_counts = {}
+            filtered_cursor = []
+            for p in p_cursor:
+                l = (p.get("lang") or "en").lower()
+                c = lang_counts.get(l, 0)
+                if c < 30:
+                    lang_counts[l] = c + 1
+                    filtered_cursor.append(p)
 
+            raw_printings = []
+            for p in filtered_cursor:
+                p_name = p.get("name") or card.get("name") or "card"
+                p_printed_name = p.get("printed_name") or p_name
+                p_set = (p.get("set") or "").lower()
+                p_slug = slugify(p_name)
+                p_lang = (p.get("lang") or "en").lower()
+                p_printing_slug = f"{p_slug}-{p_set}-{p_lang}" if p_lang != "en" else (f"{p_slug}-{p_set}" if p_set else p.get("id"))
+                p_small_url, p_img_url, p_large_url = resolve_card_images(p, None)
+                p_rarity = p.get("rarity") or card.get("rarity") or ""
+                p_artist = p.get("artist") or card.get("artist") or "Unknown"
+                FLAGS = {
+                    'en': '🇺🇸', 'ja': '🇯🇵', 'fr': '🇫🇷', 'de': '🇩🇪',
+                    'es': '🇪🇸', 'it': '🇮🇹', 'zhs': '🇨🇳', 'zht': '🇹🇼',
+                    'pt': '🇧🇷', 'ru': '🇷🇺', 'ko': '🇰🇷'
+                }
+                raw_printings.append({
+                    "id": p.get("id"),
+                    "printing_slug": p_printing_slug,
+                    "name": p_name,
+                    "printed_name": p_printed_name,
+                    "set_name": p.get("set_name", "Unknown"),
+                    "set": p_set,
+                    "collector_number": p.get("collector_number", "N/A"),
+                    "rarity": p_rarity,
+                    "lang": p_lang,
+                    "lang_flag": FLAGS.get(p_lang, '🌐'),
+                    "artist": p_artist,
+                    "artist_slug": slugify(p_artist),
+                    "released_at": p.get("released_at", ""),
+                    "image_url": p_small_url or p_img_url,
+                    "large_image_url": p_large_url or p_img_url,
+                })
+            set_ram_cache(raw_p_cache_key, raw_printings)
+
+        # Make copy and assign is_current for this specific printing
+        card_id = card.get("id")
+        current_lang = (card.get("lang") or "en").lower()
         LANG_NAMES = {
             "en": "🇺🇸 English",
             "ja": "🇯🇵 日本語 (Japanese)",
@@ -3032,10 +3165,12 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
             "zht": "🇹🇼 繁體中文 (Traditional Chinese)"
         }
 
-        # Group printings by language
         lang_groups = {}
-        for p in printings:
-            l_code = p.get("lang", "en").lower()
+        for rp in raw_printings:
+            p = dict(rp)
+            p["is_current"] = (p["id"] == card_id)
+            printings.append(p)
+            l_code = p["lang"]
             if l_code not in lang_groups:
                 lang_groups[l_code] = {
                     "lang_code": l_code,
@@ -3047,15 +3182,11 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
             if p["is_current"]:
                 lang_groups[l_code]["has_current"] = True
 
-        # Sort printings inside each group by released_at descending
-        for g in lang_groups.values():
-            g["printings_list"].sort(key=lambda x: (not x["is_current"], x.get("released_at") or ""), reverse=False)
-
         # Sort language groups: active viewing language first, then English, then alphabetical
         sorted_lang_groups = sorted(
             lang_groups.values(),
             key=lambda g: (
-                0 if g["has_current"] else (1 if g["lang_code"] == "en" else 2),
+                0 if g["has_current"] or g["lang_code"] == current_lang else (1 if g["lang_code"] == "en" else 2),
                 g["lang_name"]
             )
         )
@@ -3405,6 +3536,10 @@ async def similar_cards_page(slug: str, request: Request, background_tasks: Back
     elif slug.lower().endswith(".json"):
         slug = slug[:-5]
         is_json = True
+
+    slug_clean = slug.strip().lower()
+    if slug_clean in ("null", "undefined", "none") or slug_clean.startswith(("null.", "undefined.", "none.")):
+        return RedirectResponse(url="/", status_code=301)
 
     slug = slug.strip()
     if not slug or slug in ("", ".", "..", "-"):
@@ -4146,7 +4281,7 @@ def get_or_build_gallery_cache(db) -> List[dict]:
     return _GALLERY_CACHE["items"]
 
 @app.get("/api/live-gallery/feed")
-async def live_gallery_feed():
+async def live_gallery_feed(request: Request):
     import random
     db = get_mongo_db()
     all_cached = get_or_build_gallery_cache(db)
@@ -4154,6 +4289,31 @@ async def live_gallery_feed():
     # Return a shuffled slice of 40 cards from the 301 cached Oracle cards
     if all_cached:
         shuffled = random.sample(all_cached, min(40, len(all_cached)))
+        
+        # Notify Discord once per user/guest session when they open the live gallery
+        if not request.session.get("notified_gallery_session"):
+            request.session["notified_gallery_session"] = True
+            first_card = shuffled[0]
+            first_img = first_card.get("art_url") or first_card.get("card_url")
+            card_name = first_card.get("name", "Unknown Card")
+            artist = first_card.get("artist", "Unknown Artist")
+            set_name = first_card.get("set_name", "")
+            
+            user = request.session.get("user")
+            user_display = (user.get("name") or user.get("discord_username")) if user else "A visitor (Guest)"
+            
+            asyncio.create_task(send_discord_notification(
+                title="🖼️ Live Gallery Started",
+                description=f"**{user_display}** just loaded the Live Gallery!",
+                color=0x9B59B6,
+                fields=[
+                    {"name": "First Card", "value": card_name, "inline": True},
+                    {"name": "Artist", "value": artist, "inline": True},
+                    {"name": "Set", "value": set_name or "Standard", "inline": True}
+                ],
+                image_url=first_img
+            ))
+            
         return JSONResponse(content={"items": shuffled, "cards": shuffled})
         
     return JSONResponse(content={"items": [], "cards": []})
@@ -4175,8 +4335,20 @@ async def artist_detail(request: Request, slug: str, background_tasks: Backgroun
         slug = slug[:-5]
         is_json = True
 
-    unslugged = slug.replace('-', ' ')
-    artist_name = unslugged.title()
+    # Fast in-memory resolution of exact artist casing (e.g. 'larry-macdougall' -> 'Larry MacDougall')
+    global _ARTISTS_MAP
+    if '_ARTISTS_MAP' not in globals() or _ARTISTS_MAP is None:
+        try:
+            _ARTISTS_MAP = {slugify(a): a for a in db["cards"].distinct("artist") if a}
+        except Exception:
+            _ARTISTS_MAP = {}
+    
+    resolved_artist = _ARTISTS_MAP.get(slug)
+    if resolved_artist:
+        artist_name = resolved_artist
+    else:
+        unslugged = slug.replace('-', ' ')
+        artist_name = unslugged.title()
     
     # 1. Fast exact match using index
     query_exact = {"artist": artist_name, "lang": "en"}
@@ -4184,6 +4356,13 @@ async def artist_detail(request: Request, slug: str, background_tasks: Backgroun
         query_exact,
         {"name": 1, "set": 1, "set_name": 1, "collector_number": 1, "released_at": 1, "rarity": 1, "type_line": 1, "mana_cost": 1, "image_uris": 1, "image_slug": 1, "artist": 1}
     ).sort("released_at", -1).limit(60))
+    
+    if not cards_cursor:
+        query_exact_any = {"artist": artist_name}
+        cards_cursor = list(db["cards"].find(
+            query_exact_any,
+            {"name": 1, "set": 1, "set_name": 1, "collector_number": 1, "released_at": 1, "rarity": 1, "type_line": 1, "mana_cost": 1, "image_uris": 1, "image_slug": 1, "artist": 1}
+        ).sort("released_at", -1).limit(60))
     
     # 2. Fallback to regex if exact title didn't hit
     if not cards_cursor:
