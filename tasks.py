@@ -363,7 +363,7 @@ def process_art_vl(self, illustration_id: str, force: bool = False, model: str =
         "model": vl_model,
         "prompt": BLINDED_VL_PROMPT,
         "images": [image_b64],
-        "stream": False,
+        "stream": True,
         "keep_alive": "1h",
         "options": {
             "temperature": 0.1,
@@ -373,6 +373,7 @@ def process_art_vl(self, illustration_id: str, force: bool = False, model: str =
     }
 
     start_time = time.time()
+    raw_text = ""
     try:
         req = urllib.request.Request(
             api_url,
@@ -381,11 +382,35 @@ def process_art_vl(self, illustration_id: str, force: bool = False, model: str =
             method="POST"
         )
         with urllib.request.urlopen(req, timeout=ollama_timeout) as response:
-            res_data = json.loads(response.read().decode("utf-8"))
-            raw_text = res_data.get("response", "").strip()
+            first_chunk_checked = False
+            for line in response:
+                if not line:
+                    continue
+                try:
+                    chunk = json.loads(line.decode("utf-8"))
+                except Exception:
+                    continue
+                
+                token = chunk.get("response", "")
+                raw_text += token
+
+                # Fast-fail check on the very first few characters:
+                if not first_chunk_checked:
+                    stripped = raw_text.strip()
+                    if len(stripped) >= 4:
+                        first_chunk_checked = True
+                        if not (stripped.startswith("{") or stripped.startswith("```")):
+                            response.close()
+                            raise ValueError(f"Non-JSON opening tokens detected ({stripped[:20]!r}). Aborting immediately.")
+
+                if chunk.get("done", False):
+                    break
     except (URLError, HTTPError, TimeoutError, ConnectionError) as e:
         print(f"[VL FAIL ] illustration_id={illustration_id} | Ollama error: {e} | retry {self.request.retries + 1}/3")
         raise self.retry(exc=e)
+    except ValueError as ve:
+        print(f"[VL FAST-FAIL] illustration_id={illustration_id} | {ve} | retry {self.request.retries + 1}/3")
+        raise self.retry(exc=ve)
 
     gen_duration = time.time() - start_time
 
