@@ -324,8 +324,6 @@ def process_art_vl(self, illustration_id: str, force: bool = False, model: str =
         raise ValueError(f"No image URL found for illustration_id: {illustration_id}")
 
     card_name = meta.get("card_name", "Unknown")
-    print(f"[VL START] {card_name} | {illustration_id[:8]}...")
-    sys.stdout.flush()
 
     # 3. Load or download art crop into base64
     try:
