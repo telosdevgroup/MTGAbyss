@@ -355,12 +355,10 @@ def process_art_vl(self, illustration_id: str, force: bool = False, model: str =
         "prompt": BLINDED_VL_PROMPT,
         "images": [image_b64],
         "stream": False,
-        "format": "json",
         "keep_alive": "1h",
         "options": {
             "temperature": 0.1,
-            "num_ctx": 2048,
-            "num_predict": 512
+            "num_ctx": 4096
         }
     }
 
