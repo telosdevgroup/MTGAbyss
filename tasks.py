@@ -418,7 +418,15 @@ def process_art_vl(self, illustration_id: str, force: bool = False, model: str =
 
     subj_count = len(observations.get("subjects", []))
     obj_count = len(observations.get("visible_objects", []))
-    msg = f"[VL DONE ] {card_name} | {gen_duration:.1f}s | subjects={subj_count} objects={obj_count}"
+    
+    # Fast queue backlog count for easy tracking
+    try:
+        in_q = db.client.celery_broker.messages.count_documents({"queue": "vl"})
+        left_str = f"({in_q} left) "
+    except Exception:
+        left_str = ""
+
+    msg = f"[VL DONE ] {left_str}{card_name} | {gen_duration:.1f}s | subjects={subj_count} objects={obj_count}"
     print(msg)
     sys.stdout.flush()
     return msg

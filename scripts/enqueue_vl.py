@@ -11,6 +11,7 @@ from tasks import process_art_vl
 def main():
     parser = argparse.ArgumentParser(description="Enqueue unique MTG illustration IDs for blinded VL processing into Celery queue 'vl'.")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of illustrations to queue (for testing/gradual rollouts)")
+    parser.add_argument("--no-shuffle", action="store_true", help="Do not shuffle illustrations before enqueuing")
     parser.add_argument("--model", default="qwen3-vl:latest", help="VL model identifier (default: qwen3-vl:latest)")
     parser.add_argument("--prompt-version", type=int, default=1, help="Prompt version (default: 1)")
     parser.add_argument("--dry-run", action="store_true", help="Print counts and exit without enqueuing")
@@ -77,6 +78,13 @@ def main():
 
     # Remaining to queue
     remaining_ids = list(all_illustration_ids - completed_ids)
+    
+    # Shuffle for varied visual distribution across nodes
+    if not args.no_shuffle:
+        import random
+        random.seed()
+        random.shuffle(remaining_ids)
+
     if args.limit:
         remaining_ids = remaining_ids[:args.limit]
 
