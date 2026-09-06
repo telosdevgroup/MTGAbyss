@@ -106,8 +106,8 @@ def main():
         if idx % 1000 == 0 or idx == to_queue:
             print(f"    Enqueued {idx:,}/{to_queue:,}...")
 
-    print(f"\n[+] Enqueued {to_queue:,} jobs to Celery queue 'vl'.")
-    print("GO FEED THE MACHINES. 🔥\n")
+    print("\n[+] Enqueued {to_queue:,} jobs to Celery queue 'vl'.")
+    print("GO FEED THE MACHINES.\n")
 
 if __name__ == "__main__":
     main()
