@@ -1,0 +1,82 @@
+{% extends "dominion/base.html" %}
+
+{% block title %}Dominion Card Catalog &amp; Rules Index — AvaScry{% endblock %}
+
+{% block head_extra %}
+<meta name="description" content="Complete Dominion card database: all expansions, 1st and 2nd edition cards, costs, and official rules rulings.">
+<style>
+  .hero {
+    margin-bottom: 2.5rem;
+  }
+  .hero h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+  }
+  .hero p {
+    color: var(--muted);
+    font-size: 1.1rem;
+    max-width: 650px;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25rem;
+  }
+  .card-cell {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .card-cell:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+  .card-cell-name {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.35rem;
+  }
+  .card-cell-meta {
+    font-size: 0.85rem;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <h1>Dominion Intelligence Index</h1>
+  <p>Authoritative card texts, costs, 1e vs 2e comparisons, and official rules clarifications across {{ total_cards }} cards and {{ total_expansions }} expansions.</p>
+</div>
+
+<div class="card-grid">
+  {% for c in cards %}
+  <a href="/dominion/card/{{ c.slug }}" class="card-cell">
+    <div>
+      <div class="card-cell-name">{{ c.name }}</div>
+      <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 0.75rem;">
+        {{ c.card_kinds | join(', ') | title }}
+      </div>
+    </div>
+    <div class="card-cell-meta">
+      <span>{% if c.is_kingdom_card %}&bull; Kingdom{% endif %}</span>
+      <span style="color: var(--accent); font-weight: 600;">View Rules &rarr;</span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

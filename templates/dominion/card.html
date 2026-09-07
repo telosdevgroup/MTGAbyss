@@ -1,0 +1,231 @@
+{% extends "dominion/base.html" %}
+
+{% block title %}{{ card.name }} — Dominion Rules, Cost & FAQ | AvaScry{% endblock %}
+
+{% block head_extra %}
+<meta name="description" content="{{ card.name }} Dominion card: cost, types, rules text, and official Donald X. Vaccarino FAQ rulings.">
+<link rel="alternate" type="text/markdown" href="/card/{{ card.slug }}.md" title="{{ card.name }} Markdown">
+<link rel="alternate" type="application/json" href="/card/{{ card.slug }}.json" title="{{ card.name }} JSON">
+
+<!-- Schema.org JSON-LD Graph for AI & Search Bots -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://dominion.avascry.com/card/{{ card.slug }}#webpage",
+      "url": "https://dominion.avascry.com/card/{{ card.slug }}",
+      "name": "{{ card.name }} — Dominion Card & Rules",
+      "isPartOf": {
+        "@type": "WebSite",
+        "@id": "https://dominion.avascry.com/#website",
+        "name": "AvaScry Dominion",
+        "url": "https://dominion.avascry.com"
+      }
+    },
+    {
+      "@type": "Thing",
+      "@id": "https://dominion.avascry.com/card/{{ card.slug }}#card",
+      "name": "{{ card.name }}",
+      "url": "https://dominion.avascry.com/card/{{ card.slug }}",
+      "description": "Dominion {{ card.card_kinds | join(', ') }} card."
+    }
+    {% if rulings %}
+    ,
+    {
+      "@type": "FAQPage",
+      "@id": "https://dominion.avascry.com/card/{{ card.slug }}#faq",
+      "mainEntity": [
+        {% for r in rulings %}
+        {
+          "@type": "Question",
+          "name": {{ r.question | tojson }},
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": {{ r.answer | tojson }}
+          }
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
+    }
+    {% endif %}
+  ]
+}
+</script>
+<style>
+  .card-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin-top: 1.5rem;
+  }
+  .card-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+  }
+  .card-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .card-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #fff;
+  }
+  .meta-pills {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .rules-box {
+    background: var(--rule-bg);
+    border-left: 4px solid var(--accent);
+    padding: 1.25rem 1.5rem;
+    border-radius: 0 8px 8px 0;
+    font-size: 1.15rem;
+    margin-bottom: 2rem;
+    line-height: 1.7;
+  }
+  .version-item {
+    padding: 1rem;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+  .version-title {
+    font-weight: 700;
+    color: var(--accent-gold);
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+  }
+  .ruling-card {
+    background: var(--rule-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .ruling-q {
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+  .ruling-a {
+    color: var(--text);
+    white-space: pre-line;
+  }
+  .authority-badge {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.75rem;
+    display: block;
+  }
+  .format-links {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .format-links a {
+    color: var(--accent);
+    margin-right: 1rem;
+    text-decoration: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<article class="card-page" data-game="dominion" data-card-slug="{{ card.slug }}">
+  <nav aria-label="Breadcrumb" style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;">
+    <a href="/dominion" style="color: var(--muted); text-decoration: none;">Dominion</a>
+    <span aria-hidden="true">&nbsp;/&nbsp;</span>
+    <span style="color: var(--text);">{{ card.name }}</span>
+  </nav>
+
+  <div class="card-layout">
+    <div class="card-panel">
+      <header class="card-header-bar">
+        <div>
+          <h1 class="card-title">{{ card.name }}</h1>
+          <p style="color: var(--muted); font-size: 0.95rem; margin-top: 0.25rem;">
+            Dominion {{ card.card_kinds | join(' &bull; ') | title }}
+          </p>
+        </div>
+        <div class="meta-pills">
+          {% if card.is_kingdom_card %}
+          <span class="badge" style="background: rgba(56, 189, 248, 0.1); border-color: var(--accent); color: var(--accent);">Kingdom Card</span>
+          {% endif %}
+          {% for kind in card.card_kinds %}
+          <span class="badge" style="background: rgba(255,255,255,0.05);">{{ kind | title }}</span>
+          {% endfor %}
+        </div>
+      </header>
+
+      {% if versions and versions[0].printed_rules_text %}
+      <section aria-labelledby="primary-rules-heading">
+        <h2 id="primary-rules-heading" class="sr-only">Rules Text</h2>
+        <div class="rules-box">
+          {{ versions[0].printed_rules_text }}
+        </div>
+      </section>
+      {% endif %}
+
+      <section aria-labelledby="editions-heading" style="margin-bottom: 2.5rem;">
+        <h2 id="editions-heading" style="font-family: 'Outfit', sans-serif; font-size: 1.35rem; margin-bottom: 1rem;">
+          Expansions &amp; Editions
+        </h2>
+        {% for v in versions %}
+        <div class="version-item">
+          <div class="version-title">
+            <span>{{ v.expansion_tag | title }} ({{ v.edition | upper }})</span>
+            <span>
+              {% if v.cost.coins %}{{ v.cost.coins }} Coins{% endif %}
+              {% if v.cost.debt %}+{{ v.cost.debt }} Debt{% endif %}
+              {% if v.cost.potion %}+1 Potion{% endif %}
+              {% if not v.cost.coins and not v.cost.debt and not v.cost.potion %}0 Coins{% endif %}
+            </span>
+          </div>
+          <p style="color: var(--muted); font-size: 0.9rem;">
+            <strong>Printed Text:</strong> {{ v.printed_rules_text or 'Standard rules' }}
+          </p>
+        </div>
+        {% endfor %}
+      </section>
+
+      {% if rulings %}
+      <section id="official-rulings" aria-labelledby="rulings-heading">
+        <h2 id="rulings-heading" style="font-family: 'Outfit', sans-serif; font-size: 1.35rem; margin-bottom: 1rem;">
+          Official Rules &amp; Interaction FAQ
+        </h2>
+        {% for r in rulings %}
+        <div class="ruling-card">
+          <div class="ruling-q">{{ r.question }}</div>
+          <div class="ruling-a">{{ r.answer }}</div>
+          <span class="authority-badge">&bull; Authority: {{ r.authority.name }} ({{ r.authority.authority_type }})</span>
+        </div>
+        {% endfor %}
+      </section>
+      {% endif %}
+
+      <div class="format-links">
+        <span>Machine formats:</span>
+        <a href="/dominion/card/{{ card.slug }}.md">Plain Text (.md)</a>
+        <a href="/dominion/card/{{ card.slug }}.json">Structured JSON (.json)</a>
+      </div>
+    </div>
+  </div>
+</article>
+{% endblock %}

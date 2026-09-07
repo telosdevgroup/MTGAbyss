@@ -47,6 +47,8 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from db_mongo import get_mongo_db
 import i18n
+from mtgabyss.network_router import extract_subdomain
+from mtgabyss.dominion_router import dominion_router
 
 app = FastAPI(title="AvaScry", description="Magic: The Gathering Visual Explorer & Strategy Engine")
 
@@ -225,6 +227,25 @@ os.makedirs("public/images/normal", exist_ok=True)
 os.makedirs("public/images/large", exist_ok=True)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Mount Dominion router under /dominion for zero-config local testing
+app.include_router(dominion_router, prefix="/dominion")
+
+@app.middleware("http")
+async def subdomain_routing_middleware(request: Request, call_next):
+    """
+    Subdomain Host Routing:
+    If host is dominion.avascry.com or dominion.localhost, rewrite the internal path
+    to route directly into the dominion router without changing the client's visible URL.
+    """
+    host = request.headers.get("host", "")
+    sub = extract_subdomain(host)
+    if sub == "dominion":
+        # Rewrites request scope path internally to /dominion...
+        path = request.scope.get("path", "")
+        if not path.startswith("/dominion") and not path.startswith("/static"):
+            request.scope["path"] = "/dominion" + path
+    return await call_next(request)
 
 # In-memory prefix index for O(1) resolution of multi-face, art-series, and extensionless card slugs
 IMAGE_PREFIX_MAP = {"normal": {}, "large": {}}
@@ -3103,15 +3124,20 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
             if not p_cursor:
                 p_cursor = list(db["cards"].find({"oracle_id": oracle_id}).sort("released_at", -1))
             
-            # Capping printings per language to max 30 for massive print lists (e.g. Forest, Island) to keep Jinja fast
-            lang_counts = {}
-            filtered_cursor = []
+            # Capping printings per language to prime 31 (16 newest + 15 classic vintage) for massive print lists (e.g. Forest, Island)
+            by_lang = {}
             for p in p_cursor:
                 l = (p.get("lang") or "en").lower()
-                c = lang_counts.get(l, 0)
-                if c < 30:
-                    lang_counts[l] = c + 1
-                    filtered_cursor.append(p)
+                if l not in by_lang:
+                    by_lang[l] = []
+                by_lang[l].append(p)
+
+            filtered_cursor = []
+            for l, prints in by_lang.items():
+                if len(prints) > 31:
+                    filtered_cursor.extend(prints[:16] + prints[-15:])
+                else:
+                    filtered_cursor.extend(prints)
 
             raw_printings = []
             for p in filtered_cursor:
