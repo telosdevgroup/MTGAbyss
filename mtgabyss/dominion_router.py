@@ -172,3 +172,52 @@ async def dominion_card_html(request: Request, slug: str):
             "rulings": rulings
         }
     )
+
+import os
+import asyncio
+import httpx
+from fastapi.responses import FileResponse, RedirectResponse
+
+DOMINION_IMAGE_DIR = os.path.join("public", "images", "dominion")
+os.makedirs(DOMINION_IMAGE_DIR, exist_ok=True)
+
+async def _download_dominion_image(cdn_url: str, local_path: str):
+    try:
+        headers = {"User-Agent": "AvaScry/2.0"}
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(cdn_url, headers=headers, follow_redirects=True)
+            if resp.status_code == 200 and resp.content:
+                with open(local_path, "wb") as f:
+                    f.write(resp.content)
+    except Exception as e:
+        print(f"[Dominion Image Download Error] {e}")
+
+@dominion_router.get("/images/{slug}.jpg", include_in_schema=False)
+async def dominion_card_image(slug: str):
+    """
+    On-demand card image delivery:
+    1. If exists locally on disk, serve immediately with 30-day immutable cache.
+    2. If not on disk, lookup CDN url in avascry_dominion, start background download,
+       and return 307 temporary redirect to hotlink immediately.
+    """
+    clean_slug = slug.lower().strip()
+    local_file = os.path.join(DOMINION_IMAGE_DIR, f"{clean_slug}.jpg")
+    
+    if os.path.isfile(local_file):
+        return FileResponse(
+            local_file,
+            media_type="image/jpeg",
+            headers={"Cache-Control": "public, max-age=2592000, immutable"}
+        )
+        
+    db = get_dominion_db()
+    card = db.cards.find_one({"slug": clean_slug}, {"image_url": 1})
+    if card and card.get("image_url"):
+        cdn_url = card["image_url"]
+        # Trigger background download to local disk
+        asyncio.create_task(_download_dominion_image(cdn_url, local_file))
+        # Hotlink on first request
+        return RedirectResponse(url=cdn_url, status_code=307)
+        
+    raise HTTPException(status_code=404, detail="Image not found")
+

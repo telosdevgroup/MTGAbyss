@@ -56,9 +56,34 @@
 <style>
   .card-layout {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 2rem;
+    grid-template-columns: 320px 1fr;
+    gap: 2.25rem;
     margin-top: 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 820px) {
+    .card-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+  .card-image-col {
+    position: sticky;
+    top: 5rem;
+    text-align: center;
+  }
+  .card-img-wrap {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    display: inline-block;
+  }
+  .card-img-wrap img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    display: block;
   }
   .card-panel {
     background: #ffffff;
@@ -169,6 +194,19 @@
   </nav>
 
   <div class="card-layout">
+    <aside class="card-image-col">
+      <div class="card-img-wrap">
+        <img 
+          src="/dominion/images/{{ card.slug }}.jpg" 
+          alt="{{ card.name }} Dominion Card"
+          width="300"
+          height="465"
+          loading="eager"
+          onerror="this.parentElement.style.display='none'"
+        />
+      </div>
+    </aside>
+
     <div class="card-panel">
       <header class="card-header-bar">
         <div>
