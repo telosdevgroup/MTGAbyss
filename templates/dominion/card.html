@@ -283,16 +283,146 @@
     color: #0f172a;
     margin-top: 0.2rem;
   }
+  .card-top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .prev-next-links {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .nav-arrow-link {
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: color 0.15s ease;
+  }
+  .nav-arrow-link:hover {
+    color: var(--accent);
+  }
+  .synergy-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.65rem;
+  }
+  .synergy-title {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-right: 0.25rem;
+  }
+  .synergy-chip {
+    background: #f1f5f9;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-decoration: none;
+    transition: all 0.15s ease;
+  }
+  .synergy-chip:hover {
+    background: #fffbeb;
+    border-color: #fde68a;
+    color: var(--accent);
+  }
+  .edition-diff-section {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  }
+  .diff-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .diff-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 640px) {
+    .diff-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .diff-col {
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .diff-col-1e {
+    background: #f8fafc;
+  }
+  .diff-col-2e {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+  }
+  .diff-col-title {
+    font-weight: 800;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    color: #0f172a;
+  }
+  .diff-text {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: #334155;
+    white-space: pre-line;
+  }
+  .btn-copy-citation {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin-left: 0.5rem;
+  }
+  .btn-copy-citation:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
   .format-links {
     margin-top: 2rem;
     padding-top: 1.25rem;
     border-top: 1px solid #f1f5f9;
     font-size: 0.85rem;
     color: var(--muted);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
   .format-links a {
     color: var(--accent);
-    margin-right: 1rem;
+    margin-right: 0.5rem;
     text-decoration: none;
     font-weight: 600;
   }
@@ -307,22 +437,38 @@
   <meta itemprop="name" content="{{ card.name }}">
   <meta itemprop="image" content="https://dominion.avascry.com/images/{{ card.slug }}.jpg">
   
-  <nav aria-label="Breadcrumb" itemscope itemtype="https://schema.org/BreadcrumbList" style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1.25rem;">
-    <span itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-      <a itemprop="item" href="{{ base_path or '/' }}" style="color: var(--muted); text-decoration: none;"><span itemprop="name">Dominion</span></a>
-      <meta itemprop="position" content="1" />
-    </span>
-    <span aria-hidden="true">&nbsp;/&nbsp;</span>
-    <span itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-      <a itemprop="item" href="{{ base_path or '/' }}" style="color: var(--muted); text-decoration: none;"><span itemprop="name">{{ (card.card_kinds[0] if card.card_kinds else 'Kingdom') | title }} Cards</span></a>
-      <meta itemprop="position" content="2" />
-    </span>
-    <span aria-hidden="true">&nbsp;/&nbsp;</span>
-    <span itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-      <span itemprop="name" style="color: var(--text); font-weight: 600;">{{ card.name }}</span>
-      <meta itemprop="position" content="3" />
-    </span>
-  </nav>
+  <div class="card-top-nav">
+    <nav aria-label="Breadcrumb" itemscope itemtype="https://schema.org/BreadcrumbList">
+      <span itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="{{ base_path or '/' }}" style="color: var(--muted); text-decoration: none;"><span itemprop="name">Dominion</span></a>
+        <meta itemprop="position" content="1" />
+      </span>
+      <span aria-hidden="true">&nbsp;/&nbsp;</span>
+      <span itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="{{ base_path or '/' }}" style="color: var(--muted); text-decoration: none;"><span itemprop="name">{{ (card.card_kinds[0] if card.card_kinds else 'Kingdom') | title }} Cards</span></a>
+        <meta itemprop="position" content="2" />
+      </span>
+      <span aria-hidden="true">&nbsp;/&nbsp;</span>
+      <span itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <span itemprop="name" style="color: var(--text); font-weight: 600;">{{ card.name }}</span>
+        <meta itemprop="position" content="3" />
+      </span>
+    </nav>
+
+    <div class="prev-next-links">
+      {% if prev_card %}
+      <a href="{{ base_path }}/card/{{ prev_card.slug }}" class="nav-arrow-link" title="Previous: {{ prev_card.name }} (&larr; key)">
+        &larr; {{ prev_card.name }}
+      </a>
+      {% endif %}
+      {% if prev_card and next_card %}<span style="color: var(--border-subtle);">&bull;</span>{% endif %}
+      {% if next_card %}
+      <a href="{{ base_path }}/card/{{ next_card.slug }}" class="nav-arrow-link" title="Next: {{ next_card.name }} (&rarr; key)">
+        {{ next_card.name }} &rarr;
+      </a>
+      {% endif %}
+    </div>
+  </div>
 
   <div class="card-layout">
     <aside class="card-image-col">
@@ -384,6 +530,17 @@
         </div>
       </header>
 
+      {% if synergies %}
+      <div class="synergy-chips">
+        <span class="synergy-title">Mechanics:</span>
+        {% for syn in synergies %}
+        <a href="{{ base_path or '/' }}?q={{ syn.query }}" class="synergy-chip" title="Search all {{ syn.label }} cards in Dominion">
+          {{ syn.label }}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
       <!-- Key Card Attributes Definition List for Search Snippets -->
       <dl class="card-meta-grid">
         <div class="card-meta-item">
@@ -422,6 +579,40 @@
         </h2>
         <div class="rules-box" itemprop="description">
           {{ versions[0].printed_rules_text }}
+        </div>
+      </section>
+      {% endif %}
+      {% if edition_diff %}
+      <section class="edition-diff-section" aria-labelledby="diff-heading">
+        <div class="diff-header-row">
+          <h2 id="diff-heading" style="font-family: 'Cinzel', serif; font-size: 1.2rem; font-weight: 700; color: #0f172a;">
+            1st Edition vs 2nd Edition Errata
+          </h2>
+          {% if edition_diff.has_text_change %}
+          <span class="badge" style="background: rgba(245, 158, 11, 0.12); color: #b45309; border-color: #f59e0b;">Text Revised in 2E</span>
+          {% else %}
+          <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #059669; border-color: #10b981;">Wording Unchanged</span>
+          {% endif %}
+        </div>
+        <div class="diff-grid">
+          <div class="diff-col diff-col-1e">
+            <div class="diff-col-title">
+              <span>1st Edition ({{ edition_diff.v1_tag }})</span>
+              <span>
+                {% if edition_diff.v1_cost.coins %}{{ edition_diff.v1_cost.coins }} Coins{% else %}0 Coins{% endif %}
+              </span>
+            </div>
+            <div class="diff-text">{{ edition_diff.v1_text or 'Original 1st Edition printing.' }}</div>
+          </div>
+          <div class="diff-col diff-col-2e">
+            <div class="diff-col-title">
+              <span>2nd Edition ({{ edition_diff.v2_tag }})</span>
+              <span>
+                {% if edition_diff.v2_cost.coins %}{{ edition_diff.v2_cost.coins }} Coins{% else %}0 Coins{% endif %}
+              </span>
+            </div>
+            <div class="diff-text">{{ edition_diff.v2_text or 'Current standard rules text.' }}</div>
+          </div>
         </div>
       </section>
       {% endif %}
@@ -469,8 +660,41 @@
         <span>Machine formats:</span>
         <a href="{{ base_path }}/card/{{ card.slug }}.md">Plain Text (.md)</a>
         <a href="{{ base_path }}/card/{{ card.slug }}.json">Structured JSON (.json)</a>
+        <button type="button" class="btn-copy-citation" id="btn-copy-citation" title="Copy markdown citation">
+          📋 Copy Citation
+        </button>
       </div>
     </div>
   </div>
 </article>
+
+<script>
+  // Keyboard Arrow navigation for Prev/Next card
+  window.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    {% if prev_card %}
+    if (e.key === 'ArrowLeft') {
+      window.location.href = '{{ base_path }}/card/{{ prev_card.slug }}';
+    }
+    {% endif %}
+    {% if next_card %}
+    if (e.key === 'ArrowRight') {
+      window.location.href = '{{ base_path }}/card/{{ next_card.slug }}';
+    }
+    {% endif %}
+  });
+
+  // Copy citation logic
+  const btnCitation = document.getElementById('btn-copy-citation');
+  if (btnCitation) {
+    btnCitation.addEventListener('click', () => {
+      const text = `[{{ card.name }}](https://dominion.avascry.com/card/{{ card.slug }}) — Dominion {{ card.card_kinds | join(', ') | title }}{% if versions and versions[0].cost.coins %} (${versions[0].cost.coins} Coins){% endif %}`;
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btnCitation.textContent;
+        btnCitation.textContent = '✓ Copied!';
+        setTimeout(() => { btnCitation.textContent = orig; }, 1800);
+      });
+    });
+  }
+</script>
 {% endblock %}

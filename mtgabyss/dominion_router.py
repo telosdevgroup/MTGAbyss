@@ -238,6 +238,55 @@ async def dominion_card_html(request: Request, slug: str):
     for r in rulings:
         r["answer"] = _format_rules(r.get("answer", ""))
 
+    # Alphabetical prev/next cards
+    norm = card.get("normalized_name") or card.get("name", "").lower()
+    prev_card = db.cards.find_one({"normalized_name": {"$lt": norm}}, {"_id": 0, "name": 1, "slug": 1}, sort=[("normalized_name", -1)])
+    next_card = db.cards.find_one({"normalized_name": {"$gt": norm}}, {"_id": 0, "name": 1, "slug": 1}, sort=[("normalized_name", 1)])
+
+    # Detect 1st vs 2nd edition diff
+    v_1e = next((v for v in versions if "1" in str(v.get("edition", "")).lower() or "1e" in str(v.get("expansion_tag", "")).lower()), None)
+    v_2e = next((v for v in versions if "2" in str(v.get("edition", "")).lower() or "2e" in str(v.get("expansion_tag", "")).lower()), None)
+    edition_diff = None
+    if v_1e and v_2e:
+        t1 = v_1e.get("printed_rules_text", "").strip()
+        t2 = v_2e.get("printed_rules_text", "").strip()
+        edition_diff = {
+            "v1_edition": v_1e.get("edition", "1st Edition"),
+            "v1_tag": v_1e.get("expansion_tag", "").title(),
+            "v1_text": t1,
+            "v1_cost": v_1e.get("cost", {}),
+            "v2_edition": v_2e.get("edition", "2nd Edition"),
+            "v2_tag": v_2e.get("expansion_tag", "").title(),
+            "v2_text": t2,
+            "v2_cost": v_2e.get("cost", {}),
+            "has_text_change": t1 != t2
+        }
+
+    # Extract mechanics and synergies
+    all_text = " ".join([v.get("printed_rules_text", "") for v in versions]).lower()
+    kinds = [k.lower() for k in card.get("card_kinds", [])]
+    synergies = []
+    if "trash" in all_text:
+        synergies.append({"label": "Trashing", "query": "trash"})
+    if "+2 action" in all_text or "+1 action" in all_text or "+3 action" in all_text or "+action" in all_text:
+        synergies.append({"label": "Action Engine", "query": "action"})
+    if "+1 buy" in all_text or "+2 buy" in all_text or "+buy" in all_text:
+        synergies.append({"label": "+Buy", "query": "buy"})
+    if "+1 card" in all_text or "+2 card" in all_text or "+3 card" in all_text or "+card" in all_text:
+        synergies.append({"label": "Card Draw", "query": "card"})
+    if "gain" in all_text:
+        synergies.append({"label": "Gainer", "query": "gain"})
+    if "attack" in kinds:
+        synergies.append({"label": "Attack", "query": "attack"})
+    if "reaction" in kinds:
+        synergies.append({"label": "Reaction", "query": "reaction"})
+    if "duration" in kinds:
+        synergies.append({"label": "Duration", "query": "duration"})
+    if "victory" in kinds:
+        synergies.append({"label": "Victory", "query": "victory"})
+    if "treasure" in kinds:
+        synergies.append({"label": "Treasure", "query": "treasure"})
+
     return templates.TemplateResponse(
         request=request,
         name="dominion/card.html",
@@ -245,6 +294,10 @@ async def dominion_card_html(request: Request, slug: str):
             "card": card,
             "versions": versions,
             "rulings": rulings,
+            "prev_card": prev_card,
+            "next_card": next_card,
+            "edition_diff": edition_diff,
+            "synergies": synergies,
             "base_path": get_base_prefix(request)
         }
     )
