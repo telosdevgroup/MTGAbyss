@@ -710,15 +710,18 @@
     {% endif %}
   });
 
-  // Copy citation logic
+  // Copy citation logic for LLMs & AI Prompts
   const btnCitation = document.getElementById('btn-copy-citation');
   if (btnCitation) {
     btnCitation.addEventListener('click', () => {
-      const text = `[{{ card.name }}{% if edition_diff and edition_diff.has_text_change %} (2nd Edition){% endif %}](https://dominion.avascry.com/card/{{ card.slug }}) — Dominion {{ card.card_kinds | join(', ') | title }}{% if versions and versions[0].cost.coins %} (${versions[0].cost.coins} Coins){% endif %}`;
+      const text = `> **{{ card.name }}{% if edition_diff and edition_diff.has_text_change %} (2nd Edition){% endif %}**
+> Types: {{ card.card_kinds | join(', ') | title }}{% if versions and versions[0].cost.coins %} | Cost: {{ versions[0].cost.coins }} Coins{% endif %}{% if versions and versions[0].expansion_tag %} | Expansion: {{ versions[0].expansion_name or versions[0].expansion_tag }}{% endif %}
+> Rules: "{{ (versions[0].printed_rules_text if versions else '') | replace('\n', ' ') }}"
+> Source: AvaScry Dominion (https://dominion.avascry.com/card/{{ card.slug }})`;
       navigator.clipboard.writeText(text).then(() => {
         const orig = btnCitation.textContent;
-        btnCitation.textContent = '✓ Copied!';
-        setTimeout(() => { btnCitation.textContent = orig; }, 1800);
+        btnCitation.textContent = '✓ AI Citation Copied!';
+        setTimeout(() => { btnCitation.textContent = orig; }, 2000);
       });
     });
   }

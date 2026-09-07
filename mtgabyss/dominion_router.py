@@ -124,7 +124,7 @@ async def dominion_llms_full_txt():
             cost = v.get("cost", {})
             lines.append(f"- Edition: {v.get('expansion_tag')} ({v.get('edition')}) | Cost: {cost.get('coins', 0)} Coins | Rules: {v.get('printed_rules_text', '')}")
             
-        rulings = list(db.rulings.find({"card_id": c["_id"]}))
+        rulings = list(db.rulings.find({"$or": [{"card_id": f"card:{c.get('slug')}"}, {"card_id": c.get("_id")}]}))
         if rulings:
             lines.append("Official FAQ:")
             for r in rulings:
@@ -132,9 +132,106 @@ async def dominion_llms_full_txt():
                 lines.append(f"    A: {r.get('answer')}")
         lines.append("")
         
-    return "\n".join(lines)
+    return PlainTextResponse(content="\n".join(lines), media_type="text/plain; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes"})
 
-@dominion_router.get("/robots.txt", response_class=PlainTextResponse)
+@dominion_router.get("/rules.md", response_class=PlainTextResponse)
+async def dominion_rules_md():
+    """Canonical Markdown rules overview of Dominion turn structure and card interaction rules."""
+    content = """# Dominion Complete Rules & Mechanics Architecture
+> Authoritative rules reference for Dominion (Rio Grande Games / Donald X. Vaccarino).
+
+## 1. Game Flow & Turn Phases
+Dominion is played in three sequential turn phases (the **ABC** phases):
+1. **A — Action Phase**:
+   - The active player may play one Action card from their hand.
+   - Playing an Action may grant additional Actions (+Actions), additional Buys (+Buys), additional Coins (+Coins), or additional cards (+Cards).
+   - If a player has multiple Actions remaining, they may play additional Action cards until all Action points are exhausted or they choose to stop.
+2. **B — Buy Phase**:
+   - The player may play any number of Treasure cards from their hand in any order.
+   - The player then uses their accumulated Coins to purchase cards from the Supply. By default, a player has 1 Buy. Additional Buys allow purchasing multiple cards from the Supply provided sufficient Coins.
+   - Purchased cards are placed directly into the player's Discard pile unless otherwise specified (e.g. Nomad Camp, Tracker).
+3. **C — Clean-up Phase**:
+   - All cards in play (Actions and Treasures played this turn) and all remaining cards in hand are placed face up into the player's Discard pile.
+   - The player draws 5 new cards from their Deck to form their next hand.
+   - If the player's Deck runs out of cards during a draw, they shuffle their Discard pile to form a fresh Deck.
+
+## 2. Card Classes & Types
+- **Action**: Cards played during the Action phase that provide instructions and resources.
+- **Treasure**: Currency cards played during the Buy phase to generate purchasing power (Copper, Silver, Gold, Platinum).
+- **Victory**: Score cards that provide Victory Points (VP) at the end of the game (Estate, Duchy, Province, Colony, Curse).
+- **Reaction**: Cards that can be revealed or played in response to specific game events (e.g., Moat, Sheepdog, Falconer).
+- **Duration**: Orange cards that remain in play across multiple turns to provide delayed or recurring effects (introduced in *Seaside*).
+- **Attack**: Hostile Action cards that impair opponents (discarding, trashing, cursing).
+
+## 3. Game End Conditions
+The game ends immediately after any player's turn when either:
+1. The **Province** supply pile is empty (or Colony pile in games using Platinum/Colony).
+2. Any **three Supply piles** are empty (four piles in games with 5-6 players).
+
+The player with the highest total Victory Points across their entire deck wins.
+"""
+    return PlainTextResponse(content=content, media_type="text/markdown; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes"})
+
+@dominion_router.get("/rules.json", response_class=JSONResponse)
+async def dominion_rules_json():
+    """Structured JSON rules architecture for programmatic engines."""
+    return JSONResponse(
+        content={
+            "game": "Dominion",
+            "publisher": "Rio Grande Games",
+            "designer": "Donald X. Vaccarino",
+            "turn_structure": [
+                {"phase": "Action", "description": "Play 1 Action card by default. Chain +Actions."},
+                {"phase": "Buy", "description": "Play Treasures, spend accumulated Coins with available Buys."},
+                {"phase": "Clean-up", "description": "Discard cards in play and hand, draw 5 cards."}
+            ],
+            "card_types": ["Action", "Treasure", "Victory", "Reaction", "Duration", "Attack", "Curse"],
+            "end_conditions": [
+                "Province (or Colony) pile empty",
+                "Any 3 supply piles empty (4 piles in 5-6 player games)"
+            ]
+        },
+        headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes"}
+    )
+
+@dominion_router.get("/sets.md", response_class=PlainTextResponse)
+async def dominion_sets_md():
+    """Manifest of all Dominion expansions, editions, and promo sets."""
+    db = get_dominion_db()
+    expansions = list(db.expansions.find({}).sort("year", 1))
+    lines = [
+        "# Dominion Expansions & Manifest",
+        "Author: Donald X. Vaccarino | Publisher: Rio Grande Games\n",
+        "| Expansion | Code | Year | Status |",
+        "| :--- | :--- | :--- | :--- |"
+    ]
+    for e in expansions:
+        name = e.get("name") or e.get("set_tag")
+        code = e.get("set_tag", "").upper()
+        year = e.get("year", "—")
+        status = "2nd Edition Available" if "2e" in code.lower() or "second" in name.lower() else "Active"
+        lines.append(f"| {name} | {code} | {year} | {status} |")
+    return PlainTextResponse(content="\n".join(lines), media_type="text/markdown; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes"})
+
+@dominion_router.get("/.well-known/ai-content", response_class=PlainTextResponse)
+async def dominion_well_known_ai():
+    content = """# AI Content Declaration & Scraping Permission
+domain: dominion.avascry.com
+operator: AvaScry Card Network
+ai-train: allowed
+ai-search: allowed
+machine-endpoints:
+  - https://dominion.avascry.com/llms.txt
+  - https://dominion.avascry.com/llms-full.txt
+  - https://dominion.avascry.com/rules.md
+  - https://dominion.avascry.com/rules.json
+  - https://dominion.avascry.com/sets.md
+  - https://dominion.avascry.com/sitemap.xml
+format-negotiation:
+  - Header: "Accept: text/markdown" -> /card/{slug}.md
+  - Header: "Accept: application/json" -> /card/{slug}.json
+"""
+    return PlainTextResponse(content=content, media_type="text/plain; charset=utf-8")
 async def dominion_robots_txt():
     """Standard crawl directives for Dominion subdomain."""
     return (
@@ -363,6 +460,11 @@ async def dominion_card_html(request: Request, slug: str):
             "edition_diff": edition_diff,
             "synergies": synergies,
             "base_path": get_base_prefix(request)
+        },
+        headers={
+            "Vary": "Accept",
+            "Link": f'</card/{slug}.md>; rel="alternate"; type="text/markdown", </card/{slug}.json>; rel="alternate"; type="application/json"',
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
         }
     )
 

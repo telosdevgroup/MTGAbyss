@@ -7,18 +7,35 @@
 {% endblock %}
 
 {% block og_tags %}
-<meta property="og:site_name" content="AvaScry SWU">
+<meta property="og:site_name" content="AvaScry Star Wars: Unlimited">
 <meta property="og:type" content="article">
 <meta property="og:title" content="{{ card.title or card.name }}{% if card.subtitle %} — {{ card.subtitle }}{% endif %} | AvaScry SWU">
 <meta property="og:description" content="View rules, aspects, stats, and text for {{ card.title or card.name }} ({{ card.expansion.code or card.set_code }} #{{ card.card_number or card.number }}).">
 <meta property="og:url" content="https://swu.avascry.com/card/{{ card.slug }}">
 {% if card.art_front or card.front_image %}
-<meta property="og:image" content="{{ card.art_front or card.front_image }}">
-<meta name="twitter:image" content="{{ card.art_front or card.front_image }}">
+<meta property="og:image" content="https://swu.avascry.com{{ card.art_front or card.front_image }}">
+<meta name="twitter:image" content="https://swu.avascry.com{{ card.art_front or card.front_image }}">
 {% endif %}
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ card.title or card.name }}{% if card.subtitle %} — {{ card.subtitle }}{% endif %}">
 <meta name="twitter:description" content="Canonical card data and rulings for {{ card.title or card.name }}.">
+
+<!-- Google Schema.org Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemPage",
+  "name": "{{ card.title or card.name }}{% if card.subtitle %}: {{ card.subtitle }}{% endif %}",
+  "description": "Star Wars: Unlimited card details, rules text, and official rulings for {{ card.title or card.name }}.",
+  "url": "https://swu.avascry.com/card/{{ card.slug }}",
+  "mainEntity": {
+    "@type": "Game",
+    "name": "{{ card.title or card.name }}",
+    "genre": "Trading Card Game",
+    "character": "{{ card.title or card.name }}"
+  }
+}
+</script>
 {% endblock %}
 
 {% block content %}
@@ -59,24 +76,23 @@
         grid-template-columns: 360px 1fr !important;
       }
     }
-    .card-flip-container {
-      perspective: 1000px;
-    }
   </style>
 
   <!-- Left Column: High-Res Scan & Dual-Sided Flip -->
   <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
-    <div id="cardImageWrapper" style="width: 100%; max-width: 360px; background: #070a10; border: 1px solid var(--border); border-radius: 14px; padding: 0.75rem; box-shadow: 0 10px 30px rgba(0,0,0,0.6); text-align: center;">
-      <img id="cardFrontImg" src="{{ card.art_front or card.front_image }}" alt="{{ card.title or card.name }} (Front)" style="width: 100%; height: auto; border-radius: 10px; display: block;">
+    <div id="cardImageWrapper" style="width: 100%; max-width: 360px; background: #0c0c0f; border: 1px solid var(--border); border-radius: 14px; padding: 0.75rem; box-shadow: 0 10px 30px rgba(0,0,0,0.7); text-align: center;">
+      <img id="cardFrontImg" src="{{ card.art_front or card.front_image }}" alt="{{ card.title or card.name }} (Front)" style="width: 100%; height: auto; border-radius: 10px; display: block;"
+           onerror="if(this.src!=='{{ card.front_image }}'&&'{{ card.front_image }}'){this.src='{{ card.front_image }}';}">
       {% if card.art_back or card.back_image %}
-        <img id="cardBackImg" src="{{ card.art_back or card.back_image }}" alt="{{ card.title or card.name }} (Unit Side)" style="width: 100%; height: auto; border-radius: 10px; display: none;">
+        <img id="cardBackImg" src="{{ card.art_back or card.back_image }}" alt="{{ card.title or card.name }} (Unit Side)" style="width: 100%; height: auto; border-radius: 10px; display: none;"
+             onerror="if(this.src!=='{{ card.back_image }}'&&'{{ card.back_image }}'){this.src='{{ card.back_image }}';}">
       {% endif %}
     </div>
 
     <!-- Interactive Flip Button for Leader cards -->
     {% if card.art_back or card.back_image %}
       <button id="flipBtn" type="button" onclick="toggleCardFace()"
-              style="width: 100%; max-width: 360px; background: var(--card-bg); border: 1px solid var(--accent); color: var(--accent); font-weight: 700; padding: 0.65rem 1rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: background 0.15s;">
+              style="width: 100%; max-width: 360px; background: #18181b; border: 1px solid #3f3f46; color: #fff; font-weight: 700; padding: 0.65rem 1rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: background 0.15s;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
         </svg>
@@ -105,15 +121,38 @@
     {% endif %}
 
     <!-- Machine Exports & Links -->
-    <div style="width: 100%; max-width: 360px; display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.25rem;">
-      <a href="{{ base_path }}/card/{{ card.slug }}.md" target="_blank"
-         style="flex: 1; text-align: center; font-size: 0.78rem; font-family: monospace; background: #121826; border: 1px solid var(--border); padding: 0.45rem 0.6rem; border-radius: 6px; color: var(--muted); text-decoration: none;">
-        .MD Raw
-      </a>
-      <a href="{{ base_path }}/card/{{ card.slug }}.json" target="_blank"
-         style="flex: 1; text-align: center; font-size: 0.78rem; font-family: monospace; background: #121826; border: 1px solid var(--border); padding: 0.45rem 0.6rem; border-radius: 6px; color: var(--muted); text-decoration: none;">
-        .JSON Data
-      </a>
+    <div style="width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.25rem;">
+      <div style="display: flex; gap: 0.5rem; justify-content: center;">
+        <a href="{{ base_path }}/card/{{ card.slug }}.md" target="_blank"
+           style="flex: 1; text-align: center; font-size: 0.78rem; font-family: monospace; background: #141417; border: 1px solid var(--border); padding: 0.45rem 0.6rem; border-radius: 6px; color: var(--muted); text-decoration: none;">
+          .MD Raw
+        </a>
+        <a href="{{ base_path }}/card/{{ card.slug }}.json" target="_blank"
+           style="flex: 1; text-align: center; font-size: 0.78rem; font-family: monospace; background: #141417; border: 1px solid var(--border); padding: 0.45rem 0.6rem; border-radius: 6px; color: var(--muted); text-decoration: none;">
+          .JSON Data
+        </a>
+      </div>
+      <button onclick="copyAICitation()" id="btnCopyAICitation"
+              style="width: 100%; background: #18181b; border: 1px dashed #52525b; color: #facc15; font-size: 0.8rem; font-weight: 700; padding: 0.5rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: background 0.15s;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <span id="citationBtnText">Copy AI / LLM Citation</span>
+      </button>
+      <script>
+        function copyAICitation() {
+          const citation = `> **{{ card.title or card.name }}{% if card.subtitle %}: {{ card.subtitle }}{% endif %}** ({{ card.expansion.code or card.set_code }} #{{ card.card_number or card.number }})
+> Type: {{ card.type }}{% if card.cost is not none %} | Cost: {{ card.cost }}{% endif %}{% if card.power is not none and card.hp is not none %} | Stats: {{ card.power }}/{{ card.hp }}{% endif %} | Aspects: {{ card.aspects | join(', ') if card.aspects else 'Neutral' }}
+> Rules: "{{ (card.text or '') | replace('\n', ' ') }}"
+> Source: AvaScry Star Wars Unlimited (https://swu.avascry.com/card/{{ card.slug }})`;
+          navigator.clipboard.writeText(citation).then(() => {
+            const btnText = document.getElementById('citationBtnText');
+            btnText.innerText = 'Citation Copied for AI!';
+            setTimeout(() => { btnText.innerText = 'Copy AI / LLM Citation'; }, 2200);
+          });
+        }
+      </script>
     </div>
   </div>
 
@@ -128,7 +167,7 @@
             {{ card.title or card.name }}
           </h1>
           {% if card.subtitle %}
-            <div style="font-size: 1.15rem; color: var(--accent); font-weight: 600; margin-bottom: 0.5rem;">
+            <div style="font-size: 1.15rem; color: #d4d4d8; font-weight: 600; margin-bottom: 0.5rem;">
               {{ card.subtitle }}
             </div>
           {% endif %}
@@ -139,7 +178,7 @@
 
         <!-- Cost badge -->
         {% if card.cost is not none %}
-          <div style="background: #000; border: 2px solid var(--accent); color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+          <div style="background: #000; border: 2px solid #3f3f46; color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.6);">
             <span style="font-size: 0.65rem; color: var(--muted); text-transform: uppercase; line-height: 1;">COST</span>
             <span style="font-size: 1.15rem; font-weight: 800; line-height: 1;">{{ card.cost }}</span>
           </div>
@@ -148,7 +187,7 @@
 
       <!-- Aspects & Traits -->
       <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; align-items: center;">
-        <span style="font-size: 0.8rem; background: #1f293d; color: #cbd5e1; padding: 0.25rem 0.65rem; border-radius: 6px; font-weight: 600;">
+        <span style="font-size: 0.8rem; background: #1e1e24; border: 1px solid var(--border); color: #e4e4e7; padding: 0.25rem 0.65rem; border-radius: 6px; font-weight: 600;">
           {{ card.type }}{% if card.type2 and card.type2 != card.type %} / {{ card.type2 }}{% endif %}
         </span>
         
@@ -159,13 +198,13 @@
         {% endfor %}
 
         {% for trait in card.traits %}
-          <span style="font-size: 0.75rem; background: #162032; border: 1px solid var(--border); color: #94a3b8; padding: 0.2rem 0.55rem; border-radius: 6px;">
+          <span style="font-size: 0.75rem; background: #141417; border: 1px solid var(--border); color: #a1a1aa; padding: 0.2rem 0.55rem; border-radius: 6px;">
             {{ trait }}
           </span>
         {% endfor %}
 
         {% for ar in card.arenas %}
-          <span style="font-size: 0.75rem; background: #261b36; border: 1px solid #4a2c6d; color: #d8b4fe; padding: 0.2rem 0.55rem; border-radius: 6px;">
+          <span style="font-size: 0.75rem; background: #18181b; border: 1px solid #3f3f46; color: #e4e4e7; padding: 0.2rem 0.55rem; border-radius: 6px;">
             {{ ar }} Arena
           </span>
         {% endfor %}
@@ -182,9 +221,9 @@
           </div>
         {% endif %}
         {% if card.hp is not none %}
-          <div style="flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-left: 4px solid #3b82f6; border-radius: 8px; padding: 0.85rem 1.25rem;">
+          <div style="flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-left: 4px solid #38bdf8; border-radius: 8px; padding: 0.85rem 1.25rem;">
             <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--muted); font-weight: 700; letter-spacing: 0.05em;">Hit Points (HP)</div>
-            <div style="font-size: 1.6rem; font-weight: 800; color: #3b82f6;">{{ card.hp }}</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #38bdf8;">{{ card.hp }}</div>
           </div>
         {% endif %}
       </div>
@@ -197,11 +236,11 @@
       </h2>
       
       {% if card.text_styled %}
-        <div style="font-size: 1.02rem; line-height: 1.6; color: #f1f5f9;" class="swu-rules-content">
+        <div style="font-size: 1.02rem; line-height: 1.6; color: #f4f4f5;" class="swu-rules-content">
           {{ card.text_styled | safe }}
         </div>
       {% elif card.text or card.front_text %}
-        <div style="font-size: 1.02rem; line-height: 1.6; color: #f1f5f9; white-space: pre-line;">
+        <div style="font-size: 1.02rem; line-height: 1.6; color: #f4f4f5; white-space: pre-line;">
           {{ card.text or card.front_text }}
         </div>
       {% else %}
@@ -213,19 +252,19 @@
       <!-- Leader Deploy Box / Epic Action -->
       {% if card.deploy_box or card.deploy_box_styled or card.epic_action or card.epic_action_styled %}
         <div style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px dashed var(--border);">
-          <div style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; color: var(--accent); margin-bottom: 0.4rem;">
+          <div style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; color: #ef4444; margin-bottom: 0.4rem;">
             Leader Epic Action &amp; Deploy
           </div>
           {% if card.epic_action_styled %}
-            <div style="color: #e2e8f0; font-size: 0.95rem; line-height: 1.5;">{{ card.epic_action_styled | safe }}</div>
+            <div style="color: #e4e4e7; font-size: 0.95rem; line-height: 1.5;">{{ card.epic_action_styled | safe }}</div>
           {% elif card.epic_action %}
-            <div style="color: #e2e8f0; font-size: 0.95rem; line-height: 1.5;">{{ card.epic_action }}</div>
+            <div style="color: #e4e4e7; font-size: 0.95rem; line-height: 1.5;">{{ card.epic_action }}</div>
           {% endif %}
 
           {% if card.deploy_box_styled %}
-            <div style="margin-top: 0.5rem; color: #cbd5e1; font-size: 0.92rem; line-height: 1.5;">{{ card.deploy_box_styled | safe }}</div>
+            <div style="margin-top: 0.5rem; color: #d4d4d8; font-size: 0.92rem; line-height: 1.5;">{{ card.deploy_box_styled | safe }}</div>
           {% elif card.deploy_box or card.back_text %}
-            <div style="margin-top: 0.5rem; color: #cbd5e1; font-size: 0.92rem; line-height: 1.5;">{{ card.deploy_box or card.back_text }}</div>
+            <div style="margin-top: 0.5rem; color: #d4d4d8; font-size: 0.92rem; line-height: 1.5;">{{ card.deploy_box or card.back_text }}</div>
           {% endif %}
         </div>
       {% endif %}
@@ -233,11 +272,16 @@
 
     <!-- Official Rulings & Clarifications if any -->
     {% if card.rules or card.rules_styled %}
-      <div style="background: #141c2c; border: 1px solid #1e2c47; border-radius: 12px; padding: 1.5rem;">
-        <h2 style="font-size: 1.05rem; font-weight: 700; color: var(--accent); margin-bottom: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Space Grotesk', sans-serif;">
-          Official Rules &amp; Clarifications
-        </h2>
-        <div style="font-size: 0.95rem; line-height: 1.6; color: #cbd5e1;">
+      <div style="background: #141417; border: 1px solid #27272a; border-radius: 12px; padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+          <h2 style="font-size: 1.05rem; font-weight: 700; color: #f4f4f5; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Space Grotesk', sans-serif;">
+            Official Rules &amp; Clarifications
+          </h2>
+          <a href="{{ base_path }}/rulings?q={{ card.title or card.name }}" style="font-size: 0.8rem; color: #60a5fa; text-decoration: none;">
+            View in Rulings Directory &rarr;
+          </a>
+        </div>
+        <div style="font-size: 0.95rem; line-height: 1.6; color: #d4d4d8;">
           {% if card.rules_styled %}
             {{ card.rules_styled | safe }}
           {% else %}
@@ -253,13 +297,19 @@
         <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">
           Related &amp; Synergy Cards
         </h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.85rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem;">
           {% for sc in synergy_cards %}
-            <a href="{{ base_path }}/card/{{ sc.slug }}" style="background: #090d16; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; text-decoration: none; display: flex; flex-direction: column;">
-              {% if sc.art_front or sc.front_image %}
-                <img src="{{ sc.art_front or sc.front_image }}" alt="{{ sc.title or sc.name }}" loading="lazy" style="width: 100%; height: auto;">
-              {% endif %}
-              <div style="padding: 0.45rem; font-size: 0.78rem; font-weight: 600; color: #fff; line-height: 1.2;">
+            <a href="{{ base_path }}/card/{{ sc.slug }}" style="background: #09090b; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; text-decoration: none; display: flex; flex-direction: column; transition: transform 0.15s, border-color 0.15s;"
+               onmouseover="this.style.borderColor='rgba(239,68,68,0.6)'; this.style.transform='translateY(-2px)';"
+               onmouseout="this.style.borderColor='var(--border)'; this.style.transform='none';">
+              <div style="aspect-ratio: {% if sc.type in ['Leader', 'Base'] %}1.393{% else %}0.714{% endif %}; background: #0c0c0f; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                {% if sc.art_front or sc.front_image %}
+                  <img src="{{ sc.art_front or sc.front_image }}" alt="{{ sc.title or sc.name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: contain; display: block;">
+                {% else %}
+                  <div style="font-size: 0.75rem; color: var(--muted); padding: 0.5rem; text-align: center;">{{ sc.title or sc.name }}</div>
+                {% endif %}
+              </div>
+              <div style="padding: 0.5rem 0.6rem; font-size: 0.78rem; font-weight: 600; color: #fff; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-top: 1px solid var(--border);">
                 {{ sc.title or sc.name }}
               </div>
             </a>
@@ -271,3 +321,4 @@
   </div>
 </div>
 {% endblock %}
+
