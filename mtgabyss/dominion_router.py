@@ -6,6 +6,7 @@ Serves HTML, Markdown (.md), JSON, sitemaps, and llms.txt endpoints for bots and
 
 import os
 import re
+import time
 from fastapi import APIRouter, Request, HTTPException, Response
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
@@ -13,6 +14,18 @@ from db_mongo import get_mongo_db
 
 dominion_router = APIRouter(prefix="", tags=["Dominion"])
 templates = Jinja2Templates(directory="templates")
+
+# In-memory TTL cache for expensive crawler manifests (1h TTL)
+DOMINION_CACHE = {}
+
+def get_cached(key: str, ttl_seconds: int = 3600):
+    entry = DOMINION_CACHE.get(key)
+    if entry and (time.time() - entry["time"] < ttl_seconds):
+        return entry["data"]
+    return None
+
+def set_cached(key: str, data):
+    DOMINION_CACHE[key] = {"data": data, "time": time.time()}
 
 @dominion_router.get("/images/{rest_of_path:path}", include_in_schema=False)
 async def dominion_serve_image(rest_of_path: str):
@@ -122,22 +135,30 @@ async def dominion_home(request: Request):
 @dominion_router.get("/llms.txt", response_class=PlainTextResponse)
 async def dominion_llms_txt(request: Request):
     """Navigational manifest for LLM search agents."""
-    return (
-        "# AvaScry Dominion\n\n"
-        "> Structured Dominion card, expansion, edition, and official rules data.\n\n"
-        "## Start here\n"
-        "- [All Cards](https://dominion.avascry.com/)\n"
-        "- [Card Sitemap](https://dominion.avascry.com/sitemap.xml)\n"
-        "- [Full Corpus](https://dominion.avascry.com/llms-full.txt)\n\n"
-        "## Endpoints\n"
-        "- HTML: https://dominion.avascry.com/card/{slug}\n"
-        "- Markdown: https://dominion.avascry.com/card/{slug}.md\n"
-        "- JSON: https://dominion.avascry.com/card/{slug}.json\n"
+    return PlainTextResponse(
+        content=(
+            "# AvaScry Dominion\n\n"
+            "> Structured Dominion card, expansion, edition, and official rules data.\n\n"
+            "## Start here\n"
+            "- [All Cards](https://dominion.avascry.com/)\n"
+            "- [Card Sitemap](https://dominion.avascry.com/sitemap.xml)\n"
+            "- [Full Corpus](https://dominion.avascry.com/llms-full.txt)\n\n"
+            "## Endpoints\n"
+            "- HTML: https://dominion.avascry.com/card/{slug}\n"
+            "- Markdown: https://dominion.avascry.com/card/{slug}.md\n"
+            "- JSON: https://dominion.avascry.com/card/{slug}.json\n"
+        ),
+        media_type="text/plain; charset=utf-8",
+        headers={"Cache-Control": "public, max-age=3600"}
     )
 
 @dominion_router.get("/llms-full.txt", response_class=PlainTextResponse)
 async def dominion_llms_full_txt():
-    """Full plain-text game corpus for direct model ingestion."""
+    """Full plain-text game corpus for direct model ingestion with 1h in-memory caching."""
+    cached = get_cached("dominion_llms_full_txt", ttl_seconds=3600)
+    if cached:
+        return PlainTextResponse(content=cached, media_type="text/plain; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes", "Cache-Control": "public, max-age=3600"})
+
     db = get_dominion_db()
     cards = list(db.cards.find({}).sort("normalized_name", 1))
     lines = [
@@ -166,7 +187,9 @@ async def dominion_llms_full_txt():
                 lines.append(f"    A: {r.get('answer')}")
         lines.append("")
         
-    return PlainTextResponse(content="\n".join(lines), media_type="text/plain; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes"})
+    full_text = "\n".join(lines)
+    set_cached("dominion_llms_full_txt", full_text)
+    return PlainTextResponse(content=full_text, media_type="text/plain; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes", "Cache-Control": "public, max-age=3600"})
 
 @dominion_router.get("/rules.md", response_class=PlainTextResponse)
 async def dominion_rules_md():
@@ -204,7 +227,7 @@ The game ends immediately after any player's turn when either:
 
 The player with the highest total Victory Points across their entire deck wins.
 """
-    return PlainTextResponse(content=content, media_type="text/markdown; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes"})
+    return PlainTextResponse(content=content, media_type="text/markdown; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes", "Cache-Control": "public, max-age=3600"})
 
 @dominion_router.get("/rules.json", response_class=JSONResponse)
 async def dominion_rules_json():
@@ -225,12 +248,16 @@ async def dominion_rules_json():
                 "Any 3 supply piles empty (4 piles in 5-6 player games)"
             ]
         },
-        headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes"}
+        headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes", "Cache-Control": "public, max-age=3600"}
     )
 
 @dominion_router.get("/sets.md", response_class=PlainTextResponse)
 async def dominion_sets_md():
-    """Manifest of all Dominion expansions, editions, and promo sets."""
+    """Manifest of all Dominion expansions, editions, and promo sets with 1h in-memory caching."""
+    cached = get_cached("dominion_sets_md", ttl_seconds=3600)
+    if cached:
+        return PlainTextResponse(content=cached, media_type="text/markdown; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes", "Cache-Control": "public, max-age=3600"})
+
     db = get_dominion_db()
     expansions = list(db.expansions.find({}).sort("year", 1))
     lines = [
@@ -245,7 +272,9 @@ async def dominion_sets_md():
         year = e.get("year", "—")
         status = "2nd Edition Available" if "2e" in code.lower() or "second" in name.lower() else "Active"
         lines.append(f"| {name} | {code} | {year} | {status} |")
-    return PlainTextResponse(content="\n".join(lines), media_type="text/markdown; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes"})
+    content = "\n".join(lines)
+    set_cached("dominion_sets_md", content)
+    return PlainTextResponse(content=content, media_type="text/markdown; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes", "Cache-Control": "public, max-age=3600"})
 
 @dominion_router.get("/.well-known/ai-content", response_class=PlainTextResponse)
 async def dominion_well_known_ai():
@@ -276,7 +305,11 @@ async def dominion_robots_txt():
 
 @dominion_router.get("/sitemap.xml", response_class=Response)
 async def dominion_sitemap_xml():
-    """Automated XML sitemap with Google Image extensions for Dominion cards."""
+    """Automated XML sitemap with Google Image extensions for Dominion cards (cached 24h)."""
+    cached = get_cached("dominion_sitemap_xml", ttl_seconds=86400)
+    if cached:
+        return Response(content=cached, media_type="application/xml", headers={"Cache-Control": "public, max-age=86400"})
+
     import datetime
     today = datetime.date.today().isoformat()
     db = get_dominion_db()
@@ -304,7 +337,9 @@ async def dominion_sitemap_xml():
             f'  </url>'
         )
     xml.append('</urlset>')
-    return Response(content="\n".join(xml), media_type="application/xml")
+    sitemap_content = "\n".join(xml)
+    set_cached("dominion_sitemap_xml", sitemap_content)
+    return Response(content=sitemap_content, media_type="application/xml", headers={"Cache-Control": "public, max-age=86400"})
 
 @dominion_router.get("/random")
 async def dominion_random_card(request: Request):
@@ -598,53 +633,23 @@ async def dominion_contact(request: Request):
 
 @dominion_router.post("/contact", response_class=HTMLResponse)
 async def dominion_contact_post(request: Request):
-    form = await request.form()
-    honeypot = form.get("website_url", "").strip()
-    # If honeypot filled, silently pretend success
-    if honeypot:
-        return templates.TemplateResponse(
-            request=request,
-            name="dominion/contact.html",
-            context={"base_path": get_base_prefix(request), "success": True, "error": None}
-        )
-
-    name = str(form.get("name", "")).strip()
-    contact_info = str(form.get("contact", "")).strip()
-    category = str(form.get("category", "General Feedback")).strip()
-    message = str(form.get("message", "")).strip()
-
-    if not name or not contact_info or not message:
-        return templates.TemplateResponse(
-            request=request,
-            name="dominion/contact.html",
-            context={
-                "base_path": get_base_prefix(request),
-                "success": False,
-                "error": "Please fill out all required fields before submitting."
-            }
-        )
-
-    # Dispatch Discord notification via app.py helper
-    try:
-        from app import send_discord_notification
-        fields = [
-            {"name": "Sender", "value": name, "inline": True},
-            {"name": "Contact", "value": contact_info, "inline": True},
-            {"name": "Category", "value": category, "inline": False},
-            {"name": "Message", "value": message[:1024], "inline": False}
-        ]
-        await send_discord_notification(
-            title=f"📩 [Dominion Feedback] {category}",
-            description=f"New inquiry received on **dominion.avascry.com** from **{name}**.",
-            color=0xb45309,  # Dominion Amber / Copper
-            fields=fields
-        )
-    except Exception as exc:
-        print(f"[Dominion Contact Error] Failed to dispatch Discord notification: {exc}")
-
+    from mtgabyss.shared.contact import process_contact_submission
+    result = await process_contact_submission(
+        request=request,
+        subsite_name="AvaScry Dominion",
+        subsite_color=0xb45309,
+        extra_field_name="category",
+        extra_field_label="Category"
+    )
     return templates.TemplateResponse(
         request=request,
         name="dominion/contact.html",
-        context={"base_path": get_base_prefix(request), "success": True, "error": None}
+        context={
+            "base_path": get_base_prefix(request),
+            "success": result["success"],
+            "error": result["error"],
+            "values": result.get("values", {})
+        }
     )
+
 
