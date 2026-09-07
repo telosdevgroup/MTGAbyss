@@ -8,7 +8,7 @@ import os
 import re
 from typing import Optional
 from fastapi import APIRouter, Request, HTTPException, Response
-from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse, FileResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse, FileResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from db_mongo import get_mongo_db
 
@@ -240,6 +240,85 @@ async def swu_home(request: Request,
         }
     )
 
+
+@swu_router.get("/random.json", response_class=JSONResponse)
+async def swu_random_json(aspect: Optional[str] = None,
+                          type: Optional[str] = None,
+                          arena: Optional[str] = None):
+    db = get_swu_db()
+    match_filter = {}
+    if aspect:
+        match_filter["aspects"] = {"$regex": f"^{re.escape(aspect)}$", "$options": "i"}
+    if type:
+        match_filter["type"] = {"$regex": f"^{re.escape(type)}$", "$options": "i"}
+    if arena:
+        match_filter["arenas"] = {"$regex": f"^{re.escape(arena)}$", "$options": "i"}
+
+    pipeline = []
+    if match_filter:
+        pipeline.append({"$match": match_filter})
+    pipeline.append({"$sample": {"size": 1}})
+    pipeline.append({"$project": {"_id": 0}})
+
+    sample = list(db.cards.aggregate(pipeline))
+    if not sample:
+        raise HTTPException(status_code=404, detail="No matching SWU cards found")
+    return JSONResponse(sample[0], headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
+@swu_router.get("/random.md")
+async def swu_random_markdown(request: Request,
+                              aspect: Optional[str] = None,
+                              type: Optional[str] = None,
+                              arena: Optional[str] = None):
+    db = get_swu_db()
+    match_filter = {}
+    if aspect:
+        match_filter["aspects"] = {"$regex": f"^{re.escape(aspect)}$", "$options": "i"}
+    if type:
+        match_filter["type"] = {"$regex": f"^{re.escape(type)}$", "$options": "i"}
+    if arena:
+        match_filter["arenas"] = {"$regex": f"^{re.escape(arena)}$", "$options": "i"}
+
+    pipeline = []
+    if match_filter:
+        pipeline.append({"$match": match_filter})
+    pipeline.append({"$sample": {"size": 1}})
+    pipeline.append({"$project": {"slug": 1, "_id": 0}})
+
+    sample = list(db.cards.aggregate(pipeline))
+    if not sample:
+        raise HTTPException(status_code=404, detail="No matching SWU cards found")
+    slug = sample[0]["slug"]
+    base_path = get_base_prefix(request)
+    return RedirectResponse(url=f"{base_path}/card/{slug}.md", status_code=307, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
+@swu_router.get("/random")
+async def swu_random_card(request: Request,
+                          aspect: Optional[str] = None,
+                          type: Optional[str] = None,
+                          arena: Optional[str] = None):
+    db = get_swu_db()
+    match_filter = {}
+    if aspect:
+        match_filter["aspects"] = {"$regex": f"^{re.escape(aspect)}$", "$options": "i"}
+    if type:
+        match_filter["type"] = {"$regex": f"^{re.escape(type)}$", "$options": "i"}
+    if arena:
+        match_filter["arenas"] = {"$regex": f"^{re.escape(arena)}$", "$options": "i"}
+
+    pipeline = []
+    if match_filter:
+        pipeline.append({"$match": match_filter})
+    pipeline.append({"$sample": {"size": 1}})
+    pipeline.append({"$project": {"slug": 1, "_id": 0}})
+
+    sample = list(db.cards.aggregate(pipeline))
+    if not sample:
+        raise HTTPException(status_code=404, detail="No matching SWU cards found")
+    slug = sample[0]["slug"]
+    base_path = get_base_prefix(request)
+    return RedirectResponse(url=f"{base_path}/card/{slug}", status_code=307, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
 @swu_router.get("/card/{slug}.md", response_class=PlainTextResponse)
 async def swu_card_markdown(slug: str, request: Request):
     db = get_swu_db()
@@ -340,27 +419,31 @@ async def swu_card_detail(slug: str, request: Request):
     if next_card and not next_card.get("card_number"):
         next_card["card_number"] = next_card.get("number")
 
-    # Similar/synergy cards: same traits or aspects in same set
+    # Similar/synergy cards: same traits or aspects, deduplicated by card title
     traits = card.get("traits", [])
     aspects = card.get("aspects", [])
+    current_title = card.get("title") or card.get("name")
     synergy_query = {
         "slug": {"$ne": card.get("slug")},
-        "variant_type": {"$not": {"$regex": "Foil", "$options": "i"}},
+        "variant_type": {"$nin": ["Foil", "Hyperspace Foil", "Prestige Foil", "Prestige Serialized"]},
         "$or": [
             {"traits": {"$in": traits}} if traits else {},
             {"aspects": {"$in": aspects}} if aspects else {}
         ]
     }
-    # remove empty dicts from $or
     synergy_query["$or"] = [cond for cond in synergy_query["$or"] if cond]
     synergy_cards = []
     if synergy_query["$or"]:
-        synergy_cards = list(db.cards.find(synergy_query, {
-            "_id": 0, "slug": 1, "title": 1, "name": 1, "subtitle": 1, "art_front": 1, "front_image": 1, "type": 1, "cost": 1
-        }).limit(8))
-        for sc in synergy_cards:
-            if not sc.get("title"):
-                sc["title"] = sc.get("name")
+        raw_synergy = list(db.cards.find(synergy_query, {
+            "_id": 0, "slug": 1, "title": 1, "name": 1, "subtitle": 1, "art_front": 1, "front_image": 1, "type": 1, "cost": 1, "variant_type": 1
+        }).limit(30))
+        seen_titles = {current_title} if current_title else set()
+        for sc in raw_synergy:
+            t = sc.get("title") or sc.get("name")
+            if not t or t in seen_titles:
+                continue
+            seen_titles.add(t)
+            sc["title"] = t
             sc_slug = sc.get("slug") or ""
             base_sc_slug = sc_slug[:-1] if sc_slug.endswith(("F", "f")) else sc_slug
             if os.path.isfile(f"public/images/swu/{sc_slug}_front.png"):
@@ -369,6 +452,9 @@ async def swu_card_detail(slug: str, request: Request):
                 sc["art_front"] = f"/images/swu/{base_sc_slug}_front.png"
             else:
                 sc["art_front"] = sc.get("local_image_front") or sc.get("art_front") or sc.get("front_image")
+            synergy_cards.append(sc)
+            if len(synergy_cards) >= 6:
+                break
 
     return templates.TemplateResponse(
         request=request,
@@ -755,6 +841,11 @@ async def swu_sitemap_xml():
         '  <url><loc>https://swu.avascry.com/terms</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>',
         '  <url><loc>https://swu.avascry.com/contact</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>'
     ]
+    # Include core keywords in sitemap
+    keywords = list(db.keywords.find({}, {"slug": 1, "_id": 0}))
+    for kw in keywords:
+        if kw.get("slug"):
+            xml_lines.append(f'  <url><loc>https://swu.avascry.com/keyword/{kw["slug"]}</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>')
     for c in cards:
         xml_lines.append(f'  <url><loc>https://swu.avascry.com/card/{c["slug"]}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>')
     xml_lines.append('</urlset>')

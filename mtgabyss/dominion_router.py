@@ -6,7 +6,7 @@ Serves HTML, Markdown (.md), JSON, sitemaps, and llms.txt endpoints for bots and
 
 import re
 from fastapi import APIRouter, Request, HTTPException, Response
-from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from db_mongo import get_mongo_db
 
@@ -271,6 +271,20 @@ async def dominion_sitemap_xml():
         )
     xml.append('</urlset>')
     return Response(content="\n".join(xml), media_type="application/xml")
+
+@dominion_router.get("/random")
+async def dominion_random_card(request: Request):
+    db = get_dominion_db()
+    pipeline = [
+        {"$sample": {"size": 1}},
+        {"$project": {"slug": 1, "_id": 0}}
+    ]
+    sample = list(db.cards.aggregate(pipeline))
+    if not sample:
+        raise HTTPException(status_code=404, detail="No Dominion cards found")
+    slug = sample[0]["slug"]
+    base_path = get_base_prefix(request)
+    return RedirectResponse(url=f"{base_path}/card/{slug}", status_code=307, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
 @dominion_router.get("/card/{slug}.json")
 async def dominion_card_json(slug: str):
