@@ -32,16 +32,17 @@
 
   <style>
     :root {
-      --bg: #090a0d;               /* Deep Underhive industrial black */
-      --card-bg: #111318;          /* Grimy forged steel panel */
-      --card-hover: #171a22;
-      --border: #232733;           /* Heavy rivet-line border */
-      --border-subtle: #2d3342;
-      --text: #f0f2f5;             /* Stark luminous readout */
-      --muted: #8b95a5;            /* Industrial gunmetal slate */
-      --accent: #ff471a;           /* Hazard rust red / plasma burner */
-      --accent-glow: rgba(255, 71, 26, 0.22);
-      --hazard-yellow: #eab308;    /* Hive Hazard yellow stripes */
+      --bg: #11141b;               /* Softer charcoal slate, gentle on the eyes */
+      --card-bg: #181d27;          /* Elevated panel slate */
+      --card-hover: #1f2533;       /* Subtle hover lift */
+      --border: #293042;           /* Crisp refined borders */
+      --border-subtle: #353e54;
+      --text: #f1f5f9;             /* Luminous readable readout */
+      --muted: #94a3b8;            /* Slate muted text */
+      --accent: #ff5722;           /* Hazard rust red / plasma burner */
+      --accent-glow: rgba(255, 87, 34, 0.18);
+      --badge-bg: #222938;         /* Pill badge background */
+      --hazard-yellow: #eab308;
       --toxic-green: #22c55e;
       --las-blue: #38bdf8;
     }
@@ -58,12 +59,12 @@
     a { color: inherit; text-decoration: none; }
     
     header {
-      background: #0d0f14;
-      border-bottom: 2px solid #ff471a;
+      background: #141923;
+      border-bottom: 2px solid var(--accent);
       position: sticky;
       top: 0;
       z-index: 100;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
     .header-inner {
       max-width: 1200px;
@@ -89,7 +90,7 @@
     .brand-tag {
       font-size: 0.68rem;
       padding: 2px 7px;
-      background: rgba(255,71,26,0.15);
+      background: rgba(255,87,34,0.15);
       border: 1px solid var(--accent);
       color: var(--accent);
       border-radius: 3px;
@@ -129,16 +130,51 @@
     .badge-mono {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.75rem;
-      padding: 2px 8px;
+      padding: 3px 8px;
       border-radius: 4px;
-      background: #171b24;
+      background: var(--badge-bg);
       border: 1px solid var(--border);
       color: var(--muted);
+      display: inline-block;
     }
     .badge-accent {
-      background: rgba(255,71,26,0.15);
-      border: 1px solid rgba(255,71,26,0.4);
-      color: #ff6b4a;
+      background: rgba(255,87,34,0.15);
+      border: 1px solid rgba(255,87,34,0.4);
+      color: #ff7043;
+    }
+
+    /* Clean Stat Chips replacing heavy tables */
+    .stat-chip-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.45rem;
+      margin: 0.85rem 0;
+    }
+    .stat-chip {
+      background: #141722;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.35rem 0.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .stat-chip-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      font-family: 'Chakra Petch', sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+    .stat-chip-val {
+      font-size: 0.85rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: #fff;
     }
 
     /* Data Card Grid */
@@ -150,16 +186,16 @@
     .hive-card {
       background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 1.25rem;
+      border-radius: 8px;
+      padding: 1.35rem;
       transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
     .hive-card:hover {
-      border-color: #ff471a;
-      box-shadow: 0 4px 16px var(--accent-glow);
+      border-color: var(--accent);
+      box-shadow: 0 4px 18px var(--accent-glow);
       transform: translateY(-2px);
     }
 

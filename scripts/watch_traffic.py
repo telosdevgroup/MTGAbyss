@@ -59,10 +59,51 @@ ROUTE_BADGES = {
     "other":     f"{DIM}[OTHR]{RESET}"
 }
 
+# Site badges for AvaScry multi-subsite network
+SITE_BADGES = {
+    "mtg": f"{YELLOW}{BOLD}[MTG ]{RESET}",
+    "dom": f"{CYAN}{BOLD}[DOM ]{RESET}",
+    "swu": f"{MAGENTA}{BOLD}[SWU ]{RESET}",
+    "other": f"{DIM}[SCRY]{RESET}"
+}
+
+# Format badges
+FORMAT_BADGES = {
+    "html": f"{CYAN}[HTML]{RESET}",
+    "md":   f"{MAGENTA}{BOLD}[MD  ]{RESET}",
+    "json": f"{YELLOW}[JSON]{RESET}",
+    "img":  f"{BLUE}[IMG ]{RESET}",
+    "txt":  f"{YELLOW}[TXT ]{RESET}",
+    "xml":  f"{YELLOW}{BOLD}[XML ]{RESET}",
+    "rss":  f"{CYAN}[RSS ]{RESET}",
+    "csv":  f"{GREEN}{BOLD}[CSV ]{RESET}",
+    "css":  f"{BLUE}[CSS ]{RESET}",
+    "js":   f"{BLUE}[JS  ]{RESET}",
+    "font": f"{MAGENTA}[FONT]{RESET}",
+    "zip":  f"{RED}[ZIP ]{RESET}",
+    "other": f"{DIM}[OTHR]{RESET}"
+}
+
+def infer_site(site_tag: str, path: str) -> str:
+    """Infer site ('mtg', 'dom', 'swu') from site badge or path."""
+    st = site_tag.upper().strip() if site_tag else ""
+    if "DOM" in st:
+        return "dom"
+    if "SWU" in st:
+        return "swu"
+    if "MTG" in st:
+        return "mtg"
+    p_lower = path.lower()
+    if p_lower.startswith("/dominion"):
+        return "dom"
+    if p_lower.startswith("/swu"):
+        return "swu"
+    return "mtg"
+
 LOG_FILE = os.environ.get("ACCESS_LOG_PATH", r"C:\avascry_data\logs\access.log")
 
 LOG_REGEX = re.compile(
-    r'^(?P<ts>\S+)\s+(?P<ip>\S+)\s+(?P<badge>\[[^\]]+\])\s+(?P<status>\d{3})\s+\(\s*(?P<lat>\d+)ms\)(?P<tags>(?:\s+\[[^\]]*\])*)\s+->\s+(?P<method>\S+)\s+(?P<path>\S+)(?:\s+"(?P<ua>[^"]*)")?'
+    r'^(?P<ts>\S+)\s+(?P<ip>\S+)\s+(?P<badge>\[[^\]]+\])\s+(?:\[(?P<site>[A-Z0-9_\s]+)\]\s+)?(?P<status>\d{3})\s+\(\s*(?P<lat>\d+)ms\)(?P<tags>(?:\s+\[[^\]]*\])*)\s+->\s+(?P<method>\S+)\s+(?P<path>\S+)(?:\s+"(?P<ua>[^"]*)")?'
 )
 
 SURFACE_CODE_TO_ROUTE = {
@@ -657,7 +698,9 @@ class TrafficTracker:
         self.selected_filter = "all" # Crawler filter category
         self.selected_route_filter = "all" # Domain route/surface filter
         self.selected_type_filter = "all" # Content/file format filter
+        self.selected_site_filter = "all" # Subsite filter ('all', 'mtg', 'dom', 'swu')
         self.total_reqs = 0
+        self.site_counts = defaultdict(int)
         self.cat_counts = defaultdict(int)
         self.route_counts = defaultdict(int)
         self.type_counts = defaultdict(int)
@@ -692,6 +735,7 @@ class TrafficTracker:
         """Reset in-memory counters and recent hit logs."""
         self.start_time = datetime.now()
         self.total_reqs = 0
+        self.site_counts = defaultdict(int)
         self.cat_counts = defaultdict(int)
         self.route_counts = defaultdict(int)
         self.type_counts = defaultdict(int)
@@ -714,15 +758,17 @@ class TrafficTracker:
         self.current_sec_count = 0
         self.last_hit_epoch = time.time()
 
-    def add_request(self, dt: datetime, cat: str, status: int, path: str, ip: str, badge: str, ct: str = "", lat: int = 0, surf_tag: str = ""):
+    def add_request(self, dt: datetime, cat: str, status: int, path: str, ip: str, badge: str, ct: str = "", lat: int = 0, surf_tag: str = "", site: str = ""):
         now_epoch = dt.timestamp()
         self.last_hit_epoch = time.time()
         
+        site_key = site or infer_site(site, path)
         route = SURFACE_CODE_TO_ROUTE.get(surf_tag.upper()) or classify_route(path)
         file_type = classify_file_type(path, ct)
         lang = classify_language(path)
 
         self.total_reqs += 1
+        self.site_counts[site_key] += 1
         self.cat_counts[cat] += 1
         self.route_counts[route] += 1
         self.type_counts[file_type] += 1
@@ -760,11 +806,13 @@ class TrafficTracker:
         hit_record = {
             "time": dt.strftime("%H:%M:%S"),
             "badge": badge,
+            "site": site_key,
             "status": status,
             "path": path,
             "ip": ip,
             "cat": cat,
             "ct": ct,
+            "surf_tag": surf_tag,
             "route": route,
             "file_type": file_type,
             "lang": lang,
@@ -1054,7 +1102,13 @@ def render_dashboard(tracker: TrafficTracker):
         type_key = tracker.selected_type_filter
         type_label = TYPE_FILTER_NAMES.get(type_key, "All Formats")
         
+        site_key = tracker.selected_site_filter
+        site_labels = {"all": "All Sites", "mtg": "MTG", "dom": "Dominion", "swu": "Star Wars"}
+        site_label = site_labels.get(site_key, "All Sites")
+
         badges = []
+        if site_key != "all":
+            badges.append(f"{YELLOW}Site: {site_label}{RESET}")
         if filter_key != "all":
             badges.append(f"{YELLOW}Bot: {filter_label}{RESET}")
         if route_key != "all":
@@ -1068,7 +1122,8 @@ def render_dashboard(tracker: TrafficTracker):
             filter_summary = f"{BOLD}ALL TRAFFIC & SURFACES ({tot:,} total){RESET}"
 
         output.append(f"  {BOLD}⚡ LIVE STREAM FEED — {filter_summary}")
-        output.append(f"  {DIM}Bot Keys: {YELLOW}[7] Citations{RESET} | {YELLOW}[0] ShapBot{RESET} | {DIM}[g] Google [c] Claude [o] OpenAI [p] Perplexity [y] Yandex [h] Headless{RESET}")
+        output.append(f"  {DIM}Site Keys: {YELLOW}[m] MTG{RESET} | {CYAN}[9] Dominion{RESET} | {MAGENTA}[0] Star Wars{RESET} | {DIM}[a] All Sites{RESET}")
+        output.append(f"  {DIM}Bot Keys: {YELLOW}[7] Citations{RESET} | {DIM}[g] Google [c] Claude [o] OpenAI [p] Perplexity [y] Yandex [h] Headless{RESET}")
         output.append(f"  {DIM}Surface Keys: [v] Vectors [s] Synergies [k] Checklists | Format Keys: [d] Markdown [t] HTML [j] JSON [i] Image{RESET}")
         output.append(f"{CYAN}--------------------------------------------------------------------------------{RESET}")
 
@@ -1084,7 +1139,8 @@ def render_dashboard(tracker: TrafficTracker):
         source_buffer = tracker.citation_hits if filter_key == "citations" else tracker.recent_hits
         matching_hits = [
             h for h in source_buffer
-            if _cat_match(h, filter_key) and
+            if (site_key == "all" or h.get("site") == site_key) and
+               _cat_match(h, filter_key) and
                (route_key == "all" or h.get("route") == route_key) and
                (type_key == "all" or h.get("file_type") == type_key)
         ]
@@ -1094,21 +1150,25 @@ def render_dashboard(tracker: TrafficTracker):
         else:
             limit = len(matching_hits) if filter_key == "citations" else 20
             for hit in matching_hits[:limit]:
-                is_cit = any(k in hit['badge'].lower() for k in ("-user", "chatgpt-user", "claude-user", "perplexity-user"))
-                if is_cit:
-                    badge_str = f"{YELLOW}{BOLD}⭐ {hit['badge']:<15}{RESET}"
-                elif "watch:" in hit['badge'].lower():
-                    badge_str = f"{MAGENTA}{BOLD}👁️ {hit['badge']:<15}{RESET}"
+                s_key = hit.get("site", "mtg")
+                s_badge = SITE_BADGES.get(s_key, SITE_BADGES["other"])
+                
+                surf_tag = hit.get("surf_tag", "").strip()
+                if surf_tag:
+                    # Clean brackets
+                    raw_surf = surf_tag.strip("[] ").strip()
+                    rt_badge = ROUTE_BADGES.get(SURFACE_CODE_TO_ROUTE.get(raw_surf, ""), None)
+                    if not rt_badge:
+                        rt_badge = f"{GREEN}[{raw_surf:<4}]{RESET}"
                 else:
-                    badge_str = f"{hit['badge']:<18}"
-                col = GREEN if hit['status'] == 200 else (BLUE if str(hit['status']).startswith('3') else RED)
-                
-                rt = hit.get("route", "other")
-                rt_badge = ROUTE_BADGES.get(rt, f"{DIM}[OTHR]{RESET}")
-                
-                lat_val = f"{hit.get('lat', 0):3d}ms" if hit.get('lat') else "  - "
-                path_str = hit['path'][:54]
-                output.append(f"  {badge_str} ({lat_val}) {rt_badge} -> {path_str}")
+                    rt = hit.get("route", "other")
+                    rt_badge = ROUTE_BADGES.get(rt, f"{DIM}[OTHR]{RESET}")
+
+                ft = hit.get("file_type", "other")
+                ft_badge = FORMAT_BADGES.get(ft, f"{DIM}[OTHR]{RESET}")
+
+                path_str = hit['path'][:56]
+                output.append(f"  {s_badge} {rt_badge} {ft_badge} {path_str}")
 
     # ==========================================
     # VIEW 2: STORAGE & DATABASE METER
@@ -1476,15 +1536,18 @@ def check_keyboard_input(tracker: TrafficTracker):
                         tracker.selected_route_filter = "all"
                         tracker.selected_type_filter = "all"
                     render_dashboard(tracker)
+                # Subsite Filters
+                elif ch in (b'm', b'M', b'8'):
+                    tracker.selected_site_filter = "all" if tracker.selected_site_filter == "mtg" else "mtg"
+                    render_dashboard(tracker)
+                elif ch in (b'9',):
+                    tracker.selected_site_filter = "all" if tracker.selected_site_filter == "dom" else "dom"
+                    render_dashboard(tracker)
                 elif ch in (b'0',):
-                    if tracker.selected_filter == "shapbot":
-                        tracker.selected_filter = "all"
-                    else:
-                        tracker.selected_filter = "shapbot"
-                        tracker.selected_route_filter = "all"
-                        tracker.selected_type_filter = "all"
+                    tracker.selected_site_filter = "all" if tracker.selected_site_filter == "swu" else "swu"
                     render_dashboard(tracker)
                 elif ch in (b'a', b'A'):
+                    tracker.selected_site_filter = "all"
                     tracker.selected_filter = "all"
                     tracker.selected_route_filter = "all"
                     tracker.selected_type_filter = "all"
@@ -1607,6 +1670,7 @@ def tail_log_file(tracker: TrafficTracker, from_now: bool = False):
                         ts = datetime.now(timezone.utc)
                     ip = m.group("ip")
                     badge = m.group("badge")
+                    site_raw = m.group("site") or ""
                     status = int(m.group("status"))
                     path = m.group("path")
                     surf_tag, fmt_tag = parse_log_tags(m.group("tags"))
@@ -1615,7 +1679,8 @@ def tail_log_file(tracker: TrafficTracker, from_now: bool = False):
                     if cat == "siteblaster":
                         continue
                     lat_val = int(m.group("lat")) if m.group("lat") else 0
-                    tracker.add_request(ts, cat, status, path, ip, badge, ct, lat_val, surf_tag)
+                    site_val = infer_site(site_raw, path)
+                    tracker.add_request(ts, cat, status, path, ip, badge, ct, lat_val, surf_tag, site=site_val)
         while True:
             line = f.readline()
             if line:
@@ -1629,6 +1694,7 @@ def tail_log_file(tracker: TrafficTracker, from_now: bool = False):
                             ts = datetime.now(timezone.utc)
                         ip = m.group("ip")
                         badge = m.group("badge")
+                        site_raw = m.group("site") or ""
                         status = int(m.group("status"))
                         method = m.group("method")
                         path = m.group("path")
@@ -1638,7 +1704,8 @@ def tail_log_file(tracker: TrafficTracker, from_now: bool = False):
                         if cat == "siteblaster":
                             continue
                         lat_val = int(m.group("lat")) if m.group("lat") else 0
-                        tracker.add_request(ts, cat, status, path, ip, badge, ct, lat_val, surf_tag)
+                        site_val = infer_site(site_raw, path)
+                        tracker.add_request(ts, cat, status, path, ip, badge, ct, lat_val, surf_tag, site=site_val)
             else:
                 time.sleep(0.1)
 

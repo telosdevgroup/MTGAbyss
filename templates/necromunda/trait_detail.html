@@ -14,20 +14,12 @@
       {{ trait.name }}
     </h1>
 
-    <!-- Tri-surface action bar -->
-    <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; background: #0b0d12; border: 1px solid var(--border); padding: 0.6rem 1rem; border-radius: 6px; align-items: center;">
-      <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700;">Tri-Surface:</span>
-      <span class="badge-mono" style="background: #1e2430; color: #fff;">HTML View</span>
-      <a href="{{ base_path }}/trait/{{ trait.slug }}.md" class="badge-mono" style="color: var(--accent);">Markdown (.md)</a>
-      <a href="{{ base_path }}/trait/{{ trait.slug }}.json" class="badge-mono" style="color: var(--accent);">REST (.json)</a>
-    </div>
-
     <!-- Official Rule Text -->
     <div style="margin-bottom: 1.75rem;">
       <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
         Rule Effect &amp; Mechanics
       </h2>
-      <p style="color: #f1f5f9; line-height: 1.6; font-size: 1.05rem; background: #0c0e12; border: 1px solid var(--border); border-left: 4px solid var(--accent); padding: 1.25rem; border-radius: 4px;">
+      <p style="color: #f1f5f9; line-height: 1.6; font-size: 1.05rem; background: #141722; border: 1px solid var(--border); border-left: 4px solid var(--accent); padding: 1.25rem; border-radius: 4px;">
         {{ trait.rules_text }}
       </p>
     </div>
@@ -58,26 +50,13 @@
               <span class="badge-mono badge-accent">{{ w.cost_credits }} cr</span>
             </div>
             <div style="font-size: 0.78rem; color: var(--muted); margin-bottom: 0.5rem;">Category: {{ w.category }}</div>
-            <table class="stat-table" style="margin: 0.5rem 0;">
-              <thead>
-                <tr>
-                  <th>Rng</th>
-                  <th>Str</th>
-                  <th>Dmg</th>
-                  <th>AP</th>
-                  <th>Ammo</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>{{ w.range_short }}/{{ w.range_long }}</td>
-                  <td>{{ w.strength }}</td>
-                  <td>{{ w.damage }}</td>
-                  <td>{{ w.armor_piercing }}</td>
-                  <td>{{ w.ammo_check }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+              <span class="badge-mono">RNG {{ w.range_short }}/{{ w.range_long }}</span>
+              <span class="badge-mono">STR {{ w.strength }}</span>
+              <span class="badge-mono">DMG {{ w.damage }}</span>
+              <span class="badge-mono">AP {{ w.armor_piercing }}</span>
+              <span class="badge-mono">AMMO {{ w.ammo }}</span>
+            </div>
           </div>
         </a>
         {% endfor %}
@@ -85,6 +64,15 @@
       {% else %}
       <p style="color: var(--muted); font-size: 0.9rem;">No weapons currently registered with this trait in the armory.</p>
       {% endif %}
+    </div>
+
+    <!-- Subtle Developer / Data Export Footer -->
+    <div style="margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+      <span style="font-size: 0.75rem; color: var(--muted); font-family: 'JetBrains Mono', monospace;">DATA EXPORT / AGENT INGESTION:</span>
+      <div style="display: flex; gap: 0.5rem;">
+        <a href="{{ base_path }}/trait/{{ trait.slug }}.md" class="badge-mono" style="font-size: 0.75rem;">Markdown (.md)</a>
+        <a href="{{ base_path }}/trait/{{ trait.slug }}.json" class="badge-mono" style="font-size: 0.75rem;">REST (.json)</a>
+      </div>
     </div>
   </div>
 </div>

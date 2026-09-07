@@ -17,16 +17,8 @@
       {{ house.title }}
     </div>
 
-    <!-- Tri-surface action bar -->
-    <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; background: #0b0d12; border: 1px solid var(--border); padding: 0.6rem 1rem; border-radius: 6px; align-items: center;">
-      <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700;">Tri-Surface:</span>
-      <span class="badge-mono" style="background: #1e2430; color: #fff;">HTML View</span>
-      <a href="{{ base_path }}/house/{{ house.slug }}.md" class="badge-mono" style="color: var(--accent);">Markdown (.md)</a>
-      <a href="{{ base_path }}/house/{{ house.slug }}.json" class="badge-mono" style="color: var(--accent);">REST (.json)</a>
-    </div>
-
     <!-- Tactical Overview -->
-    <div style="background: #0d0f14; border: 1px solid var(--border); padding: 1.25rem; border-radius: 6px; margin-bottom: 1.75rem;">
+    <div style="background: #141722; border: 1px solid var(--border); padding: 1.25rem; border-radius: 6px; margin-bottom: 1.75rem;">
       <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.1rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
         Specialty Profile
       </h2>
@@ -64,14 +56,13 @@
       </p>
     </div>
 
-    <!-- Tactics Summary -->
-    <div>
-      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
-        Gang Construction &amp; Campaign Tactics
-      </h2>
-      <p style="color: #cbd5e1; line-height: 1.6; font-size: 0.95rem;">
-        {{ house.tactics_summary }}
-      </p>
+    <!-- Subtle Developer / Data Export Footer -->
+    <div style="margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+      <span style="font-size: 0.75rem; color: var(--muted); font-family: 'JetBrains Mono', monospace;">DATA EXPORT / AGENT INGESTION:</span>
+      <div style="display: flex; gap: 0.5rem;">
+        <a href="{{ base_path }}/house/{{ house.slug }}.md" class="badge-mono" style="font-size: 0.75rem;">Markdown (.md)</a>
+        <a href="{{ base_path }}/house/{{ house.slug }}.json" class="badge-mono" style="font-size: 0.75rem;">REST (.json)</a>
+      </div>
     </div>
   </div>
 </div>

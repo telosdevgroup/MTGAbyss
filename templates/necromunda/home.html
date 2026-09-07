@@ -42,47 +42,57 @@
 
   <div class="grid-cards">
     {% for w in weapons[:6] %}
-    <a href="{{ base_path }}/weapon/{{ w.slug }}" class="hive-card">
+    <div class="hive-card">
       <div>
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-          <h3 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.15rem; font-weight: 700; color: #fff;">{{ w.name }}</h3>
+          <h3 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.15rem; font-weight: 700;">
+            <a href="{{ base_path }}/weapon/{{ w.slug }}" style="color: #fff;">{{ w.name }}</a>
+          </h3>
           <span class="badge-mono badge-accent">{{ w.cost_credits }} cr</span>
         </div>
         <div style="display: flex; gap: 0.4rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
           <span class="badge-mono">{{ w.category }}</span>
           <span class="badge-mono">{{ w.rarity }}</span>
         </div>
-        <table class="stat-table">
-          <thead>
-            <tr>
-              <th>Rng S/L</th>
-              <th>Acc S/L</th>
-              <th>Str</th>
-              <th>Dmg</th>
-              <th>AP</th>
-              <th>Ammo</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>{{ w.range_short }} / {{ w.range_long }}</td>
-              <td>{{ w.accuracy_short }} / {{ w.accuracy_long }}</td>
-              <td>{{ w.strength }}</td>
-              <td>{{ w.damage }}</td>
-              <td>{{ w.armor_piercing }}</td>
-              <td>{{ w.ammo }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div>
-        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.5rem;">
-          {% for t in w.traits %}
-          <span style="font-size: 0.72rem; background: #1a1e28; color: #ff6b4a; padding: 2px 6px; border-radius: 3px; font-family: 'JetBrains Mono', monospace;">{{ t }}</span>
-          {% endfor %}
+
+        <div class="stat-chip-row">
+          <div class="stat-chip">
+            <span class="stat-chip-label">Range S/L</span>
+            <span class="stat-chip-val">{{ w.range_short }} / {{ w.range_long }}</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-chip-label">Acc S/L</span>
+            <span class="stat-chip-val">{{ w.accuracy_short }} / {{ w.accuracy_long }}</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-chip-label">Strength</span>
+            <span class="stat-chip-val">{{ w.strength }}</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-chip-label">Damage</span>
+            <span class="stat-chip-val">{{ w.damage }}</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-chip-label">Armor Piercing</span>
+            <span class="stat-chip-val">{{ w.armor_piercing }}</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-chip-label">Ammo Check</span>
+            <span class="stat-chip-val">{{ w.ammo }}</span>
+          </div>
         </div>
       </div>
-    </a>
+      <div>
+        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.5rem; margin-bottom: 0.75rem;">
+          {% for t in w.traits %}
+          <a href="{{ base_path }}/traits" style="font-size: 0.72rem; background: #222736; color: #ff7043; border: 1px solid #323a4f; padding: 2px 6px; border-radius: 3px; font-family: 'JetBrains Mono', monospace;">{{ t }}</a>
+          {% endfor %}
+        </div>
+        <div style="border-top: 1px solid var(--border); padding-top: 0.5rem;">
+          <a href="{{ base_path }}/weapon/{{ w.slug }}" style="color: var(--accent); font-size: 0.82rem; font-weight: 600;">View Weapon Profile &rarr;</a>
+        </div>
+      </div>
+    </div>
     {% endfor %}
   </div>
 </section>
