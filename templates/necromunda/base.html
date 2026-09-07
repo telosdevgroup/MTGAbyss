@@ -256,12 +256,35 @@
         AvaScry <span class="accent">Necromunda</span>
         <span class="brand-tag">UNDERHIVE</span>
       </a>
-      <nav aria-label="Necromunda Navigation">
+      <nav aria-label="Necromunda Navigation" style="display: flex; align-items: center; gap: 1.25rem;">
         <a href="{{ base_path or '/' }}">Hub</a>
         <a href="{{ base_path }}/weapons">Armory</a>
         <a href="{{ base_path }}/traits">Traits</a>
         <a href="{{ base_path }}/houses">Clan Houses</a>
         <a href="{{ base_path }}/skills">Skills</a>
+
+        <div class="necromunda-auth-controls" style="display: inline-flex; align-items: center; margin-left: 0.5rem; text-transform: none;">
+        {% if user %}
+          <div style="display: inline-flex; align-items: center; gap: 0.35rem;">
+            <a href="https://avascry.com/dashboard" title="View Your Account Dashboard" style="display: inline-flex; align-items: center; gap: 0.45rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.2rem 0.65rem 0.2rem 0.25rem; text-decoration: none; color: #fff;">
+              {% if user.picture %}
+                <img src="{{ user.picture }}" alt="{{ user.name }}" style="width: 22px; height: 22px; border-radius: 2px; object-fit: cover;">
+              {% else %}
+                <div style="width: 22px; height: 22px; border-radius: 2px; background: var(--accent); color: #fff; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; font-weight: 700;">{{ user.name[0] if user.name else 'U' }}</div>
+              {% endif %}
+              <span style="font-size: 0.8rem; font-weight: 700; max-width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'JetBrains Mono', monospace;">
+                {% if user.discord_username %}@{{ user.discord_username }}{% else %}{{ user.name }}{% endif %}
+              </span>
+            </a>
+            <a href="/auth/logout" title="Sign out" aria-label="Sign out" style="color: var(--muted); font-size: 0.75rem; text-decoration: none; padding: 0.2rem 0.35rem; border-radius: 2px;">✕</a>
+          </div>
+        {% else %}
+          <a href="/auth/login" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.32rem 0.85rem; border-radius: 4px; background: rgba(255,87,34,0.15); border: 1px solid var(--accent); color: var(--accent); font-size: 0.8rem; font-weight: 700; text-decoration: none; font-family: 'Chakra Petch', sans-serif; letter-spacing: 0.05em; text-transform: uppercase;">
+            <span aria-hidden="true" style="font-size: 0.85rem;">💀</span>
+            Sign In
+          </a>
+        {% endif %}
+        </div>
       </nav>
     </div>
   </header>

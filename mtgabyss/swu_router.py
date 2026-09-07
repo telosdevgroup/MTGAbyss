@@ -10,11 +10,10 @@ import xml.etree.ElementTree as ET
 from typing import Optional
 from fastapi import APIRouter, Request, HTTPException, Response
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse, FileResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from db_mongo import get_mongo_db
+from mtgabyss.shared.helpers import templates
 
 swu_router = APIRouter(prefix="", tags=["Star Wars Unlimited"])
-templates = Jinja2Templates(directory="templates")
 
 @swu_router.get("/images/{rest_of_path:path}", include_in_schema=False)
 async def swu_serve_image(rest_of_path: str):
@@ -374,7 +373,14 @@ async def swu_card_markdown(slug: str, request: Request):
         lines.append(card.get("rules"))
 
     lines.append(f"\n*Source: AvaScry Star Wars Unlimited (https://swu.avascry.com/card/{card.get('slug')})*")
-    return Response(content="\n".join(lines), media_type="text/markdown; charset=utf-8")
+    return Response(
+        content="\n".join(lines),
+        media_type="text/markdown; charset=utf-8",
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
 
 @swu_router.get("/card/{slug}.json", response_class=JSONResponse)
 async def swu_card_json(slug: str):
@@ -382,7 +388,13 @@ async def swu_card_json(slug: str):
     card = db.cards.find_one({"$or": [{"slug": slug}, {"name_slug": slug}]}, {"_id": 0})
     if not card:
         raise HTTPException(status_code=404, detail="Card not found")
-    return JSONResponse(content=card)
+    return JSONResponse(
+        content=card,
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
 
 @swu_router.get("/card/{slug}.xml", response_class=Response)
 async def swu_card_xml(slug: str):
@@ -550,6 +562,7 @@ async def swu_card_detail(slug: str, request: Request):
         },
         headers={
             "Vary": "Accept",
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
             "Link": f'</card/{card.get("slug", slug)}.md>; rel="alternate"; type="text/markdown", </card/{card.get("slug", slug)}.json>; rel="alternate"; type="application/json", </card/{card.get("slug", slug)}.xml>; rel="alternate"; type="application/xml"',
             "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
         }
@@ -570,6 +583,10 @@ async def swu_keywords_list(request: Request):
             "keywords": keywords,
             "current_keyword": None,
             "cards": []
+        },
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
         }
     )
 
@@ -580,7 +597,13 @@ async def swu_keyword_json(slug: str):
     kw = db.keywords.find_one({"slug": clean_slug}, {"_id": 0})
     if not kw:
         raise HTTPException(status_code=404, detail="Keyword not found")
-    return JSONResponse(content=kw)
+    return JSONResponse(
+        content=kw,
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
 
 @swu_router.get("/keyword/{slug}.md", response_class=PlainTextResponse)
 async def swu_keyword_markdown(slug: str):
@@ -600,7 +623,14 @@ async def swu_keyword_markdown(slug: str):
     if kw.get("rules_reference"):
         lines.append(f"\n## Rules Reference\n{kw.get('rules_reference')}")
     lines.append(f"\n*Source: AvaScry Star Wars Unlimited (https://swu.avascry.com/keyword/{kw.get('slug')})*")
-    return PlainTextResponse(content="\n".join(lines), media_type="text/markdown; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes"})
+    return PlainTextResponse(
+        content="\n".join(lines),
+        media_type="text/markdown; charset=utf-8",
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
 
 @swu_router.get("/keyword/{slug}", response_class=HTMLResponse)
 async def swu_keyword_detail(request: Request, slug: str):
@@ -636,6 +666,7 @@ async def swu_keyword_detail(request: Request, slug: str):
         },
         headers={
             "Vary": "Accept",
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
             "Link": f'</keyword/{kw["slug"]}.md>; rel="alternate"; type="text/markdown", </keyword/{kw["slug"]}.json>; rel="alternate"; type="application/json"',
             "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
         }
@@ -659,6 +690,7 @@ async def swu_rules_index(request: Request):
         },
         headers={
             "Vary": "Accept",
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
             "Link": '</rules.md>; rel="alternate"; type="text/markdown", </rules.json>; rel="alternate"; type="application/json"',
             "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
         }
@@ -691,6 +723,11 @@ async def swu_rule_section(request: Request, slug: str):
             "all_sections": all_sections,
             "sections_to_display": [current_sec],
             "current_section": current_sec
+        },
+        headers={
+            "Vary": "Accept",
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
         }
     )
 
@@ -726,6 +763,11 @@ async def swu_rulings_feed(request: Request, q: Optional[str] = None, page: int 
             "current_page": page,
             "total_pages": total_pages,
             "total_count": total_count
+        },
+        headers={
+            "Vary": "Accept",
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
         }
     )
 
@@ -747,6 +789,11 @@ async def swu_ruling_detail(request: Request, slug: str):
             "current_page": 1,
             "total_pages": 1,
             "total_count": 1
+        },
+        headers={
+            "Vary": "Accept",
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
         }
     )
 
@@ -783,7 +830,14 @@ async def swu_llms_txt(request: Request):
 - Heroism (White): Light side characters and allies.
 - Villainy (Black): Empire, Sith, and scoundrels.
 """
-    return PlainTextResponse(content=content, media_type="text/plain; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes"})
+    return PlainTextResponse(
+        content=content,
+        media_type="text/plain; charset=utf-8",
+        headers={
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
 
 @swu_router.get("/llms-full.txt", response_class=PlainTextResponse)
 async def swu_llms_full_txt():
@@ -827,7 +881,14 @@ async def swu_llms_full_txt():
             lines.append(f"- Epic Action / Deploy: {c.get('deploy_box').strip()}")
         lines.append("")
 
-    return PlainTextResponse(content="\n".join(lines), media_type="text/plain; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes"})
+    return PlainTextResponse(
+        content="\n".join(lines),
+        media_type="text/plain; charset=utf-8",
+        headers={
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
 
 @swu_router.get("/rules.md", response_class=PlainTextResponse)
 async def swu_rules_md():
@@ -865,7 +926,14 @@ Once both players pass consecutively:
 ## 4. Victory Condition
 The game ends immediately when a player's **Base takes 30 damage** (or its specified HP value). The opposing player wins immediately.
 """
-    return PlainTextResponse(content=content, media_type="text/markdown; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes"})
+    return PlainTextResponse(
+        content=content,
+        media_type="text/markdown; charset=utf-8",
+        headers={
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
 
 @swu_router.get("/rules.json", response_class=JSONResponse)
 async def swu_rules_json():
@@ -888,7 +956,10 @@ async def swu_rules_json():
             "aspects": ["Vigilance", "Command", "Aggression", "Cunning", "Heroism", "Villainy"],
             "base_hp_default": 30
         },
-        headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes"}
+        headers={
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
     )
 
 @swu_router.get("/sets.md", response_class=PlainTextResponse)
@@ -905,7 +976,14 @@ async def swu_sets_md():
 | **LAW** | Legends of the Force | July 2025 | Yes |
 | **SEC** | Secrets of Power | November 2025 | Yes |
 """
-    return PlainTextResponse(content=content, media_type="text/markdown; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes"})
+    return PlainTextResponse(
+        content=content,
+        media_type="text/markdown; charset=utf-8",
+        headers={
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
 
 @swu_router.get("/.well-known/ai-content", response_class=PlainTextResponse)
 async def swu_well_known_ai():
@@ -925,7 +1003,11 @@ format-negotiation:
   - Header: "Accept: text/markdown" -> /card/{slug}.md
   - Header: "Accept: application/json" -> /card/{slug}.json
 """
-    return PlainTextResponse(content=content, media_type="text/plain; charset=utf-8")
+    return PlainTextResponse(
+        content=content,
+        media_type="text/plain; charset=utf-8",
+        headers={"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
+    )
 
 @swu_router.get("/sitemap.xml", response_class=Response)
 async def swu_sitemap_xml():
@@ -970,10 +1052,14 @@ async def swu_sitemap_xml():
 
 @swu_router.get("/robots.txt", response_class=PlainTextResponse)
 async def swu_robots_txt():
-    return PlainTextResponse("""User-agent: *
+    return PlainTextResponse(
+        """User-agent: *
 Allow: /
 Sitemap: https://swu.avascry.com/sitemap.xml
-""")
+""",
+        media_type="text/plain; charset=utf-8",
+        headers={"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
+    )
 
 @swu_router.get("/about", response_class=HTMLResponse)
 async def swu_about(request: Request):
@@ -1009,51 +1095,22 @@ async def swu_contact(request: Request):
 
 @swu_router.post("/contact", response_class=HTMLResponse)
 async def swu_contact_post(request: Request):
-    form = await request.form()
-    honeypot = form.get("website_url", "").strip()
-    if honeypot:
-        return templates.TemplateResponse(
-            request=request,
-            name="swu/contact.html",
-            context={"base_path": get_base_prefix(request), "success": True, "error": None}
-        )
-
-    name = str(form.get("name", "")).strip()
-    contact_info = str(form.get("contact", "")).strip()
-    category = str(form.get("category", "General Feedback")).strip()
-    message = str(form.get("message", "")).strip()
-
-    if not name or not contact_info or not message:
-        return templates.TemplateResponse(
-            request=request,
-            name="swu/contact.html",
-            context={
-                "base_path": get_base_prefix(request),
-                "success": False,
-                "error": "Please fill out all required fields before submitting."
-            }
-        )
-
-    try:
-        from app import send_discord_notification
-        fields = [
-            {"name": "Game Subsite", "value": "Star Wars: Unlimited (swu.avascry.com)", "inline": True},
-            {"name": "Category", "value": category, "inline": True},
-            {"name": "Sender", "value": name, "inline": True},
-            {"name": "Contact / Email", "value": contact_info, "inline": True},
-            {"name": "Message", "value": message[:1024], "inline": False}
-        ]
-        await send_discord_notification(
-            title=f"\U0001f30c SWU Inquiry: {category} from {name}",
-            description=message[:500],
-            color=0xfacc15, # SWU gold
-            fields=fields
-        )
-    except Exception as e:
-        print(f"[SWU Discord Notify Error] {e}")
-
+    from mtgabyss.shared.contact import process_contact_submission
+    result = await process_contact_submission(
+        request=request,
+        subsite_name="Star Wars: Unlimited",
+        subsite_color=0xfacc15,
+        extra_field_name="category",
+        extra_field_label="Category"
+    )
     return templates.TemplateResponse(
         request=request,
         name="swu/contact.html",
-        context={"base_path": get_base_prefix(request), "success": True, "error": None}
+        context={
+            "base_path": get_base_prefix(request),
+            "success": result["success"],
+            "error": result["error"],
+            "values": result.get("values", {})
+        }
     )
+

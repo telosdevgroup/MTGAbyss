@@ -16,6 +16,7 @@ Usage:
 import sys
 import os
 import re
+import json
 import html
 import time
 import random
@@ -237,6 +238,29 @@ class SWUSiteBlaster:
                         self.log_pass("card HTML alternates", f"{slug} has MD/JSON/XML alternate link tags")
                     else:
                         self.log_warn("card HTML alternates", f"{slug}", "Missing alternate link tags in HTML head")
+
+                    # Check Cache-Control header
+                    cc = resp_html.headers.get("cache-control", "")
+                    if "max-age=3600" in cc:
+                        self.log_pass("card HTML cache", f"{slug} Cache-Control verified")
+                    else:
+                        self.log_warn("card HTML cache", f"/card/{slug}", f"Unexpected Cache-Control: {cc}")
+
+                    # Check Schema.org @graph structured data
+                    ld_match = re.search(r'<script type="application/ld\+json">\s*(\{.*?\})\s*</script>', text, re.DOTALL)
+                    if ld_match:
+                        try:
+                            ld_json = json.loads(ld_match.group(1))
+                            graph = ld_json.get("@graph", [])
+                            types = {item.get("@type") for item in graph if isinstance(item, dict)}
+                            if {"WebPage", "BreadcrumbList", "Thing"}.issubset(types):
+                                self.log_pass("card Schema.org graph", f"{slug} valid @graph (types: {', '.join(sorted(types))})")
+                            else:
+                                self.log_warn("card Schema.org graph", f"{slug}", f"Missing standard types in @graph: {types}")
+                        except Exception as e:
+                            self.log_fail("card Schema.org graph", f"/card/{slug}", f"Failed to parse JSON-LD: {e}")
+                    else:
+                        self.log_warn("card Schema.org graph", f"/card/{slug}", "No application/ld+json script tag found")
                 else:
                     self.log_fail("card HTML", f"/card/{slug}", f"Status {resp_html.status_code}")
             except Exception as e:
@@ -250,6 +274,8 @@ class SWUSiteBlaster:
                         self.log_pass("card Markdown", f"{name} (/card/{slug}.md)")
                     else:
                         self.log_warn("card Markdown", f"/card/{slug}.md", "Markdown missing card name header")
+                    if "max-age=3600" in resp_md.headers.get("cache-control", ""):
+                        self.log_pass("card Markdown cache", f"{slug}.md Cache-Control verified")
                 else:
                     self.log_fail("card Markdown", f"/card/{slug}.md", f"Status {resp_md.status_code}")
             except Exception as e:
@@ -266,6 +292,25 @@ class SWUSiteBlaster:
                     else:
                         self.log_fail("card JSON REST", f"/card/{slug}.json", "REST symmetry mismatch with Mongo entity",
                                       {"expected_slug": slug, "json_slug": c_slug})
+
+                    if "max-age=3600" in resp_json.headers.get("cache-control", ""):
+                        self.log_pass("card JSON cache", f"{slug}.json Cache-Control verified")
+
+                    # Mechanics & Invariant validation
+                    card_type = data.get("type") or ""
+                    if card_type.lower() == "leader":
+                        if data.get("local_image_back") or data.get("epic_action") or data.get("unit_power") is not None:
+                            self.log_pass("leader mechanics", f"{name} leader unit/back face attributes validated")
+                        else:
+                            self.log_warn("leader mechanics", f"{name}", "Leader missing deploy or unit face attributes")
+                    elif card_type.lower() == "unit":
+                        arenas = data.get("arenas") or []
+                        if isinstance(arenas, list) and any(a in ["Ground", "Space"] for a in arenas):
+                            self.log_pass("unit arena", f"{name} ({', '.join(arenas)} Arena)")
+                        elif data.get("arena") in ["Ground", "Space"]:
+                            self.log_pass("unit arena", f"{name} ({data.get('arena')} Arena)")
+                        else:
+                            self.log_warn("unit arena", f"{name}", f"Unexpected arenas value: {arenas}")
                 else:
                     self.log_fail("card JSON REST", f"/card/{slug}.json", f"Status {resp_json.status_code}")
             except Exception as e:
@@ -366,6 +411,31 @@ class SWUSiteBlaster:
         except Exception as e:
             self.log_fail("rulings feed", "/rulings", str(e))
 
+        # Verify errata feed
+        try:
+            resp_errata = self.get("/errata")
+            if resp_errata.status_code == 200 and "Errata" in resp_errata.text:
+                self.log_pass("errata feed", "/errata page rendered 200 OK")
+            else:
+                self.log_fail("errata feed", "/errata", f"Status {resp_errata.status_code}")
+        except Exception as e:
+            self.log_fail("errata feed", "/errata", str(e))
+
+        # Verify individual ruling pages
+        rulings_with_slug = list(self.db.clarifications.find({"slug": {"$exists": True, "$ne": ""}}, {"_id": 0, "slug": 1}).limit(20))
+        if rulings_with_slug:
+            sampled_r = self.rng.sample(rulings_with_slug, min(4, len(rulings_with_slug)))
+            for r in sampled_r:
+                r_slug = r.get("slug")
+                try:
+                    resp_r = self.get(f"/ruling/{r_slug}")
+                    if resp_r.status_code == 200:
+                        self.log_pass("ruling detail", f"/ruling/{r_slug} -> 200 OK")
+                    else:
+                        self.log_fail("ruling detail", f"/ruling/{r_slug}", f"Status {resp_r.status_code}")
+                except Exception as e:
+                    self.log_fail("ruling detail", f"/ruling/{r_slug}", str(e))
+
         # Verify cards with official clarifications render them
         clarifications = list(self.db.clarifications.find({}).limit(20))
         if clarifications:
@@ -424,6 +494,11 @@ class SWUSiteBlaster:
                         self.log_pass("rules export", f"{path} format and fragments validated")
                     else:
                         self.log_warn("rules export", path, f"Missing fragments: {missing}")
+
+                    if "max-age=86400" in resp.headers.get("cache-control", ""):
+                        self.log_pass("rules cache", f"{path} Cache-Control verified")
+                    else:
+                        self.log_warn("rules cache", path, f"Unexpected Cache-Control: {resp.headers.get('cache-control')}")
                 else:
                     self.log_fail("rules export", path, f"Status {resp.status_code}")
             except Exception as e:

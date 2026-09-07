@@ -27,20 +27,73 @@
 <meta name="twitter:title" content="{{ card.title or card.name }}{% if card.subtitle %} — {{ card.subtitle }}{% endif %}">
 <meta name="twitter:description" content="Canonical card data and rulings for {{ card.title or card.name }}.">
 
-<!-- Google Schema.org Structured Data -->
+<!-- Schema.org JSON-LD Graph for AI & Search Bots -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "ItemPage",
-  "name": "{{ card.title or card.name }}{% if card.subtitle %}: {{ card.subtitle }}{% endif %}",
-  "description": "Star Wars: Unlimited card details, rules text, and official rulings for {{ card.title or card.name }}.",
-  "url": "https://swu.avascry.com/card/{{ card.slug }}",
-  "mainEntity": {
-    "@type": "Game",
-    "name": "{{ card.title or card.name }}",
-    "genre": "Trading Card Game",
-    "character": "{{ card.title or card.name }}"
-  }
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://swu.avascry.com/card/{{ card.slug }}#webpage",
+      "url": "https://swu.avascry.com/card/{{ card.slug }}",
+      "name": "{{ card.title or card.name }}{% if card.subtitle %} — {{ card.subtitle }}{% endif %} | AvaScry SWU",
+      "description": "Star Wars: Unlimited card details, rules text, and official rulings for {{ card.title or card.name }}.",
+      "isPartOf": {
+        "@type": "WebSite",
+        "@id": "https://swu.avascry.com/#website",
+        "name": "AvaScry Star Wars: Unlimited",
+        "url": "https://swu.avascry.com"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://swu.avascry.com/card/{{ card.slug }}#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "SWU Database",
+          "item": "https://swu.avascry.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "{{ card.expansion.name or card.set_name or card.set_code or 'Expansions' }}",
+          "item": "https://swu.avascry.com/?set={{ card.expansion.code or card.set_code }}"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "{{ card.title or card.name }}",
+          "item": "https://swu.avascry.com/card/{{ card.slug }}"
+        }
+      ]
+    },
+    {
+      "@type": "Thing",
+      "@id": "https://swu.avascry.com/card/{{ card.slug }}#card",
+      "name": "{{ card.title or card.name }}",
+      {% if card.subtitle %}"alternateName": "{{ card.subtitle }}",{% endif %}
+      "url": "https://swu.avascry.com/card/{{ card.slug }}",
+      {% if card.art_front or card.front_image %}"image": "https://swu.avascry.com{{ card.art_front or card.front_image }}",{% endif %}
+      "description": "Star Wars: Unlimited {{ card.type or 'Card' }} from {{ card.expansion.name or card.set_name or 'Star Wars Unlimited' }}. Aspects: {{ card.aspects | join(', ') if card.aspects else 'Neutral' }}.",
+      "category": "Star Wars: Unlimited Trading Card Game"
+    }{% if card.rules %},
+    {
+      "@type": "FAQPage",
+      "@id": "https://swu.avascry.com/card/{{ card.slug }}#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What are the official rules and clarifications for {{ card.title or card.name }}?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": {{ card.rules | tojson }}
+          }
+        }
+      ]
+    }{% endif %}
+  ]
 }
 </script>
 {% endblock %}

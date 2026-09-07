@@ -706,58 +706,21 @@ async def necromunda_contact(request: Request):
 
 @necromunda_router.post("/contact", response_class=HTMLResponse)
 async def necromunda_contact_post(request: Request):
-    form = await request.form()
-    honeypot = form.get("website_url", "").strip()
-    if honeypot:
-        return templates.TemplateResponse(
-            request=request,
-            name="necromunda/contact.html",
-            context={"base_path": get_base_prefix(request), "success": True, "error": None}
-        )
-
-    name = str(form.get("name", "")).strip()
-    contact_info = str(form.get("contact", "")).strip()
-    category = str(form.get("category", "")).strip()
-    message = str(form.get("message", "")).strip()
-
-    if not name or not contact_info or not message:
-        return templates.TemplateResponse(
-            request=request,
-            name="necromunda/contact.html",
-            context={
-                "base_path": get_base_prefix(request),
-                "success": False,
-                "error": "Please fill out all required fields before submitting."
-            }
-        )
-
-    try:
-        from mtgabyss.routers.auth_router import send_discord_notification
-        fields = [
-            {"name": "Subsite", "value": "AvaScry Necromunda (necromunda.avascry.com)", "inline": True},
-            {"name": "Sender", "value": name, "inline": True},
-            {"name": "Contact", "value": contact_info, "inline": True},
-        ]
-        if category:
-            fields.append({"name": "Category", "value": category, "inline": True})
-        fields.append({"name": "Message", "value": message[:1024], "inline": False})
-
-        title_str = f"📩 [Necromunda Contact] Message from {name}"
-        if category:
-            title_str = f"📩 [Necromunda Contact] {category} from {name}"
-
-        await send_discord_notification(
-            title=title_str,
-            description=f"New contact message received on **necromunda.avascry.com** from **{name}**.",
-            color=0xff5722,
-            fields=fields
-        )
-    except Exception as exc:
-        print(f"[Necromunda Contact Error] Failed to dispatch Discord notification: {exc}")
-
+    from mtgabyss.shared.contact import process_contact_submission
+    result = await process_contact_submission(
+        request=request,
+        subsite_name="AvaScry Necromunda",
+        subsite_color=0xff5722
+    )
     return templates.TemplateResponse(
         request=request,
         name="necromunda/contact.html",
-        context={"base_path": get_base_prefix(request), "success": True, "error": None}
+        context={
+            "base_path": get_base_prefix(request),
+            "success": result["success"],
+            "error": result["error"],
+            "values": result.get("values", {})
+        }
     )
+
 

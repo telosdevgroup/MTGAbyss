@@ -58,10 +58,13 @@ from mtgabyss.routers.api_router import api_router
 app = FastAPI(title="AvaScry", description="Magic: The Gathering Visual Explorer & Strategy Engine")
 
 SESSION_SECRET_KEY = os.environ.get("SESSION_SECRET_KEY", "fallback-insecure-secret-key-32-bytes-min")
+SESSION_COOKIE_DOMAIN = os.environ.get("SESSION_COOKIE_DOMAIN", "").strip() or None
+
 app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET_KEY,
     session_cookie="avascry_session",
+    domain=SESSION_COOKIE_DOMAIN,
     max_age=14 * 24 * 3600,  # 14 days
     same_site="lax",
     https_only=False  # Allow http for local development; cookies still work behind https proxy

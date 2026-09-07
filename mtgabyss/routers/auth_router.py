@@ -13,15 +13,32 @@ from mtgabyss.shared.helpers import templates
 auth_router = APIRouter()
 
 def is_safe_redirect(url: Optional[str]) -> bool:
-    """Validate that redirect target is strictly a safe local relative path."""
+    """Validate that redirect target is strictly a safe local path or a trusted AvaScry subdomain."""
     if not url or not isinstance(url, str):
         return False
     url = url.strip()
-    if not url.startswith("/") or url.startswith("//") or "\\" in url or "://" in url:
+    if "\\" in url:
         return False
-    if url.startswith("/auth"):
-        return False
-    return True
+    # Relative path
+    if url.startswith("/") and not url.startswith("//"):
+        if url.startswith("/auth"):
+            return False
+        return True
+    # Fully-qualified URL to trusted AvaScry network or local dev
+    if "://" in url:
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+            if parsed.scheme not in ("http", "https"):
+                return False
+            netloc = parsed.netloc.lower().split(":")[0]
+            if netloc == "avascry.com" or netloc.endswith(".avascry.com") or netloc == "localhost" or netloc.endswith(".localhost"):
+                if parsed.path.startswith("/auth"):
+                    return False
+                return True
+        except Exception:
+            return False
+    return False
 
 def get_base_url(request: Request) -> str:
     """Resolve correct base URL honoring Cloudflare / reverse proxy headers."""

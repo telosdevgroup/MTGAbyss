@@ -1,0 +1,151 @@
+{# Standardized AvaScry Network Contact Form Component #}
+<div id="contact-wrapper" class="contact-component-container">
+  {% if success %}
+    <div id="contact-success-state" style="background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; text-align: left;">
+      <div style="display: flex; align-items: center; gap: 0.6rem; color: #4ade80; font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">
+        <span>✓</span> Message Sent!
+      </div>
+      <p style="margin: 0 0 1.25rem 0; font-size: 0.92rem; color: #cbd5e1; line-height: 1.5;">
+        Thank you! Your transmission has been dispatched to our maintainers. If you provided an email or Discord tag, we will follow up shortly.
+      </p>
+      <a href="{{ base_path or '/' }}" style="display: inline-flex; align-items: center; gap: 0.4rem; background: var(--accent, #6366f1); color: #fff; padding: 0.6rem 1.2rem; font-weight: 700; font-size: 0.85rem; border-radius: 6px; text-decoration: none;">
+        &larr; Return Home
+      </a>
+    </div>
+  {% else %}
+    {% if error %}
+      <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; color: #f87171; font-size: 0.92rem;">
+        {{ error }}
+      </div>
+    {% endif %}
+
+    <div id="contact-form-box">
+      <form id="contact-form" method="POST" action="{{ contact_action or (base_path ~ '/contact') if base_path else '/contact' }}" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <!-- Anti-Spam Honeypot -->
+        <div style="display: none;" aria-hidden="true">
+          <label for="website_url">Leave this field blank</label>
+          <input type="text" id="website_url" name="website_url" tabindex="-1" autocomplete="off">
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem;">
+          <div>
+            <label for="contact_name" class="contact-label" style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text, #f1f5f9);">
+              Your Name <span style="color: var(--accent, #6366f1);">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="contact_name" 
+              name="name" 
+              maxlength="80" 
+              required 
+              placeholder="e.g. Alex" 
+              value="{{ values.name if values else '' }}"
+              class="contact-input"
+              style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.95rem; font-family: inherit;"
+            >
+          </div>
+          <div>
+            <label for="contact_handle" class="contact-label" style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text, #f1f5f9);">
+              Email or Discord Tag <span style="color: var(--accent, #6366f1);">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="contact_handle" 
+              name="contact" 
+              maxlength="100" 
+              required 
+              placeholder="e.g. alex@example.com or @username" 
+              value="{{ values.contact if values else '' }}"
+              class="contact-input"
+              style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.95rem; font-family: inherit;"
+            >
+          </div>
+        </div>
+
+        {% if include_category %}
+        <div>
+          <label for="contact_category" class="contact-label" style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text, #f1f5f9);">
+            Topic / Category
+          </label>
+          <select 
+            id="contact_category" 
+            name="category" 
+            class="contact-input"
+            style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.95rem; font-family: inherit;"
+          >
+            <option value="General Feedback">General Feedback</option>
+            <option value="Errata & Clarification">Card / Rule Errata or Clarification</option>
+            <option value="Missing Content">Missing Data or Scan Issue</option>
+            <option value="Feature Suggestion">Feature Suggestion</option>
+            <option value="Partnership / Support">Partnership or Support</option>
+          </select>
+        </div>
+        {% endif %}
+
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <label for="contact_message" class="contact-label" style="font-size: 0.85rem; font-weight: 700; color: var(--text, #f1f5f9);">
+              Your Message <span style="color: var(--accent, #6366f1);">*</span>
+            </label>
+            <span id="char-counter" style="font-size: 0.75rem; color: var(--muted, #94a3b8); font-family: monospace;">
+              0 / 500
+            </span>
+          </div>
+          <textarea 
+            id="contact_message" 
+            name="message" 
+            rows="5" 
+            maxlength="500" 
+            required 
+            placeholder="How can we help? (feedback, errata, rules question, feature idea...)" 
+            class="contact-input"
+            style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.95rem; font-family: inherit; resize: vertical;"
+          >{{ values.message if values else '' }}</textarea>
+        </div>
+
+        <div>
+          <button 
+            type="submit" 
+            id="contact-submit-btn"
+            style="background: var(--accent, #6366f1); color: #fff; border: none; padding: 0.75rem 1.75rem; font-weight: 700; font-size: 0.95rem; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: transform 0.15s ease, opacity 0.15s ease;"
+          >
+            <span id="submit-text">Send Message</span> &rarr;
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      (function() {
+        const textarea = document.getElementById('contact_message');
+        const counter = document.getElementById('char-counter');
+        const form = document.getElementById('contact-form');
+        const formBox = document.getElementById('contact-form-box');
+        const submitBtn = document.getElementById('contact-submit-btn');
+        const submitText = document.getElementById('submit-text');
+
+        if (textarea && counter) {
+          const updateCount = () => {
+            const count = textarea.value.length;
+            counter.textContent = count + ' / 500';
+            if (count >= 480) {
+              counter.style.color = '#f87171';
+            } else {
+              counter.style.color = 'var(--muted, #94a3b8)';
+            }
+          };
+          textarea.addEventListener('input', updateCount);
+          updateCount();
+        }
+
+        if (form && submitBtn) {
+          form.addEventListener('submit', function() {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.6';
+            if (submitText) submitText.textContent = 'Sending...';
+          });
+        }
+      })();
+    </script>
+  {% endif %}
+</div>

@@ -96,8 +96,32 @@ async def contact_page(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="contact.html",
-        context={"current_lang": lang, "active_nav": "contact"}
+        context={"current_lang": lang, "active_nav": "contact", "success": False, "error": None}
     )
+
+@pages_router.post("/contact", response_class=HTMLResponse)
+async def contact_page_post(request: Request):
+    from mtgabyss.shared.contact import process_contact_submission
+    lang = i18n.get_locale(request)
+    result = await process_contact_submission(
+        request=request,
+        subsite_name="AvaScry MTG",
+        subsite_color=0x3b82f6,
+        extra_field_name="category",
+        extra_field_label="Category"
+    )
+    return templates.TemplateResponse(
+        request=request,
+        name="contact.html",
+        context={
+            "current_lang": lang,
+            "active_nav": "contact",
+            "success": result["success"],
+            "error": result["error"],
+            "values": result.get("values", {})
+        }
+    )
+
 
 @pages_router.get("/privacy", response_class=HTMLResponse)
 async def privacy_policy(request: Request):
