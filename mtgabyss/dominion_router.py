@@ -17,6 +17,13 @@ def get_dominion_db():
     client = get_mongo_db().client
     return client["avascry_dominion"]
 
+def get_base_prefix(request: Request) -> str:
+    host = request.headers.get("host", "")
+    from mtgabyss.network_router import extract_subdomain
+    if extract_subdomain(host) == "dominion":
+        return ""
+    return "/dominion"
+
 @dominion_router.get("", response_class=HTMLResponse)
 @dominion_router.get("/", response_class=HTMLResponse)
 async def dominion_home(request: Request):
@@ -31,7 +38,8 @@ async def dominion_home(request: Request):
         context={
             "cards": cards,
             "total_cards": total_cards,
-            "total_expansions": total_expansions
+            "total_expansions": total_expansions,
+            "base_path": get_base_prefix(request)
         }
     )
 
@@ -210,7 +218,8 @@ async def dominion_card_html(request: Request, slug: str):
         context={
             "card": card,
             "versions": versions,
-            "rulings": rulings
+            "rulings": rulings,
+            "base_path": get_base_prefix(request)
         }
     )
 

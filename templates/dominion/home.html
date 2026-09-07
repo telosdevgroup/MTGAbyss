@@ -236,7 +236,7 @@
 <div class="card-grid" id="dominion-card-grid">
   {% for c in cards %}
   <a 
-    href="/dominion/card/{{ c.slug }}" 
+    href="{{ base_path }}/card/{{ c.slug }}" 
     class="card-cell" 
     data-name="{{ c.name | lower }}" 
     data-kinds="{{ c.card_kinds | join(' ') | lower }}"

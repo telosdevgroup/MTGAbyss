@@ -309,12 +309,12 @@
   
   <nav aria-label="Breadcrumb" itemscope itemtype="https://schema.org/BreadcrumbList" style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1.25rem;">
     <span itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-      <a itemprop="item" href="/dominion" style="color: var(--muted); text-decoration: none;"><span itemprop="name">Dominion</span></a>
+      <a itemprop="item" href="{{ base_path or '/' }}" style="color: var(--muted); text-decoration: none;"><span itemprop="name">Dominion</span></a>
       <meta itemprop="position" content="1" />
     </span>
     <span aria-hidden="true">&nbsp;/&nbsp;</span>
     <span itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-      <a itemprop="item" href="/dominion" style="color: var(--muted); text-decoration: none;"><span itemprop="name">{{ (card.card_kinds[0] if card.card_kinds else 'Kingdom') | title }} Cards</span></a>
+      <a itemprop="item" href="{{ base_path or '/' }}" style="color: var(--muted); text-decoration: none;"><span itemprop="name">{{ (card.card_kinds[0] if card.card_kinds else 'Kingdom') | title }} Cards</span></a>
       <meta itemprop="position" content="2" />
     </span>
     <span aria-hidden="true">&nbsp;/&nbsp;</span>
@@ -329,7 +329,7 @@
       <div class="card-img-wrap">
         <img 
           id="dominion-card-img"
-          src="/dominion/images/{{ card.slug }}.jpg" 
+          src="{{ base_path }}/images/{{ card.slug }}.jpg" 
           alt="{{ card.name }} Dominion Card Scan"
           title="{{ card.name }} Dominion Card"
           width="300"
@@ -351,11 +351,11 @@
           img.style.opacity = '0.4';
           setTimeout(() => {
             if (ed === '1e') {
-              img.src = '/dominion/images/{{ card.slug }}-1e.jpg';
+              img.src = '{{ base_path }}/images/{{ card.slug }}-1e.jpg';
               btn1.classList.add('active');
               btn2.classList.remove('active');
             } else {
-              img.src = '/dominion/images/{{ card.slug }}.jpg';
+              img.src = '{{ base_path }}/images/{{ card.slug }}.jpg';
               btn2.classList.add('active');
               btn1.classList.remove('active');
             }
@@ -467,8 +467,8 @@
 
       <div class="format-links">
         <span>Machine formats:</span>
-        <a href="/dominion/card/{{ card.slug }}.md">Plain Text (.md)</a>
-        <a href="/dominion/card/{{ card.slug }}.json">Structured JSON (.json)</a>
+        <a href="{{ base_path }}/card/{{ card.slug }}.md">Plain Text (.md)</a>
+        <a href="{{ base_path }}/card/{{ card.slug }}.json">Structured JSON (.json)</a>
       </div>
     </div>
   </div>
