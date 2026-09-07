@@ -113,7 +113,7 @@ async def subdomain_routing_middleware(request: Request, call_next):
     sub = extract_subdomain(host)
     if sub == "dominion":
         path = request.scope.get("path", "")
-        if not path.startswith("/dominion") and not path.startswith("/static") and not path.startswith("/images"):
+        if not path.startswith("/dominion") and not path.startswith("/static"):
             request.scope["path"] = "/dominion" + path
     elif sub == "swu":
         path = request.scope.get("path", "")

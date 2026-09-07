@@ -4,14 +4,48 @@ Connects directly to MongoDB database 'avascry_dominion'.
 Serves HTML, Markdown (.md), JSON, sitemaps, and llms.txt endpoints for bots and humans.
 """
 
+import os
 import re
 from fastapi import APIRouter, Request, HTTPException, Response
-from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from db_mongo import get_mongo_db
 
 dominion_router = APIRouter(prefix="", tags=["Dominion"])
 templates = Jinja2Templates(directory="templates")
+
+@dominion_router.get("/images/{rest_of_path:path}", include_in_schema=False)
+async def dominion_serve_image(rest_of_path: str):
+    """
+    Serve Dominion card scans from local storage (public/images/dominion/...)
+    with dynamic CDN fallback if the card is known in the database.
+    """
+    # Check public/images/dominion/
+    file_path = os.path.join("public", "images", "dominion", rest_of_path)
+    if os.path.isfile(file_path):
+        ext = os.path.splitext(file_path)[1].lower()
+        media_type = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}.get(ext, "image/jpeg")
+        return FileResponse(file_path, media_type=media_type, headers={"Cache-Control": "public, max-age=2592000, immutable"})
+
+    # Check fallback: public/images/ directly
+    fallback_path = os.path.join("public", "images", rest_of_path)
+    if os.path.isfile(fallback_path):
+        ext = os.path.splitext(fallback_path)[1].lower()
+        media_type = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}.get(ext, "image/jpeg")
+        return FileResponse(fallback_path, media_type=media_type, headers={"Cache-Control": "public, max-age=2592000, immutable"})
+
+    # Check database for remote image_url to provide 307 CDN redirect fallback
+    slug = os.path.splitext(rest_of_path)[0]
+    db = get_dominion_db()
+    card = db.cards.find_one({"slug": slug}, {"image_url": 1, "image_1e_url": 1})
+    if card:
+        target_url = card.get("image_url")
+        if slug.endswith("-1e") and card.get("image_1e_url"):
+            target_url = card.get("image_1e_url")
+        if target_url:
+            return RedirectResponse(target_url, status_code=307)
+
+    raise HTTPException(status_code=404, detail="Dominion image not found")
 
 def get_dominion_db():
     client = get_mongo_db().client
