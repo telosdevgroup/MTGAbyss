@@ -175,6 +175,35 @@ async def dominion_card_json(slug: str):
         "rulings": rulings
     }
 
+def format_dominion_rules_html(text: str) -> str:
+    if not text:
+        return ""
+    # Coin tokens: '1 <*COIN*>' or '<*COIN*>'
+    t = re.sub(r'(\d+)\s*<\*COIN\*>', r'+\1 Coin', text)
+    t = t.replace("<*COIN*>", "Coin")
+    t = t.replace("<*POTION*>", "Potion")
+    t = re.sub(r'<\*?VP\*?>', 'VP', t)
+    # Dominion line divider (<line> is the below-the-line divider on cards)
+    t = re.sub(r'<line\s*/?>', '<hr class="dominion-divider">', t)
+    # Line and paragraph breaks: normalize <n> to <br><br>
+    t = re.sub(r'(?:<n>\s*)+', '<br><br>', t)
+    # Alignment tags
+    t = t.replace("<center>", '<div style="text-align: center;">').replace("</center>", "</div>")
+    t = t.replace("<left>", '<div style="text-align: left;">').replace("</left>", "</div>")
+    return t.strip()
+
+def format_dominion_rules_plain(text: str) -> str:
+    if not text:
+        return ""
+    t = re.sub(r'(\d+)\s*<\*COIN\*>', r'+\1 Coin', text)
+    t = t.replace("<*COIN*>", "Coin")
+    t = t.replace("<*POTION*>", "Potion")
+    t = re.sub(r'<\*?VP\*?>', 'VP', t)
+    t = re.sub(r'<line\s*/?>', '\n---\n', t)
+    t = re.sub(r'(?:<br\s*/?>|<n>\s*)+', '\n', t)
+    t = re.sub(r'</?(?:center|left|b|i|u)>', '', t)
+    return t.strip()
+
 @dominion_router.get("/card/{slug}.md", response_class=PlainTextResponse)
 async def dominion_card_markdown(slug: str):
     db = get_dominion_db()
@@ -202,13 +231,15 @@ async def dominion_card_markdown(slug: str):
                 cost_str += ", 1 Potion"
             md.append(f"### {v.get('expansion_tag', 'Base')} ({v.get('edition', 'standard')})")
             md.append(f"- **Cost**: {cost_str}")
-            md.append(f"- **Text**: {v.get('printed_rules_text', '')}\n")
+            clean_text = format_dominion_rules_plain(v.get('printed_rules_text', ''))
+            md.append(f"- **Text**: {clean_text}\n")
             
     if rulings:
         md.append("## Official Rulings & Rules FAQ")
         for r in rulings:
             md.append(f"**{r.get('question', '')}**\n")
-            md.append(f"{r.get('answer', '')}\n")
+            clean_ans = format_dominion_rules_plain(r.get('answer', ''))
+            md.append(f"{clean_ans}\n")
             
     return "\n".join(md)
 
@@ -221,16 +252,6 @@ async def dominion_card_html(request: Request, slug: str):
         
     versions = list(db.card_versions.find({"card_id": f"card:{slug}"}))
     rulings = list(db.rulings.find({"card_id": f"card:{slug}"}))
-
-    def _format_rules(text: str) -> str:
-        if not text:
-            return ""
-        # Format coin token tags
-        t = re.sub(r'(\d+)\s*<\*COIN\*>', r'+\1 Coin', text)
-        t = t.replace("<*COIN*>", "Coin")
-        # Format paragraph / line break tokens
-        t = re.sub(r'(?:<n>\s*)+', '\n\n', t)
-        return t.strip()
 
     exp_map = {e.get('set_tag', '').lower(): e.get('name') for e in db.expansions.find({}, {"set_tag": 1, "name": 1})}
 
@@ -247,11 +268,15 @@ async def dominion_card_html(request: Request, slug: str):
         return s.replace('And', '&')
 
     for v in versions:
-        v["printed_rules_text"] = _format_rules(v.get("printed_rules_text", ""))
+        raw_text = v.get("printed_rules_text", "")
+        v["printed_rules_html"] = format_dominion_rules_html(raw_text)
+        v["printed_rules_text"] = format_dominion_rules_plain(raw_text)
         v["expansion_name"] = _format_expansion(v.get("expansion_tag", ""))
 
     for r in rulings:
-        r["answer"] = _format_rules(r.get("answer", ""))
+        raw_ans = r.get("answer", "")
+        r["answer_html"] = format_dominion_rules_html(raw_ans)
+        r["answer"] = format_dominion_rules_plain(raw_ans)
 
     # Alphabetical prev/next cards
     norm = card.get("normalized_name") or card.get("name", "").lower()
@@ -269,10 +294,12 @@ async def dominion_card_html(request: Request, slug: str):
             "v1_edition": v_1e.get("edition", "1st Edition"),
             "v1_tag": _format_expansion(v_1e.get("expansion_tag", "")),
             "v1_text": t1,
+            "v1_html": v_1e.get("printed_rules_html", "").strip(),
             "v1_cost": v_1e.get("cost", {}),
             "v2_edition": v_2e.get("edition", "2nd Edition"),
             "v2_tag": _format_expansion(v_2e.get("expansion_tag", "")),
             "v2_text": t2,
+            "v2_html": v_2e.get("printed_rules_html", "").strip(),
             "v2_cost": v_2e.get("cost", {}),
             "has_text_change": t1 != t2
         }
@@ -364,4 +391,88 @@ async def dominion_card_image(slug: str):
         return RedirectResponse(url=cdn_url, status_code=307)
         
     raise HTTPException(status_code=404, detail="Image not found")
+
+@dominion_router.get("/about", response_class=HTMLResponse)
+async def dominion_about(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="dominion/about.html",
+        context={"base_path": get_base_prefix(request)}
+    )
+
+@dominion_router.get("/privacy", response_class=HTMLResponse)
+async def dominion_privacy(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="dominion/privacy.html",
+        context={"base_path": get_base_prefix(request)}
+    )
+
+@dominion_router.get("/terms", response_class=HTMLResponse)
+async def dominion_terms(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="dominion/terms.html",
+        context={"base_path": get_base_prefix(request)}
+    )
+
+@dominion_router.get("/contact", response_class=HTMLResponse)
+async def dominion_contact(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="dominion/contact.html",
+        context={"base_path": get_base_prefix(request), "success": False, "error": None}
+    )
+
+@dominion_router.post("/contact", response_class=HTMLResponse)
+async def dominion_contact_post(request: Request):
+    form = await request.form()
+    honeypot = form.get("website_url", "").strip()
+    # If honeypot filled, silently pretend success
+    if honeypot:
+        return templates.TemplateResponse(
+            request=request,
+            name="dominion/contact.html",
+            context={"base_path": get_base_prefix(request), "success": True, "error": None}
+        )
+
+    name = str(form.get("name", "")).strip()
+    contact_info = str(form.get("contact", "")).strip()
+    category = str(form.get("category", "General Feedback")).strip()
+    message = str(form.get("message", "")).strip()
+
+    if not name or not contact_info or not message:
+        return templates.TemplateResponse(
+            request=request,
+            name="dominion/contact.html",
+            context={
+                "base_path": get_base_prefix(request),
+                "success": False,
+                "error": "Please fill out all required fields before submitting."
+            }
+        )
+
+    # Dispatch Discord notification via app.py helper
+    try:
+        from app import send_discord_notification
+        fields = [
+            {"name": "Sender", "value": name, "inline": True},
+            {"name": "Contact", "value": contact_info, "inline": True},
+            {"name": "Category", "value": category, "inline": False},
+            {"name": "Message", "value": message[:1024], "inline": False}
+        ]
+        await send_discord_notification(
+            title=f"📩 [Dominion Feedback] {category}",
+            description=f"New inquiry received on **dominion.avascry.com** from **{name}**.",
+            color=0xb45309,  # Dominion Amber / Copper
+            fields=fields
+        )
+    except Exception as exc:
+        print(f"[Dominion Contact Error] Failed to dispatch Discord notification: {exc}")
+
+    return templates.TemplateResponse(
+        request=request,
+        name="dominion/contact.html",
+        context={"base_path": get_base_prefix(request), "success": True, "error": None}
+    )
 

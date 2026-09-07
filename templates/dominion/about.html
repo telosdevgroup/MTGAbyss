@@ -1,0 +1,48 @@
+{% extends "dominion/base.html" %}
+
+{% block title %}About AvaScry Dominion | Comprehensive Card & Errata Database{% endblock %}
+{% block meta_description %}Learn about AvaScry Dominion, an open reference database for Donald X. Vaccarino's deck-building game, tracking official rulings, card text changes across editions, and strategic kingdom building.{% endblock %}
+
+{% block content %}
+<article style="max-width: 800px; margin: 0 auto; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 2.5rem; box-shadow: var(--shadow-sm);">
+  <h1 style="font-family: 'Cinzel', serif; font-size: 2rem; color: #0f172a; margin-top: 0; margin-bottom: 0.5rem;">About AvaScry Dominion</h1>
+  <p style="color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem;">Official Donald X. Vaccarino rulings, edition errata diffs, and strategic card mechanics.</p>
+
+  <section style="margin-bottom: 2rem; line-height: 1.7; color: #334155;">
+    <h2 style="font-family: 'Cinzel', serif; font-size: 1.3rem; color: #0f172a; margin-bottom: 0.75rem;">Mission &amp; Purpose</h2>
+    <p>
+      AvaScry Dominion is a dedicated reference encyclopedia for the seminal deck-building card game created by Donald X. Vaccarino and published by Rio Grande Games. Since its debut in 2008, Dominion has expanded across more than 15 full expansions, numerous promos, second editions, and comprehensive rules errata.
+    </p>
+    <p>
+      Our mission is to provide tabletop and digital Dominion enthusiasts, tournament players, and game organizers with the fastest, most accurate rules clarity, visual card scans, and side-by-side errata comparisons between 1st Edition and 2nd Edition printings.
+    </p>
+  </section>
+
+  <section style="margin-bottom: 2rem; line-height: 1.7; color: #334155;">
+    <h2 style="font-family: 'Cinzel', serif; font-size: 1.3rem; color: #0f172a; margin-bottom: 0.75rem;">Data Integrity &amp; Sources</h2>
+    <p>All card texts, costs, types, and official interaction rulings are compiled from verified community and publisher sources:</p>
+    <ul style="padding-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 1rem;">
+      <li><strong>Rio Grande Games Official Rulebooks</strong>: Authoritative rules manuals and Donald X. Vaccarino FAQ interaction notes.</li>
+      <li><strong>Dominion Strategy Wiki</strong>: Comprehensive community errata history, rulings updates, and card imagery.</li>
+      <li><strong>sumpfork Dominiontabs Database</strong>: Verified expansion manifests, type hierarchies, and card costs.</li>
+    </ul>
+  </section>
+
+  <section style="margin-bottom: 2rem; line-height: 1.7; color: #334155;">
+    <h2 style="font-family: 'Cinzel', serif; font-size: 1.3rem; color: #0f172a; margin-bottom: 0.75rem;">Features &amp; Superpowers</h2>
+    <ul style="padding-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 1rem;">
+      <li><strong>Visual Card Scans &amp; Compact View</strong>: Seamless toggle between visual card photography and rapid tournament data tables.</li>
+      <li><strong>Edition Errata Diff</strong>: Instant side-by-side comparison illustrating wording revisions and cost changes from 1st Edition to 2nd Edition.</li>
+      <li><strong>Kingdom Generator</strong>: Balanced 10-kingdom generator with custom cost-curve analysis, card swapping, and 1-click clipboard export.</li>
+      <li><strong>Machine-Readable Endpoints</strong>: Every card offers pure markdown (<code>.md</code>) and structured JSON (<code>.json</code>) representations for AI agents and Discord bots.</li>
+    </ul>
+  </section>
+
+  <section style="line-height: 1.7; color: #334155;">
+    <h2 style="font-family: 'Cinzel', serif; font-size: 1.3rem; color: #0f172a; margin-bottom: 0.75rem;">Get in Touch</h2>
+    <p>
+      Found an interaction ruling that needs updating or have a suggestion for the kingdom generator? Visit our <a href="{{ base_path }}/contact" style="color: var(--accent); font-weight: 600;">Contact &amp; Errata Page</a> to send feedback directly to the development team.
+    </p>
+  </section>
+</article>
+{% endblock %}

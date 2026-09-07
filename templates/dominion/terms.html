@@ -1,0 +1,51 @@
+{% extends "dominion/base.html" %}
+
+{% block title %}Terms of Service | AvaScry Dominion{% endblock %}
+{% block meta_description %}Terms of Service for AvaScry Dominion. Information regarding acceptable use, intellectual property disclaimers, and limitation of liability.{% endblock %}
+
+{% block content %}
+<article style="max-width: 800px; margin: 0 auto; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 2.5rem; box-shadow: var(--shadow-sm);">
+  <h1 style="font-family: 'Cinzel', serif; font-size: 2rem; color: #0f172a; margin-top: 0; margin-bottom: 0.5rem;">Terms of Service</h1>
+  <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem;">Effective Date: September 2026</p>
+
+  <div style="line-height: 1.7; color: #334155; display: flex; flex-direction: column; gap: 1.5rem;">
+    <section>
+      <h2 style="font-family: 'Cinzel', serif; font-size: 1.25rem; color: #0f172a; margin-bottom: 0.5rem;">1. Acceptance of Terms</h2>
+      <p>
+        By accessing and using AvaScry Dominion (dominion.avascry.com), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the website.
+      </p>
+    </section>
+
+    <section>
+      <h2 style="font-family: 'Cinzel', serif; font-size: 1.25rem; color: #0f172a; margin-bottom: 0.5rem;">2. Intellectual Property &amp; Fair Use Disclaimer</h2>
+      <p>
+        Dominion, its expansions, card names, mechanics, and printed rules text are intellectual property and trademarks of Donald X. Vaccarino and Rio Grande Games. AvaScry Dominion is an independent, non-commercial community encyclopedia and reference guide.
+      </p>
+      <p>
+        All card scans, artwork, and textual materials are displayed in low-to-medium resolution solely for non-commercial identification, rules clarification, critique, and educational purposes under the Fair Use doctrine of United States copyright law (17 U.S.C. &sect; 107).
+      </p>
+    </section>
+
+    <section>
+      <h2 style="font-family: 'Cinzel', serif; font-size: 1.25rem; color: #0f172a; margin-bottom: 0.5rem;">3. Permitted Use &amp; Automated Access</h2>
+      <p>
+        You may access this site for personal reference, tournament play, and rules adjudication. Automated bots, AI agents, and search engines are permitted to access machine-readable endpoints (such as <code>/card/{slug}.md</code>, <code>/card/{slug}.json</code>, and <code>/llms.txt</code>) in compliance with our <code>/robots.txt</code> policy and reasonable request rate limits. Excessive automated crawling that disrupts service availability is prohibited.
+      </p>
+    </section>
+
+    <section>
+      <h2 style="font-family: 'Cinzel', serif; font-size: 1.25rem; color: #0f172a; margin-bottom: 0.5rem;">4. Disclaimer of Warranties</h2>
+      <p>
+        AvaScry Dominion is provided &ldquo;as is&rdquo; and &ldquo;as available&rdquo; without warranties of any kind. While we strive for complete rules accuracy, we cannot guarantee that every interaction or errata entry is free from clerical error. Official tournament rulings should always defer to Rio Grande Games official publications.
+      </p>
+    </section>
+
+    <section>
+      <h2 style="font-family: 'Cinzel', serif; font-size: 1.25rem; color: #0f172a; margin-bottom: 0.5rem;">5. Contact</h2>
+      <p>
+        For inquiries regarding these terms, please reach out via our <a href="{{ base_path }}/contact" style="color: var(--accent); font-weight: 600;">Contact Form</a>.
+      </p>
+    </section>
+  </div>
+</article>
+{% endblock %}

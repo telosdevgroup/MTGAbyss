@@ -917,20 +917,40 @@
     closeKingdomModal.addEventListener('click', closeModal);
     btnRerollKingdom.addEventListener('click', generateKingdom);
 
+    const navKingdom = document.getElementById('nav-kingdom-generator');
+    if (navKingdom) {
+      navKingdom.addEventListener('click', e => {
+        e.preventDefault();
+        openModal();
+      });
+    }
+
+    if (window.location.hash === '#generator') {
+      openModal();
+    }
+
     kingdomModal.addEventListener('click', e => {
       if (e.target === kingdomModal) closeModal();
     });
 
     btnCopyKingdom.addEventListener('click', () => {
-      const text = activeKingdom.map(k => {
+      const curve = {};
+      const cardLines = activeKingdom.map(k => {
         let cost = `$${k.coins}`;
-        if (k.debt) cost += '+Debt';
-        if (k.potion) cost += '+Potion';
-        return `- ${k.name} (${cost}) [https://dominion.avascry.com/card/${k.slug}]`;
+        if (k.debt) cost += ' +Debt';
+        if (k.potion) cost += ' +Potion';
+        curve[cost] = (curve[cost] || 0) + 1;
+        const kinds = k.kinds ? k.kinds.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' • ') : '';
+        const typesStr = kinds ? ` — ${kinds}` : '';
+        return `• **${k.name}** (${cost})${typesStr} • <https://dominion.avascry.com/card/${k.slug}>`;
       }).join('\n');
-      navigator.clipboard.writeText(`AvaScry Dominion 10-Kingdom Setup:\n${text}`).then(() => {
+
+      const curveStr = Object.entries(curve).map(([cost, count]) => `${count}× ${cost}`).join(' • ');
+      const message = `**🎲 AvaScry Dominion 10-Kingdom Board**\n${cardLines}\n\n📊 *Cost Curve: ${curveStr}*`;
+
+      navigator.clipboard.writeText(message).then(() => {
         const orig = btnCopyKingdom.textContent;
-        btnCopyKingdom.textContent = '✓ Copied!';
+        btnCopyKingdom.textContent = '✓ Copied for Discord!';
         setTimeout(() => { btnCopyKingdom.textContent = orig; }, 1800);
       });
     });

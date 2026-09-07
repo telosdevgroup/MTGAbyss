@@ -1,0 +1,53 @@
+{% extends "dominion/base.html" %}
+
+{% block title %}Privacy Policy | AvaScry Dominion{% endblock %}
+{% block meta_description %}Privacy Policy for AvaScry Dominion. Information regarding cookies, Google AdSense, third-party analytics, data protection, and user rights under GDPR and CCPA.{% endblock %}
+
+{% block content %}
+<article style="max-width: 800px; margin: 0 auto; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 2.5rem; box-shadow: var(--shadow-sm);">
+  <h1 style="font-family: 'Cinzel', serif; font-size: 2rem; color: #0f172a; margin-top: 0; margin-bottom: 0.5rem;">Privacy Policy</h1>
+  <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem;">Last updated: September 2026</p>
+
+  <div style="line-height: 1.7; color: #334155; display: flex; flex-direction: column; gap: 1.5rem;">
+    <section>
+      <h2 style="font-family: 'Cinzel', serif; font-size: 1.25rem; color: #0f172a; margin-bottom: 0.5rem;">1. Introduction</h2>
+      <p>
+        AvaScry Dominion (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is an online reference database for the Dominion card game, accessible via dominion.avascry.com. This Privacy Policy explains how information is collected, used, and disclosed when you visit our website. We respect your personal privacy and are committed to protecting user data.
+      </p>
+    </section>
+
+    <section>
+      <h2 style="font-family: 'Cinzel', serif; font-size: 1.25rem; color: #0f172a; margin-bottom: 0.5rem;">2. Information We Collect</h2>
+      <p><strong>Log Files &amp; Technical Usage:</strong> Like most web servers, our systems automatically log routine, non-identifying technical data including your IP address, browser user-agent, operating system, referring pages, date/time timestamps, and pages accessed to ensure uptime, security, and traffic monitoring.</p>
+      <p><strong>Contact Form Submissions:</strong> When you voluntarily submit an inquiry or errata report via our Contact page, we collect your provided name, contact handle (email or Discord username), inquiry category, and message text solely to respond to your request.</p>
+      <p><strong>Local Storage Preferences:</strong> We use your browser&rsquo;s local storage (<code>localStorage</code>) to save interface preferences, such as your chosen card catalog display mode (Visual Scans vs. Compact Grid). This data remains strictly on your local device and is never transmitted to our servers.</p>
+    </section>
+
+    <section>
+      <h2 style="font-family: 'Cinzel', serif; font-size: 1.25rem; color: #0f172a; margin-bottom: 0.5rem;">3. Google AdSense &amp; Third-Party Cookies</h2>
+      <p>
+        We may partner with third-party advertising vendors, including Google AdSense, to serve relevant advertisements when you visit our website.
+      </p>
+      <ul style="padding-left: 1.5rem; margin-top: 0.5rem;">
+        <li>Third-party vendors, including Google, use cookies to serve ads based on a user's prior visits to this website or other websites on the internet.</li>
+        <li>Google's use of advertising cookies enables it and its partners to serve ads to users based on their visits to our site and/or other sites on the internet.</li>
+        <li>Users may opt out of personalized advertising by visiting <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer" style="color: var(--accent);">Google Ads Settings</a> or through the <a href="https://www.aboutads.info/choices/" target="_blank" rel="noopener noreferrer" style="color: var(--accent);">Digital Advertising Alliance Opt-Out</a>.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 style="font-family: 'Cinzel', serif; font-size: 1.25rem; color: #0f172a; margin-bottom: 0.5rem;">4. Data Protection &amp; User Rights (GDPR &amp; CCPA)</h2>
+      <p>
+        Under applicable data protection regulations such as the General Data Protection Regulation (GDPR) and California Consumer Privacy Act (CCPA), you have the right to request access to, rectification of, or deletion of any personal communications sent to us. We never sell, trade, or rent user personal data to third parties.
+      </p>
+    </section>
+
+    <section>
+      <h2 style="font-family: 'Cinzel', serif; font-size: 1.25rem; color: #0f172a; margin-bottom: 0.5rem;">5. Contact Us</h2>
+      <p>
+        If you have questions regarding this Privacy Policy or wish to request data deletion, please reach out through our <a href="{{ base_path }}/contact" style="color: var(--accent); font-weight: 600;">Contact Form</a>.
+      </p>
+    </section>
+  </div>
+</article>
+{% endblock %}

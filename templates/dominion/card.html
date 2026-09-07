@@ -220,6 +220,19 @@
     line-height: 1.7;
     font-family: 'Plus Jakarta Sans', sans-serif;
   }
+  .dominion-divider {
+    border: 0;
+    border-top: 2px solid #d97706;
+    margin: 1rem 0;
+    opacity: 0.55;
+  }
+  .diff-text .dominion-divider,
+  .version-item .dominion-divider,
+  .ruling-a .dominion-divider {
+    border-top: 1.5px solid #cbd5e1;
+    margin: 0.75rem 0;
+    opacity: 0.8;
+  }
   .version-item {
     padding: 1.15rem;
     background: #f8fafc;
@@ -568,13 +581,13 @@
         {% endif %}
       </dl>
 
-      {% if versions and versions[0].printed_rules_text %}
+      {% if versions and (versions[0].printed_rules_html or versions[0].printed_rules_text) %}
       <section aria-labelledby="primary-rules-heading">
         <h2 id="primary-rules-heading" style="font-family: 'Cinzel', serif; font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: #0f172a;">
           Card Text &amp; Rules Effect
         </h2>
         <div class="rules-box" itemprop="description">
-          {{ versions[0].printed_rules_text }}
+          {{ (versions[0].printed_rules_html or versions[0].printed_rules_text) | safe }}
         </div>
       </section>
       {% endif %}
@@ -598,7 +611,7 @@
                 {% if edition_diff.v1_cost.coins %}{{ edition_diff.v1_cost.coins }} Coins{% else %}0 Coins{% endif %}
               </span>
             </div>
-            <div class="diff-text">{{ edition_diff.v1_text or 'Original 1st Edition printing.' }}</div>
+            <div class="diff-text">{{ (edition_diff.v1_html or edition_diff.v1_text or 'Original 1st Edition printing.') | safe }}</div>
           </div>
           <div class="diff-col diff-col-2e">
             <div class="diff-col-title">
@@ -607,7 +620,7 @@
                 {% if edition_diff.v2_cost.coins %}{{ edition_diff.v2_cost.coins }} Coins{% else %}0 Coins{% endif %}
               </span>
             </div>
-            <div class="diff-text">{{ edition_diff.v2_text or 'Current standard rules text.' }}</div>
+            <div class="diff-text">{{ (edition_diff.v2_html or edition_diff.v2_text or 'Current standard rules text.') | safe }}</div>
           </div>
         </div>
       </section>
@@ -629,7 +642,7 @@
             </span>
           </div>
           <p style="color: var(--muted); font-size: 0.9rem;">
-            <strong>Printed Text:</strong> {{ v.printed_rules_text or 'Standard rules' }}
+            <strong>Printed Text:</strong> {{ (v.printed_rules_html or v.printed_rules_text or 'Standard rules') | safe }}
           </p>
         </div>
         {% endfor %}
@@ -644,7 +657,7 @@
         <article class="ruling-card" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
           <h3 class="ruling-q" itemprop="name">{{ r.question }}</h3>
           <div class="ruling-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
-            <div itemprop="text">{{ r.answer }}</div>
+            <div itemprop="text">{{ (r.answer_html or r.answer) | safe }}</div>
           </div>
           <span class="authority-badge">&bull; Authority: {{ r.authority.name }} ({{ r.authority.authority_type }})</span>
         </article>
