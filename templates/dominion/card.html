@@ -517,7 +517,7 @@
         <div>
           <h1 class="card-title">{{ card.name }}</h1>
           <p style="color: var(--muted); font-size: 0.95rem; margin-top: 0.25rem;">
-            Dominion {{ card.card_kinds | join(' &bull; ') | title }}
+            Dominion • {{ card.card_kinds | map('title') | join(' • ') }}
           </p>
         </div>
         <div class="meta-pills">
@@ -559,10 +559,6 @@
         <div class="card-meta-item">
           <dt>Kingdom</dt>
           <dd>{{ 'Yes' if card.is_kingdom_card else 'No' }}</dd>
-        </div>
-        <div class="card-meta-item">
-          <dt>Editions</dt>
-          <dd>{{ versions | length }} Printing{% if versions | length > 1 %}s{% endif %}</dd>
         </div>
         {% if rulings %}
         <div class="card-meta-item">
