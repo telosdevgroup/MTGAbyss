@@ -963,7 +963,7 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
         f'</printing/{safe_canonical_slug}.xml>; rel="alternate"; type="application/xml", '
         f'</printing/{safe_canonical_slug}.csv>; rel="alternate"; type="text/csv"'
     )
-    if illustration_id:
+    if visual_artwork and illustration_id:
         safe_ill_id = safe_header_segment(str(illustration_id))
         link_header_val += (
             f', </art/{safe_ill_id}.json>; rel="related"; type="application/json"'

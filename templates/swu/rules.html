@@ -2,10 +2,25 @@
 
 {% block title %}
   {% if current_section %}
-    SWU CR §{{ current_section.section_id }} {{ current_section.title }} — Star Wars: Unlimited Rules
+    SWU CR §{{ current_section.section_id }} {{ current_section.title }} &mdash; Star Wars: Unlimited Rules
   {% else %}
-    Star Wars: Unlimited Comprehensive Rules — AvaScry SWU
+    Star Wars: Unlimited Comprehensive Rules &mdash; AvaScry SWU
   {% endif %}
+{% endblock %}
+
+{% block canonical %}
+  {% if current_section %}
+    <link rel="canonical" href="https://swu.avascry.com/rule/{{ current_section.slug or current_section.section_id }}">
+  {% else %}
+    <link rel="canonical" href="https://swu.avascry.com/rules">
+  {% endif %}
+{% endblock %}
+
+{% block alternates %}
+  <link rel="alternate" type="text/markdown" title="Star Wars: Unlimited Rules Architecture (Markdown)" href="https://swu.avascry.com/rules.md">
+  <link rel="alternate" type="application/json" title="Star Wars: Unlimited Rules Architecture (JSON)" href="https://swu.avascry.com/rules.json">
+  <link rel="alternate" type="application/xml" title="Star Wars: Unlimited Sitemap" href="https://swu.avascry.com/sitemap.xml">
+  <link rel="alternate" type="text/plain" title="Star Wars: Unlimited LLM Context" href="https://swu.avascry.com/llms.txt">
 {% endblock %}
 
 {% block og_tags %}

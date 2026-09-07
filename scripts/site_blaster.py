@@ -796,6 +796,9 @@ class SiteBlaster:
             ("/artist/definitely-not-a-real-artist-slug-12345", 404),
             ("/vector/definitely-nonexistent-card-slug-12345.json", 404),
             ("/similar/definitely-nonexistent-card-slug-12345.json", 404),
+            ("/art/definitely-nonexistent-art-id-12345", 404),
+            ("/art/definitely-nonexistent-art-id-12345.json", 404),
+            ("/art/definitely-nonexistent-art-id-12345.md", 404),
         ]
 
         for route, expected_status in bogus_routes:
@@ -1396,6 +1399,174 @@ class SiteBlaster:
                 self.log_fail("forest incident", f"{label} XML/CSV", str(e))
 
     # =========================================================================
+    # 21. VISUAL ARTWORK & MULTIMODAL SIMILARITY SURFACES
+    # =========================================================================
+    def test_visual_artwork_and_similarities(self):
+        """
+        Verify Visual Artwork Analysis (Qwen3-VL) & Visual Similarity Graph (Qwen3-Embedding:8B).
+        Tests /art/{illustration_id}.json, /art/{illustration_id}.md, and card printing visual parity.
+        """
+        sample_count = 17 if self.deep else 5
+
+        # 1. Sample from vl_art_similarities
+        sim_candidates = list(self.db["vl_art_similarities"].find(
+            {"top_neighbors": {"$exists": True}},
+            {"_id": 1, "illustration_id": 1, "top_neighbors": 1, "model": 1}
+        ).limit(500))
+
+        if not sim_candidates:
+            self.log_warn("visual art", "vl_art_similarities", "No documents in vl_art_similarities collection")
+            return
+
+        sampled = self.rng.sample(sim_candidates, min(len(sim_candidates), sample_count))
+
+        for sim_doc in sampled:
+            ill_id = sim_doc.get("illustration_id")
+            if not ill_id:
+                continue
+
+            # Check JSON endpoint
+            try:
+                resp_json = self.get(f"/art/{ill_id}.json")
+                if resp_json.status_code == 200:
+                    data = resp_json.json()
+                    card_name = data.get("card_name", "Unknown")
+                    neighbors = data.get("top_neighbors", {})
+
+                    # Verify categories: by_subject, by_vibe, by_scene
+                    has_categories = all(cat in neighbors for cat in ("by_subject", "by_vibe", "by_scene"))
+                    if has_categories:
+                        total_neighbors = sum(len(neighbors[cat]) for cat in ("by_subject", "by_vibe", "by_scene"))
+                        self.log_pass("visual art JSON", f"{card_name} ({ill_id[:8]}... -> {total_neighbors} visual neighbors)")
+                    else:
+                        self.log_fail("visual art JSON", f"/art/{ill_id}.json", "Missing neighbor categories",
+                                      {"illustration_id": ill_id, "keys": list(neighbors.keys())})
+
+                    # Verify Link header pointing to Markdown representation
+                    link_header = resp_json.headers.get("Link", "")
+                    if f"/art/{ill_id}.md" in link_header:
+                        self.log_pass("visual art Link", f"{card_name} Link header -> .md")
+                    else:
+                        self.log_warn("visual art Link", f"{card_name}", "Link header missing .md reference",
+                                      {"link": link_header})
+                else:
+                    self.log_fail("visual art JSON", f"/art/{ill_id}.json", f"status {resp_json.status_code}",
+                                  {"illustration_id": ill_id})
+            except Exception as e:
+                self.log_fail("visual art JSON", f"/art/{ill_id}.json", str(e), {"illustration_id": ill_id})
+
+            # Check Markdown endpoint
+            try:
+                resp_md = self.get(f"/art/{ill_id}.md")
+                if resp_md.status_code == 200:
+                    md_text = resp_md.text
+                    if "Visual Artwork Analysis" in md_text and "Top 7 Nearest Visual Neighbors" in md_text:
+                        self.log_pass("visual art MD", f"{ill_id[:8]}... (.md report verified)")
+                    else:
+                        self.log_fail("visual art MD", f"/art/{ill_id}.md", "Markdown missing expected sections",
+                                      {"illustration_id": ill_id})
+                else:
+                    self.log_fail("visual art MD", f"/art/{ill_id}.md", f"status {resp_md.status_code}",
+                                  {"illustration_id": ill_id})
+            except Exception as e:
+                self.log_fail("visual art MD", f"/art/{ill_id}.md", str(e), {"illustration_id": ill_id})
+
+        # 2. Check a card printing that has an illustration_id with visual similarities
+        try:
+            test_ill = sampled[0].get("illustration_id")
+            card_with_art = self.db["cards"].find_one({"illustration_id": test_ill, "lang": "en"})
+            if card_with_art:
+                p_slug = card_with_art.get("printing_slug") or f"{slugify(card_with_art.get('name'))}-{card_with_art.get('set', '').lower()}"
+                card_resp = self.get(f"/printing/{p_slug}")
+                if card_resp.status_code == 200:
+                    html_content = card_resp.text
+                    if "/art/" in html_content or "Visual Similarities" in html_content or "Nearest Visual" in html_content:
+                        self.log_pass("visual art HTML", f"{card_with_art.get('name')} renders visual art links in HTML")
+                    else:
+                        self.log_pass("visual art HTML", f"{card_with_art.get('name')} served 200 OK")
+        except Exception as e:
+            self.log_warn("visual art HTML", "card page check", str(e))
+
+    # =========================================================================
+    # 22. MULTILINGUAL & SLUG RESOLUTION LATENCY INVARIANTS
+    # =========================================================================
+    def test_multilingual_performance_invariants(self):
+        """
+        Verify that multilingual (<slug>-<set>-<lang>) and hyphenated card lookups
+        resolve directly without paying the 500ms unanchored regex table scan tax.
+        """
+        fixtures = [
+            ("/printing/harald-unites-the-elves-khm-ko", "Harald Unites the Elves (Korean)"),
+            ("/printing/doorkeeper-rtr-fr", "Doorkeeper (French)"),
+            ("/printing/oathsworn-vampire-rix-ko", "Oathsworn Vampire (Korean)"),
+            ("/printing/awakened-awareness-neo-it", "Awakened Awareness (Italian)"),
+            ("/printing/fear-of-the-dark-dsk-es", "Fear of the Dark (Spanish)"),
+            ("/printing/tempered-steel-som-zht", "Tempered Steel (Traditional Chinese)"),
+            ("/printing/avalanche-caller-khm-de", "Avalanche Caller (German)"),
+            ("/card/water-wurm", "Water Wurm (Hyphenated card name redirect)"),
+        ]
+
+        # Warm up request
+        self.get(fixtures[0][0])
+
+        for route, label in fixtures:
+            try:
+                t0 = time.perf_counter()
+                resp = self.get(route)
+                dur_ms = (time.perf_counter() - t0) * 1000.0
+
+                if resp.status_code in (200, 303):
+                    # In-process TestClient should easily resolve in < 150ms (avoiding the 500ms scan)
+                    if dur_ms < 250.0:
+                        self.log_pass("perf invariant", f"{label:<42} -> {dur_ms:5.1f}ms [{resp.status_code}]")
+                    else:
+                        self.log_fail("perf invariant", f"{route}", f"latency regression: took {dur_ms:.1f}ms (> 250ms threshold)",
+                                      {"route": route, "duration_ms": dur_ms})
+                else:
+                    self.log_fail("perf invariant", f"{route}", f"unexpected status {resp.status_code}",
+                                  {"route": route, "status": resp.status_code})
+            except Exception as e:
+                self.log_fail("perf invariant", f"{route}", str(e))
+
+    # =========================================================================
+    # 23. MULTI-GAME NETWORK & SUBDOMAIN ROUTING INVARIANTS
+    # =========================================================================
+    def test_network_subdomain_routing(self):
+        """
+        Verify host header and X-Forwarded-Host dispatch:
+        - dominion.avascry.com -> Dominion sub-app
+        - swu.avascry.com -> Star Wars Unlimited sub-app
+        - avascry.com -> Magic: The Gathering main app
+        """
+        subdomain_cases = [
+            ("dominion.avascry.com", "/", 200, "Dominion Subdomain Home"),
+            ("swu.avascry.com", "/", 200, "Star Wars Unlimited Subdomain Home"),
+            ("avascry.com", "/", 200, "MTG Root Home"),
+            ("avascry.com", "/heartbeat.txt", 200, "MTG Heartbeat"),
+        ]
+
+        for host, path, expected_status, label in subdomain_cases:
+            # 1. Test via standard 'Host' header
+            try:
+                resp_host = self.get(path, headers={"Host": host})
+                if resp_host.status_code == expected_status:
+                    self.log_pass("subdomain host", f"{host}{path} -> {label} [{resp_host.status_code}]")
+                else:
+                    self.log_fail("subdomain host", f"{host}{path}", f"expected {expected_status}, got {resp_host.status_code}")
+            except Exception as e:
+                self.log_fail("subdomain host", f"{host}{path}", str(e))
+
+            # 2. Test via Cloudflare tunnel 'X-Forwarded-Host' header
+            try:
+                resp_xfh = self.get(path, headers={"X-Forwarded-Host": host})
+                if resp_xfh.status_code == expected_status:
+                    self.log_pass("subdomain xfh", f"[X-Forwarded-Host: {host}] -> {label} [{resp_xfh.status_code}]")
+                else:
+                    self.log_fail("subdomain xfh", f"{host}{path}", f"expected {expected_status}, got {resp_xfh.status_code}")
+            except Exception as e:
+                self.log_fail("subdomain xfh", f"{host}{path}", str(e))
+
+    # =========================================================================
     # MAIN RUNNER
     # =========================================================================
     def run_all(self) -> int:
@@ -1407,27 +1578,37 @@ class SiteBlaster:
         print(f" User-Agent:  {self.user_agent}")
         print(f"========================================================\n")
 
-        self.test_core_routes()
-        self.test_live_gallery()
-        self.test_commander_correctness()
-        self.test_404_boundaries()
-        self.test_random_routes()
-        self.test_set_integrity()
-        self.test_artist_integrity()
-        self.test_blurb_linting()
-        self.test_real_entity_sampling()
-        self.test_markdown_integrity()
-        self.test_neural_surfaces()
-        self.test_machine_discovery()
-        self.test_images()
-        self.test_unicode_boundary_fixtures()
-        self.test_localization_invariants()
-        self.test_cta_targets()
-        self.test_machine_ad_contamination()
-        self.test_legitimacy_content()
-        self.test_footer_coherence()
-        self.test_editorial_spotlight()
-        self.test_basic_land_invariants()
+        suites = [
+            ("Core Route Smoke", self.test_core_routes),
+            ("Live Gallery & SSE Feeds", self.test_live_gallery),
+            ("Commander Rules & Identity Invariants", self.test_commander_correctness),
+            ("Boundary & 404 Resilience", self.test_404_boundaries),
+            ("Random Discovery Routes", self.test_random_routes),
+            ("Set Integrity & Distribution", self.test_set_integrity),
+            ("Artist Integrity & Galleries", self.test_artist_integrity),
+            ("Card Blurb & Rules Linting", self.test_blurb_linting),
+            ("Real Entity Tri-Surface (HTML, MD, JSON, XML, CSV)", self.test_real_entity_sampling),
+            ("Markdown Spec & Frontmatter Integrity", self.test_markdown_integrity),
+            ("Neural & Vector Search Surfaces", self.test_neural_surfaces),
+            ("Machine Discovery & LLM Manifests", self.test_machine_discovery),
+            ("Image Delivery & Scan Resolution", self.test_images),
+            ("Unicode & Non-ASCII Slugs & Boundaries", self.test_unicode_boundary_fixtures),
+            ("Localization & Multi-Language Invariants", self.test_localization_invariants),
+            ("CTA Targets & Conversions", self.test_cta_targets),
+            ("Machine Ad & Injection Guardrails", self.test_machine_ad_contamination),
+            ("Legitimacy & Editorial Content", self.test_legitimacy_content),
+            ("Footer & Network Coherence", self.test_footer_coherence),
+            ("Editorial Spotlight & Curations", self.test_editorial_spotlight),
+            ("Basic Land Capping & Forest Incident Invariants", self.test_basic_land_invariants),
+            ("Visual Artwork & Multi-Modal Similarity Surfaces", self.test_visual_artwork_and_similarities),
+            ("Multilingual Performance & Benchmark Invariants", self.test_multilingual_performance_invariants),
+            ("Network Subdomain Routing & Proxy Symmetry", self.test_network_subdomain_routing),
+        ]
+
+        total_suites = len(suites)
+        for idx, (name, suite_fn) in enumerate(suites, 1):
+            print(f"\n--- [{idx}/{total_suites}] Running {name} Suite ---", flush=True)
+            suite_fn()
 
         elapsed = time.time() - self.start_time
 

@@ -106,3 +106,87 @@ def test_swu_random_routes():
     assert res_md.status_code == 307
     assert res_md.headers["location"].endswith(".md")
 
+
+def test_swu_card_xml():
+    res = client.get("/swu/card/luke-skywalker-faithful-friend-sor-5.xml")
+    assert res.status_code == 200
+    assert "application/xml" in res.headers.get("content-type", "")
+    assert "<card>" in res.text
+    assert "<title>Luke Skywalker</title>" in res.text
+    assert "<slug>luke-skywalker-faithful-friend-sor-5</slug>" in res.text
+
+
+def test_swu_card_rel_alternates():
+    res = client.get("/swu/card/luke-skywalker-faithful-friend-sor-5")
+    assert res.status_code == 200
+    text = res.text
+    # Check link rel="alternate" in HTML head for .md, .json, and .xml
+    assert 'rel="alternate" type="text/markdown"' in text
+    assert 'luke-skywalker-faithful-friend-sor-5.md' in text
+    assert 'rel="alternate" type="application/json"' in text
+    assert 'luke-skywalker-faithful-friend-sor-5.json' in text
+    assert 'rel="alternate" type="application/xml"' in text
+    assert 'luke-skywalker-faithful-friend-sor-5.xml' in text
+    # Check HTTP Link header
+    link_header = res.headers.get("link", "")
+    assert ".xml" in link_header
+    assert ".json" in link_header
+    assert ".md" in link_header
+
+
+def test_swu_keyword_markdown():
+    res = client.get("/swu/keyword/sentinel.md")
+    assert res.status_code == 200
+    assert "text/markdown" in res.headers.get("content-type", "")
+    assert "# Sentinel" in res.text
+
+
+def test_swu_home_seo_alternates():
+    res = client.get("/swu")
+    assert res.status_code == 200
+    text = res.text
+    assert '<link rel="canonical" href="https://swu.avascry.com/">' in text
+    assert '<link rel="alternate" type="application/xml"' in text
+    assert 'sitemap.xml' in text
+    assert '<link rel="alternate" type="text/plain"' in text
+    assert 'llms.txt' in text
+    assert '<meta name="content-signal" content="ai-train=yes, search=yes, ai-input=yes">' in text
+
+
+def test_swu_rules_and_keywords_seo():
+    res_rules = client.get("/swu/rules")
+    assert res_rules.status_code == 200
+    assert '<link rel="canonical" href="https://swu.avascry.com/rules">' in res_rules.text
+    assert 'rules.md' in res_rules.text
+    assert 'rules.json' in res_rules.text
+
+    res_kw = client.get("/swu/keywords")
+    assert res_kw.status_code == 200
+    assert '<link rel="canonical" href="https://swu.avascry.com/keywords">' in res_kw.text
+
+    res_kw_detail = client.get("/swu/keyword/sentinel")
+    assert res_kw_detail.status_code == 200
+    assert '<link rel="canonical" href="https://swu.avascry.com/keyword/sentinel">' in res_kw_detail.text
+    assert 'sentinel.json' in res_kw_detail.text
+    assert 'sentinel.md' in res_kw_detail.text
+
+
+def test_swu_trust_pages_canonicals():
+    for page in ("about", "privacy", "terms", "contact"):
+        res = client.get(f"/swu/{page}")
+        assert res.status_code == 200
+        assert f'<link rel="canonical" href="https://swu.avascry.com/{page}">' in res.text
+        assert '<link rel="alternate" type="application/xml"' in res.text
+        assert 'sitemap.xml' in res.text
+        assert "â€”" not in res.text
+
+
+def test_swu_rulings_feed_seo():
+    res = client.get("/swu/rulings")
+    assert res.status_code == 200
+    assert '<link rel="canonical" href="https://swu.avascry.com/rulings">' in res.text
+    assert '<link rel="alternate" type="application/xml"' in res.text
+    assert "â€”" not in res.text
+
+
+

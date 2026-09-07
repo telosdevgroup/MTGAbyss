@@ -6,6 +6,13 @@
 <link rel="canonical" href="https://swu.avascry.com/card/{{ card.slug }}">
 {% endblock %}
 
+{% block alternates %}
+<link rel="alternate" type="text/markdown" title="{{ card.title or card.name }} (Markdown for AI Agents)" href="https://swu.avascry.com/card/{{ card.slug }}.md">
+<link rel="alternate" type="application/json" title="{{ card.title or card.name }} (JSON)" href="https://swu.avascry.com/card/{{ card.slug }}.json">
+<link rel="alternate" type="application/xml" title="{{ card.title or card.name }} (XML)" href="https://swu.avascry.com/card/{{ card.slug }}.xml">
+<link rel="alternate" type="application/xml" title="Star Wars: Unlimited Sitemap" href="https://swu.avascry.com/sitemap.xml">
+{% endblock %}
+
 {% block og_tags %}
 <meta property="og:site_name" content="AvaScry Star Wars: Unlimited">
 <meta property="og:type" content="article">

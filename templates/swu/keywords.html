@@ -2,10 +2,27 @@
 
 {% block title %}
   {% if current_keyword %}
-    {{ current_keyword.name }} — Star Wars: Unlimited Keyword &amp; Mechanics Rules
+    {{ current_keyword.name }} &mdash; Star Wars: Unlimited Keyword &amp; Mechanics Rules
   {% else %}
-    Star Wars: Unlimited Keywords &amp; Mechanics Directory — AvaScry SWU
+    Star Wars: Unlimited Keywords &amp; Mechanics Directory &mdash; AvaScry SWU
   {% endif %}
+{% endblock %}
+
+{% block canonical %}
+  {% if current_keyword %}
+    <link rel="canonical" href="https://swu.avascry.com/keyword/{{ current_keyword.slug }}">
+  {% else %}
+    <link rel="canonical" href="https://swu.avascry.com/keywords">
+  {% endif %}
+{% endblock %}
+
+{% block alternates %}
+  {% if current_keyword %}
+    <link rel="alternate" type="application/json" title="{{ current_keyword.name }} (JSON)" href="https://swu.avascry.com/keyword/{{ current_keyword.slug }}.json">
+    <link rel="alternate" type="text/markdown" title="{{ current_keyword.name }} (Markdown)" href="https://swu.avascry.com/keyword/{{ current_keyword.slug }}.md">
+  {% endif %}
+  <link rel="alternate" type="application/xml" title="Star Wars: Unlimited Sitemap" href="https://swu.avascry.com/sitemap.xml">
+  <link rel="alternate" type="text/plain" title="Star Wars: Unlimited LLM Context" href="https://swu.avascry.com/llms.txt">
 {% endblock %}
 
 {% block og_tags %}

@@ -6,6 +6,7 @@ Serves HTML, Markdown (.md), JSON, sitemaps, and llms.txt endpoints for bots and
 
 import os
 import re
+import xml.etree.ElementTree as ET
 from typing import Optional
 from fastapi import APIRouter, Request, HTTPException, Response
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse, FileResponse, RedirectResponse
@@ -247,6 +248,11 @@ async def swu_home(request: Request,
             "available_types": available_types,
             "available_arenas": available_arenas,
             "available_sets": available_sets
+        },
+        headers={
+            "Vary": "Accept",
+            "Link": '</sitemap.xml>; rel="alternate"; type="application/xml", </llms.txt>; rel="alternate"; type="text/plain", </rules.md>; rel="alternate"; type="text/markdown", </rules.json>; rel="alternate"; type="application/json"',
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
         }
     )
 
@@ -378,10 +384,76 @@ async def swu_card_json(slug: str):
         raise HTTPException(status_code=404, detail="Card not found")
     return JSONResponse(content=card)
 
+@swu_router.get("/card/{slug}.xml", response_class=Response)
+async def swu_card_xml(slug: str):
+    db = get_swu_db()
+    card = db.cards.find_one({"$or": [{"slug": slug}, {"name_slug": slug}]}, {"_id": 0})
+    if not card:
+        raise HTTPException(status_code=404, detail="Card not found")
+
+    root = ET.Element("card")
+    ET.SubElement(root, "slug").text = str(card.get("slug") or "")
+    ET.SubElement(root, "title").text = str(card.get("title") or card.get("name") or "")
+    if card.get("subtitle"):
+        ET.SubElement(root, "subtitle").text = str(card.get("subtitle"))
+    
+    exp_el = ET.SubElement(root, "expansion")
+    exp_code = card.get("expansion", {}).get("code") if isinstance(card.get("expansion"), dict) else card.get("set_code")
+    exp_name = card.get("expansion", {}).get("name") if isinstance(card.get("expansion"), dict) else card.get("set_name")
+    if exp_code:
+        exp_el.set("code", str(exp_code))
+    exp_el.text = str(exp_name or "")
+    
+    ET.SubElement(root, "cardNumber").text = str(card.get("card_number") or card.get("number") or "")
+    ET.SubElement(root, "type").text = str(card.get("type") or "")
+    if card.get("type2"):
+        ET.SubElement(root, "type2").text = str(card.get("type2"))
+    if card.get("cost") is not None:
+        ET.SubElement(root, "cost").text = str(card.get("cost"))
+    if card.get("power") is not None:
+        ET.SubElement(root, "power").text = str(card.get("power"))
+    if card.get("hp") is not None:
+        ET.SubElement(root, "hp").text = str(card.get("hp"))
+    
+    aspects_el = ET.SubElement(root, "aspects")
+    for a in card.get("aspects") or []:
+        ET.SubElement(aspects_el, "aspect").text = str(a)
+        
+    traits_el = ET.SubElement(root, "traits")
+    for t in card.get("traits") or []:
+        ET.SubElement(traits_el, "trait").text = str(t)
+        
+    arenas_el = ET.SubElement(root, "arenas")
+    for ar in card.get("arenas") or []:
+        ET.SubElement(arenas_el, "arena").text = str(ar)
+        
+    if card.get("rarity"):
+        ET.SubElement(root, "rarity").text = str(card.get("rarity"))
+    if card.get("artist"):
+        ET.SubElement(root, "artist").text = str(card.get("artist"))
+    if card.get("text"):
+        ET.SubElement(root, "text").text = str(card.get("text"))
+    if card.get("deploy_box"):
+        ET.SubElement(root, "deployBox").text = str(card.get("deploy_box"))
+    if card.get("rules"):
+        ET.SubElement(root, "rules").text = str(card.get("rules"))
+
+    xml_bytes = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    return Response(
+        content=xml_bytes,
+        media_type="application/xml; charset=utf-8",
+        headers={
+            "Cache-Control": "public, max-age=86400",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
+
 @swu_router.get("/card/{slug}", response_class=HTMLResponse)
 async def swu_card_detail(slug: str, request: Request):
     db = get_swu_db()
     card = db.cards.find_one({"$or": [{"slug": slug}, {"name_slug": slug}]}, {"_id": 0})
+    if not card:
+        raise HTTPException(status_code=404, detail="Card not found")
     # Normalize card attributes
     if not card.get("title"):
         card["title"] = card.get("name") or "Unknown"
@@ -478,7 +550,7 @@ async def swu_card_detail(slug: str, request: Request):
         },
         headers={
             "Vary": "Accept",
-            "Link": f'</card/{card.get("slug", slug)}.md>; rel="alternate"; type="text/markdown", </card/{card.get("slug", slug)}.json>; rel="alternate"; type="application/json"',
+            "Link": f'</card/{card.get("slug", slug)}.md>; rel="alternate"; type="text/markdown", </card/{card.get("slug", slug)}.json>; rel="alternate"; type="application/json", </card/{card.get("slug", slug)}.xml>; rel="alternate"; type="application/xml"',
             "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
         }
     )
@@ -510,10 +582,30 @@ async def swu_keyword_json(slug: str):
         raise HTTPException(status_code=404, detail="Keyword not found")
     return JSONResponse(content=kw)
 
+@swu_router.get("/keyword/{slug}.md", response_class=PlainTextResponse)
+async def swu_keyword_markdown(slug: str):
+    db = get_swu_db()
+    clean_slug = slug.removesuffix(".md")
+    kw = db.keywords.find_one({"slug": clean_slug}, {"_id": 0})
+    if not kw:
+        raise HTTPException(status_code=404, detail="Keyword not found")
+    lines = [
+        f"# {kw.get('name')}",
+        f"**Slug:** {kw.get('slug')}",
+    ]
+    if kw.get("reminder"):
+        lines.append(f"**Reminder:** {kw.get('reminder')}")
+    if kw.get("description"):
+        lines.append(f"\n## Definition\n{kw.get('description')}")
+    if kw.get("rules_reference"):
+        lines.append(f"\n## Rules Reference\n{kw.get('rules_reference')}")
+    lines.append(f"\n*Source: AvaScry Star Wars Unlimited (https://swu.avascry.com/keyword/{kw.get('slug')})*")
+    return PlainTextResponse(content="\n".join(lines), media_type="text/markdown; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes"})
+
 @swu_router.get("/keyword/{slug}", response_class=HTMLResponse)
 async def swu_keyword_detail(request: Request, slug: str):
     db = get_swu_db()
-    clean_slug = slug.removesuffix(".json")
+    clean_slug = slug.removesuffix(".json").removesuffix(".md")
     kw = db.keywords.find_one({"slug": clean_slug}, {"_id": 0})
     if not kw:
         raise HTTPException(status_code=404, detail="Keyword not found")
@@ -541,6 +633,11 @@ async def swu_keyword_detail(request: Request, slug: str):
             "keywords": [],
             "current_keyword": kw,
             "cards": cards
+        },
+        headers={
+            "Vary": "Accept",
+            "Link": f'</keyword/{kw["slug"]}.md>; rel="alternate"; type="text/markdown", </keyword/{kw["slug"]}.json>; rel="alternate"; type="application/json"',
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
         }
     )
 
@@ -559,6 +656,11 @@ async def swu_rules_index(request: Request):
             "all_sections": all_sections,
             "sections_to_display": all_sections,
             "current_section": None
+        },
+        headers={
+            "Vary": "Accept",
+            "Link": '</rules.md>; rel="alternate"; type="text/markdown", </rules.json>; rel="alternate"; type="application/json"',
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
         }
     )
 

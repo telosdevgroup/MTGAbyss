@@ -3,21 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}AvaScry Star Wars: Unlimited â€” Cards, Rules Clarifications &amp; Format Legality{% endblock %}</title>
+  <title>{% block title %}AvaScry Star Wars: Unlimited &mdash; Cards, Rules Clarifications &amp; Format Legality{% endblock %}</title>
   
   {% block canonical %}
   <link rel="canonical" href="https://swu.avascry.com/">
   {% endblock %}
 
+  {% block alternates %}
+  <link rel="alternate" type="application/xml" title="Star Wars: Unlimited Sitemap" href="https://swu.avascry.com/sitemap.xml">
+  <link rel="alternate" type="text/plain" title="Star Wars: Unlimited LLM Context" href="https://swu.avascry.com/llms.txt">
+  {% endblock %}
+
   <meta name="theme-color" content="#0a0a0c">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="content-signal" content="ai-train=yes, search=yes, ai-input=yes">
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 
   {% block og_tags %}
   <meta property="og:site_name" content="AvaScry Star Wars: Unlimited">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="AvaScry Star Wars: Unlimited â€” Cards, Rules Clarifications &amp; Format Legality">
+  <meta property="og:title" content="AvaScry Star Wars: Unlimited &mdash; Cards, Rules Clarifications &amp; Format Legality">
   <meta property="og:description" content="Structured Star Wars: Unlimited card database, leader flip states, comprehensive rules clarifications, and format legality.">
   <meta property="og:url" content="https://swu.avascry.com/">
   <meta name="twitter:card" content="summary_large_image">

@@ -1,6 +1,19 @@
 {% extends "swu/base.html" %}
 
-{% block title %}Star Wars: Unlimited Card Database &amp; Strategy Explorer — AvaScry SWU{% endblock %}
+{% block title %}Star Wars: Unlimited Card Database &amp; Strategy Explorer &mdash; AvaScry SWU{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://swu.avascry.com/">
+{% endblock %}
+
+{% block alternates %}
+<link rel="alternate" type="application/xml" title="Star Wars: Unlimited Sitemap" href="https://swu.avascry.com/sitemap.xml">
+<link rel="alternate" type="text/plain" title="Star Wars: Unlimited LLM Context" href="https://swu.avascry.com/llms.txt">
+<link rel="alternate" type="text/plain" title="Full Star Wars: Unlimited Corpus" href="https://swu.avascry.com/llms-full.txt">
+<link rel="alternate" type="text/markdown" title="Rules Architecture (Markdown)" href="https://swu.avascry.com/rules.md">
+<link rel="alternate" type="application/json" title="Rules Architecture (JSON)" href="https://swu.avascry.com/rules.json">
+<link rel="alternate" type="text/markdown" title="Expansion Manifest (Markdown)" href="https://swu.avascry.com/sets.md">
+{% endblock %}
 
 {% block extra_head %}
 <style>
