@@ -232,8 +232,23 @@ async def dominion_card_html(request: Request, slug: str):
         t = re.sub(r'(?:<n>\s*)+', '\n\n', t)
         return t.strip()
 
+    exp_map = {e.get('set_tag', '').lower(): e.get('name') for e in db.expansions.find({}, {"set_tag": 1, "name": 1})}
+
+    def _format_expansion(tag: str) -> str:
+        if not tag:
+            return ""
+        name = exp_map.get(tag.lower())
+        if name and not name.startswith('*') and (" " in name or name.istitle()):
+            return name
+        s = re.sub(r'([a-z])([A-Z0-9])', r'\1 \2', tag)
+        s = re.sub(r'([0-9])([A-Z])', r'\1 \2', s)
+        s = re.sub(r'\b1St\b', '1st', s.title())
+        s = re.sub(r'\b2Nd\b', '2nd', s)
+        return s.replace('And', '&')
+
     for v in versions:
         v["printed_rules_text"] = _format_rules(v.get("printed_rules_text", ""))
+        v["expansion_name"] = _format_expansion(v.get("expansion_tag", ""))
 
     for r in rulings:
         r["answer"] = _format_rules(r.get("answer", ""))
@@ -252,11 +267,11 @@ async def dominion_card_html(request: Request, slug: str):
         t2 = v_2e.get("printed_rules_text", "").strip()
         edition_diff = {
             "v1_edition": v_1e.get("edition", "1st Edition"),
-            "v1_tag": v_1e.get("expansion_tag", "").title(),
+            "v1_tag": _format_expansion(v_1e.get("expansion_tag", "")),
             "v1_text": t1,
             "v1_cost": v_1e.get("cost", {}),
             "v2_edition": v_2e.get("edition", "2nd Edition"),
-            "v2_tag": v_2e.get("expansion_tag", "").title(),
+            "v2_tag": _format_expansion(v_2e.get("expansion_tag", "")),
             "v2_text": t2,
             "v2_cost": v_2e.get("cost", {}),
             "has_text_change": t1 != t2

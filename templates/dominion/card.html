@@ -620,7 +620,7 @@
         {% for v in versions %}
         <div class="version-item">
           <div class="version-title">
-            <span>{{ v.expansion_tag | title }} ({{ v.edition | upper }})</span>
+            <span>{{ v.expansion_name or (v.expansion_tag | title) }} ({{ v.edition | upper }})</span>
             <span>
               {% if v.cost.coins %}{{ v.cost.coins }} Coins{% endif %}
               {% if v.cost.debt %}+{{ v.cost.debt }} Debt{% endif %}
