@@ -10,11 +10,11 @@
   }
   .hero h1 {
     font-family: 'Cinzel', serif;
-    font-size: 2.3rem;
+    font-size: 2.4rem;
     font-weight: 800;
     margin-bottom: 0.5rem;
-    color: #fff;
-    letter-spacing: 0.03em;
+    color: #0f172a;
+    letter-spacing: 0.02em;
   }
   .hero p {
     color: var(--muted);
@@ -28,28 +28,30 @@
     gap: 1.25rem;
   }
   .card-cell {
-    background: var(--card-bg);
+    background: #ffffff;
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.25rem;
+    border-radius: 12px;
+    padding: 1.35rem;
     text-decoration: none;
     color: inherit;
-    transition: transform 0.15s ease, border-color 0.15s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
   }
   .card-cell:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
     border-color: var(--accent);
   }
   .card-cell-name {
     font-family: 'Cinzel', serif;
-    font-size: 1.15rem;
+    font-size: 1.2rem;
     font-weight: 700;
-    color: #fff;
+    color: #0f172a;
     margin-bottom: 0.35rem;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
   }
   .card-cell-meta {
     font-size: 0.85rem;
@@ -57,6 +59,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
   }
 </style>
 {% endblock %}
