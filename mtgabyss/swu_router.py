@@ -731,15 +731,17 @@ format-negotiation:
 
 @swu_router.get("/sitemap.xml", response_class=Response)
 async def swu_sitemap_xml():
+    """
+    Lean, high-authority launch sitemap:
+    - Top-level pillars & legal compliance pages (8 URLs)
+    - 127 sampled cards for healthy crawl signal
+    - Cache-Control 24h to prevent edge latency
+    """
     db = get_swu_db()
-    # Sample 127 random cards for crawl budget optimization
     cards = list(db.cards.aggregate([
         {"$sample": {"size": 127}},
         {"$project": {"slug": 1, "_id": 0}}
     ]))
-    keywords = list(db.keywords.find({}, {"slug": 1, "_id": 0}))
-    rules = list(db.rules_entries.find({}, {"slug": 1, "_id": 0}))
-    rulings = list(db.clarifications.find({}, {"slug": 1, "_id": 0}).limit(2000))
 
     xml_lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -753,16 +755,15 @@ async def swu_sitemap_xml():
         '  <url><loc>https://swu.avascry.com/terms</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>',
         '  <url><loc>https://swu.avascry.com/contact</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>'
     ]
-    for kw in keywords:
-        xml_lines.append(f'  <url><loc>https://swu.avascry.com/keyword/{kw["slug"]}</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>')
-    for r in rules:
-        xml_lines.append(f'  <url><loc>https://swu.avascry.com/rule/{r["slug"]}</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>')
-    for rl in rulings:
-        xml_lines.append(f'  <url><loc>https://swu.avascry.com/ruling/{rl["slug"]}</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>')
     for c in cards:
         xml_lines.append(f'  <url><loc>https://swu.avascry.com/card/{c["slug"]}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>')
     xml_lines.append('</urlset>')
-    return Response(content="\n".join(xml_lines), media_type="application/xml; charset=utf-8")
+
+    return Response(
+        content="\n".join(xml_lines),
+        media_type="application/xml; charset=utf-8",
+        headers={"Cache-Control": "public, max-age=86400, stale-while-revalidate=3600"}
+    )
 
 @swu_router.get("/robots.txt", response_class=PlainTextResponse)
 async def swu_robots_txt():
