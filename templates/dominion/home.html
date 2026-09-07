@@ -63,6 +63,84 @@
     padding-top: 0.75rem;
     margin-top: 0.75rem;
   }
+  .search-container {
+    margin-top: 1.75rem;
+    max-width: 800px;
+  }
+  .search-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .search-icon {
+    position: absolute;
+    left: 1.25rem;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .search-input {
+    width: 100%;
+    padding: 1rem 3rem 1rem 3.25rem;
+    font-size: 1.05rem;
+    font-family: inherit;
+    background: #ffffff;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 4px 16px rgba(180, 83, 9, 0.12);
+  }
+  .clear-btn {
+    position: absolute;
+    right: 1.25rem;
+    background: #e2e8f0;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    line-height: 1;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .clear-btn:hover {
+    background: #cbd5e1;
+    color: var(--text);
+  }
+  .filter-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  .pill-btn {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .pill-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .pill-btn.active {
+    background: var(--header-bg);
+    border-color: var(--header-bg);
+    color: #fff;
+  }
 </style>
 {% endblock %}
 
@@ -70,22 +148,149 @@
 <div class="hero">
   <h1>Dominion Official Rules &amp; Card Synergies</h1>
   <p>Official Donald X. Vaccarino rulings, 1e vs 2e comparisons, and card interactions across {{ total_cards }} cards and {{ total_expansions }} expansions.</p>
+  
+  <div class="search-container">
+    <div class="search-input-wrap">
+      <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input 
+        type="text" 
+        id="dominion-search-input" 
+        class="search-input" 
+        placeholder="Type to filter cards (e.g. Chapel, Village, Attack, Duration, Action)..." 
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="Filter cards"
+      />
+      <button id="clear-search-btn" class="clear-btn" style="display: none;" aria-label="Clear filter">&times;</button>
+    </div>
+
+    <!-- Fast Category Filter Chips -->
+    <div class="filter-pills" id="type-pills">
+      <button type="button" class="pill-btn active" data-type="all">All Cards (<span id="count-visible">{{ total_cards }}</span>)</button>
+      <button type="button" class="pill-btn" data-type="kingdom">Kingdom Only</button>
+      <button type="button" class="pill-btn" data-type="action">Actions</button>
+      <button type="button" class="pill-btn" data-type="attack">Attacks</button>
+      <button type="button" class="pill-btn" data-type="treasure">Treasures</button>
+      <button type="button" class="pill-btn" data-type="victory">Victory</button>
+      <button type="button" class="pill-btn" data-type="duration">Duration</button>
+      <button type="button" class="pill-btn" data-type="event">Events / Projects</button>
+    </div>
+  </div>
 </div>
 
-<div class="card-grid">
+<div class="card-grid" id="dominion-card-grid">
   {% for c in cards %}
-  <a href="/dominion/card/{{ c.slug }}" class="card-cell">
+  <a 
+    href="/dominion/card/{{ c.slug }}" 
+    class="card-cell" 
+    data-name="{{ c.name | lower }}" 
+    data-kinds="{{ c.card_kinds | join(' ') | lower }}"
+    data-is-kingdom="{% if c.is_kingdom_card %}true{% else %}false{% endif %}"
+  >
     <div>
       <div class="card-cell-name">{{ c.name }}</div>
-      <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 0.75rem;">
-        {{ c.card_kinds | join(', ') | title }}
+      <div style="font-size: 0.82rem; color: var(--muted); margin-bottom: 0.75rem;">
+        {{ c.card_kinds | join(' &bull; ') | title }}
       </div>
     </div>
     <div class="card-cell-meta">
       <span>{% if c.is_kingdom_card %}&bull; Kingdom{% endif %}</span>
-      <span style="color: var(--accent); font-weight: 600;">View Rules &rarr;</span>
+      <span style="color: var(--accent); font-weight: 600;">Rules &rarr;</span>
     </div>
   </a>
   {% endfor %}
 </div>
+
+<div id="no-results" style="display: none; text-align: center; padding: 4rem 2rem; color: var(--muted);">
+  <p style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin-bottom: 0.5rem;">No cards match your filter</p>
+  <p>Try clearing your search query or selecting "All Cards".</p>
+</div>
+
+<script>
+  (function() {
+    const input = document.getElementById('dominion-search-input');
+    const clearBtn = document.getElementById('clear-search-btn');
+    const pills = document.querySelectorAll('#type-pills .pill-btn');
+    const grid = document.getElementById('dominion-card-grid');
+    const cards = Array.from(grid.querySelectorAll('.card-cell'));
+    const countDisplay = document.getElementById('count-visible');
+    const noResults = document.getElementById('no-results');
+
+    let currentFilterType = 'all';
+
+    function applyFilter() {
+      const q = input.value.trim().toLowerCase();
+      let visibleCount = 0;
+
+      if (q.length > 0) {
+        clearBtn.style.display = 'block';
+      } else {
+        clearBtn.style.display = 'none';
+      }
+
+      cards.forEach(card => {
+        const name = card.getAttribute('data-name') || '';
+        const kinds = card.getAttribute('data-kinds') || '';
+        const isKingdom = card.getAttribute('data-is-kingdom') === 'true';
+
+        // Type filter check
+        let matchesType = true;
+        if (currentFilterType === 'kingdom') {
+          matchesType = isKingdom;
+        } else if (currentFilterType !== 'all') {
+          matchesType = kinds.includes(currentFilterType);
+        }
+
+        // Text query check
+        let matchesQuery = true;
+        if (q) {
+          matchesQuery = name.includes(q) || kinds.includes(q);
+        }
+
+        if (matchesType && matchesQuery) {
+          card.style.display = 'flex';
+          visibleCount++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      countDisplay.textContent = visibleCount;
+      noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+
+    input.addEventListener('input', applyFilter);
+
+    clearBtn.addEventListener('click', () => {
+      input.value = '';
+      input.focus();
+      applyFilter();
+    });
+
+    pills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        pills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        currentFilterType = pill.getAttribute('data-type');
+        applyFilter();
+      });
+    });
+
+    // Keyboard shortcut '/' focuses search
+    window.addEventListener('keydown', e => {
+      if (e.key === '/' && document.activeElement !== input) {
+        e.preventDefault();
+        input.focus();
+        input.select();
+      } else if (e.key === 'Escape' && document.activeElement === input) {
+        input.value = '';
+        applyFilter();
+        input.blur();
+      }
+    });
+  })();
+</script>
 {% endblock %}

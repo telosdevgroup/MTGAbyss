@@ -20,8 +20,8 @@ def get_dominion_db():
 @dominion_router.get("/", response_class=HTMLResponse)
 async def dominion_home(request: Request):
     db = get_dominion_db()
-    cards = list(db.cards.find({}, {"_id": 0, "name": 1, "slug": 1, "card_kinds": 1, "is_kingdom_card": 1}).sort("normalized_name", 1).limit(100))
-    total_cards = db.cards.count_documents({})
+    cards = list(db.cards.find({}, {"_id": 0, "name": 1, "slug": 1, "card_kinds": 1, "is_kingdom_card": 1}).sort("normalized_name", 1))
+    total_cards = len(cards)
     total_expansions = db.expansions.count_documents({})
     
     return templates.TemplateResponse(
