@@ -1,0 +1,157 @@
+{% extends "necromunda/base.html" %}
+
+{% block title %}AvaScry Necromunda — Underhive Armory &amp; Tactics Lexicon{% endblock %}
+
+{% block content %}
+<section style="margin-bottom: 2.5rem; text-align: center; padding: 2.5rem 1rem; background: radial-gradient(circle at center, rgba(255, 71, 26, 0.08) 0%, transparent 70%); border: 1px solid var(--border); border-radius: 8px;">
+  <div class="brand-tag" style="display: inline-block; margin-bottom: 0.85rem;">SECTOR 13-SUB // NECROMUNDA PRIMUS</div>
+  <h1 style="font-family: 'Chakra Petch', sans-serif; font-size: 2.4rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.75rem;">
+    Underhive Armory &amp; Tactics Lexicon
+  </h1>
+  <p style="color: var(--muted); max-width: 680px; margin: 0 auto 1.5rem; font-size: 1.05rem;">
+    Sub-second tactical reference for Necromunda gang skirmish warfare. Complete weapon statlines, trait interactions, clan rosters, and skill trees.
+  </p>
+
+  <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+    <a href="{{ base_path }}/weapons" class="badge-mono badge-accent" style="padding: 8px 16px; font-size: 0.88rem; font-weight: 600;">
+      Browse Armory ({{ total_weapons }})
+    </a>
+    <a href="{{ base_path }}/traits" class="badge-mono" style="padding: 8px 16px; font-size: 0.88rem; font-weight: 600;">
+      Weapon Traits ({{ total_traits }})
+    </a>
+    <a href="{{ base_path }}/houses" class="badge-mono" style="padding: 8px 16px; font-size: 0.88rem; font-weight: 600;">
+      Clan Houses ({{ total_houses }})
+    </a>
+    <a href="{{ base_path }}/skills" class="badge-mono" style="padding: 8px 16px; font-size: 0.88rem; font-weight: 600;">
+      Skill Disciplines ({{ total_skills }})
+    </a>
+  </div>
+</section>
+
+<!-- Featured Armory Weapons -->
+<section style="margin-bottom: 3rem;">
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.25rem;">
+    <div>
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.4rem; font-weight: 700; text-transform: uppercase;">
+        Underhive Heavy Armory
+      </h2>
+      <p style="color: var(--muted); font-size: 0.85rem;">Standard and black-market firearm profiles</p>
+    </div>
+    <a href="{{ base_path }}/weapons" style="font-size: 0.85rem; color: var(--accent); font-weight: 600;">View All Weapons &rarr;</a>
+  </div>
+
+  <div class="grid-cards">
+    {% for w in weapons[:6] %}
+    <a href="{{ base_path }}/weapon/{{ w.slug }}" class="hive-card">
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <h3 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.15rem; font-weight: 700; color: #fff;">{{ w.name }}</h3>
+          <span class="badge-mono badge-accent">{{ w.cost_credits }} cr</span>
+        </div>
+        <div style="display: flex; gap: 0.4rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+          <span class="badge-mono">{{ w.category }}</span>
+          <span class="badge-mono">{{ w.rarity }}</span>
+        </div>
+        <table class="stat-table">
+          <thead>
+            <tr>
+              <th>Rng S/L</th>
+              <th>Acc S/L</th>
+              <th>Str</th>
+              <th>Dmg</th>
+              <th>AP</th>
+              <th>Ammo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ w.range_short }} / {{ w.range_long }}</td>
+              <td>{{ w.accuracy_short }} / {{ w.accuracy_long }}</td>
+              <td>{{ w.strength }}</td>
+              <td>{{ w.damage }}</td>
+              <td>{{ w.armor_piercing }}</td>
+              <td>{{ w.ammo }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.5rem;">
+          {% for t in w.traits %}
+          <span style="font-size: 0.72rem; background: #1a1e28; color: #ff6b4a; padding: 2px 6px; border-radius: 3px; font-family: 'JetBrains Mono', monospace;">{{ t }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Clan Houses of Hive Primus -->
+<section style="margin-bottom: 3rem;">
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.25rem;">
+    <div>
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.4rem; font-weight: 700; text-transform: uppercase;">
+        Great Clan Houses
+      </h2>
+      <p style="color: var(--muted); font-size: 0.85rem;">Factions vying for underhive territorial domination</p>
+    </div>
+    <a href="{{ base_path }}/houses" style="font-size: 0.85rem; color: var(--accent); font-weight: 600;">View All Houses &rarr;</a>
+  </div>
+
+  <div class="grid-cards">
+    {% for h in houses %}
+    <a href="{{ base_path }}/house/{{ h.slug }}" class="hive-card">
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+          <h3 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; color: #fff;">{{ h.name }}</h3>
+        </div>
+        <div style="font-size: 0.82rem; color: var(--accent); font-weight: 600; margin-bottom: 0.75rem;">{{ h.title }}</div>
+        <p style="font-size: 0.86rem; color: var(--muted); line-height: 1.5; margin-bottom: 1rem;">
+          {{ h.specialty }}
+        </p>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--muted); margin-bottom: 0.25rem; font-weight: 600; text-transform: uppercase;">Favored Gear:</div>
+        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+          {% for w in h.signature_weapons %}
+          <span class="badge-mono" style="font-size: 0.72rem;">{{ w }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Weapon Traits Preview -->
+<section>
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.25rem;">
+    <div>
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.4rem; font-weight: 700; text-transform: uppercase;">
+        Rule Traits Lexicon
+      </h2>
+      <p style="color: var(--muted); font-size: 0.85rem;">Keyword mechanics governing combat outcomes</p>
+    </div>
+    <a href="{{ base_path }}/traits" style="font-size: 0.85rem; color: var(--accent); font-weight: 600;">View All Traits &rarr;</a>
+  </div>
+
+  <div class="grid-cards">
+    {% for t in traits[:6] %}
+    <a href="{{ base_path }}/trait/{{ t.slug }}" class="hive-card">
+      <div>
+        <h3 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.1rem; font-weight: 700; color: #ff6b4a; margin-bottom: 0.5rem;">
+          {{ t.name }}
+        </h3>
+        <p style="font-size: 0.86rem; color: #d1d5db; line-height: 1.5; margin-bottom: 0.75rem;">
+          {{ t.rules_text }}
+        </p>
+      </div>
+      <div style="font-size: 0.78rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 0.5rem;">
+        <em>FAQ / Synergy:</em> {{ t.faq }}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

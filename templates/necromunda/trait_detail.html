@@ -1,0 +1,91 @@
+{% extends "necromunda/base.html" %}
+
+{% block title %}Trait: {{ trait.name }} — Necromunda Underhive Lexicon{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+  <div style="margin-bottom: 1.5rem;">
+    <a href="{{ base_path }}/traits" style="font-size: 0.85rem; color: var(--accent); font-weight: 600;">&larr; Back to Traits Lexicon</a>
+  </div>
+
+  <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-bottom: 2rem;">
+    <div class="brand-tag" style="display: inline-block; margin-bottom: 0.5rem;">WEAPON TRAIT</div>
+    <h1 style="font-family: 'Chakra Petch', sans-serif; font-size: 2.4rem; font-weight: 700; color: #ff6b4a; text-transform: uppercase; margin-bottom: 1rem;">
+      {{ trait.name }}
+    </h1>
+
+    <!-- Tri-surface action bar -->
+    <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; background: #0b0d12; border: 1px solid var(--border); padding: 0.6rem 1rem; border-radius: 6px; align-items: center;">
+      <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700;">Tri-Surface:</span>
+      <span class="badge-mono" style="background: #1e2430; color: #fff;">HTML View</span>
+      <a href="{{ base_path }}/trait/{{ trait.slug }}.md" class="badge-mono" style="color: var(--accent);">Markdown (.md)</a>
+      <a href="{{ base_path }}/trait/{{ trait.slug }}.json" class="badge-mono" style="color: var(--accent);">REST (.json)</a>
+    </div>
+
+    <!-- Official Rule Text -->
+    <div style="margin-bottom: 1.75rem;">
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+        Rule Effect &amp; Mechanics
+      </h2>
+      <p style="color: #f1f5f9; line-height: 1.6; font-size: 1.05rem; background: #0c0e12; border: 1px solid var(--border); border-left: 4px solid var(--accent); padding: 1.25rem; border-radius: 4px;">
+        {{ trait.rules_text }}
+      </p>
+    </div>
+
+    <!-- Tactical Analysis -->
+    <div style="margin-bottom: 2rem;">
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+        Tactical Application &amp; Exploit Analysis
+      </h2>
+      <p style="color: #cbd5e1; line-height: 1.6; font-size: 0.95rem;">
+        {{ trait.faq }}
+      </p>
+    </div>
+
+    <!-- Compatible Weapons in Armory -->
+    <div>
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 1rem;">
+        Armory Weapons Featuring {{ trait.name }} ({{ weapons|length }})
+      </h2>
+
+      {% if weapons %}
+      <div class="grid-cards">
+        {% for w in weapons %}
+        <a href="{{ base_path }}/weapon/{{ w.slug }}" class="hive-card">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
+              <h3 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.15rem; font-weight: 700; color: #fff;">{{ w.name }}</h3>
+              <span class="badge-mono badge-accent">{{ w.cost_credits }} cr</span>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--muted); margin-bottom: 0.5rem;">Category: {{ w.category }}</div>
+            <table class="stat-table" style="margin: 0.5rem 0;">
+              <thead>
+                <tr>
+                  <th>Rng</th>
+                  <th>Str</th>
+                  <th>Dmg</th>
+                  <th>AP</th>
+                  <th>Ammo</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>{{ w.range_short }}/{{ w.range_long }}</td>
+                  <td>{{ w.strength }}</td>
+                  <td>{{ w.damage }}</td>
+                  <td>{{ w.armor_piercing }}</td>
+                  <td>{{ w.ammo_check }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="color: var(--muted); font-size: 0.9rem;">No weapons currently registered with this trait in the armory.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

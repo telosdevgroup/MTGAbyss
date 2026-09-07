@@ -41,6 +41,7 @@ from mtgabyss.shared.cache import RAM_CACHE, set_ram_cache
 # Existing Subsite Routers
 from mtgabyss.dominion_router import dominion_router
 from mtgabyss.swu_router import swu_router
+from mtgabyss.routers.necromunda_router import necromunda_router
 
 # Extracted MTG Routers
 from mtgabyss.routers.static_router import static_router
@@ -78,6 +79,7 @@ app.mount("/images", StaticFiles(directory="public/images"), name="images")
 # Subsite Routers
 app.include_router(dominion_router, prefix="/dominion")
 app.include_router(swu_router, prefix="/swu")
+app.include_router(necromunda_router, prefix="/necromunda")
 
 # Extracted MTG Routers
 app.include_router(static_router)
@@ -105,6 +107,7 @@ async def subdomain_routing_middleware(request: Request, call_next):
     If host is dominion.avascry.com or dominion.localhost, rewrite the internal path
     to route directly into the dominion router.
     If host is swu.avascry.com or starwars.avascry.com, rewrite to /swu router.
+    If host is necromunda.avascry.com or necromunda.localhost, rewrite to /necromunda router.
     """
     host = get_request_host(request)
     sub = extract_subdomain(host)
@@ -116,6 +119,10 @@ async def subdomain_routing_middleware(request: Request, call_next):
         path = request.scope.get("path", "")
         if not path.startswith("/swu") and not path.startswith("/static") and not path.startswith("/images"):
             request.scope["path"] = "/swu" + path
+    elif sub == "necromunda":
+        path = request.scope.get("path", "")
+        if not path.startswith("/necromunda") and not path.startswith("/static") and not path.startswith("/images"):
+            request.scope["path"] = "/necromunda" + path
     return await call_next(request)
 
 

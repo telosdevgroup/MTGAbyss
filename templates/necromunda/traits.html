@@ -1,0 +1,43 @@
+{% extends "necromunda/base.html" %}
+
+{% block title %}Weapon Traits Lexicon ({{ total_traits }} Traits) — AvaScry Necromunda{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <div class="brand-tag" style="display: inline-block; margin-bottom: 0.5rem;">COMBAT MECHANICS &amp; RULES</div>
+  <h1 style="font-family: 'Chakra Petch', sans-serif; font-size: 2.2rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">
+    Weapon Traits Lexicon
+  </h1>
+  <p style="color: var(--muted); font-size: 0.95rem;">
+    Comprehensive index of Underhive weapon traits, keyword rulings, and tactical exploitation notes.
+  </p>
+</div>
+
+<div class="grid-cards">
+  {% for t in traits %}
+  <a href="{{ base_path }}/trait/{{ t.slug }}" class="hive-card">
+    <div>
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.25rem; font-weight: 700; color: #ff6b4a; margin-bottom: 0.5rem;">
+        {{ t.name }}
+      </h2>
+      <p style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 0.75rem;">
+        {{ t.rules_text }}
+      </p>
+    </div>
+
+    <div>
+      <div style="font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 0.5rem; margin-bottom: 0.5rem;">
+        <em>Tactics:</em> {{ t.faq }}
+      </div>
+      <div style="display: flex; gap: 0.5rem; font-size: 0.72rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 0.4rem;">
+        <span>Format: HTML</span>
+        <span>•</span>
+        <a href="{{ base_path }}/trait/{{ t.slug }}.md" style="color: var(--accent);">.md</a>
+        <span>•</span>
+        <a href="{{ base_path }}/trait/{{ t.slug }}.json" style="color: var(--accent);">.json</a>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

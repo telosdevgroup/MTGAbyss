@@ -1,0 +1,48 @@
+{% extends "necromunda/base.html" %}
+
+{% block title %}Great Clan Houses ({{ total_houses }} Factions) — AvaScry Necromunda{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <div class="brand-tag" style="display: inline-block; margin-bottom: 0.5rem;">FACTIONS &amp; GANG ROSTERS</div>
+  <h1 style="font-family: 'Chakra Petch', sans-serif; font-size: 2.2rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">
+    Great Clan Houses of Hive Primus
+  </h1>
+  <p style="color: var(--muted); font-size: 0.95rem;">
+    Tactical profiles, lore histories, preferred weapons, and primary skill trees across all major factions.
+  </p>
+</div>
+
+<div class="grid-cards">
+  {% for h in houses %}
+  <a href="{{ base_path }}/house/{{ h.slug }}" class="hive-card">
+    <div>
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.35rem; font-weight: 700; color: #fff;">{{ h.name }}</h2>
+      <div style="font-size: 0.85rem; color: var(--accent); font-weight: 600; margin-bottom: 0.75rem;">{{ h.title }}</div>
+      <p style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 1rem;">
+        {{ h.specialty }}
+      </p>
+    </div>
+
+    <div>
+      <div style="margin-bottom: 0.6rem;">
+        <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 700;">Favored Weapons:</div>
+        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.25rem;">
+          {% for w in h.signature_weapons %}
+          <span class="badge-mono" style="font-size: 0.72rem;">{{ w }}</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.5rem; font-size: 0.72rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 0.4rem;">
+        <span>Format: HTML</span>
+        <span>•</span>
+        <a href="{{ base_path }}/house/{{ h.slug }}.md" style="color: var(--accent);">.md</a>
+        <span>•</span>
+        <a href="{{ base_path }}/house/{{ h.slug }}.json" style="color: var(--accent);">.json</a>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

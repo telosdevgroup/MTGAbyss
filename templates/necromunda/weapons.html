@@ -1,0 +1,81 @@
+{% extends "necromunda/base.html" %}
+
+{% block title %}Underhive Armory ({{ total_weapons }} Weapons) — AvaScry Necromunda{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <div class="brand-tag" style="display: inline-block; margin-bottom: 0.5rem;">MUNITIONS &amp; FIREARMS</div>
+  <h1 style="font-family: 'Chakra Petch', sans-serif; font-size: 2.2rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">
+    Underhive Armory
+  </h1>
+  <p style="color: var(--muted); font-size: 0.95rem;">
+    Tactical profiles, credit costs, trading post rarity, and weapon trait interactions across Hive Primus.
+  </p>
+
+  <div style="display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;">
+    <a href="{{ base_path }}/weapons" class="badge-mono badge-accent">All Categories</a>
+    {% for cat in categories %}
+    <a href="#cat-{{ cat|lower|replace(' ', '-') }}" class="badge-mono">{{ cat }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="grid-cards">
+  {% for w in weapons %}
+  <a href="{{ base_path }}/weapon/{{ w.slug }}" class="hive-card" id="cat-{{ w.category|lower|replace(' ', '-') }}">
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.25rem; font-weight: 700; color: #fff;">{{ w.name }}</h2>
+        <span class="badge-mono badge-accent">{{ w.cost_credits }} cr</span>
+      </div>
+      <div style="display: flex; gap: 0.4rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+        <span class="badge-mono">{{ w.category }}</span>
+        <span class="badge-mono">{{ w.rarity }}</span>
+      </div>
+
+      <table class="stat-table">
+        <thead>
+          <tr>
+            <th>Rng S/L</th>
+            <th>Acc S/L</th>
+            <th>Str</th>
+            <th>Dmg</th>
+            <th>AP</th>
+            <th>Ammo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ w.range_short }} / {{ w.range_long }}</td>
+            <td>{{ w.accuracy_short }} / {{ w.accuracy_long }}</td>
+            <td>{{ w.strength }}</td>
+            <td>{{ w.damage }}</td>
+            <td>{{ w.armor_piercing }}</td>
+            <td>{{ w.ammo }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 0.75rem;">
+        {{ w.description[:120] }}...
+      </p>
+    </div>
+
+    <div>
+      <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+        {% for t in w.traits %}
+        <span style="font-size: 0.72rem; background: #1a1e28; color: #ff6b4a; padding: 2px 6px; border-radius: 3px; font-family: 'JetBrains Mono', monospace;">{{ t }}</span>
+        {% endfor %}
+      </div>
+      <div style="display: flex; gap: 0.5rem; font-size: 0.72rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 0.4rem;">
+        <span>Format: HTML</span>
+        <span>•</span>
+        <a href="{{ base_path }}/weapon/{{ w.slug }}.md" style="color: var(--accent);">.md</a>
+        <span>•</span>
+        <a href="{{ base_path }}/weapon/{{ w.slug }}.json" style="color: var(--accent);">.json</a>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

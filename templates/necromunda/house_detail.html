@@ -1,0 +1,78 @@
+{% extends "necromunda/base.html" %}
+
+{% block title %}Clan House: {{ house.name }} — Necromunda Gang Tactics{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+  <div style="margin-bottom: 1.5rem;">
+    <a href="{{ base_path }}/houses" style="font-size: 0.85rem; color: var(--accent); font-weight: 600;">&larr; Back to Clan Houses</a>
+  </div>
+
+  <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-bottom: 2rem;">
+    <div class="brand-tag" style="display: inline-block; margin-bottom: 0.5rem;">HIVE PRIMUS CLAN</div>
+    <h1 style="font-family: 'Chakra Petch', sans-serif; font-size: 2.4rem; font-weight: 700; text-transform: uppercase;">
+      {{ house.name }}
+    </h1>
+    <div style="font-size: 1.1rem; color: var(--accent); font-weight: 600; margin-bottom: 1.25rem;">
+      {{ house.title }}
+    </div>
+
+    <!-- Tri-surface action bar -->
+    <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; background: #0b0d12; border: 1px solid var(--border); padding: 0.6rem 1rem; border-radius: 6px; align-items: center;">
+      <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700;">Tri-Surface:</span>
+      <span class="badge-mono" style="background: #1e2430; color: #fff;">HTML View</span>
+      <a href="{{ base_path }}/house/{{ house.slug }}.md" class="badge-mono" style="color: var(--accent);">Markdown (.md)</a>
+      <a href="{{ base_path }}/house/{{ house.slug }}.json" class="badge-mono" style="color: var(--accent);">REST (.json)</a>
+    </div>
+
+    <!-- Tactical Overview -->
+    <div style="background: #0d0f14; border: 1px solid var(--border); padding: 1.25rem; border-radius: 6px; margin-bottom: 1.75rem;">
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.1rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+        Specialty Profile
+      </h2>
+      <p style="color: #f1f5f9; font-size: 1rem; line-height: 1.6; margin-bottom: 1rem;">
+        {{ house.specialty }}
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
+        <div>
+          <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 700;">House Signature Weaponry:</div>
+          <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.35rem;">
+            {% for w in house.signature_weapons %}
+            <span class="badge-mono">{{ w }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 700;">Primary Skill Trees:</div>
+          <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.35rem;">
+            {% for s in house.primary_skills %}
+            <span class="badge-mono badge-accent">{{ s }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lore Background -->
+    <div style="margin-bottom: 1.75rem;">
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+        House History &amp; Underhive Role
+      </h2>
+      <p style="color: #cbd5e1; line-height: 1.6; font-size: 0.95rem;">
+        {{ house.lore }}
+      </p>
+    </div>
+
+    <!-- Tactics Summary -->
+    <div>
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+        Gang Construction &amp; Campaign Tactics
+      </h2>
+      <p style="color: #cbd5e1; line-height: 1.6; font-size: 0.95rem;">
+        {{ house.tactics_summary }}
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

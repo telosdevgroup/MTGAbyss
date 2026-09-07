@@ -1,0 +1,115 @@
+{% extends "necromunda/base.html" %}
+
+{% block title %}{{ weapon.name }} — Necromunda Underhive Armory{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+  <div style="margin-bottom: 1.5rem;">
+    <a href="{{ base_path }}/weapons" style="font-size: 0.85rem; color: var(--accent); font-weight: 600;">&larr; Back to Armory</a>
+  </div>
+
+  <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+      <div>
+        <div class="brand-tag" style="display: inline-block; margin-bottom: 0.5rem;">{{ weapon.category|upper }}</div>
+        <h1 style="font-family: 'Chakra Petch', sans-serif; font-size: 2.4rem; font-weight: 700; text-transform: uppercase;">
+          {{ weapon.name }}
+        </h1>
+      </div>
+      <div style="text-align: right;">
+        <div class="badge-mono badge-accent" style="font-size: 1.15rem; padding: 4px 12px; margin-bottom: 0.35rem; display: inline-block;">
+          {{ weapon.cost_credits }} Credits
+        </div>
+        <div style="font-size: 0.82rem; color: var(--muted); font-family: 'JetBrains Mono', monospace;">
+          Rarity: {{ weapon.rarity }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Tri-surface action bar -->
+    <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; background: #0b0d12; border: 1px solid var(--border); padding: 0.6rem 1rem; border-radius: 6px; align-items: center;">
+      <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700;">Tri-Surface:</span>
+      <span class="badge-mono" style="background: #1e2430; color: #fff;">HTML View</span>
+      <a href="{{ base_path }}/weapon/{{ weapon.slug }}.md" class="badge-mono" style="color: var(--accent);">Markdown (.md)</a>
+      <a href="{{ base_path }}/weapon/{{ weapon.slug }}.json" class="badge-mono" style="color: var(--accent);">REST (.json)</a>
+    </div>
+
+    <!-- Characteristics Profile -->
+    <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+      Ballistics Profile
+    </h2>
+    <table class="stat-table" style="font-size: 0.95rem;">
+      <thead>
+        <tr>
+          <th>Short Range</th>
+          <th>Long Range</th>
+          <th>Acc Short</th>
+          <th>Acc Long</th>
+          <th>Strength</th>
+          <th>Damage</th>
+          <th>Armor Piercing</th>
+          <th>Ammo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{ weapon.range_short }}</td>
+          <td>{{ weapon.range_long }}</td>
+          <td>{{ weapon.accuracy_short }}</td>
+          <td>{{ weapon.accuracy_long }}</td>
+          <td>{{ weapon.strength }}</td>
+          <td>{{ weapon.damage }}</td>
+          <td>{{ weapon.armor_piercing }}</td>
+          <td>{{ weapon.ammo }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Weapon Traits -->
+    <div style="margin: 1.75rem 0;">
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.75rem;">
+        Weapon Traits
+      </h2>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        {% for t in traits_data %}
+        <div style="background: #0d0f14; border: 1px solid var(--border); border-left: 3px solid var(--accent); padding: 0.85rem 1.15rem; border-radius: 4px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+            <a href="{{ base_path }}/trait/{{ t.slug }}" style="font-weight: 700; color: #ff6b4a; font-family: 'Chakra Petch', sans-serif; font-size: 1.05rem;">
+              {{ t.name }} &rarr;
+            </a>
+          </div>
+          <p style="font-size: 0.88rem; color: #e2e8f0; line-height: 1.5; margin-bottom: 0.35rem;">
+            {{ t.rules_text }}
+          </p>
+          <div style="font-size: 0.8rem; color: var(--muted);">
+            <em>Tactical note:</em> {{ t.faq }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Description / Lore Blurb -->
+    <div style="margin: 1.75rem 0;">
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+        Underhive Description &amp; Technical Lore
+      </h2>
+      <p style="color: #cbd5e1; line-height: 1.6; font-size: 0.95rem; background: #0c0e12; border: 1px solid var(--border); padding: 1rem 1.25rem; border-radius: 4px;">
+        {{ weapon.description }}
+      </p>
+    </div>
+
+    <!-- Gang Availability -->
+    <div style="margin-top: 1.75rem;">
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+        Gang Availability &amp; Trading Post Costs
+      </h2>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        {% for a in weapon.availability %}
+        <span class="badge-mono badge-accent">{{ a }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

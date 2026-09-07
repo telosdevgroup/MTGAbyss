@@ -1,0 +1,45 @@
+{% extends "necromunda/base.html" %}
+
+{% block title %}Skill Disciplines ({{ total_skills }} Trees) — AvaScry Necromunda{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <div class="brand-tag" style="display: inline-block; margin-bottom: 0.5rem;">FIGHTER ADVANCEMENT &amp; UPGRADES</div>
+  <h1 style="font-family: 'Chakra Petch', sans-serif; font-size: 2.2rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">
+    Skill Disciplines &amp; Trees
+  </h1>
+  <p style="color: var(--muted); font-size: 0.95rem;">
+    Comprehensive tables of fighter abilities, D6 advancement tables, and combat passive rulings.
+  </p>
+</div>
+
+<div class="grid-cards">
+  {% for s in skills %}
+  <a href="{{ base_path }}/skill/{{ s.slug }}" class="hive-card">
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.35rem; font-weight: 700; color: #fff;">{{ s.name }}</h2>
+        <span class="badge-mono badge-accent">{{ s.tree }}</span>
+      </div>
+      <p style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 1rem;">
+        {{ s.rules_text }}
+      </p>
+    </div>
+
+    <div>
+      <div style="font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 0.5rem; margin-bottom: 0.5rem;">
+        <em>Tactics:</em> {{ s.tactics }}
+      </div>
+
+      <div style="display: flex; gap: 0.5rem; font-size: 0.72rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 0.4rem;">
+        <span>Format: HTML</span>
+        <span>•</span>
+        <a href="{{ base_path }}/skill/{{ s.slug }}.md" style="color: var(--accent);">.md</a>
+        <span>•</span>
+        <a href="{{ base_path }}/skill/{{ s.slug }}.json" style="color: var(--accent);">.json</a>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

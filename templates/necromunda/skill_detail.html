@@ -1,0 +1,46 @@
+{% extends "necromunda/base.html" %}
+
+{% block title %}Skill Discipline: {{ skill.name }} — Necromunda Underhive{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+  <div style="margin-bottom: 1.5rem;">
+    <a href="{{ base_path }}/skills" style="font-size: 0.85rem; color: var(--accent); font-weight: 600;">&larr; Back to Skill Disciplines</a>
+  </div>
+
+  <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-bottom: 2rem;">
+    <div class="brand-tag" style="display: inline-block; margin-bottom: 0.5rem;">SKILL DISCIPLINE: {{ skill.tree|upper }}</div>
+    <h1 style="font-family: 'Chakra Petch', sans-serif; font-size: 2.4rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+      {{ skill.name }}
+    </h1>
+
+    <!-- Tri-surface action bar -->
+    <div style="display: flex; gap: 0.75rem; margin-bottom: 1.75rem; background: #0b0d12; border: 1px solid var(--border); padding: 0.6rem 1rem; border-radius: 6px; align-items: center;">
+      <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700;">Tri-Surface:</span>
+      <span class="badge-mono" style="background: #1e2430; color: #fff;">HTML View</span>
+      <a href="{{ base_path }}/skill/{{ skill.slug }}.md" class="badge-mono" style="color: var(--accent);">Markdown (.md)</a>
+      <a href="{{ base_path }}/skill/{{ skill.slug }}.json" class="badge-mono" style="color: var(--accent);">REST (.json)</a>
+    </div>
+
+    <!-- Rules Text -->
+    <div style="margin-bottom: 1.75rem;">
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+        Skill Rules &amp; Activation
+      </h2>
+      <p style="color: #f1f5f9; line-height: 1.6; font-size: 1.05rem; background: #0c0e12; border: 1px solid var(--border); border-left: 4px solid var(--accent); padding: 1.25rem; border-radius: 4px;">
+        {{ skill.rules_text }}
+      </p>
+    </div>
+
+    <!-- Tactics -->
+    <div>
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+        Tactical Analysis &amp; Fighter Synergy
+      </h2>
+      <p style="color: #cbd5e1; line-height: 1.6; font-size: 0.95rem;">
+        {{ skill.tactics }}
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
