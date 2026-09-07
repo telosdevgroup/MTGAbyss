@@ -110,11 +110,13 @@
   </div>
 
   <div class="grid-cards">
-    {% for h in houses %}
-    <a href="{{ base_path }}/house/{{ h.slug }}" class="hive-card">
+    {% for h in houses[:6] %}
+    <div class="hive-card">
       <div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-          <h3 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; color: #fff;">{{ h.name }}</h3>
+          <h3 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700;">
+            <a href="{{ base_path }}/house/{{ h.slug }}" style="color: #fff;">{{ h.name }}</a>
+          </h3>
         </div>
         <div style="font-size: 0.82rem; color: var(--accent); font-weight: 600; margin-bottom: 0.75rem;">{{ h.title }}</div>
         <p style="font-size: 0.86rem; color: var(--muted); line-height: 1.5; margin-bottom: 1rem;">
@@ -122,14 +124,17 @@
         </p>
       </div>
       <div>
-        <div style="font-size: 0.75rem; color: var(--muted); margin-bottom: 0.25rem; font-weight: 600; text-transform: uppercase;">Favored Gear:</div>
-        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+        <div style="font-size: 0.75rem; color: var(--muted); margin-bottom: 0.35rem; font-weight: 600; text-transform: uppercase;">Favored Gear:</div>
+        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
           {% for w in h.signature_weapons %}
           <span class="badge-mono" style="font-size: 0.72rem;">{{ w }}</span>
           {% endfor %}
         </div>
+        <div style="border-top: 1px solid var(--border); padding-top: 0.5rem;">
+          <a href="{{ base_path }}/house/{{ h.slug }}" style="color: var(--accent); font-size: 0.82rem; font-weight: 600;">View House Dossier &rarr;</a>
+        </div>
       </div>
-    </a>
+    </div>
     {% endfor %}
   </div>
 </section>
