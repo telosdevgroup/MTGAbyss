@@ -124,15 +124,22 @@
     margin-top: 1.5rem;
     align-items: start;
   }
-  @media (max-width: 820px) {
-    .card-layout {
-      grid-template-columns: 1fr;
-    }
-  }
   .card-image-col {
     position: sticky;
     top: 5rem;
     text-align: center;
+  }
+  @media (max-width: 820px) {
+    .card-layout {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      margin-top: 0.75rem;
+    }
+    .card-image-col {
+      position: static;
+      top: auto;
+      margin-bottom: 0.5rem;
+    }
   }
   .card-img-wrap {
     background: #ffffff;
@@ -141,6 +148,8 @@
     padding: 0.75rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
     display: inline-block;
+    max-width: 320px;
+    width: 100%;
   }
   .card-img-wrap img {
     max-width: 100%;
@@ -182,6 +191,12 @@
     padding: 2.25rem;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
   }
+  @media (max-width: 640px) {
+    .card-panel {
+      padding: 1.25rem 1rem;
+      border-radius: 10px;
+    }
+  }
   .card-header-bar {
     display: flex;
     justify-content: space-between;
@@ -198,6 +213,11 @@
     font-weight: 800;
     color: #0f172a;
     letter-spacing: 0.02em;
+  }
+  @media (max-width: 640px) {
+    .card-title {
+      font-size: 1.85rem;
+    }
   }
   .meta-pills {
     display: flex;
