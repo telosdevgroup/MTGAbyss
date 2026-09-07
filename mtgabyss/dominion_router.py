@@ -29,8 +29,33 @@ def get_base_prefix(request: Request) -> str:
 async def dominion_home(request: Request):
     db = get_dominion_db()
     cards = list(db.cards.find({}, {"_id": 0, "name": 1, "slug": 1, "card_kinds": 1, "is_kingdom_card": 1}).sort("normalized_name", 1))
+    
+    # Enrich cards with version data (cost, expansion tags, rules snippet)
+    versions = list(db.card_versions.find({}, {"_id": 0, "card_id": 1, "cost": 1, "expansion_tag": 1, "printed_rules_text": 1}))
+    versions_by_card = {}
+    for v in versions:
+        cid = v.get("card_id")
+        if cid:
+            versions_by_card.setdefault(cid, []).append(v)
+            
+    for c in cards:
+        cvs = versions_by_card.get(f"card:{c['slug']}", [])
+        c["expansions"] = list(dict.fromkeys([v.get("expansion_tag", "").lower() for v in cvs if v.get("expansion_tag")]))
+        cost = cvs[0].get("cost", {}) if cvs else {}
+        c["cost"] = cost
+        c["rules_text"] = " ".join([v.get("printed_rules_text", "") for v in cvs if v.get("printed_rules_text")])
+        
+    expansions = list(db.expansions.find({}, {"_id": 0, "set_tag": 1, "name": 1}).sort("name", 1))
+    seen_tags = set()
+    clean_expansions = []
+    for e in expansions:
+        tag = e.get("set_tag", "").lower()
+        if tag and tag not in seen_tags:
+            seen_tags.add(tag)
+            clean_expansions.append({"set_tag": tag, "name": e.get("name")})
+            
     total_cards = len(cards)
-    total_expansions = db.expansions.count_documents({})
+    total_expansions = len(clean_expansions)
     
     return templates.TemplateResponse(
         request=request,
@@ -39,6 +64,7 @@ async def dominion_home(request: Request):
             "cards": cards,
             "total_cards": total_cards,
             "total_expansions": total_expansions,
+            "expansions": clean_expansions,
             "base_path": get_base_prefix(request)
         }
     )
