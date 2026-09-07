@@ -732,7 +732,11 @@ format-negotiation:
 @swu_router.get("/sitemap.xml", response_class=Response)
 async def swu_sitemap_xml():
     db = get_swu_db()
-    cards = list(db.cards.find({}, {"slug": 1, "_id": 0}))
+    # Sample 127 random cards for crawl budget optimization
+    cards = list(db.cards.aggregate([
+        {"$sample": {"size": 127}},
+        {"$project": {"slug": 1, "_id": 0}}
+    ]))
     keywords = list(db.keywords.find({}, {"slug": 1, "_id": 0}))
     rules = list(db.rules_entries.find({}, {"slug": 1, "_id": 0}))
     rulings = list(db.clarifications.find({}, {"slug": 1, "_id": 0}).limit(2000))
