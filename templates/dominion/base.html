@@ -148,10 +148,33 @@
       <a href="{{ base_path or '/' }}" class="logo">
         AvaScry <span class="logo-badge">Dominion</span>
       </a>
-      <nav aria-label="Dominion Navigation">
+      <nav aria-label="Dominion Navigation" style="display: flex; align-items: center; gap: 1.25rem;">
         <a href="{{ base_path or '/' }}">Rulings &amp; Cards</a>
-        <a href="{{ base_path or '/' }}#generator" id="nav-kingdom-generator">Kingdom Generator</a>
+        <a href="{{ base_path }}/kingdom-generator" id="nav-kingdom-generator">Kingdom Generator</a>
         <a href="{{ base_path }}/random">Random Card</a>
+
+        <div class="dominion-auth-controls" style="display: inline-flex; align-items: center; margin-left: 0.5rem;">
+        {% if user %}
+          <div style="display: inline-flex; align-items: center; gap: 0.35rem;">
+            <a href="https://avascry.com/dashboard" title="View Your Account Dashboard" style="display: inline-flex; align-items: center; gap: 0.45rem; background: var(--header-border); border: 1px solid rgba(255,255,255,0.15); border-radius: 9999px; padding: 0.2rem 0.65rem 0.2rem 0.25rem; text-decoration: none; color: #fff;">
+              {% if user.picture %}
+                <img src="{{ user.picture }}" alt="{{ user.name }}" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover;">
+              {% else %}
+                <div style="width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; font-weight: 700;">{{ user.name[0] if user.name else 'U' }}</div>
+              {% endif %}
+              <span style="font-size: 0.8rem; font-weight: 700; max-width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {% if user.discord_username %}@{{ user.discord_username }}{% else %}{{ user.name }}{% endif %}
+              </span>
+            </a>
+            <a href="/auth/logout" title="Sign out" aria-label="Sign out" style="color: var(--header-muted); font-size: 0.75rem; text-decoration: none; padding: 0.2rem 0.35rem; border-radius: 50%;">✕</a>
+          </div>
+        {% else %}
+          <a href="/auth/login" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.32rem 0.85rem; border-radius: 9999px; background: rgba(180, 83, 9, 0.2); border: 1px solid rgba(180, 83, 9, 0.45); color: #fbbf24; font-size: 0.8rem; font-weight: 700; text-decoration: none; transition: background 0.15s;">
+            <span aria-hidden="true" style="font-size: 0.85rem;">👑</span>
+            Sign In
+          </a>
+        {% endif %}
+        </div>
       </nav>
     </div>
   </header>

@@ -7,6 +7,7 @@ Serves HTML, Markdown (.md), JSON, sitemaps, and llms.txt endpoints for bots and
 import os
 import re
 import time
+from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Request, HTTPException, Response
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
@@ -132,6 +133,60 @@ async def dominion_home(request: Request):
         }
     )
 
+@dominion_router.get("/kingdom-generator", response_class=HTMLResponse)
+async def dominion_kingdom_generator(request: Request,
+                                     cards: Optional[str] = None,
+                                     sets: Optional[str] = None):
+    """
+    Dedicated 10-Kingdom Generator for Dominion.
+    Supports pre-seeding via `?cards=slug1,slug2,...` and set filtering via `?sets=base,prosperity,...`.
+    """
+    db = get_dominion_db()
+    all_cards = list(db.cards.find({}, {"_id": 0, "name": 1, "slug": 1, "card_kinds": 1, "is_kingdom_card": 1}).sort("normalized_name", 1))
+
+    # Enrich cards with version cost & expansion data
+    versions = list(db.card_versions.find({}, {"_id": 0, "card_id": 1, "cost": 1, "expansion_tag": 1, "printed_rules_text": 1}))
+    versions_by_card = {}
+    for v in versions:
+        cid = v.get("card_id")
+        if cid:
+            versions_by_card.setdefault(cid, []).append(v)
+
+    for c in all_cards:
+        cvs = versions_by_card.get(f"card:{c['slug']}", [])
+        c["expansions"] = list(dict.fromkeys([v.get("expansion_tag", "").lower() for v in cvs if v.get("expansion_tag")]))
+        cost = cvs[0].get("cost", {}) if cvs else {}
+        c["cost"] = cost
+        c["rules_text"] = " ".join([v.get("printed_rules_text", "") for v in cvs if v.get("printed_rules_text")])
+
+    expansions = list(db.expansions.find({}, {"_id": 0, "set_tag": 1, "name": 1}).sort("name", 1))
+    seen_tags = set()
+    clean_expansions = []
+    for e in expansions:
+        orig_tag = e.get("set_tag", "")
+        tag = orig_tag.lower()
+        if tag and tag not in seen_tags:
+            seen_tags.add(tag)
+            clean_name = format_expansion_name(orig_tag, e.get("name"))
+            clean_expansions.append({"set_tag": tag, "name": clean_name})
+    clean_expansions.sort(key=lambda x: x["name"])
+
+    # Parse initial cards from query parameter if provided
+    initial_slugs = [s.strip().lower() for s in cards.split(",")] if cards else []
+    initial_sets = [s.strip().lower() for s in sets.split(",")] if sets else []
+
+    return templates.TemplateResponse(
+        request=request,
+        name="dominion/kingdom_generator.html",
+        context={
+            "cards": all_cards,
+            "expansions": clean_expansions,
+            "initial_slugs": initial_slugs,
+            "initial_sets": initial_sets,
+            "base_path": get_base_prefix(request)
+        }
+    )
+
 @dominion_router.get("/llms.txt", response_class=PlainTextResponse)
 async def dominion_llms_txt(request: Request):
     """Navigational manifest for LLM search agents."""
@@ -149,7 +204,10 @@ async def dominion_llms_txt(request: Request):
             "- JSON: https://dominion.avascry.com/card/{slug}.json\n"
         ),
         media_type="text/plain; charset=utf-8",
-        headers={"Cache-Control": "public, max-age=3600"}
+        headers={
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
     )
 
 @dominion_router.get("/llms-full.txt", response_class=PlainTextResponse)
@@ -157,7 +215,14 @@ async def dominion_llms_full_txt():
     """Full plain-text game corpus for direct model ingestion with 1h in-memory caching."""
     cached = get_cached("dominion_llms_full_txt", ttl_seconds=3600)
     if cached:
-        return PlainTextResponse(content=cached, media_type="text/plain; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes", "Cache-Control": "public, max-age=3600"})
+        return PlainTextResponse(
+            content=cached,
+            media_type="text/plain; charset=utf-8",
+            headers={
+                "Content-Signal": "ai-train=yes, search=yes, ai-input=yes",
+                "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"
+            }
+        )
 
     db = get_dominion_db()
     cards = list(db.cards.find({}).sort("normalized_name", 1))
@@ -189,7 +254,14 @@ async def dominion_llms_full_txt():
         
     full_text = "\n".join(lines)
     set_cached("dominion_llms_full_txt", full_text)
-    return PlainTextResponse(content=full_text, media_type="text/plain; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes", "Cache-Control": "public, max-age=3600"})
+    return PlainTextResponse(
+        content=full_text,
+        media_type="text/plain; charset=utf-8",
+        headers={
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes",
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+    )
 
 @dominion_router.get("/rules.md", response_class=PlainTextResponse)
 async def dominion_rules_md():
@@ -227,7 +299,14 @@ The game ends immediately after any player's turn when either:
 
 The player with the highest total Victory Points across their entire deck wins.
 """
-    return PlainTextResponse(content=content, media_type="text/markdown; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes", "Cache-Control": "public, max-age=3600"})
+    return PlainTextResponse(
+        content=content,
+        media_type="text/markdown; charset=utf-8",
+        headers={
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes",
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+    )
 
 @dominion_router.get("/rules.json", response_class=JSONResponse)
 async def dominion_rules_json():
@@ -248,7 +327,10 @@ async def dominion_rules_json():
                 "Any 3 supply piles empty (4 piles in 5-6 player games)"
             ]
         },
-        headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes", "Cache-Control": "public, max-age=3600"}
+        headers={
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes",
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"
+        }
     )
 
 @dominion_router.get("/sets.md", response_class=PlainTextResponse)
@@ -256,7 +338,14 @@ async def dominion_sets_md():
     """Manifest of all Dominion expansions, editions, and promo sets with 1h in-memory caching."""
     cached = get_cached("dominion_sets_md", ttl_seconds=3600)
     if cached:
-        return PlainTextResponse(content=cached, media_type="text/markdown; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes", "Cache-Control": "public, max-age=3600"})
+        return PlainTextResponse(
+            content=cached,
+            media_type="text/markdown; charset=utf-8",
+            headers={
+                "Content-Signal": "ai-train=yes, search=yes, ai-input=yes",
+                "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"
+            }
+        )
 
     db = get_dominion_db()
     expansions = list(db.expansions.find({}).sort("year", 1))
@@ -274,7 +363,14 @@ async def dominion_sets_md():
         lines.append(f"| {name} | {code} | {year} | {status} |")
     content = "\n".join(lines)
     set_cached("dominion_sets_md", content)
-    return PlainTextResponse(content=content, media_type="text/markdown; charset=utf-8", headers={"Content-Signal": "ai-train=yes, search=yes, ai-input=yes", "Cache-Control": "public, max-age=3600"})
+    return PlainTextResponse(
+        content=content,
+        media_type="text/markdown; charset=utf-8",
+        headers={
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes",
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+    )
 
 @dominion_router.get("/.well-known/ai-content", response_class=PlainTextResponse)
 async def dominion_well_known_ai():
@@ -294,7 +390,11 @@ format-negotiation:
   - Header: "Accept: text/markdown" -> /card/{slug}.md
   - Header: "Accept: application/json" -> /card/{slug}.json
 """
-    return PlainTextResponse(content=content, media_type="text/plain; charset=utf-8")
+    return PlainTextResponse(
+        content=content,
+        media_type="text/plain; charset=utf-8",
+        headers={"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
+    )
 async def dominion_robots_txt():
     """Standard crawl directives for Dominion subdomain."""
     return (
@@ -378,13 +478,19 @@ async def dominion_card_json(slug: str):
 
     rulings = list(db.rulings.find({"card_id": f"card:{clean_slug}"}, {"_id": 0}))
     
-    return {
-        "card": card,
-        "image_url": base_img,
-        "image_1e_url": f"https://dominion.avascry.com/images/{clean_slug}-1e.jpg",
-        "versions": versions,
-        "rulings": rulings
-    }
+    return JSONResponse(
+        content={
+            "card": card,
+            "image_url": base_img,
+            "image_1e_url": f"https://dominion.avascry.com/images/{clean_slug}-1e.jpg",
+            "versions": versions,
+            "rulings": rulings
+        },
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
 
 def format_dominion_rules_html(text: str) -> str:
     if not text:
@@ -452,7 +558,13 @@ async def dominion_card_markdown(slug: str):
             clean_ans = format_dominion_rules_plain(r.get('answer', ''))
             md.append(f"{clean_ans}\n")
             
-    return "\n".join(md)
+    return PlainTextResponse(
+        "\n".join(md),
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
 
 @dominion_router.get("/card/{slug}", response_class=HTMLResponse)
 async def dominion_card_html(request: Request, slug: str):
@@ -545,6 +657,7 @@ async def dominion_card_html(request: Request, slug: str):
             "base_path": get_base_prefix(request)
         },
         headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
             "Vary": "Accept",
             "Link": f'</card/{slug}.md>; rel="alternate"; type="text/markdown", </card/{slug}.json>; rel="alternate"; type="application/json"',
             "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"

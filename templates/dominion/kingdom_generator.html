@@ -1,0 +1,1048 @@
+{% extends "dominion/base.html" %}
+
+{% block title %}Dominion Kingdom Generator — 10-Card Board Randomizer & Exporter | AvaScry{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://dominion.avascry.com/kingdom-generator">
+{% endblock %}
+
+{% block og_tags %}
+<meta property="og:site_name" content="AvaScry Dominion">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Dominion Kingdom Generator — 10-Card Board Randomizer & Exporter | AvaScry">
+<meta property="og:description" content="Generate balanced, randomized 10-card Dominion Kingdom setups across all expansions with attack filtering, visual card scans, shareable URLs, and Discord/Markdown export.">
+<meta property="og:url" content="https://dominion.avascry.com/kingdom-generator">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dominion Kingdom Generator — 10-Card Board Randomizer & Exporter | AvaScry">
+<meta name="twitter:description" content="Generate balanced, randomized 10-card Dominion Kingdom setups across all expansions with attack filtering, visual card scans, shareable URLs, and Discord/Markdown export.">
+{% endblock %}
+
+{% block head_extra %}
+<meta name="description" content="Generate balanced, randomized 10-card Dominion Kingdom setups across all expansions with attack filtering, visual card scans, shareable URLs, and Discord/Markdown export.">
+
+<style>
+  /* Kingdom Generator Specific Styles */
+  .kg-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    margin-bottom: 3rem;
+  }
+
+  .kg-header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 1.75rem;
+    color: #f8fafc;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .kg-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: #fbbf24;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .kg-subtitle {
+    font-size: 0.95rem;
+    color: #94a3b8;
+    max-width: 780px;
+    line-height: 1.5;
+  }
+
+  /* Toolbar & Filter Controls */
+  .kg-controls-panel {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .kg-actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 1rem;
+  }
+
+  .kg-btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .kg-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+  }
+
+  .kg-btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+  }
+  .kg-btn-primary:hover {
+    background: var(--accent-hover);
+  }
+
+  .kg-btn-secondary {
+    background: #f1f5f9;
+    color: var(--text);
+    border-color: var(--border);
+  }
+  .kg-btn-secondary:hover {
+    background: #e2e8f0;
+    border-color: var(--border-subtle);
+  }
+
+  .kg-btn-outline {
+    background: transparent;
+    color: var(--muted);
+    border-color: var(--border);
+  }
+  .kg-btn-outline:hover {
+    background: #f8fafc;
+    color: var(--text);
+  }
+
+  /* Filters section */
+  .kg-filters-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+  }
+  @media (max-width: 820px) {
+    .kg-filters-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .kg-filter-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    color: var(--muted);
+    margin-bottom: 0.6rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .kg-sets-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    max-height: 140px;
+    overflow-y: auto;
+    padding: 0.4rem;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .kg-set-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    padding: 0.2rem 0.55rem;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.12s ease;
+  }
+  .kg-set-chip input[type="checkbox"] {
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .kg-set-chip.checked {
+    background: #fffbeb;
+    border-color: #f59e0b;
+    color: #92400e;
+    font-weight: 600;
+  }
+
+  .kg-select {
+    padding: 0.45rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #ffffff;
+    font-size: 0.85rem;
+    color: var(--text);
+    width: 100%;
+  }
+
+  /* Analytics & Summary Bar */
+  .kg-stats-bar {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  .kg-curve-group {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+  }
+
+  .kg-curve-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    background: #f8fafc;
+  }
+  .kg-coin-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: #f59e0b;
+    color: #78350f;
+    font-size: 0.68rem;
+    font-weight: 800;
+  }
+
+  /* 10-Card Kingdom Grid */
+  .kg-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1.25rem;
+  }
+  @media (max-width: 1024px) {
+    .kg-cards-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  @media (max-width: 640px) {
+    .kg-cards-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.85rem;
+    }
+  }
+
+  .kg-card-item {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+  }
+  .kg-card-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px -2px rgba(0,0,0,0.1);
+    border-color: #cbd5e1;
+  }
+
+  .kg-card-image-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 5 / 8;
+    background: #1e293b;
+    overflow: hidden;
+  }
+
+  .kg-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.25s ease;
+  }
+  .kg-card-item:hover .kg-card-img {
+    transform: scale(1.03);
+  }
+
+  .kg-card-reroll-btn {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.45rem;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(4px);
+    color: #ffffff;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.15s ease, transform 0.15s ease;
+    z-index: 2;
+  }
+  .kg-card-reroll-btn:hover {
+    background: var(--accent);
+    transform: rotate(90deg);
+  }
+
+  .kg-card-body {
+    padding: 0.75rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+    justify-content: space-between;
+  }
+
+  .kg-card-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+  }
+
+  .kg-card-name {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text);
+    text-decoration: none;
+    line-height: 1.25;
+  }
+  .kg-card-name:hover {
+    color: var(--accent);
+  }
+
+  .kg-card-cost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #f59e0b;
+    color: #78350f;
+    font-weight: 800;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+  }
+
+  .kg-card-types {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: capitalize;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .kg-type-badge {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+  }
+  .kg-type-attack {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #991b1b;
+    font-weight: 600;
+  }
+
+  /* Toast Notification */
+  .kg-toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: #0f172a;
+    color: #ffffff;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    z-index: 100;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+  }
+  .kg-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Modal Styles */
+  .kg-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    padding: 1rem;
+  }
+  .kg-modal-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .kg-modal-card {
+    background: #ffffff;
+    border-radius: 12px;
+    max-width: 580px;
+    width: 100%;
+    padding: 1.5rem;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .kg-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .kg-modal-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .kg-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--muted);
+  }
+  .kg-textarea {
+    width: 100%;
+    height: 180px;
+    font-family: ui-monospace, monospace;
+    font-size: 0.85rem;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #f8fafc;
+    resize: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="kg-container">
+  <!-- Hero / Header -->
+  <div class="kg-header">
+    <h1 class="kg-title">
+      <span aria-hidden="true">🏰</span> 10-Kingdom Generator
+    </h1>
+    <p class="kg-subtitle">
+      Instantly randomize, balance, and fine-tune official Dominion Kingdom supplies. Filter across all expansions, balance attacks, inspect high-res card scans, copy Discord markdown tables, and persist custom setups for game night.
+    </p>
+  </div>
+
+  <!-- Controls Panel -->
+  <div class="kg-controls-panel">
+    <!-- Top Row Actions -->
+    <div class="kg-actions-row">
+      <div class="kg-btn-group">
+        <button id="btn-roll" class="kg-btn kg-btn-primary" title="Randomize all 10 kingdom cards">
+          🎲 Roll Kingdom
+        </button>
+        <button id="btn-copy-url" class="kg-btn kg-btn-secondary" title="Copy shareable link with current 10 cards">
+          🔗 Copy Link
+        </button>
+        <button id="btn-export" class="kg-btn kg-btn-outline" title="Export to Discord markdown or plaintext">
+          📋 Export Deck
+        </button>
+      </div>
+
+      <div class="kg-btn-group">
+        <button id="btn-save-board" class="kg-btn kg-btn-outline" title="Save this board to browser storage">
+          ⭐ Save Kingdom
+        </button>
+        <select id="select-saved" class="kg-select" style="width: auto; min-width: 170px;">
+          <option value="">Saved Kingdoms (0)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Filters Grid -->
+    <div class="kg-filters-grid">
+      <!-- Expansions Selector -->
+      <div>
+        <div class="kg-filter-title">
+          <span>Expansions (<span id="selected-sets-count">0</span> Selected)</span>
+          <div style="display: flex; gap: 0.5rem; font-size: 0.72rem; text-transform: none;">
+            <a href="javascript:void(0)" id="btn-select-all-sets" style="color: var(--accent); text-decoration: none;">Select All</a>
+            <span>•</span>
+            <a href="javascript:void(0)" id="btn-clear-sets" style="color: var(--muted); text-decoration: none;">Clear</a>
+          </div>
+        </div>
+        <div class="kg-sets-container" id="sets-container">
+          {% for exp in expansions %}
+          <label class="kg-set-chip" id="chip-{{ exp.set_tag }}">
+            <input type="checkbox" name="sets" value="{{ exp.set_tag }}" {% if not initial_sets or exp.set_tag in initial_sets %}checked{% endif %}>
+            <span>{{ exp.name }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Balance & Rules Constraint -->
+      <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+        <div>
+          <div class="kg-filter-title">Attack Cards Limit</div>
+          <select id="select-attacks" class="kg-select">
+            <option value="any">Any Number of Attacks</option>
+            <option value="0">No Attacks (0)</option>
+            <option value="1">Max 1 Attack</option>
+            <option value="2">Max 2 Attacks</option>
+          </select>
+        </div>
+        <div>
+          <div class="kg-filter-title">Cost Curve Preference</div>
+          <select id="select-curve" class="kg-select">
+            <option value="balanced">Balanced Curve (Standard)</option>
+            <option value="pure">Purely Random</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analytics / Board Summary -->
+  <div class="kg-stats-bar">
+    <div style="font-size: 0.85rem; font-weight: 600; color: var(--muted);">
+      Active Kingdom: <strong id="kingdom-pool-size" style="color: var(--text);">10</strong> Cards
+    </div>
+    <div class="kg-curve-group" id="curve-badges">
+      <span class="kg-curve-badge"><span class="kg-coin-icon">2</span> <span id="stat-cost-2">0</span></span>
+      <span class="kg-curve-badge"><span class="kg-coin-icon">3</span> <span id="stat-cost-3">0</span></span>
+      <span class="kg-curve-badge"><span class="kg-coin-icon">4</span> <span id="stat-cost-4">0</span></span>
+      <span class="kg-curve-badge"><span class="kg-coin-icon">5</span> <span id="stat-cost-5">0</span></span>
+      <span class="kg-curve-badge"><span class="kg-coin-icon">6+</span> <span id="stat-cost-6">0</span></span>
+      <span class="kg-curve-badge" style="background: #fee2e2; border-color: #fca5a5; color: #991b1b;">
+        ⚔️ Attacks: <span id="stat-attacks">0</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- 10 Card Display Grid -->
+  <div class="kg-cards-grid" id="kingdom-grid">
+    <!-- Populated by JavaScript -->
+  </div>
+</div>
+
+<!-- Export Modal -->
+<div class="kg-modal-backdrop" id="export-modal">
+  <div class="kg-modal-card">
+    <div class="kg-modal-header">
+      <div class="kg-modal-title">Export Kingdom</div>
+      <button class="kg-modal-close" id="btn-close-modal">&times;</button>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <button id="btn-format-discord" class="kg-btn kg-btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">Discord Markdown</button>
+      <button id="btn-format-plain" class="kg-btn kg-btn-outline" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">Plain List</button>
+    </div>
+    <textarea id="export-textarea" class="kg-textarea" readonly></textarea>
+    <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+      <button id="btn-copy-export" class="kg-btn kg-btn-primary">Copy to Clipboard</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notice -->
+<div class="kg-toast" id="toast">
+  <span>✓</span> <span id="toast-text">Copied to clipboard!</span>
+</div>
+
+<!-- Embedded Card Pool for Client-Side Randomization -->
+<script id="card-data" type="application/json">
+{{ cards | tojson }}
+</script>
+
+<script>
+(function() {
+  const BASE_PATH = "{{ base_path }}";
+  const rawCards = JSON.parse(document.getElementById('card-data').textContent);
+  
+  // Filter only kingdom cards
+  const allKingdomCards = rawCards.filter(c => c.is_kingdom_card);
+
+  // Initial parameters passed from route
+  const initialSlugs = {{ initial_slugs | tojson }};
+  const initialSets = {{ initial_sets | tojson }};
+
+  // State
+  let activeCards = [];
+  const LOCAL_STORAGE_KEY = 'avascry_dominion_saved_kingdoms';
+
+  // Elements
+  const gridEl = document.getElementById('kingdom-grid');
+  const btnRoll = document.getElementById('btn-roll');
+  const btnCopyUrl = document.getElementById('btn-copy-url');
+  const btnExport = document.getElementById('btn-export');
+  const btnSaveBoard = document.getElementById('btn-save-board');
+  const selectSaved = document.getElementById('select-saved');
+  const selectAttacks = document.getElementById('select-attacks');
+  const selectCurve = document.getElementById('select-curve');
+  const btnSelectAllSets = document.getElementById('btn-select-all-sets');
+  const btnClearSets = document.getElementById('btn-clear-sets');
+  const setsContainer = document.getElementById('sets-container');
+  const selectedSetsCountEl = document.getElementById('selected-sets-count');
+  
+  // Modal Elements
+  const exportModal = document.getElementById('export-modal');
+  const btnCloseModal = document.getElementById('btn-close-modal');
+  const exportTextarea = document.getElementById('export-textarea');
+  const btnFormatDiscord = document.getElementById('btn-format-discord');
+  const btnFormatPlain = document.getElementById('btn-format-plain');
+  const btnCopyExport = document.getElementById('btn-copy-export');
+
+  // Stats Elements
+  const statCost2 = document.getElementById('stat-cost-2');
+  const statCost3 = document.getElementById('stat-cost-3');
+  const statCost4 = document.getElementById('stat-cost-4');
+  const statCost5 = document.getElementById('stat-cost-5');
+  const statCost6 = document.getElementById('stat-cost-6');
+  const statAttacks = document.getElementById('stat-attacks');
+
+  function showToast(text) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-text').textContent = text;
+    toast.classList.add('show');
+    setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2400);
+  }
+
+  function getSelectedSets() {
+    const checkboxes = setsContainer.querySelectorAll('input[type="checkbox"]:checked');
+    return Array.from(checkboxes).map(cb => cb.value.toLowerCase());
+  }
+
+  function updateSetChipStyles() {
+    const chips = setsContainer.querySelectorAll('.kg-set-chip');
+    let count = 0;
+    chips.forEach(chip => {
+      const cb = chip.querySelector('input');
+      if (cb.checked) {
+        chip.classList.add('checked');
+        count++;
+      } else {
+        chip.classList.remove('checked');
+      }
+    });
+    selectedSetsCountEl.textContent = count;
+  }
+
+  function getEligiblePool(excludedSlugs = []) {
+    const selectedSets = getSelectedSets();
+    return allKingdomCards.filter(c => {
+      if (excludedSlugs.includes(c.slug)) return false;
+      // Must match at least one selected expansion
+      if (selectedSets.length > 0) {
+        const hasExp = (c.expansions || []).some(exp => selectedSets.includes(exp.toLowerCase()));
+        if (!hasExp) return false;
+      }
+      return true;
+    });
+  }
+
+  function getCardCostNum(card) {
+    if (!card.cost) return 0;
+    return card.cost.coins || card.cost.coin || 0;
+  }
+
+  function isCardAttack(card) {
+    const kinds = (card.card_kinds || []).map(k => k.toLowerCase());
+    return kinds.includes('attack');
+  }
+
+  function rollKingdom() {
+    const pool = getEligiblePool();
+    if (pool.length < 10) {
+      alert('Not enough kingdom cards match your selected expansion filters (found ' + pool.length + '). Please select more sets.');
+      return;
+    }
+
+    const maxAttacksVal = selectAttacks.value;
+    const maxAttacks = maxAttacksVal === 'any' ? 10 : parseInt(maxAttacksVal, 10);
+    const balanceCurve = selectCurve.value === 'balanced';
+
+    // Shuffle pool copy
+    const shuffled = [...pool].sort(() => 0.5 - Math.random());
+    const selected = [];
+
+    // If balanced curve is requested, try to guarantee a healthy distribution:
+    // At least one $2-$3, at least three $4, at least two $5+
+    if (balanceCurve) {
+      const lowCost = shuffled.filter(c => getCardCostNum(c) <= 3);
+      const midCost = shuffled.filter(c => getCardCostNum(c) === 4);
+      const highCost = shuffled.filter(c => getCardCostNum(c) >= 5);
+
+      const takeCandidate = (arr) => {
+        for (let i = 0; i < arr.length; i++) {
+          const cand = arr[i];
+          if (selected.find(s => s.slug === cand.slug)) continue;
+          const currentAttacks = selected.filter(isCardAttack).length;
+          if (isCardAttack(cand) && currentAttacks >= maxAttacks) continue;
+          selected.push(cand);
+          return true;
+        }
+        return false;
+      };
+
+      // Seed 2 low, 3 mid, 3 high
+      takeCandidate(lowCost);
+      takeCandidate(lowCost);
+      takeCandidate(midCost);
+      takeCandidate(midCost);
+      takeCandidate(midCost);
+      takeCandidate(highCost);
+      takeCandidate(highCost);
+      takeCandidate(highCost);
+    }
+
+    // Fill remaining up to 10 from shuffled
+    for (const cand of shuffled) {
+      if (selected.length >= 10) break;
+      if (selected.find(s => s.slug === cand.slug)) continue;
+      const currentAttacks = selected.filter(isCardAttack).length;
+      if (isCardAttack(cand) && currentAttacks >= maxAttacks) continue;
+      selected.push(cand);
+    }
+
+    // Fallback if strict attack limit prevented reaching 10
+    if (selected.length < 10) {
+      for (const cand of shuffled) {
+        if (selected.length >= 10) break;
+        if (!selected.find(s => s.slug === cand.slug)) {
+          selected.push(cand);
+        }
+      }
+    }
+
+    // Sort active cards by cost then name
+    selected.sort((a, b) => {
+      const ca = getCardCostNum(a);
+      const cb = getCardCostNum(b);
+      if (ca !== cb) return ca - cb;
+      return a.name.localeCompare(b.name);
+    });
+
+    activeCards = selected;
+    renderBoard();
+    updateUrlHistory();
+  }
+
+  function rerollSingleCard(index) {
+    const currentSlugs = activeCards.map(c => c.slug);
+    const pool = getEligiblePool(currentSlugs);
+    if (pool.length === 0) {
+      showToast('No alternative cards available for this slot');
+      return;
+    }
+
+    const maxAttacksVal = selectAttacks.value;
+    const maxAttacks = maxAttacksVal === 'any' ? 10 : parseInt(maxAttacksVal, 10);
+    const otherAttacks = activeCards.filter((c, i) => i !== index && isCardAttack(c)).length;
+
+    // Filter by attack limit
+    const candidates = pool.filter(c => {
+      if (isCardAttack(c) && otherAttacks >= maxAttacks) return false;
+      return true;
+    });
+
+    const chosen = candidates.length > 0
+      ? candidates[Math.floor(Math.random() * candidates.length)]
+      : pool[Math.floor(Math.random() * pool.length)];
+
+    activeCards[index] = chosen;
+
+    // Keep sorted
+    activeCards.sort((a, b) => {
+      const ca = getCardCostNum(a);
+      const cb = getCardCostNum(b);
+      if (ca !== cb) return ca - cb;
+      return a.name.localeCompare(b.name);
+    });
+
+    renderBoard();
+    updateUrlHistory();
+  }
+
+  function updateUrlHistory() {
+    const slugs = activeCards.map(c => c.slug).join(',');
+    const url = new URL(window.location);
+    url.searchParams.set('cards', slugs);
+    window.history.replaceState({}, '', url);
+  }
+
+  function updateStats() {
+    let c2 = 0, c3 = 0, c4 = 0, c5 = 0, c6 = 0, attacks = 0;
+    activeCards.forEach(c => {
+      const cost = getCardCostNum(c);
+      if (cost <= 2) c2++;
+      else if (cost === 3) c3++;
+      else if (cost === 4) c4++;
+      else if (cost === 5) c5++;
+      else c6++;
+
+      if (isCardAttack(c)) attacks++;
+    });
+
+    statCost2.textContent = c2;
+    statCost3.textContent = c3;
+    statCost4.textContent = c4;
+    statCost5.textContent = c5;
+    statCost6.textContent = c6;
+    statAttacks.textContent = attacks;
+  }
+
+  function renderBoard() {
+    gridEl.innerHTML = '';
+    activeCards.forEach((card, index) => {
+      const costVal = getCardCostNum(card);
+      const kinds = card.card_kinds || ['Action'];
+      const isAttack = isCardAttack(card);
+
+      const cardEl = document.createElement('div');
+      cardEl.className = 'kg-card-item';
+      cardEl.innerHTML = `
+        <div class="kg-card-image-wrap">
+          <img src="${BASE_PATH}/images/${encodeURIComponent(card.slug)}.jpg"
+               alt="${card.name}"
+               class="kg-card-img"
+               loading="lazy"
+               onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'200\\' height=\\'320\\' viewBox=\\'0 0 200 320\\'><rect width=\\'200\\' height=\\'320\\' fill=\\'%231e293b\\'/><text x=\\'50%\\' y=\\'50%\\' fill=\\'%2394a3b8\\' font-family=\\'sans-serif\\' font-size=\\'14\\' text-anchor=\\'middle\\'>${encodeURIComponent(card.name)}</text></svg>';">
+          <button class="kg-card-reroll-btn" data-index="${index}" title="Reroll this card">🔄</button>
+        </div>
+        <div class="kg-card-body">
+          <div class="kg-card-name-row">
+            <a href="${BASE_PATH}/${encodeURIComponent(card.slug)}" class="kg-card-name">${card.name}</a>
+            <div class="kg-card-cost" title="Cost: ${costVal} Coins">${costVal}</div>
+          </div>
+          <div class="kg-card-types">
+            ${kinds.map(k => `<span class="kg-type-badge ${k.toLowerCase() === 'attack' ? 'kg-type-attack' : ''}">${k}</span>`).join('')}
+          </div>
+        </div>
+      `;
+
+      cardEl.querySelector('.kg-card-reroll-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        rerollSingleCard(index);
+      });
+
+      gridEl.appendChild(cardEl);
+    });
+
+    updateStats();
+  }
+
+  function getMarkdownTable() {
+    let md = `### 🏰 Dominion Kingdom Supply\n\n`;
+    md += `| # | Card | Cost | Types | Expansions |\n`;
+    md += `|---|---|:---:|---|---|\n`;
+    activeCards.forEach((c, idx) => {
+      const cost = getCardCostNum(c);
+      const types = (c.card_kinds || []).join(', ');
+      const exps = (c.expansions || []).join(', ');
+      md += `| ${idx + 1} | [${c.name}](https://dominion.avascry.com/${c.slug}) | $${cost} | ${types} | ${exps} |\n`;
+    });
+    md += `\n*Generated via [AvaScry Dominion Kingdom Generator](${window.location.href})*`;
+    return md;
+  }
+
+  function getPlainTextList() {
+    let text = `Dominion Kingdom Setup (${new Date().toLocaleDateString()}):\n`;
+    activeCards.forEach((c, idx) => {
+      const cost = getCardCostNum(c);
+      text += `${idx + 1}. ${c.name} ($${cost}) - ${(c.card_kinds || []).join(', ')}\n`;
+    });
+    text += `\nLink: ${window.location.href}\n`;
+    return text;
+  }
+
+  // LocalStorage Saved Kingdoms Management
+  function getSavedKingdoms() {
+    try {
+      return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function renderSavedDropdown() {
+    const list = getSavedKingdoms();
+    selectSaved.innerHTML = `<option value="">Saved Kingdoms (${list.length})</option>`;
+    list.forEach((item, idx) => {
+      const opt = document.createElement('option');
+      opt.value = idx;
+      opt.textContent = `${item.title || 'Kingdom ' + (idx + 1)} (${item.slugs.length} cards)`;
+      selectSaved.appendChild(opt);
+    });
+  }
+
+  function saveCurrentKingdom() {
+    const title = prompt('Enter a name for this Kingdom setup:', 'Game Night ' + new Date().toLocaleDateString());
+    if (!title) return;
+
+    const list = getSavedKingdoms();
+    list.unshift({
+      title: title.trim(),
+      date: new Date().toISOString(),
+      slugs: activeCards.map(c => c.slug)
+    });
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(list.slice(0, 30)));
+    renderSavedDropdown();
+    showToast(`Saved "${title}"!`);
+  }
+
+  function loadSavedKingdom(index) {
+    const list = getSavedKingdoms();
+    const item = list[index];
+    if (!item || !item.slugs) return;
+
+    const cardsMap = new Map(allKingdomCards.map(c => [c.slug, c]));
+    const matched = item.slugs.map(s => cardsMap.get(s)).filter(Boolean);
+    if (matched.length > 0) {
+      activeCards = matched;
+      renderBoard();
+      updateUrlHistory();
+      showToast(`Loaded "${item.title}"`);
+    }
+  }
+
+  // Event Listeners
+  btnRoll.addEventListener('click', rollKingdom);
+
+  btnCopyUrl.addEventListener('click', () => {
+    updateUrlHistory();
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      showToast('Kingdom link copied to clipboard!');
+    });
+  });
+
+  btnExport.addEventListener('click', () => {
+    exportTextarea.value = getMarkdownTable();
+    btnFormatDiscord.classList.replace('kg-btn-outline', 'kg-btn-secondary');
+    btnFormatPlain.classList.replace('kg-btn-secondary', 'kg-btn-outline');
+    exportModal.classList.add('active');
+  });
+
+  btnCloseModal.addEventListener('click', () => {
+    exportModal.classList.remove('active');
+  });
+
+  exportModal.addEventListener('click', (e) => {
+    if (e.target === exportModal) exportModal.classList.remove('active');
+  });
+
+  btnFormatDiscord.addEventListener('click', () => {
+    exportTextarea.value = getMarkdownTable();
+    btnFormatDiscord.classList.replace('kg-btn-outline', 'kg-btn-secondary');
+    btnFormatPlain.classList.replace('kg-btn-secondary', 'kg-btn-outline');
+  });
+
+  btnFormatPlain.addEventListener('click', () => {
+    exportTextarea.value = getPlainTextList();
+    btnFormatPlain.classList.replace('kg-btn-outline', 'kg-btn-secondary');
+    btnFormatDiscord.classList.replace('kg-btn-secondary', 'kg-btn-outline');
+  });
+
+  btnCopyExport.addEventListener('click', () => {
+    navigator.clipboard.writeText(exportTextarea.value).then(() => {
+      showToast('Export copied to clipboard!');
+      exportModal.classList.remove('active');
+    });
+  });
+
+  btnSaveBoard.addEventListener('click', saveCurrentKingdom);
+
+  selectSaved.addEventListener('change', (e) => {
+    if (e.target.value !== '') {
+      loadSavedKingdom(parseInt(e.target.value, 10));
+    }
+  });
+
+  btnSelectAllSets.addEventListener('click', () => {
+    setsContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+    updateSetChipStyles();
+  });
+
+  btnClearSets.addEventListener('click', () => {
+    setsContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    updateSetChipStyles();
+  });
+
+  setsContainer.addEventListener('change', (e) => {
+    if (e.target.type === 'checkbox') {
+      updateSetChipStyles();
+    }
+  });
+
+  // Initialization
+  updateSetChipStyles();
+  renderSavedDropdown();
+
+  // If initial_slugs provided via URL, populate them; otherwise roll initial board
+  if (initialSlugs && initialSlugs.length > 0) {
+    const cardsMap = new Map(allKingdomCards.map(c => [c.slug, c]));
+    const preloaded = initialSlugs.map(s => cardsMap.get(s)).filter(Boolean);
+    if (preloaded.length > 0) {
+      activeCards = preloaded;
+      renderBoard();
+    } else {
+      rollKingdom();
+    }
+  } else {
+    rollKingdom();
+  }
+})();
+</script>
+{% endblock %}

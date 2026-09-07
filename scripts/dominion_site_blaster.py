@@ -129,6 +129,8 @@ class DominionSiteBlaster:
             ("/privacy", 200, "text/html"),
             ("/terms", 200, "text/html"),
             ("/contact", 200, "text/html"),
+            ("/kingdom-generator", 200, "text/html"),
+            ("/kingdom-generator?cards=village,smithy", 200, "text/html"),
         ]
 
         for path, expected_status, expected_ct in routes:
