@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AvaScry SWU — Star Wars: Unlimited Database &amp; Strategy Engine{% endblock %}</title>
+  
+  {% block canonical %}
+  <link rel="canonical" href="https://swu.avascry.com/">
+  {% endblock %}
+
+  <meta name="theme-color" content="#0b0f19">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+
+  {% block og_tags %}
+  <meta property="og:site_name" content="AvaScry SWU">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="AvaScry SWU — Star Wars: Unlimited Database &amp; Strategy Engine">
+  <meta property="og:description" content="Explore canonical Star Wars: Unlimited cards, leaders, bases, aspects, arenas, and rulings across all sets.">
+  <meta property="og:url" content="https://swu.avascry.com/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AvaScry SWU — Star Wars: Unlimited Database &amp; Strategy Engine">
+  <meta name="twitter:description" content="Explore canonical Star Wars: Unlimited cards, leaders, bases, aspects, arenas, and rulings across all sets.">
+  {% endblock %}
+  
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Star Wars / Sci-Fi Theme: Deep Galactic Navy with Amber/Gold & Lightsaber accents -->
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #121826;
+      --card-hover: #1a2234;
+      --border: #1f293d;
+      --border-subtle: #2d3b55;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #facc15;          /* SWU Galactic Yellow/Gold */
+      --accent-hover: #eab308;
+      --accent-glow: rgba(250, 204, 21, 0.15);
+      
+      /* SWU Aspect Colors */
+      --aspect-vigilance: #3b82f6;   /* Blue */
+      --aspect-command: #10b981;     /* Green */
+      --aspect-aggression: #ef4444;  /* Red */
+      --aspect-cunning: #f59e0b;     /* Yellow */
+      --aspect-heroism: #e2e8f0;     /* White/Silver */
+      --aspect-villainy: #8b5cf6;    /* Purple/Dark */
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    a { color: inherit; text-decoration: none; }
+    
+    header {
+      background: #0d1322;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(8px);
+    }
+    .header-inner {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 0.85rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .brand .logo-badge {
+      background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+      color: #090d16;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    nav a {
+      color: var(--muted);
+      transition: color 0.15s;
+    }
+    nav a:hover, nav a.active {
+      color: var(--accent);
+    }
+    
+    main {
+      flex: 1;
+      max-width: 1300px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 3rem 1.25rem;
+    }
+    
+    footer {
+      background: #070a10;
+      border-top: 1px solid var(--border);
+      padding: 3rem 1.25rem 2rem 1.25rem;
+      margin-top: auto;
+      color: var(--muted);
+    }
+    .footer-inner {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    
+    /* Aspect Badges */
+    .aspect-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .aspect-vigilance { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .aspect-command { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .aspect-aggression { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .aspect-cunning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .aspect-heroism { background: rgba(226, 232, 240, 0.12); color: #f8fafc; border: 1px solid rgba(226, 232, 240, 0.3); }
+    .aspect-villainy { background: rgba(139, 92, 246, 0.18); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.35); }
+    .aspect-neutral { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
+
+    /* Custom Form Elements */
+    input[type="text"], select {
+      background: #121826;
+      border: 1px solid var(--border-subtle);
+      color: var(--text);
+      padding: 0.55rem 0.9rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input[type="text"]:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    @media (max-width: 768px) {
+      .header-inner { flex-direction: column; align-items: flex-start; }
+      nav { flex-wrap: wrap; gap: 1rem; width: 100%; }
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <a href="{{ base_path or '/' }}" class="brand" aria-label="AvaScry Star Wars Unlimited">
+        AvaScry <span style="color: var(--accent);">SWU</span>
+        <span class="logo-badge">Star Wars: Unlimited</span>
+      </a>
+      <nav aria-label="SWU Navigation">
+        <a href="{{ base_path or '/' }}">Card Catalog</a>
+        <a href="{{ base_path or '/' }}?type=Leader">Leaders</a>
+        <a href="{{ base_path or '/' }}?type=Base">Bases</a>
+        <a href="https://dominion.avascry.com" target="_blank" rel="noopener">Dominion</a>
+        <a href="https://avascry.com" target="_blank" rel="noopener">MTG Network</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div style="display: flex; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 2rem;">
+        <div style="max-width: 440px;">
+          <div style="font-family: 'Space Grotesk', sans-serif; font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">
+            AvaScry <span style="color: var(--accent);">SWU</span>
+          </div>
+          <p style="margin: 0; line-height: 1.5; font-size: 0.84rem;">
+            The canonical rules, aspect synergies, and card database for Star Wars: Unlimited (SWU). Full catalog coverage across Spark of Rebellion, Shadows of the Galaxy, Twilight of the Republic, and subsequent expansions.
+          </p>
+        </div>
+        <div>
+          <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 0.6rem;">Legal &amp; Support</div>
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
+            <li><a href="{{ base_path }}/about">About AvaScry SWU</a></li>
+            <li><a href="{{ base_path }}/contact">Contact &amp; Errata Reports</a></li>
+            <li><a href="{{ base_path }}/privacy">Privacy Policy</a></li>
+            <li><a href="{{ base_path }}/terms">Terms of Service</a></li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 0.6rem;">Machine &amp; Network</div>
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
+            <li><a href="{{ base_path }}/sitemap.xml">XML Sitemap</a></li>
+            <li><a href="{{ base_path }}/robots.txt">Robots.txt</a></li>
+            <li><a href="{{ base_path }}/llms.txt">LLM Training (llms.txt)</a></li>
+            <li><a href="https://dominion.avascry.com" target="_blank" rel="noopener">Dominion Subsite</a></li>
+            <li><a href="https://avascry.com" target="_blank" rel="noopener">MTG Network</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.25rem; width: 100%; font-size: 0.76rem; line-height: 1.6; color: #64748b;">
+        <p style="margin: 0 0 0.4rem 0;">
+          <strong>Disclaimer &amp; Trademark Notice:</strong> Star Wars: Unlimited is a trademark of Fantasy Flight Games and Lucasfilm Ltd. / Disney. AvaScry SWU is an independent community reference database and is neither affiliated with, endorsed by, nor sponsored by Fantasy Flight Games, Lucasfilm Ltd., or The Walt Disney Company. All card scans, artwork, and game text are displayed under Fair Use for identification, commentary, and educational reference purposes.
+        </p>
+        <p style="margin: 0;">
+          &copy; {{ current_year or 2026 }} AvaScry Card Network. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

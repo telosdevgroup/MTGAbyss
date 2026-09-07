@@ -1,0 +1,273 @@
+{% extends "swu/base.html" %}
+
+{% block title %}{{ card.title or card.name }}{% if card.subtitle %} — {{ card.subtitle }}{% endif %} | AvaScry SWU{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://swu.avascry.com/card/{{ card.slug }}">
+{% endblock %}
+
+{% block og_tags %}
+<meta property="og:site_name" content="AvaScry SWU">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{ card.title or card.name }}{% if card.subtitle %} — {{ card.subtitle }}{% endif %} | AvaScry SWU">
+<meta property="og:description" content="View rules, aspects, stats, and text for {{ card.title or card.name }} ({{ card.expansion.code or card.set_code }} #{{ card.card_number or card.number }}).">
+<meta property="og:url" content="https://swu.avascry.com/card/{{ card.slug }}">
+{% if card.art_front or card.front_image %}
+<meta property="og:image" content="{{ card.art_front or card.front_image }}">
+<meta name="twitter:image" content="{{ card.art_front or card.front_image }}">
+{% endif %}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ card.title or card.name }}{% if card.subtitle %} — {{ card.subtitle }}{% endif %}">
+<meta name="twitter:description" content="Canonical card data and rulings for {{ card.title or card.name }}.">
+{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb & Prev/Next navigation -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;">
+  <div style="font-size: 0.85rem; color: var(--muted); display: flex; align-items: center; gap: 0.5rem;">
+    <a href="{{ base_path or '/' }}" style="color: var(--muted); text-decoration: none;">SWU Database</a>
+    <span>/</span>
+    <a href="{{ base_path or '/' }}?set={{ card.expansion.code or card.set_code }}" style="color: var(--muted); text-decoration: none;">
+      {{ card.expansion.name or card.set_name or card.set_code }} ({{ card.expansion.code or card.set_code }})
+    </a>
+    <span>/</span>
+    <span style="color: #fff; font-weight: 600;">{{ card.title or card.name }}</span>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem;">
+    {% if prev_card %}
+      <a href="{{ base_path }}/card/{{ prev_card.slug }}"
+         style="padding: 0.35rem 0.75rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; font-size: 0.82rem; color: var(--text); text-decoration: none; display: flex; align-items: center; gap: 0.35rem;">
+        &larr; #{{ prev_card.card_number }} {{ prev_card.title }}
+      </a>
+    {% endif %}
+    {% if next_card %}
+      <a href="{{ base_path }}/card/{{ next_card.slug }}"
+         style="padding: 0.35rem 0.75rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; font-size: 0.82rem; color: var(--text); text-decoration: none; display: flex; align-items: center; gap: 0.35rem;">
+        #{{ next_card.card_number }} {{ next_card.title }} &rarr;
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Main Card Detail Layout -->
+<div style="display: grid; grid-template-columns: 1fr; gap: 2rem; align-items: start;" class="swu-card-layout">
+  
+  <style>
+    @media (min-width: 820px) {
+      .swu-card-layout {
+        grid-template-columns: 360px 1fr !important;
+      }
+    }
+    .card-flip-container {
+      perspective: 1000px;
+    }
+  </style>
+
+  <!-- Left Column: High-Res Scan & Dual-Sided Flip -->
+  <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
+    <div id="cardImageWrapper" style="width: 100%; max-width: 360px; background: #070a10; border: 1px solid var(--border); border-radius: 14px; padding: 0.75rem; box-shadow: 0 10px 30px rgba(0,0,0,0.6); text-align: center;">
+      <img id="cardFrontImg" src="{{ card.art_front or card.front_image }}" alt="{{ card.title or card.name }} (Front)" style="width: 100%; height: auto; border-radius: 10px; display: block;">
+      {% if card.art_back or card.back_image %}
+        <img id="cardBackImg" src="{{ card.art_back or card.back_image }}" alt="{{ card.title or card.name }} (Unit Side)" style="width: 100%; height: auto; border-radius: 10px; display: none;">
+      {% endif %}
+    </div>
+
+    <!-- Interactive Flip Button for Leader cards -->
+    {% if card.art_back or card.back_image %}
+      <button id="flipBtn" type="button" onclick="toggleCardFace()"
+              style="width: 100%; max-width: 360px; background: var(--card-bg); border: 1px solid var(--accent); color: var(--accent); font-weight: 700; padding: 0.65rem 1rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: background 0.15s;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+        </svg>
+        <span id="flipBtnText">Flip to Deployed Unit Side</span>
+      </button>
+
+      <script>
+        let showingFront = true;
+        function toggleCardFace() {
+          const front = document.getElementById('cardFrontImg');
+          const back = document.getElementById('cardBackImg');
+          const btnText = document.getElementById('flipBtnText');
+          if (showingFront) {
+            front.style.display = 'none';
+            back.style.display = 'block';
+            btnText.innerText = 'Flip to Leader Front Side';
+            showingFront = false;
+          } else {
+            front.style.display = 'block';
+            back.style.display = 'none';
+            btnText.innerText = 'Flip to Deployed Unit Side';
+            showingFront = true;
+          }
+        }
+      </script>
+    {% endif %}
+
+    <!-- Machine Exports & Links -->
+    <div style="width: 100%; max-width: 360px; display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.25rem;">
+      <a href="{{ base_path }}/card/{{ card.slug }}.md" target="_blank"
+         style="flex: 1; text-align: center; font-size: 0.78rem; font-family: monospace; background: #121826; border: 1px solid var(--border); padding: 0.45rem 0.6rem; border-radius: 6px; color: var(--muted); text-decoration: none;">
+        .MD Raw
+      </a>
+      <a href="{{ base_path }}/card/{{ card.slug }}.json" target="_blank"
+         style="flex: 1; text-align: center; font-size: 0.78rem; font-family: monospace; background: #121826; border: 1px solid var(--border); padding: 0.45rem 0.6rem; border-radius: 6px; color: var(--muted); text-decoration: none;">
+        .JSON Data
+      </a>
+    </div>
+  </div>
+
+  <!-- Right Column: Specs, Rules & Stats -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    
+    <!-- Title & Subtitle Header -->
+    <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+        <div>
+          <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; line-height: 1.15;">
+            {{ card.title or card.name }}
+          </h1>
+          {% if card.subtitle %}
+            <div style="font-size: 1.15rem; color: var(--accent); font-weight: 600; margin-bottom: 0.5rem;">
+              {{ card.subtitle }}
+            </div>
+          {% endif %}
+          <div style="font-size: 0.85rem; color: var(--muted);">
+            {{ card.expansion.name or card.set_name or card.set_code }} &bull; Set {{ card.expansion.code or card.set_code }} #{{ card.card_number or card.number }} &bull; {{ card.rarity or 'Common' }}
+          </div>
+        </div>
+
+        <!-- Cost badge -->
+        {% if card.cost is not none %}
+          <div style="background: #000; border: 2px solid var(--accent); color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+            <span style="font-size: 0.65rem; color: var(--muted); text-transform: uppercase; line-height: 1;">COST</span>
+            <span style="font-size: 1.15rem; font-weight: 800; line-height: 1;">{{ card.cost }}</span>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Aspects & Traits -->
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; align-items: center;">
+        <span style="font-size: 0.8rem; background: #1f293d; color: #cbd5e1; padding: 0.25rem 0.65rem; border-radius: 6px; font-weight: 600;">
+          {{ card.type }}{% if card.type2 and card.type2 != card.type %} / {{ card.type2 }}{% endif %}
+        </span>
+        
+        {% for asp in card.aspects %}
+          <a href="{{ base_path or '/' }}?aspect={{ asp }}" class="aspect-badge aspect-{{ asp.lower() }}" style="font-size: 0.75rem; padding: 0.2rem 0.55rem; text-decoration: none;">
+            {{ asp }}
+          </a>
+        {% endfor %}
+
+        {% for trait in card.traits %}
+          <span style="font-size: 0.75rem; background: #162032; border: 1px solid var(--border); color: #94a3b8; padding: 0.2rem 0.55rem; border-radius: 6px;">
+            {{ trait }}
+          </span>
+        {% endfor %}
+
+        {% for ar in card.arenas %}
+          <span style="font-size: 0.75rem; background: #261b36; border: 1px solid #4a2c6d; color: #d8b4fe; padding: 0.2rem 0.55rem; border-radius: 6px;">
+            {{ ar }} Arena
+          </span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Power & HP Badges if unit or leader -->
+    {% if card.power is not none or card.hp is not none %}
+      <div style="display: flex; gap: 1rem;">
+        {% if card.power is not none %}
+          <div style="flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-left: 4px solid #ef4444; border-radius: 8px; padding: 0.85rem 1.25rem;">
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--muted); font-weight: 700; letter-spacing: 0.05em;">Power</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #ef4444;">{{ card.power }}</div>
+          </div>
+        {% endif %}
+        {% if card.hp is not none %}
+          <div style="flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-left: 4px solid #3b82f6; border-radius: 8px; padding: 0.85rem 1.25rem;">
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--muted); font-weight: 700; letter-spacing: 0.05em;">Hit Points (HP)</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #3b82f6;">{{ card.hp }}</div>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <!-- Card Rules Text -->
+    <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+      <h2 style="font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Space Grotesk', sans-serif;">
+        Card Ability &amp; Text
+      </h2>
+      
+      {% if card.text_styled %}
+        <div style="font-size: 1.02rem; line-height: 1.6; color: #f1f5f9;" class="swu-rules-content">
+          {{ card.text_styled | safe }}
+        </div>
+      {% elif card.text or card.front_text %}
+        <div style="font-size: 1.02rem; line-height: 1.6; color: #f1f5f9; white-space: pre-line;">
+          {{ card.text or card.front_text }}
+        </div>
+      {% else %}
+        <div style="color: var(--muted); font-style: italic;">
+          (No rules text printed on card)
+        </div>
+      {% endif %}
+
+      <!-- Leader Deploy Box / Epic Action -->
+      {% if card.deploy_box or card.deploy_box_styled or card.epic_action or card.epic_action_styled %}
+        <div style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px dashed var(--border);">
+          <div style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; color: var(--accent); margin-bottom: 0.4rem;">
+            Leader Epic Action &amp; Deploy
+          </div>
+          {% if card.epic_action_styled %}
+            <div style="color: #e2e8f0; font-size: 0.95rem; line-height: 1.5;">{{ card.epic_action_styled | safe }}</div>
+          {% elif card.epic_action %}
+            <div style="color: #e2e8f0; font-size: 0.95rem; line-height: 1.5;">{{ card.epic_action }}</div>
+          {% endif %}
+
+          {% if card.deploy_box_styled %}
+            <div style="margin-top: 0.5rem; color: #cbd5e1; font-size: 0.92rem; line-height: 1.5;">{{ card.deploy_box_styled | safe }}</div>
+          {% elif card.deploy_box or card.back_text %}
+            <div style="margin-top: 0.5rem; color: #cbd5e1; font-size: 0.92rem; line-height: 1.5;">{{ card.deploy_box or card.back_text }}</div>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Official Rulings & Clarifications if any -->
+    {% if card.rules or card.rules_styled %}
+      <div style="background: #141c2c; border: 1px solid #1e2c47; border-radius: 12px; padding: 1.5rem;">
+        <h2 style="font-size: 1.05rem; font-weight: 700; color: var(--accent); margin-bottom: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Space Grotesk', sans-serif;">
+          Official Rules &amp; Clarifications
+        </h2>
+        <div style="font-size: 0.95rem; line-height: 1.6; color: #cbd5e1;">
+          {% if card.rules_styled %}
+            {{ card.rules_styled | safe }}
+          {% else %}
+            {{ card.rules }}
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Synergy / Related Cards in Set -->
+    {% if synergy_cards %}
+      <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+        <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">
+          Related &amp; Synergy Cards
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.85rem;">
+          {% for sc in synergy_cards %}
+            <a href="{{ base_path }}/card/{{ sc.slug }}" style="background: #090d16; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; text-decoration: none; display: flex; flex-direction: column;">
+              {% if sc.art_front or sc.front_image %}
+                <img src="{{ sc.art_front or sc.front_image }}" alt="{{ sc.title or sc.name }}" loading="lazy" style="width: 100%; height: auto;">
+              {% endif %}
+              <div style="padding: 0.45rem; font-size: 0.78rem; font-weight: 600; color: #fff; line-height: 1.2;">
+                {{ sc.title or sc.name }}
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

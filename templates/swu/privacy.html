@@ -1,0 +1,45 @@
+{% extends "swu/base.html" %}
+
+{% block title %}Privacy Policy — AvaScry SWU{% endblock %}
+
+{% block content %}
+<article style="max-width: 820px; margin: 0 auto; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2.5rem; line-height: 1.7; color: #cbd5e1;">
+  <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: #fff; margin-top: 0; margin-bottom: 0.5rem;">Privacy Policy</h1>
+  <p style="color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem;">Last updated: September 2026</p>
+
+  <section style="margin-bottom: 2rem;">
+    <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; color: var(--accent); margin-bottom: 0.75rem;">1. Information We Collect</h2>
+    <p>
+      AvaScry SWU operates as a free, open reference catalog. We do not require accounts or user registration to access card scans, stats, or rules data. When you submit feedback via our Contact form, we collect your provided name, contact email or Discord handle, and message details solely to respond to your inquiry.
+    </p>
+  </section>
+
+  <section style="margin-bottom: 2rem;">
+    <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; color: var(--accent); margin-bottom: 0.75rem;">2. Cookies &amp; Local Storage</h2>
+    <p>
+      We use standard session cookies and browser local storage strictly to remember user display preferences (such as Scans view vs. Text List view). We do not sell or monetize personal data.
+    </p>
+  </section>
+
+  <section style="margin-bottom: 2rem;">
+    <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; color: var(--accent); margin-bottom: 0.75rem;">3. Analytics &amp; Infrastructure</h2>
+    <p>
+      We collect anonymous server logs (HTTP status, user-agent, requested URL, response time) for server health, DDoS mitigation, and search index optimization.
+    </p>
+  </section>
+
+  <section style="margin-bottom: 2rem;">
+    <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; color: var(--accent); margin-bottom: 0.75rem;">4. Third-Party Services</h2>
+    <p>
+      External card images are hosted and delivered via verified official Content Delivery Networks. Third-party fonts are loaded securely via Google Fonts.
+    </p>
+  </section>
+
+  <section style="margin-bottom: 2rem;">
+    <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; color: var(--accent); margin-bottom: 0.75rem;">5. Contact Us</h2>
+    <p>
+      For privacy questions or data deletion requests, please contact our team via the <a href="{{ base_path }}/contact" style="color: var(--accent); text-decoration: underline;">Contact Form</a>.
+    </p>
+  </section>
+</article>
+{% endblock %}

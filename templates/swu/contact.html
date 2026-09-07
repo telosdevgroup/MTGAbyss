@@ -1,0 +1,75 @@
+{% extends "swu/base.html" %}
+
+{% block title %}Contact &amp; Errata Reports — AvaScry SWU{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 0 auto;">
+  <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2.5rem;">
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: #fff; margin-top: 0; margin-bottom: 0.5rem;">Contact AvaScry SWU</h1>
+    <p style="color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem;">
+      Report missing cards, wording errata, rule clarification updates, or suggest strategic deck features directly to our maintainers.
+    </p>
+
+    {% if success %}
+      <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 8px; padding: 1.25rem; color: #34d399; margin-bottom: 2rem;">
+        <h3 style="margin: 0 0 0.25rem 0; font-size: 1.05rem;">Transmission Received!</h3>
+        <p style="margin: 0; font-size: 0.9rem;">Thank you for your report. Our database maintainers have been notified.</p>
+      </div>
+      <a href="{{ base_path or '/' }}" style="display: inline-block; background: var(--accent); color: #090d16; font-weight: 700; padding: 0.6rem 1.25rem; border-radius: 6px;">
+        Back to Card Catalog
+      </a>
+    {% else %}
+      {% if error %}
+        <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; padding: 1rem; color: #f87171; margin-bottom: 1.5rem; font-size: 0.9rem;">
+          {{ error }}
+        </div>
+      {% endif %}
+
+      <form method="post" action="{{ base_path }}/contact" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <!-- Honeypot -->
+        <div style="display: none;">
+          <label>Leave this empty: <input type="text" name="website_url"></label>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #cbd5e1; margin-bottom: 0.4rem;">
+            Your Name / Nickname *
+          </label>
+          <input type="text" name="name" required placeholder="e.g. Luke, Wedge Antilles" style="width: 100%;">
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #cbd5e1; margin-bottom: 0.4rem;">
+            Contact Email or Discord Handle *
+          </label>
+          <input type="text" name="contact" required placeholder="e.g. pilot@alliance.org or @skywalker" style="width: 100%;">
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #cbd5e1; margin-bottom: 0.4rem;">
+            Report Category
+          </label>
+          <select name="category" style="width: 100%;">
+            <option value="Card Text / Errata">Card Text / Errata Clarification</option>
+            <option value="Rules Interaction">Official Rules Question</option>
+            <option value="Missing Card / Scan">Missing Card or Scan Issue</option>
+            <option value="Feature Suggestion">Feature Suggestion / Tool Idea</option>
+            <option value="Other">General Feedback</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #cbd5e1; margin-bottom: 0.4rem;">
+            Message &amp; Card Details *
+          </label>
+          <textarea name="message" rows="5" required placeholder="Provide card name, expansion code, collector number, and the specific discrepancy or clarification..." style="width: 100%; background: #121826; border: 1px solid var(--border-subtle); color: var(--text); padding: 0.75rem; border-radius: 6px; font-family: inherit; font-size: 0.9rem; outline: none; resize: vertical;"></textarea>
+        </div>
+
+        <button type="submit" style="background: var(--accent); color: #090d16; border: none; font-weight: 700; font-size: 0.95rem; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; margin-top: 0.5rem; transition: background 0.15s;">
+          Transmit Report
+        </button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -11,7 +11,8 @@ from fastapi import Request
 
 SUBDOMAIN_ROUTING_MAP: Dict[str, str] = {
     "dominion": "avascry_dominion",
-    "starwars": "avascry_starwars",
+    "swu": "avascry_swu",
+    "starwars": "avascry_swu",
     "lorcana": "avascry_lorcana",
     "netrunner": "avascry_netrunner",
     "onepiece": "avascry_onepiece"

@@ -1,0 +1,38 @@
+{% extends "swu/base.html" %}
+
+{% block title %}Terms of Service — AvaScry SWU{% endblock %}
+
+{% block content %}
+<article style="max-width: 820px; margin: 0 auto; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2.5rem; line-height: 1.7; color: #cbd5e1;">
+  <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: #fff; margin-top: 0; margin-bottom: 0.5rem;">Terms of Service</h1>
+  <p style="color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem;">Last updated: September 2026</p>
+
+  <section style="margin-bottom: 2rem;">
+    <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; color: var(--accent); margin-bottom: 0.75rem;">1. Acceptance of Terms</h2>
+    <p>
+      By accessing or using AvaScry SWU (accessible via <code>swu.avascry.com</code>), you agree to be bound by these Terms of Service. If you disagree with any part of the terms, you may not access the service.
+    </p>
+  </section>
+
+  <section style="margin-bottom: 2rem;">
+    <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; color: var(--accent); margin-bottom: 0.75rem;">2. Intellectual Property &amp; Fair Use</h2>
+    <p>
+      Star Wars: Unlimited is a trademark of Fantasy Flight Games and Lucasfilm Ltd. / Disney. AvaScry SWU is an unofficial, independent reference database created for educational, analytical, and community reference under Fair Use doctrines. All card artwork, card frames, and text remain the property of their respective copyright holders.
+    </p>
+  </section>
+
+  <section style="margin-bottom: 2rem;">
+    <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; color: var(--accent); margin-bottom: 0.75rem;">3. Automated Access &amp; API Usage</h2>
+    <p>
+      Automated retrieval, bots, and AI agents are welcome to consume our machine-readable endpoints (such as <code>/llms.txt</code>, <code>/sitemap.xml</code>, and <code>/card/{slug}.md</code>) provided request rates remain respectful and non-disruptive to human users.
+    </p>
+  </section>
+
+  <section style="margin-bottom: 2rem;">
+    <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; color: var(--accent); margin-bottom: 0.75rem;">4. Disclaimer of Warranty</h2>
+    <p>
+      AvaScry SWU is provided "as is" without warranty of any kind. While we make every effort to verify rulings and card attributes against official errata documents, we do not guarantee uninterrupted or error-free operation.
+    </p>
+  </section>
+</article>
+{% endblock %}

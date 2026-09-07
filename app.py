@@ -49,6 +49,7 @@ from db_mongo import get_mongo_db
 import i18n
 from mtgabyss.network_router import extract_subdomain
 from mtgabyss.dominion_router import dominion_router
+from mtgabyss.swu_router import swu_router
 
 app = FastAPI(title="AvaScry", description="Magic: The Gathering Visual Explorer & Strategy Engine")
 
@@ -230,21 +231,27 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Mount Dominion router under /dominion for zero-config local testing
 app.include_router(dominion_router, prefix="/dominion")
+# Mount Star Wars: Unlimited router under /swu for zero-config local testing
+app.include_router(swu_router, prefix="/swu")
 
 @app.middleware("http")
 async def subdomain_routing_middleware(request: Request, call_next):
     """
     Subdomain Host Routing:
     If host is dominion.avascry.com or dominion.localhost, rewrite the internal path
-    to route directly into the dominion router without changing the client's visible URL.
+    to route directly into the dominion router.
+    If host is swu.avascry.com or starwars.avascry.com, rewrite to /swu router.
     """
     host = request.headers.get("host", "")
     sub = extract_subdomain(host)
     if sub == "dominion":
-        # Rewrites request scope path internally to /dominion...
         path = request.scope.get("path", "")
         if not path.startswith("/dominion") and not path.startswith("/static"):
             request.scope["path"] = "/dominion" + path
+    elif sub in ("swu", "starwars"):
+        path = request.scope.get("path", "")
+        if not path.startswith("/swu") and not path.startswith("/static"):
+            request.scope["path"] = "/swu" + path
     return await call_next(request)
 
 # In-memory prefix index for O(1) resolution of multi-face, art-series, and extensionless card slugs
