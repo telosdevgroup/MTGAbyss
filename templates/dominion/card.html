@@ -197,14 +197,12 @@
     <aside class="card-image-col">
       <div class="card-img-wrap">
         <img 
-          src="{% if card.image_url %}{{ card.image_url }}{% else %}/dominion/images/{{ card.slug }}.jpg{% endif %}" 
+          src="/dominion/images/{{ card.slug }}.jpg" 
           alt="{{ card.name }} Dominion Card"
           width="300"
           height="465"
           loading="eager"
-          referrerpolicy="no-referrer"
-          crossorigin="anonymous"
-          onerror="this.parentElement.style.display='none'"
+          onerror="{% if card.image_url %}this.onerror=null;this.src='{{ card.image_url }}';{% else %}this.parentElement.style.display='none';{% endif %}"
         />
       </div>
     </aside>
