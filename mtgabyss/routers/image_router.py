@@ -6,6 +6,7 @@ Builds an IMAGE_PREFIX_MAP on startup in a background daemon thread.
 resolve_card_images in shared.helpers imports IMAGE_PREFIX_MAP from here (lazy import).
 """
 import os
+import re
 import asyncio
 import threading
 
@@ -46,6 +47,11 @@ def build_image_prefix_index():
 
 # Start background indexing on module import (fires once at startup)
 threading.Thread(target=build_image_prefix_index, daemon=True).start()
+
+
+def find_card_by_slug_local(db, slug: str):
+    from mtgabyss.shared.helpers import find_card_by_slug
+    return find_card_by_slug(db, slug)
 
 
 # Serve card images with long-lived Cache-Control so Cloudflare caches them at the edge
