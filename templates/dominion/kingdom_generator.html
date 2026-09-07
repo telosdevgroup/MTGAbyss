@@ -500,13 +500,20 @@
         </button>
       </div>
 
-      <div class="kg-btn-group">
+      <div class="kg-btn-group" style="align-items: center;">
         <button id="btn-save-board" class="kg-btn kg-btn-outline" title="Save this board to browser storage">
           ⭐ Save Kingdom
         </button>
         <select id="select-saved" class="kg-select" style="width: auto; min-width: 170px;">
           <option value="">Saved Kingdoms (0)</option>
         </select>
+        <span style="font-size: 0.74rem; color: var(--muted); margin-left: 0.25rem;">
+          {% if user %}
+            <span>✓ Synced with <strong style="color: var(--text);">@{{ user.discord_username or user.name }}</strong> (AvaScry ID)</span>
+          {% else %}
+            <span>Saved to browser. <a href="/auth/login" style="color: var(--accent); font-weight: 600; text-decoration: none;">Sign in with AvaScry ID</a> for network profile.</span>
+          {% endif %}
+        </span>
       </div>
     </div>
 
