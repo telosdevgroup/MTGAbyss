@@ -57,7 +57,7 @@
           "@type": "ListItem",
           "position": 2,
           "name": "{{ (card.card_kinds[0] if card.card_kinds else 'Kingdom') | title }} Cards",
-          "item": "https://dominion.avascry.com/"
+          "item": "https://dominion.avascry.com/?type={{ (card.card_kinds[0] if card.card_kinds else 'kingdom') | lower }}"
         },
         {
           "@type": "ListItem",
@@ -68,17 +68,13 @@
       ]
     },
     {
-      "@type": ["IndividualProduct", "Thing"],
+      "@type": "Thing",
       "@id": "https://dominion.avascry.com/card/{{ card.slug }}#card",
       "name": "{{ card.name }}",
       "url": "https://dominion.avascry.com/card/{{ card.slug }}",
       "image": "https://dominion.avascry.com/images/{{ card.slug }}.jpg",
       "description": "Dominion {{ card.card_kinds | join(', ') | title }} card.",
-      "category": "Dominion Card Game",
-      "brand": {
-        "@type": "Brand",
-        "name": "Rio Grande Games"
-      }
+      "category": "Dominion Card Game"
     },
     {
       "@type": "FAQPage",
@@ -447,7 +443,7 @@
 {% endblock %}
 
 {% block content %}
-<article class="card-page" data-game="dominion" data-card-slug="{{ card.slug }}" itemscope itemtype="https://schema.org/IndividualProduct">
+<article class="card-page" data-game="dominion" data-card-slug="{{ card.slug }}" itemscope itemtype="https://schema.org/Thing">
   <meta itemprop="name" content="{{ card.name }}">
   <meta itemprop="image" content="https://dominion.avascry.com/images/{{ card.slug }}.jpg">
   
@@ -459,7 +455,7 @@
       </span>
       <span aria-hidden="true">&nbsp;/&nbsp;</span>
       <span itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-        <a itemprop="item" href="{{ base_path or '/' }}" style="color: var(--muted); text-decoration: none;"><span itemprop="name">{{ (card.card_kinds[0] if card.card_kinds else 'Kingdom') | title }} Cards</span></a>
+        <a itemprop="item" href="{{ base_path or '/' }}?type={{ (card.card_kinds[0] if card.card_kinds else 'kingdom') | lower }}" style="color: var(--muted); text-decoration: none;"><span itemprop="name">{{ (card.card_kinds[0] if card.card_kinds else 'Kingdom') | title }} Cards</span></a>
         <meta itemprop="position" content="2" />
       </span>
       <span aria-hidden="true">&nbsp;/&nbsp;</span>
@@ -698,7 +694,7 @@
   const btnCitation = document.getElementById('btn-copy-citation');
   if (btnCitation) {
     btnCitation.addEventListener('click', () => {
-      const text = `[{{ card.name }}](https://dominion.avascry.com/card/{{ card.slug }}) — Dominion {{ card.card_kinds | join(', ') | title }}{% if versions and versions[0].cost.coins %} (${versions[0].cost.coins} Coins){% endif %}`;
+      const text = `[{{ card.name }}{% if edition_diff and edition_diff.has_text_change %} (2nd Edition){% endif %}](https://dominion.avascry.com/card/{{ card.slug }}) — Dominion {{ card.card_kinds | join(', ') | title }}{% if versions and versions[0].cost.coins %} (${versions[0].cost.coins} Coins){% endif %}`;
       navigator.clipboard.writeText(text).then(() => {
         const orig = btnCitation.textContent;
         btnCitation.textContent = '✓ Copied!';

@@ -804,6 +804,40 @@
       applyFilter();
     });
 
+    // Read initial URL search params (e.g. ?type=action, ?q=trash, ?set=empires)
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramQuery = urlParams.get('q');
+    const paramType = urlParams.get('type');
+    const paramCost = urlParams.get('cost');
+    const paramSet = urlParams.get('set');
+
+    if (paramQuery) {
+      input.value = paramQuery;
+    }
+    if (paramType) {
+      const targetPill = Array.from(typePills).find(p => p.getAttribute('data-type') === paramType.toLowerCase());
+      if (targetPill) {
+        typePills.forEach(p => p.classList.remove('active'));
+        targetPill.classList.add('active');
+        currentType = paramType.toLowerCase();
+      }
+    }
+    if (paramCost) {
+      const targetCost = Array.from(costPills).find(p => p.getAttribute('data-cost') === paramCost.toLowerCase());
+      if (targetCost) {
+        costPills.forEach(p => p.classList.remove('active'));
+        targetCost.classList.add('active');
+        currentCost = paramCost.toLowerCase();
+      }
+    }
+    if (paramSet) {
+      expansionSelect.value = paramSet.toLowerCase();
+      currentExpansion = paramSet.toLowerCase();
+    }
+    if (paramQuery || paramType || paramCost || paramSet) {
+      applyFilter();
+    }
+
     // Keyboard shortcut '/' focuses search
     window.addEventListener('keydown', e => {
       if (e.key === '/' && document.activeElement !== input) {

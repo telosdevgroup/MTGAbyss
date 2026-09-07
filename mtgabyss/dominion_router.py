@@ -24,6 +24,19 @@ def get_base_prefix(request: Request) -> str:
         return ""
     return "/dominion"
 
+def format_expansion_name(tag: str, raw_name: str = None, exp_map: dict = None) -> str:
+    if not tag:
+        return ""
+    name = raw_name or (exp_map.get(tag.lower()) if exp_map else "")
+    if name and not name.startswith('*') and (' ' in name or name.istitle()) and not any(p in name.lower() for p in ['removed', 'bigbox']):
+        return name
+    s = re.sub(r'([a-z])([A-Z0-9])', r'\1 \2', tag)
+    s = re.sub(r'([0-9])([A-Z])', r'\1 \2', s)
+    s = re.sub(r'\b1St\b', '1st', s.title())
+    s = re.sub(r'\b2Nd\b', '2nd', s)
+    s = s.replace('And', '&').replace('Bigbox', 'Big Box').replace('De', 'DE')
+    return s
+
 @dominion_router.get("", response_class=HTMLResponse)
 @dominion_router.get("/", response_class=HTMLResponse)
 async def dominion_home(request: Request):
@@ -49,11 +62,14 @@ async def dominion_home(request: Request):
     seen_tags = set()
     clean_expansions = []
     for e in expansions:
-        tag = e.get("set_tag", "").lower()
+        orig_tag = e.get("set_tag", "")
+        tag = orig_tag.lower()
         if tag and tag not in seen_tags:
             seen_tags.add(tag)
-            clean_expansions.append({"set_tag": tag, "name": e.get("name")})
+            clean_name = format_expansion_name(orig_tag, e.get("name"))
+            clean_expansions.append({"set_tag": tag, "name": clean_name})
             
+    clean_expansions.sort(key=lambda x: x["name"])
     total_cards = len(cards)
     total_expansions = len(clean_expansions)
     
@@ -161,16 +177,31 @@ async def dominion_sitemap_xml():
 
 @dominion_router.get("/card/{slug}.json")
 async def dominion_card_json(slug: str):
+    clean_slug = slug.lower().strip()
     db = get_dominion_db()
-    card = db.cards.find_one({"slug": slug}, {"_id": 0})
+    card = db.cards.find_one({"slug": clean_slug}, {"_id": 0})
     if not card:
         raise HTTPException(status_code=404, detail="Card not found")
     
-    versions = list(db.card_versions.find({"card_id": f"card:{slug}"}, {"_id": 0}))
-    rulings = list(db.rulings.find({"card_id": f"card:{slug}"}, {"_id": 0}))
+    # Canonical absolute image URLs
+    base_img = f"https://dominion.avascry.com/images/{clean_slug}.jpg"
+    card["image_url"] = base_img
+
+    versions = list(db.card_versions.find({"card_id": f"card:{clean_slug}"}, {"_id": 0}))
+    for v in versions:
+        ed = str(v.get("edition", "")).lower()
+        stag = str(v.get("expansion_tag", "")).lower()
+        if "1e" in ed or "1st" in stag:
+            v["image_url"] = f"https://dominion.avascry.com/images/{clean_slug}-1e.jpg"
+        else:
+            v["image_url"] = base_img
+
+    rulings = list(db.rulings.find({"card_id": f"card:{clean_slug}"}, {"_id": 0}))
     
     return {
         "card": card,
+        "image_url": base_img,
+        "image_1e_url": f"https://dominion.avascry.com/images/{clean_slug}-1e.jpg",
         "versions": versions,
         "rulings": rulings
     }
@@ -256,16 +287,7 @@ async def dominion_card_html(request: Request, slug: str):
     exp_map = {e.get('set_tag', '').lower(): e.get('name') for e in db.expansions.find({}, {"set_tag": 1, "name": 1})}
 
     def _format_expansion(tag: str) -> str:
-        if not tag:
-            return ""
-        name = exp_map.get(tag.lower())
-        if name and not name.startswith('*') and (" " in name or name.istitle()):
-            return name
-        s = re.sub(r'([a-z])([A-Z0-9])', r'\1 \2', tag)
-        s = re.sub(r'([0-9])([A-Z])', r'\1 \2', s)
-        s = re.sub(r'\b1St\b', '1st', s.title())
-        s = re.sub(r'\b2Nd\b', '2nd', s)
-        return s.replace('And', '&')
+        return format_expansion_name(tag, exp_map=exp_map)
 
     for v in versions:
         raw_text = v.get("printed_rules_text", "")
