@@ -47,7 +47,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from db_mongo import get_mongo_db
 import i18n
-from mtgabyss.network_router import extract_subdomain
+from mtgabyss.network_router import extract_subdomain, get_request_host, get_site_badge
 from mtgabyss.dominion_router import dominion_router
 from mtgabyss.swu_router import swu_router
 
@@ -226,8 +226,10 @@ app.add_middleware(
 os.makedirs("static/css", exist_ok=True)
 os.makedirs("public/images/normal", exist_ok=True)
 os.makedirs("public/images/large", exist_ok=True)
+os.makedirs("public/images/swu", exist_ok=True)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/images", StaticFiles(directory="public/images"), name="images")
 
 # Mount Dominion router under /dominion for zero-config local testing
 app.include_router(dominion_router, prefix="/dominion")
@@ -242,15 +244,15 @@ async def subdomain_routing_middleware(request: Request, call_next):
     to route directly into the dominion router.
     If host is swu.avascry.com or starwars.avascry.com, rewrite to /swu router.
     """
-    host = request.headers.get("host", "")
+    host = get_request_host(request)
     sub = extract_subdomain(host)
     if sub == "dominion":
         path = request.scope.get("path", "")
-        if not path.startswith("/dominion") and not path.startswith("/static"):
+        if not path.startswith("/dominion") and not path.startswith("/static") and not path.startswith("/images"):
             request.scope["path"] = "/dominion" + path
-    elif sub in ("swu", "starwars"):
+    elif sub == "swu":
         path = request.scope.get("path", "")
-        if not path.startswith("/swu") and not path.startswith("/static"):
+        if not path.startswith("/swu") and not path.startswith("/static") and not path.startswith("/images"):
             request.scope["path"] = "/swu" + path
     return await call_next(request)
 
@@ -773,8 +775,9 @@ async def request_logger_middleware(request: Request, call_next):
     
     raw_ua = request.headers.get("user-agent", "").replace("\r", " ").replace("\n", " ").strip()
     ua_suffix = f' "{raw_ua}"' if raw_ua else ""
-    full_audit_line = f"{ip:<28} {badge:<18} {status} ({duration_ms:>4.0f}ms) {raw_type:<6} {raw_fmt:<6} -> {method} {path}"
-    console_line = f"{ip:<22} {badge:<16} {type_badge} {fmt_tag} {path}"
+    site_badge_color, site_badge_raw = get_site_badge(get_request_host(request))
+    full_audit_line = f"{ip:<28} {badge:<18} {site_badge_raw} {status} ({duration_ms:>4.0f}ms) {raw_type:<6} {raw_fmt:<6} -> {method} {path}"
+    console_line = f"{ip:<22} {badge:<16} {site_badge_color} {type_badge} {fmt_tag} {path}"
     print(console_line, flush=True)
 
     try:
@@ -2850,7 +2853,22 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
     if not card:
         card = db["cards"].find_one({"slug": identifier})
 
-    # 2. De-duplicate double-slugs (e.g. urabrasks-forge-urabrasks-forge-aone -> urabrasks-forge-aone)
+    # 2. Fast lookup by full slug before de-duplication (preserves double-named cards like Art Series and Reversible cards)
+    if not card and '-' in identifier:
+        parts = identifier.split('-')
+        if len(parts) >= 2:
+            card_slug, set_code = "-".join(parts[:-1]), parts[-1].lower()
+            base_card = find_card_by_slug(db, card_slug)
+            if base_card:
+                oid = base_card.get("oracle_id")
+                if not oid and base_card.get("card_faces"):
+                    oid = base_card["card_faces"][0].get("oracle_id")
+                if oid:
+                    card = db["cards"].find_one({"oracle_id": oid, "set": set_code, "lang": "en"}) or db["cards"].find_one({"oracle_id": oid, "set": set_code}) or db["cards"].find_one({"card_faces.oracle_id": oid, "set": set_code})
+                if not card and base_card.get("set") == set_code:
+                    card = base_card
+
+    # 3. De-duplicate repeated double-slugs (e.g. urabrasks-forge-urabrasks-forge-aone -> urabrasks-forge-aone)
     clean_ident = identifier
     if not card and '-' in clean_ident:
         tokens = clean_ident.split('-')
@@ -2860,7 +2878,7 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
                 clean_ident = "-".join(tokens[l:])
                 break
 
-    # 3. Fast indexed lookup by oracle_id: <slug>-<set>-<lang> or <slug>-<set>
+    # 4. Fast indexed lookup by oracle_id: <slug>-<set>-<lang> or <slug>-<set>
     if not card and '-' in clean_ident:
         parts = clean_ident.split('-')
         

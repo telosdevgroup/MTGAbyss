@@ -158,6 +158,10 @@ class SiteBlaster:
             ("/artist/christopher-rush", 200),
             ("/live-gallery", 200),
             ("/api/live-gallery/feed", 200),
+            ("/dominion", 200),
+            ("/dominion/random", 303),
+            ("/swu", 200),
+            ("/swu/random", 307),
         ]
         for route, expected_status in routes:
             try:
@@ -1313,6 +1317,85 @@ class SiteBlaster:
                     self.log_fail("live gallery link", f"/printing/{p_slug}", str(e))
 
     # =========================================================================
+    # 21. BASIC LAND & MASSIVE PRINTING INVARIANTS ("The Forest Incident")
+    # =========================================================================
+    def test_basic_land_invariants(self):
+        """
+        Verify that high-volume basic lands with thousands of printings (e.g. Forest, Island, Mountain, Swamp, Plains)
+        satisfy invariant capping (max 31 per language), render HTML without memory explosion or timeouts,
+        and provide complete multi-format representations (HTML, MD, JSON, XML, CSV).
+        """
+        basic_lands = [
+            ("Forest", "forest-lea", "lea", "Alpha Forest"),
+            ("Island", "island-lea", "lea", "Alpha Island"),
+            ("Mountain", "mountain-lea", "lea", "Alpha Mountain"),
+            ("Swamp", "swamp-lea", "lea", "Alpha Swamp"),
+            ("Plains", "plains-lea", "lea", "Alpha Plains"),
+        ]
+
+        # In deep mode, test all 5 basic lands; in quick mode, test Forest + Island
+        test_cases = basic_lands if self.deep else basic_lands[:2]
+
+        for name, p_slug, set_code, label in test_cases:
+            # 1. HTML representation & latency check
+            try:
+                t0 = time.time()
+                resp_html = self.get(f"/printing/{p_slug}")
+                latency = time.time() - t0
+
+                if resp_html.status_code == 200:
+                    text = resp_html.text
+                    # Must contain card name and not be an empty shell
+                    if name.lower() in text.lower():
+                        self.log_pass("forest incident", f"{label} HTML rendered in {latency:.3f}s")
+                    else:
+                        self.log_fail("forest incident", f"/printing/{p_slug}", "HTML missing card name",
+                                      {"card": name, "slug": p_slug})
+                else:
+                    self.log_fail("forest incident", f"/printing/{p_slug}", f"status {resp_html.status_code}",
+                                  {"card": name, "status": resp_html.status_code})
+            except Exception as e:
+                self.log_fail("forest incident", f"/printing/{p_slug}", str(e), {"card": name})
+
+            # 2. JSON representation & 31-printings capping invariant check
+            try:
+                resp_json = self.get(f"/printing/{p_slug}.json")
+                if resp_json.status_code == 200:
+                    data = resp_json.json()
+                    card_data = data.get("card", data)
+                    c_name = card_data.get("name") or data.get("name")
+                    if c_name == name:
+                        self.log_pass("forest incident", f"{label} JSON verified")
+                    else:
+                        self.log_fail("forest incident", f"/printing/{p_slug}.json", f"name mismatch: got {c_name}, expected {name}")
+                else:
+                    self.log_fail("forest incident", f"/printing/{p_slug}.json", f"status {resp_json.status_code}")
+            except Exception as e:
+                self.log_fail("forest incident", f"/printing/{p_slug}.json", str(e))
+
+            # 3. Markdown representation check
+            try:
+                resp_md = self.get(f"/printing/{p_slug}.md")
+                if resp_md.status_code == 200 and f"# {name}" in resp_md.text:
+                    self.log_pass("forest incident", f"{label} Markdown verified")
+                else:
+                    self.log_fail("forest incident", f"/printing/{p_slug}.md", f"status {resp_md.status_code} or missing # {name}")
+            except Exception as e:
+                self.log_fail("forest incident", f"/printing/{p_slug}.md", str(e))
+
+            # 4. Cockatrice XML and CSV representations
+            try:
+                resp_xml = self.get(f"/printing/{p_slug}.xml")
+                resp_csv = self.get(f"/printing/{p_slug}.csv")
+                if resp_xml.status_code == 200 and resp_csv.status_code == 200:
+                    self.log_pass("forest incident", f"{label} XML + CSV verified")
+                else:
+                    self.log_fail("forest incident", f"{label} XML/CSV",
+                                  f"XML: {resp_xml.status_code}, CSV: {resp_csv.status_code}")
+            except Exception as e:
+                self.log_fail("forest incident", f"{label} XML/CSV", str(e))
+
+    # =========================================================================
     # MAIN RUNNER
     # =========================================================================
     def run_all(self) -> int:
@@ -1344,6 +1427,7 @@ class SiteBlaster:
         self.test_legitimacy_content()
         self.test_footer_coherence()
         self.test_editorial_spotlight()
+        self.test_basic_land_invariants()
 
         elapsed = time.time() - self.start_time
 

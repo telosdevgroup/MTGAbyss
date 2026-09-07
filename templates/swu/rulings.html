@@ -1,0 +1,151 @@
+﻿{% extends "swu/base.html" %}
+
+{% block title %}
+  {% if current_ruling %}
+    {{ current_ruling.card_title }} Official Ruling &amp; Errata â€” AvaScry SWU
+  {% else %}
+    Star Wars: Unlimited Official Rulings &amp; Errata Feed â€” AvaScry SWU
+  {% endif %}
+{% endblock %}
+
+{% block og_tags %}
+  {% if current_ruling %}
+    <meta property=og:title content={{ current_ruling.card_title }} Official Ruling &amp; Errata>
+    <meta property=og:description content={{ current_ruling.ruling_text | truncate(150) }}>
+  {% else %}
+    <meta property=og:title content=Star Wars: Unlimited Official Rulings &amp; Errata Feed>
+    <meta property=og:description content=Complete indexed feed of official Fantasy Flight Games card clarifications, timing interactions, and errata.>
+  {% endif %}
+{% endblock %}
+
+{% block extra_head %}
+{% if current_ruling %}
+<script type=application/ld+json>
+{
+  @context: https://schema.org,
+  @type: FAQPage,
+  mainEntity: [{
+    @type: Question,
+    name: What is the official ruling for {{ current_ruling.card_title }}?,
+    acceptedAnswer: {
+      @type: Answer,
+      text: {{ current_ruling.ruling_text | replace('"', '\"') }}
+    }
+  }]
+}
+</script>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div style=max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem;>
+
+  {% if current_ruling %}
+    <!-- Single Ruling Permalink View -->
+    <nav style=font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem;>
+      <a href={{ base_path }}/rulings style=color: var(--muted); text-decoration: none;>&larr; All Official Rulings &amp; Errata</a>
+    </nav>
+
+    <div style=background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem;>
+      <div style=display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;>
+        <div>
+          <span style=font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 0.25rem 0.6rem; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.25);>
+            Official Clarification &bull; {{ current_ruling.card_set }} #{{ current_ruling.card_number }}
+          </span>
+          <h1 style=font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 700; color: #fff; margin-top: 0.75rem; margin-bottom: 0.5rem;>
+            {{ current_ruling.card_title }}
+          </h1>
+          <div style=font-size: 0.95rem; color: var(--muted);>
+            Source: <strong style=color: #f4f4f5;>Fantasy Flight Games Official Database</strong>
+          </div>
+        </div>
+
+        <a href={{ base_path }}/card/{{ current_ruling.card_slug }} style=background: #09090b; border: 1px solid var(--border); padding: 0.5rem 1rem; border-radius: 6px; color: #60a5fa; text-decoration: none; font-size: 0.88rem; font-weight: 600;>
+          View Full Card Page &rarr;
+        </a>
+      </div>
+
+      <div style=margin-top: 1.75rem; background: #09090b; border: 1px solid #27272a; border-left: 3px solid #38bdf8; border-radius: 6px; padding: 1.5rem;>
+        <div style=font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #a1a1aa; margin-bottom: 0.6rem;>
+          Official Ruling / Interaction Note
+        </div>
+        <div style=font-size: 1.05rem; line-height: 1.65; color: #f4f4f5; white-space: pre-line;>
+          {{ current_ruling.ruling_text }}
+        </div>
+      </div>
+    </div>
+
+  {% else %}
+    <!-- Rulings & Errata Feed Overview -->
+    <div style=display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;>
+      <div>
+        <span style=font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em; color: var(--accent); background: rgba(239, 68, 68, 0.12); padding: 0.25rem 0.6rem; border-radius: 4px; border: 1px solid rgba(239, 68, 68, 0.25);>
+          Official Rules Corpus
+        </span>
+        <h1 style=font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 700; color: #fff; margin-top: 0.75rem; margin-bottom: 0.5rem;>
+          Star Wars: Unlimited Official Rulings &amp; Errata
+        </h1>
+        <p style=font-size: 1rem; color: var(--muted); max-width: 800px; line-height: 1.5;>
+          Searchable repository of {{ total_count }} official card clarifications, timing rulings, and tournament interpretations from Fantasy Flight Games.
+        </p>
+      </div>
+
+      <!-- Search Box -->
+      <form action={{ base_path }}/rulings method=get style=display: flex; gap: 0.5rem;>
+        <input type=text name=q value={{ query or '' }} placeholder=Search rulings or cards... style=width: 260px;>
+        <button type=submit style=background: var(--accent); color: #fff; border: none; padding: 0.55rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer;>
+          Search
+        </button>
+      </form>
+    </div>
+
+    <!-- Feed list -->
+    <div style=display: flex; flex-direction: column; gap: 1.25rem;>
+      {% for item in rulings %}
+        <div style=background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; display: flex; flex-direction: column; gap: 0.85rem;>
+          <div style=display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem;>
+            <div>
+              <a href={{ base_path }}/card/{{ item.card_slug }} style=font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 700; color: #fff; text-decoration: none;
+                 onmouseover=this.style.color='#60a5fa'; onmouseout=this.style.color='#fff';>
+                {{ item.card_title }}
+              </a>
+              <span style=font-size: 0.8rem; color: var(--muted); margin-left: 0.5rem;>
+                Set {{ item.card_set }} #{{ item.card_number }}
+              </span>
+            </div>
+            <a href={{ base_path }}/ruling/{{ item.slug }} style=font-size: 0.78rem; color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--muted);>
+              Permalink &rarr;
+            </a>
+          </div>
+
+          <div style=background: #09090b; border: 1px solid #27272a; border-left: 3px solid #38bdf8; border-radius: 6px; padding: 1rem; font-size: 0.94rem; line-height: 1.6; color: #d4d4d8; white-space: pre-line;>
+            {{ item.ruling_text }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+      <div style=display: flex; justify-content: center; gap: 0.5rem; margin-top: 2.5rem;>
+        {% if current_page > 1 %}
+          <a href={{ base_path }}/rulings?page={{ current_page - 1 }}{% if query %}&q={{ query }}{% endif %} style=background: var(--card-bg); border: 1px solid var(--border); padding: 0.5rem 1rem; border-radius: 6px; color: #fff; text-decoration: none;>
+            &larr; Previous
+          </a>
+        {% endif %}
+        <span style=padding: 0.5rem 1rem; color: var(--muted); font-size: 0.9rem;>
+          Page {{ current_page }} of {{ total_pages }}
+        </span>
+        {% if current_page < total_pages %}
+          <a href={{ base_path }}/rulings?page={{ current_page + 1 }}{% if query %}&q={{ query }}{% endif %} style=background: var(--card-bg); border: 1px solid var(--border); padding: 0.5rem 1rem; border-radius: 6px; color: #fff; text-decoration: none;>
+            Next &rarr;
+          </a>
+        {% endif %}
+      </div>
+    {% endif %}
+
+  {% endif %}
+
+</div>
+{% endblock %}
+

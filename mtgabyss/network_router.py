@@ -12,7 +12,6 @@ from fastapi import Request
 SUBDOMAIN_ROUTING_MAP: Dict[str, str] = {
     "dominion": "avascry_dominion",
     "swu": "avascry_swu",
-    "starwars": "avascry_swu",
     "lorcana": "avascry_lorcana",
     "netrunner": "avascry_netrunner",
     "onepiece": "avascry_onepiece"
@@ -36,3 +35,34 @@ def extract_subdomain(host: str) -> Optional[str]:
         if sub in SUBDOMAIN_ROUTING_MAP:
             return sub
     return None
+
+SITE_BADGES: Dict[str, Tuple[str, str]] = {
+    "mtg": ("\033[93m[MTG ]\033[0m", "[MTG ]"),
+    "dominion": ("\033[96m[DOM ]\033[0m", "[DOM ]"),
+    "swu": ("\033[95m[SWU ]\033[0m", "[SWU ]"),
+    "lorcana": ("\033[94m[LORC]\033[0m", "[LORC]"),
+    "netrunner": ("\033[92m[NETR]\033[0m", "[NETR]"),
+    "onepiece": ("\033[91m[ONEP]\033[0m", "[ONEP]"),
+}
+
+def get_request_host(request: Request) -> str:
+    """
+    Extracts the host from the incoming request.
+    Prioritizes 'x-forwarded-host' (used by Cloudflare / cloudflared tunnels)
+    and falls back to 'host'.
+    """
+    forwarded = request.headers.get("x-forwarded-host")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.headers.get("host", "")
+
+def get_site_badge(host: Optional[str]) -> Tuple[str, str]:
+    """
+    Returns (color_badge, raw_badge) for the site, e.g. [MTG ], [DOM ], [SWU ].
+    """
+    sub = extract_subdomain(host) if host else None
+    if sub in SITE_BADGES:
+        return SITE_BADGES[sub]
+    return SITE_BADGES["mtg"]
+
+

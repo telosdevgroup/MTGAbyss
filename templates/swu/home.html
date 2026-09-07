@@ -1,221 +1,605 @@
 {% extends "swu/base.html" %}
 
-{% block title %}Star Wars: Unlimited Card Database &amp; Deck Explorer — AvaScry SWU{% endblock %}
+{% block title %}Star Wars: Unlimited Card Database &amp; Strategy Explorer — AvaScry SWU{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* SWU Hero & Layout */
+  .swu-container {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 1.5rem 3rem 1.5rem;
+  }
+  .swu-hero {
+    background: radial-gradient(circle at 50% 0%, #1c1c24 0%, #0d0d10 70%, #09090b 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 3rem 2rem 2.5rem 2rem;
+    margin-bottom: 2.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  }
+  .swu-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+    padding: 0.35rem 0.9rem;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1.25rem;
+  }
+  .swu-hero-badge-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .swu-hero h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2.2rem, 5vw, 3.4rem);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.15;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+  }
+  .swu-hero-subtitle {
+    color: #a1a1aa;
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    max-width: 760px;
+    margin: 0 auto 2rem auto;
+    line-height: 1.6;
+  }
+  .swu-stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: clamp(1rem, 3vw, 3rem);
+    flex-wrap: wrap;
+    margin-bottom: 2.5rem;
+    padding-top: 0.5rem;
+  }
+  .swu-stat-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fff;
+  }
+  .swu-stat-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .swu-stat-divider {
+    width: 1px;
+    background: var(--border);
+  }
+  .swu-leaders-panel {
+    text-align: left;
+    background: rgba(14, 14, 18, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+  .swu-leaders-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .swu-leaders-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .swu-leaders-link {
+    font-size: 0.82rem;
+    color: #60a5fa;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .swu-leaders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+  .swu-leader-card {
+    background: #141417;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .swu-leader-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(239, 68, 68, 0.6);
+  }
+  .swu-leader-img-wrap {
+    aspect-ratio: 1.393;
+    background: #09090b;
+    overflow: hidden;
+  }
+  .swu-leader-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .swu-leader-meta {
+    padding: 0.6rem 0.75rem;
+    border-top: 1px solid var(--border);
+    background: #111114;
+  }
+  .swu-leader-name {
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .swu-leader-subtitle {
+    font-size: 0.7rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Catalog Layout */
+  .swu-catalog-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+  @media (max-width: 960px) {
+    .swu-catalog-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Filters Sidebar */
+  .swu-filter-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: sticky;
+    top: 5.5rem;
+    scroll-margin-top: 5.5rem;
+  }
+  .swu-filter-group {
+    margin-bottom: 1.25rem;
+  }
+  .swu-filter-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+  .swu-filter-select, .swu-filter-input {
+    width: 100%;
+    background: #09090b;
+    border: 1px solid var(--border);
+    color: #fff;
+    padding: 0.6rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+  .swu-filter-select:focus, .swu-filter-input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .swu-filter-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.75rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .swu-filter-btn:hover {
+    background: #dc2626;
+  }
+  .swu-clear-btn {
+    display: block;
+    text-align: center;
+    margin-top: 0.75rem;
+    font-size: 0.82rem;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .swu-clear-btn:hover {
+    color: #fff;
+  }
+
+  /* Card Grid */
+  .swu-catalog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .swu-catalog-count {
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+  .swu-catalog-count strong {
+    color: #fff;
+  }
+  .swu-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+  .swu-card-item {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+  .swu-card-item:hover {
+    transform: translateY(-4px);
+    border-color: rgba(239, 68, 68, 0.6);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  }
+  .swu-card-art-wrap {
+    aspect-ratio: 0.714;
+    background: #09090b;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .swu-card-art-wrap.landscape {
+    aspect-ratio: 1.393;
+  }
+  .swu-card-art {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .swu-card-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    background: #111114;
+  }
+  .swu-card-cost-badge {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  }
+  .swu-card-info {
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+    border-top: 1px solid var(--border);
+  }
+  .swu-card-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .swu-card-subname {
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .swu-card-tags {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-top: 0.35rem;
+  }
+  .swu-card-tag {
+    font-size: 0.68rem;
+    background: #202026;
+    color: #d4d4d8;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  /* Pagination */
+  .swu-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+  }
+  .swu-page-btn {
+    padding: 0.5rem 0.9rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .swu-page-btn:hover {
+    border-color: var(--accent);
+  }
+  .swu-page-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .swu-page-btn.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div style="margin-bottom: 2rem;">
-  <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
-    <div>
-      <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 700; color: #fff; letter-spacing: -0.02em; margin-bottom: 0.35rem;">
-        Star Wars: Unlimited Card Database
-      </h1>
-      <p style="color: var(--muted); font-size: 0.95rem; margin: 0;">
-        Fast canonical search across {{ total_count }} cards with aspects, arenas, and leader mechanics.
-      </p>
+<div class="swu-container">
+
+{% if not is_filtered and current_page == 1 %}
+  <!-- HERO BANNER & STATS SHOWCASE -->
+  <section class="swu-hero">
+    <div class="swu-hero-badge">
+      <span class="swu-hero-badge-dot"></span>
+      Official Canonical Star Wars Database
     </div>
 
-    <!-- Mode Toggle: Scans vs Grid -->
-    <div style="display: flex; background: #121826; border: 1px solid var(--border); border-radius: 8px; padding: 3px;">
-      <a href="?view=scans{% if active_aspect %}&aspect={{ active_aspect }}{% endif %}{% if active_type %}&type={{ active_type }}{% endif %}{% if active_arena %}&arena={{ active_arena }}{% endif %}{% if active_set %}&set={{ active_set }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
-         style="padding: 0.4rem 0.9rem; font-size: 0.82rem; font-weight: 700; border-radius: 6px; {% if view_mode == 'scans' %}background: var(--accent); color: #090d16;{% else %}color: var(--muted);{% endif %}">
-        Scans
-      </a>
-      <a href="?view=grid{% if active_aspect %}&aspect={{ active_aspect }}{% endif %}{% if active_type %}&type={{ active_type }}{% endif %}{% if active_arena %}&arena={{ active_arena }}{% endif %}{% if active_set %}&set={{ active_set }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
-         style="padding: 0.4rem 0.9rem; font-size: 0.82rem; font-weight: 700; border-radius: 6px; {% if view_mode == 'grid' %}background: var(--accent); color: #090d16;{% else %}color: var(--muted);{% endif %}">
-        Text List
-      </a>
-    </div>
-  </div>
+    <h1>Explore the Galactic Frontline</h1>
 
-  <!-- Search & Filter Bar -->
-  <form method="get" action="{{ base_path or '/' }}" style="display: flex; flex-direction: column; gap: 1rem; background: var(--card-bg); border: 1px solid var(--border); padding: 1.25rem; border-radius: 12px;">
-    <input type="hidden" name="view" value="{{ view_mode }}">
-    
-    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-      <input type="text" name="q" placeholder="Search by name, subtitle, text, or trait (e.g. Luke, Force, Rebel)..." value="{{ search_query }}" style="flex: 1; min-width: 260px;">
-      
-      <!-- Aspect Filter -->
-      <select name="aspect" onchange="this.form.submit()">
-        <option value="">All Aspects</option>
-        {% for asp in available_aspects %}
-          <option value="{{ asp }}" {% if active_aspect == asp %}selected{% endif %}>{{ asp }}</option>
-        {% endfor %}
-      </select>
+    <p class="swu-hero-subtitle">
+      Fast, high-fidelity card explorer, leader deploy states, Comprehensive Rules citations, and official Fantasy Flight Games rulings.
+    </p>
 
-      <!-- Type Filter -->
-      <select name="type" onchange="this.form.submit()">
-        <option value="">All Types</option>
-        {% for t in available_types %}
-          <option value="{{ t }}" {% if active_type == t %}selected{% endif %}>{{ t }}</option>
-        {% endfor %}
-      </select>
-
-      <!-- Arena Filter -->
-      <select name="arena" onchange="this.form.submit()">
-        <option value="">All Arenas</option>
-        {% for ar in available_arenas %}
-          <option value="{{ ar }}" {% if active_arena == ar %}selected{% endif %}>{{ ar }} Arena</option>
-        {% endfor %}
-      </select>
-
-      <!-- Set Filter -->
-      <select name="set" onchange="this.form.submit()">
-        <option value="">All Sets</option>
-        {% for s in available_sets %}
-          <option value="{{ s.code }}" {% if active_set == s.code %}selected{% endif %}>{{ s.code }} ({{ s.name }})</option>
-        {% endfor %}
-      </select>
-
-      <button type="submit" style="background: var(--accent); color: #090d16; border: none; font-weight: 700; padding: 0.55rem 1.25rem; border-radius: 6px; cursor: pointer;">
-        Search
-      </button>
-
-      {% if search_query or active_aspect or active_type or active_arena or active_set or active_cost %}
-        <a href="{{ base_path or '/' }}" style="display: inline-flex; align-items: center; padding: 0.55rem 0.9rem; font-size: 0.85rem; color: var(--muted); border: 1px solid var(--border-subtle); border-radius: 6px;">
-          Reset
-        </a>
-      {% endif %}
+    <!-- Key Database Stats -->
+    <div class="swu-stats-bar">
+      <div>
+        <div class="swu-stat-value">{{ cards_display }}</div>
+        <div class="swu-stat-label">Cards Cataloged</div>
+      </div>
+      <div class="swu-stat-divider"></div>
+      <div>
+        <div class="swu-stat-value" style="color: #38bdf8;">{{ rulings_display }}</div>
+        <div class="swu-stat-label">Official Rulings</div>
+      </div>
+      <div class="swu-stat-divider"></div>
+      <div>
+        <div class="swu-stat-value" style="color: #ef4444;">{{ sets_display }}</div>
+        <div class="swu-stat-label">Expansions &amp; Sets</div>
+      </div>
     </div>
 
-    <!-- Aspect Quick Chips -->
-    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; pt-1">
-      <span style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-right: 0.25rem;">Aspects:</span>
-      {% for asp in available_aspects %}
-        <a href="?aspect={{ asp }}&view={{ view_mode }}"
-           class="aspect-badge aspect-{{ asp.lower() }}"
-           style="opacity: {% if active_aspect and active_aspect != asp %}0.45{% else %}1.0{% endif %};">
-          {{ asp }}
-        </a>
-      {% endfor %}
-    </div>
-  </form>
-</div>
+    <!-- Featured Leaders Showcase -->
+    {% if featured_leaders %}
+      <div class="swu-leaders-panel">
+        <div class="swu-leaders-header">
+          <div class="swu-leaders-title">Iconic Leaders</div>
+          <a href="{{ base_path or '/' }}?type=Leader" class="swu-leaders-link">View All Leaders &rarr;</a>
+        </div>
 
-<!-- Results Grid -->
-{% if cards %}
-  {% if view_mode == 'scans' %}
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.25rem;">
-      {% for card in cards %}
-        <a href="{{ base_path }}/card/{{ card.slug }}"
-           style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;"
-           onmouseover="this.style.borderColor='var(--accent)'; this.style.transform='translateY(-3px)';"
-           onmouseout="this.style.borderColor='var(--border)'; this.style.transform='translateY(0)';">
-          
-          <!-- Image area -->
-          <div style="position: relative; background: #070a10; padding: 0.5rem; display: flex; align-items: center; justify-content: center; min-height: 290px;">
-            {% if card.art_front %}
-              <img src="{{ card.art_front }}" alt="{{ card.title }}" loading="lazy" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
-            {% else %}
-              <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 260px; color: var(--muted); text-align: center; padding: 1rem;">
-                <span style="font-weight: 700; font-size: 1.1rem; color: #fff;">{{ card.title }}</span>
-                <span style="font-size: 0.8rem; margin-top: 0.5rem;">{{ card.type }}</span>
-              </div>
-            {% endif %}
-
-            <!-- Cost badge top right if applicable -->
-            {% if card.cost is not none %}
-              <div style="position: absolute; top: 12px; right: 12px; background: #000; color: #fff; border: 1.5px solid var(--accent); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; box-shadow: 0 2px 6px rgba(0,0,0,0.8);">
-                {{ card.cost }}
-              </div>
-            {% endif %}
-          </div>
-
-          <!-- Card Meta Details -->
-          <div style="padding: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem; flex: 1;">
-            <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem;">
-              <div style="font-weight: 700; font-size: 0.95rem; color: #fff; line-height: 1.25;">
-                {{ card.title }}
-              </div>
-              <span style="font-size: 0.75rem; color: var(--muted); font-family: monospace;">#{{ card.card_number }}</span>
-            </div>
-
-            {% if card.subtitle %}
-              <div style="font-size: 0.78rem; color: var(--accent); font-weight: 600; line-height: 1.2;">
-                {{ card.subtitle }}
-              </div>
-            {% endif %}
-
-            <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: auto; padding-top: 0.4rem;">
-              <span style="font-size: 0.72rem; background: #1a2234; padding: 0.15rem 0.45rem; border-radius: 4px; color: #cbd5e1;">
-                {{ card.type }}
-              </span>
-              {% for asp in card.aspects %}
-                <span class="aspect-badge aspect-{{ asp.lower() }}" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">
-                  {{ asp }}
-                </span>
-              {% endfor %}
-            </div>
-          </div>
-        </a>
-      {% endfor %}
-    </div>
-  {% else %}
-    <!-- Text Grid Table View -->
-    <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow-x: auto;">
-      <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left;">
-        <thead>
-          <tr style="border-bottom: 1px solid var(--border); background: #0d1322; color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">
-            <th style="padding: 0.75rem 1rem;">Card Name</th>
-            <th style="padding: 0.75rem 1rem;">Set &amp; #</th>
-            <th style="padding: 0.75rem 1rem;">Type</th>
-            <th style="padding: 0.75rem 1rem;">Aspects</th>
-            <th style="padding: 0.75rem 1rem;">Cost</th>
-            <th style="padding: 0.75rem 1rem;">Power / HP</th>
-            <th style="padding: 0.75rem 1rem;">Text Summary</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for card in cards %}
-            <tr style="border-bottom: 1px solid var(--border); transition: background 0.15s;" onmouseover="this.style.background='var(--card-hover)'" onmouseout="this.style.background='transparent'">
-              <td style="padding: 0.75rem 1rem;">
-                <a href="{{ base_path }}/card/{{ card.slug }}" style="font-weight: 700; color: #fff; display: block;">
-                  {{ card.title }}
-                </a>
-                {% if card.subtitle %}
-                  <span style="font-size: 0.75rem; color: var(--accent);">{{ card.subtitle }}</span>
-                {% endif %}
-              </td>
-              <td style="padding: 0.75rem 1rem; font-family: monospace; color: var(--muted); font-size: 0.82rem;">
-                {{ card.expansion.code }} #{{ card.card_number }}
-              </td>
-              <td style="padding: 0.75rem 1rem; color: #cbd5e1;">
-                {{ card.type }}
-              </td>
-              <td style="padding: 0.75rem 1rem;">
-                <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
-                  {% for asp in card.aspects %}
-                    <span class="aspect-badge aspect-{{ asp.lower() }}" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">
-                      {{ asp }}
-                    </span>
-                  {% endfor %}
-                </div>
-              </td>
-              <td style="padding: 0.75rem 1rem; font-weight: 700; color: #fff;">
-                {% if card.cost is not none %}{{ card.cost }}{% else %}&mdash;{% endif %}
-              </td>
-              <td style="padding: 0.75rem 1rem; font-weight: 600; color: #cbd5e1;">
-                {% if card.power is not none or card.hp is not none %}
-                  {{ card.power or 0 }} / {{ card.hp or 0 }}
+        <div class="swu-leaders-grid">
+          {% for leader in featured_leaders %}
+            <a href="{{ base_path }}/card/{{ leader.slug }}" class="swu-leader-card">
+              <div class="swu-leader-img-wrap">
+                {% set leader_img = leader.art_front or leader.front_image or leader.front_image_url %}
+                {% if leader_img %}
+                  <img src="{{ leader_img }}" alt="{{ leader.name or leader.title }}" loading="lazy" class="swu-leader-img">
                 {% else %}
-                  &mdash;
+                  <div class="swu-card-placeholder">{{ leader.name or leader.title }}</div>
                 {% endif %}
-              </td>
-              <td style="padding: 0.75rem 1rem; color: var(--muted); max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                {{ card.text }}
-              </td>
-            </tr>
+              </div>
+              <div class="swu-leader-meta">
+                <div class="swu-leader-name">{{ leader.name or leader.title }}</div>
+                <div class="swu-leader-subtitle">{{ leader.subtitle or leader.type }}</div>
+              </div>
+            </a>
           {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  {% endif %}
-{% else %}
-  <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 3rem; text-align: center;">
-    <h3 style="font-size: 1.2rem; color: #fff; margin-bottom: 0.5rem;">No Star Wars cards found</h3>
-    <p style="color: var(--muted); margin-bottom: 1.5rem;">Try clearing your filters or searching for another term.</p>
-    <a href="{{ base_path or '/' }}" style="background: var(--accent); color: #090d16; font-weight: 700; padding: 0.5rem 1.2rem; border-radius: 6px; display: inline-block;">
-      Reset Filters
-    </a>
-  </div>
+        </div>
+      </div>
+    {% endif %}
+  </section>
 {% endif %}
+
+  <!-- MAIN CATALOG VIEW -->
+  <div class="swu-catalog-layout">
+    <!-- Filter Sidebar -->
+    <aside class="swu-filter-panel">
+      <form action="{{ base_path or '/' }}" method="get">
+        <div class="swu-filter-group">
+          <label class="swu-filter-label" for="q">Card Search</label>
+          <input type="text" id="q" name="q" class="swu-filter-input" placeholder="Search card title, text..." value="{{ search_query }}">
+        </div>
+
+        <div class="swu-filter-group">
+          <label class="swu-filter-label" for="aspect">Aspect</label>
+          <select id="aspect" name="aspect" class="swu-filter-select" onchange="this.form.submit()">
+            <option value="">All Aspects</option>
+            {% for a in available_aspects %}
+              <option value="{{ a }}" {% if active_aspect == a %}selected{% endif %}>{{ a }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="swu-filter-group">
+          <label class="swu-filter-label" for="type">Card Type</label>
+          <select id="type" name="type" class="swu-filter-select" onchange="this.form.submit()">
+            <option value="">All Types</option>
+            {% for t in available_types %}
+              <option value="{{ t }}" {% if active_type == t %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="swu-filter-group">
+          <label class="swu-filter-label" for="arena">Arena</label>
+          <select id="arena" name="arena" class="swu-filter-select" onchange="this.form.submit()">
+            <option value="">All Arenas</option>
+            {% for ar in available_arenas %}
+              <option value="{{ ar }}" {% if active_arena == ar %}selected{% endif %}>{{ ar }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="swu-filter-group">
+          <label class="swu-filter-label" for="set">Expansion Set</label>
+          <select id="set" name="set" class="swu-filter-select" onchange="this.form.submit()">
+            <option value="">All Sets</option>
+            {% for s in available_sets %}
+              <option value="{{ s.code }}" {% if active_set == s.code %}selected{% endif %}>{{ s.name }} ({{ s.code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        {% if is_filtered %}
+          <a href="{{ base_path or '/' }}" class="swu-clear-btn" style="background: #27272a; padding: 0.6rem; border-radius: 6px; font-weight: 600; color: #f4f4f5; text-decoration: none; display: block; text-align: center; margin-top: 1rem;">Reset Filters</a>
+        {% endif %}
+      </form>
+    </aside>
+
+    <!-- Cards Catalog Grid -->
+    <main>
+      <div class="swu-catalog-header">
+        <div class="swu-catalog-count">
+          Showing <strong>{{ cards|length }}</strong> of <strong>{{ total_matching }}</strong> cards
+          {% if is_filtered %}(Filtered View){% endif %}
+        </div>
+        <div style="font-size: 0.85rem; color: var(--muted);">
+          Page {{ current_page }} of {{ total_pages }}
+        </div>
+      </div>
+
+      {% if cards %}
+        <div class="swu-cards-grid">
+          {% for card in cards %}
+            <a href="{{ base_path }}/card/{{ card.slug }}" class="swu-card-item">
+              <div class="swu-card-art-wrap {% if card.type in ['Leader', 'Base'] %}landscape{% endif %}">
+                {% set card_img = card.art_front or card.front_image or card.front_image_url %}
+                {% if card_img %}
+                  <img src="{{ card_img }}" alt="{{ card.name or card.title }}" loading="lazy" class="swu-card-art">
+                {% else %}
+                  <div class="swu-card-placeholder">{{ card.name or card.title }}</div>
+                {% endif %}
+                {% if card.cost is defined and card.cost is not none %}
+                  <div class="swu-card-cost-badge">{{ card.cost }}</div>
+                {% endif %}
+              </div>
+              <div class="swu-card-info">
+                <div class="swu-card-name">{{ card.name or card.title }}</div>
+                {% if card.subtitle %}
+                  <div class="swu-card-subname">{{ card.subtitle }}</div>
+                {% endif %}
+                <div class="swu-card-tags">
+                  <span class="swu-card-tag">{{ card.type }}</span>
+                  {% for asp in card.aspects %}
+                    <span class="swu-card-tag" style="border: 1px solid var(--border);">{{ asp }}</span>
+                  {% endfor %}
+                  {% if card.set %}
+                    <span class="swu-card-tag" style="margin-left: auto; font-family: monospace;">{{ card.set }}</span>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+
+        <!-- Pagination Controls -->
+        {% if total_pages > 1 %}
+          <div class="swu-pagination">
+            {% if current_page > 1 %}
+              <a href="{{ page_url_prefix }}page={{ current_page - 1 }}" class="swu-page-btn">&larr; Previous</a>
+            {% else %}
+              <span class="swu-page-btn disabled">&larr; Previous</span>
+            {% endif %}
+
+            {% for p in page_range %}
+              <a href="{{ page_url_prefix }}page={{ p }}" class="swu-page-btn {% if p == current_page %}active{% endif %}">{{ p }}</a>
+            {% endfor %}
+
+            {% if current_page < total_pages %}
+              <a href="{{ page_url_prefix }}page={{ current_page + 1 }}" class="swu-page-btn">Next &rarr;</a>
+            {% else %}
+              <span class="swu-page-btn disabled">Next &rarr;</span>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% else %}
+        <div style="text-align: center; padding: 4rem 1rem; color: var(--muted);">
+          <div style="font-size: 2.5rem; margin-bottom: 1rem;">📡</div>
+          <h2 style="color: #fff; font-size: 1.3rem; margin-bottom: 0.5rem;">No Cards Found</h2>
+          <p>No cards matched your query or filter criteria in the archives.</p>
+          <a href="{{ base_path or '/' }}" style="display: inline-block; margin-top: 1rem; color: #ef4444; font-weight: 600;">Clear all filters</a>
+        </div>
+      {% endif %}
+    </main>
+  </div>
+
+</div>
 {% endblock %}

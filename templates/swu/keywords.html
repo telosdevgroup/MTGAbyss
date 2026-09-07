@@ -1,0 +1,307 @@
+{% extends "swu/base.html" %}
+
+{% block title %}
+  {% if current_keyword %}
+    {{ current_keyword.name }} — Star Wars: Unlimited Keyword &amp; Mechanics Rules
+  {% else %}
+    Star Wars: Unlimited Keywords &amp; Mechanics Directory — AvaScry SWU
+  {% endif %}
+{% endblock %}
+
+{% block og_tags %}
+  {% if current_keyword %}
+    <meta property="og:title" content="{{ current_keyword.name }} — Star Wars: Unlimited Keyword Rules">
+    <meta property="og:description" content="{{ current_keyword.reminder_text }}">
+  {% else %}
+    <meta property="og:title" content="Star Wars: Unlimited Keywords &amp; Mechanics Directory">
+    <meta property="og:description" content="Explore official Comprehensive Rules definitions, reminder text, and card examples for all SWU keywords and mechanics.">
+  {% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .kw-container {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+  .kw-header {
+    margin-bottom: 2rem;
+  }
+  .kw-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+  .kw-subtitle {
+    font-size: 1rem;
+    color: var(--muted);
+    max-width: 800px;
+    line-height: 1.5;
+  }
+  .kw-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.25rem;
+  }
+  .kw-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .kw-card:hover {
+    border-color: #52525b;
+    transform: translateY(-2px);
+  }
+  .kw-card-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+  }
+  .kw-card-sec {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: monospace;
+  }
+  .kw-card-reminder {
+    font-size: 0.88rem;
+    color: #d4d4d8;
+    font-style: italic;
+    line-height: 1.45;
+    margin: 0.5rem 0 1rem 0;
+  }
+  .kw-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #27272a;
+    padding-top: 0.75rem;
+    margin-top: 0.5rem;
+  }
+  .kw-badge {
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .kw-link {
+    font-size: 0.82rem;
+    color: #60a5fa;
+    font-weight: 600;
+  }
+
+  /* Single keyword view */
+  .kw-detail-box {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+  .kw-type-pill {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    background: rgba(239, 68, 68, 0.12);
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+  }
+  .kw-detail-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.3rem;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .kw-reminder-box {
+    margin-top: 1.5rem;
+    background: #09090b;
+    border: 1px solid #27272a;
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 1.25rem;
+  }
+  .kw-reminder-text {
+    font-size: 1.05rem;
+    font-style: italic;
+    color: #f4f4f5;
+    line-height: 1.5;
+  }
+  .kw-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.25rem;
+  }
+  .kw-card-thumb {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .kw-card-thumb:hover {
+    border-color: #3f3f46;
+    transform: translateY(-2px);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="kw-container">
+  
+  {% if current_keyword %}
+    <!-- Single Keyword View -->
+    <nav style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem;">
+      <a href="{{ base_path }}/keywords" style="color: var(--muted); text-decoration: none;">&larr; All Keywords &amp; Mechanics</a>
+    </nav>
+
+    <div class="kw-detail-box">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+        <div>
+          <span class="kw-type-pill">
+            {{ current_keyword.type | default('Keyword Ability') }}
+          </span>
+          <h1 class="kw-detail-title">
+            {{ current_keyword.name }}
+          </h1>
+          <div style="font-size: 0.95rem; color: var(--muted);">
+            Comprehensive Rules Section:
+            {% if current_keyword.rule_section %}
+              <a href="{{ base_path }}/rule/{{ current_keyword.rule_slug | default('7-keywords') }}#sec-{{ current_keyword.rule_section }}" style="color: #60a5fa; text-decoration: none; font-weight: 600;">
+                Section {{ current_keyword.rule_section }}
+              </a>
+            {% else %}
+              Section 7 (Keywords)
+            {% endif %}
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+          <a href="{{ base_path }}/keyword/{{ current_keyword.slug }}.json" target="_blank"
+             style="font-size: 0.8rem; font-family: monospace; background: #09090b; border: 1px solid var(--border); padding: 0.4rem 0.75rem; border-radius: 6px; color: var(--muted); text-decoration: none;">
+            .JSON Data
+          </a>
+        </div>
+      </div>
+
+      <!-- Reminder Text Box -->
+      <div class="kw-reminder-box">
+        <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #a1a1aa; margin-bottom: 0.4rem;">
+          Reminder Text
+        </div>
+        <div class="kw-reminder-text">
+          {{ current_keyword.reminder_text }}
+        </div>
+      </div>
+
+      <!-- Comprehensive Rules Definition -->
+      <div style="margin-top: 1.5rem;">
+        <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em;">
+          Comprehensive Rules Definition
+        </h2>
+        <div style="font-size: 0.95rem; line-height: 1.65; color: #d4d4d8; white-space: pre-line;">
+          {{ current_keyword.cr_text or current_keyword.description }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Cards with this keyword -->
+    <div style="margin-top: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem; font-weight: 700; color: #fff;">
+          Cards with {{ current_keyword.name }}
+          <span style="font-size: 0.95rem; color: var(--muted); font-weight: 400;">({{ cards | length }})</span>
+        </h2>
+        <a href="{{ base_path }}/?q={{ current_keyword.name }}" style="font-size: 0.85rem; color: #60a5fa; text-decoration: none;">
+          Search in Catalog &rarr;
+        </a>
+      </div>
+
+      {% if cards %}
+        <div class="kw-cards-grid">
+          {% for card in cards %}
+            <a href="{{ base_path }}/card/{{ card.slug }}" class="kw-card-thumb">
+              <div style="aspect-ratio: 1 / 1.4; background: #09090b; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                {% if card.art_front or card.front_image %}
+                  <img src="{{ card.art_front or card.front_image }}" alt="{{ card.title or card.name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                  <div style="font-size: 0.8rem; color: var(--muted); text-align: center; padding: 1rem;">No Scan Available</div>
+                {% endif %}
+              </div>
+              <div style="padding: 0.75rem;">
+                <div style="font-weight: 600; font-size: 0.9rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  {{ card.title or card.name }}
+                </div>
+                <div style="font-size: 0.78rem; color: var(--muted); margin-top: 0.2rem;">
+                  {{ card.expansion.code or card.set_code }} #{{ card.card_number or card.number }}
+                </div>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem; text-align: center; color: var(--muted);">
+          No cards currently registered with this keyword in the database.
+        </div>
+      {% endif %}
+    </div>
+
+  {% else %}
+    <!-- Keywords Directory Overview -->
+    <div class="kw-header">
+      <h1 class="kw-title">
+        Star Wars: Unlimited Keywords &amp; Mechanics
+      </h1>
+      <p class="kw-subtitle">
+        Complete, canonical directory of Star Wars: Unlimited keyword abilities, action triggers, and gameplay mechanics sourced directly from the official Comprehensive Rules.
+      </p>
+    </div>
+
+    <div class="kw-grid">
+      {% for kw in keywords %}
+        <a href="{{ base_path }}/keyword/{{ kw.slug }}" class="kw-card">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
+              <h2 class="kw-card-title">
+                {{ kw.name }}
+              </h2>
+              {% if kw.rule_section %}
+                <span class="kw-card-sec">CR §{{ kw.rule_section }}</span>
+              {% endif %}
+            </div>
+            <p class="kw-card-reminder">
+              {{ kw.reminder_text }}
+            </p>
+          </div>
+          <div class="kw-card-footer">
+            <span class="kw-badge">
+              {{ kw.type | default('Keyword Ability') }}
+            </span>
+            <span class="kw-link">
+              View Rules &amp; Cards &rarr;
+            </span>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

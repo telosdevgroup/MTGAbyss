@@ -24,6 +24,32 @@ async def swu_serve_image(rest_of_path: str):
         return FileResponse(file_path, media_type=media_type, headers={"Cache-Control": "public, max-age=2592000, immutable"})
     raise HTTPException(status_code=404, detail="Image not found")
 
+SWU_STATIC_IMAGES = set()
+
+def get_swu_static_images():
+    """Lazily load the set of existing SWU local scan filenames into RAM for O(1) checks."""
+    global SWU_STATIC_IMAGES
+    if not SWU_STATIC_IMAGES:
+        folder = os.path.join("public", "images", "swu")
+        if os.path.isdir(folder):
+            try:
+                SWU_STATIC_IMAGES = set(os.listdir(folder))
+            except Exception:
+                pass
+    return SWU_STATIC_IMAGES
+
+def resolve_swu_image(slug: str, suffix: str, remote_url: Optional[str] = None) -> Optional[str]:
+    """O(1) in-memory resolution of local card scans with non-foil fallback."""
+    local_files = get_swu_static_images()
+    filename = f"{slug}_{suffix}.png"
+    if filename in local_files:
+        return f"/images/swu/{filename}"
+    base_slug = slug[:-1] if slug.endswith(("F", "f")) else slug
+    base_filename = f"{base_slug}_{suffix}.png"
+    if base_filename in local_files:
+        return f"/images/swu/{base_filename}"
+    return remote_url
+
 def get_swu_db():
     client = get_mongo_db().client
     return client["avascry_swu"]
@@ -78,8 +104,8 @@ async def swu_home(request: Request,
         except ValueError:
             pass
 
-    # Hide duplicate foil variants (Foil, Hyperspace Foil, Prestige Foil) that lack dedicated scans
-    query["variant_type"] = {"$not": {"$regex": "Foil", "$options": "i"}}
+    # Hide duplicate foil variants (Foil, Hyperspace Foil, Prestige Foil) using indexed $nin
+    query["variant_type"] = {"$nin": ["Foil", "Hyperspace Foil", "Prestige Foil", "Prestige Serialized"]}
 
     limit = 36
     page = max(1, page)
@@ -118,7 +144,7 @@ async def swu_home(request: Request,
         "front_text": 1
     }).sort([("expansion.code", 1), ("card_number", 1)]).skip(skip).limit(limit))
 
-    # Normalize fields for display in templates
+    # Normalize fields for display in templates using O(1) in-memory image resolution
     for c in cards:
         if not c.get("title"):
             c["title"] = c.get("name") or "Unknown"
@@ -126,25 +152,8 @@ async def swu_home(request: Request,
             c["card_number"] = c.get("number")
         
         slug = c.get("slug") or ""
-        local_front_file = f"public/images/swu/{slug}_front.png"
-        local_back_file = f"public/images/swu/{slug}_back.png"
-
-        # If variant without scan (e.g. ending in F), fall back to base card image
-        base_slug = slug[:-1] if slug.endswith(("F", "f")) else slug
-
-        if os.path.isfile(local_front_file):
-            c["art_front"] = f"/images/swu/{slug}_front.png"
-        elif os.path.isfile(f"public/images/swu/{base_slug}_front.png"):
-            c["art_front"] = f"/images/swu/{base_slug}_front.png"
-        else:
-            c["art_front"] = c.get("local_image_front") or c.get("art_front") or c.get("front_image")
-
-        if os.path.isfile(local_back_file):
-            c["art_back"] = f"/images/swu/{slug}_back.png"
-        elif os.path.isfile(f"public/images/swu/{base_slug}_back.png"):
-            c["art_back"] = f"/images/swu/{base_slug}_back.png"
-        else:
-            c["art_back"] = c.get("local_image_back") or c.get("art_back") or c.get("back_image")
+        c["art_front"] = resolve_swu_image(slug, "front", c.get("local_image_front") or c.get("art_front") or c.get("front_image"))
+        c["art_back"] = resolve_swu_image(slug, "back", c.get("local_image_back") or c.get("art_back") or c.get("back_image"))
 
         if not c.get("text"):
             c["text"] = c.get("front_text") or ""
@@ -170,8 +179,9 @@ async def swu_home(request: Request,
         for fl in featured_leaders:
             if not fl.get("title"):
                 fl["title"] = fl.get("name")
-            fl["art_front"] = fl.get("local_image_front") or fl.get("art_front") or fl.get("front_image")
-            fl["art_back"] = fl.get("local_image_back") or fl.get("art_back") or fl.get("back_image")
+            fl_slug = fl.get("slug") or ""
+            fl["art_front"] = resolve_swu_image(fl_slug, "front", fl.get("local_image_front") or fl.get("art_front") or fl.get("front_image"))
+            fl["art_back"] = resolve_swu_image(fl_slug, "back", fl.get("local_image_back") or fl.get("art_back") or fl.get("back_image"))
 
     # Distinct lists for filter dropdowns
     available_aspects = ["Vigilance", "Command", "Aggression", "Cunning", "Heroism", "Villainy"]
@@ -199,8 +209,8 @@ async def swu_home(request: Request,
     qs = "&".join(f"{k}={v}" for k, v in query_params.items())
     page_url_prefix = f"?{qs}&" if qs else "?"
 
-    total_raw_cards = db.cards.count_documents({})
-    total_raw_clarifications = db.clarifications.count_documents({})
+    total_raw_cards = db.cards.estimated_document_count()
+    total_raw_clarifications = db.clarifications.estimated_document_count()
 
     cards_display = f"{max(4000, (total_raw_cards // 100) * 100):,}+" if total_raw_cards else "4,800+"
     rulings_display = f"{max(1500, (total_raw_clarifications // 100) * 100):,}+" if total_raw_clarifications else "1,600+"

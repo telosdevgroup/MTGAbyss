@@ -151,7 +151,6 @@
       <nav aria-label="Dominion Navigation">
         <a href="{{ base_path or '/' }}">Rulings &amp; Cards</a>
         <a href="{{ base_path or '/' }}#generator" id="nav-kingdom-generator">Kingdom Generator</a>
-        <a href="https://avascry.com" target="_blank" rel="noopener">MTG Network</a>
       </nav>
     </div>
   </header>
@@ -163,7 +162,7 @@
   <footer>
     <div class="footer-inner" style="flex-direction: column; align-items: flex-start; gap: 1.5rem;">
       <div style="display: flex; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 2rem;">
-        <div style="max-width: 420px;">
+        <div style="max-width: 400px;">
           <div style="font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">
             AvaScry <span style="color: var(--accent);">Dominion</span>
           </div>
@@ -171,6 +170,9 @@
             The canonical rules, errata, and strategy database for the Dominion deck-building game. Comprehensive coverage across all expansions from 2008 to present.
           </p>
         </div>
+
+        {% include "partials/network_games.html" %}
+
         <div>
           <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 0.6rem;">Legal &amp; Support</div>
           <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
@@ -186,7 +188,6 @@
             <li><a href="{{ base_path }}/sitemap.xml">XML Sitemap</a></li>
             <li><a href="{{ base_path }}/robots.txt">Robots.txt</a></li>
             <li><a href="{{ base_path }}/llms.txt">LLM Training (llms.txt)</a></li>
-            <li><a href="https://avascry.com" target="_blank" rel="noopener">MTG Network</a></li>
           </ul>
         </div>
       </div>

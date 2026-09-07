@@ -297,7 +297,7 @@
         <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">
           Related &amp; Synergy Cards
         </h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.25rem;">
           {% for sc in synergy_cards %}
             <a href="{{ base_path }}/card/{{ sc.slug }}" style="background: #09090b; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; text-decoration: none; display: flex; flex-direction: column; transition: transform 0.15s, border-color 0.15s;"
                onmouseover="this.style.borderColor='rgba(239,68,68,0.6)'; this.style.transform='translateY(-2px)';"

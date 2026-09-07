@@ -99,27 +99,35 @@ def normalize_card(raw: Dict[str, Any], set_map: Dict[str, str]) -> Dict[str, An
 
     set_name = set_map.get(set_code, set_code)
 
+    num_clean_int = int(re.sub(r'\D', '', number) or '0')
+
     return {
         "cid": str(raw.get("cid") or f"{set_code}_{number}"),
         "slug": unique_slug,
         "base_slug": base_slug,
+        "title": name,
         "name": name,
         "subtitle": subtitle,
         "full_name": f"{name}: {subtitle}" if subtitle else name,
         "type": card_type,
         "set_code": set_code,
         "set_name": set_name,
+        "expansion": {"code": set_code, "name": set_name},
         "number": number,
+        "card_number": num_clean_int,
         "aspects": aspects,
         "traits": traits,
         "arenas": arenas,
         "cost": cost,
         "power": power,
         "hp": hp,
+        "text": front_text,
         "front_text": front_text,
         "back_text": back_text,
         "epic_action": epic_action,
         "double_sided": double_sided,
+        "art_front": front_art,
+        "art_back": back_art,
         "front_image": front_art,
         "back_image": back_art,
         "rarity": rarity,

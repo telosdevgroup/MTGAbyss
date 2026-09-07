@@ -1,0 +1,215 @@
+{% extends "swu/base.html" %}
+
+{% block title %}
+  {% if current_section %}
+    SWU CR §{{ current_section.section_id }} {{ current_section.title }} — Star Wars: Unlimited Rules
+  {% else %}
+    Star Wars: Unlimited Comprehensive Rules — AvaScry SWU
+  {% endif %}
+{% endblock %}
+
+{% block og_tags %}
+  <meta property="og:title" content="Star Wars: Unlimited Comprehensive Rules Citation Engine">
+  <meta property="og:description" content="Searchable, deep-linkable Star Wars: Unlimited Comprehensive Rules with instant section citation anchors.">
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .rules-container {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+  .rules-header {
+    margin-bottom: 2rem;
+  }
+  .rules-badge {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    background: rgba(239, 68, 68, 0.12);
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+  }
+  .rules-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .rules-subtitle {
+    font-size: 1rem;
+    color: var(--muted);
+    max-width: 800px;
+    line-height: 1.5;
+  }
+  .rules-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .rules-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+  .rules-sidebar {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    position: sticky;
+    top: 1.5rem;
+    max-height: calc(100vh - 3rem);
+    overflow-y: auto;
+  }
+  .rules-sidebar-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-bottom: 0.85rem;
+  }
+  .rules-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.88rem;
+  }
+  .rules-nav-link {
+    padding: 0.45rem 0.65rem;
+    border-radius: 6px;
+    text-decoration: none;
+    display: flex;
+    gap: 0.5rem;
+    color: var(--muted);
+    transition: background 0.15s, color 0.15s;
+  }
+  .rules-nav-link:hover {
+    color: #f4f4f5;
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .rules-nav-link.active {
+    color: #fff;
+    background: #27272a;
+    font-weight: 600;
+  }
+  .rules-section-box {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .rules-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.85rem;
+    margin-bottom: 1.25rem;
+  }
+  .rules-copy-btn {
+    background: #09090b;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .rules-copy-btn:hover {
+    color: #fff;
+    border-color: #52525b;
+  }
+  .rules-content-body {
+    font-size: 0.96rem;
+    line-height: 1.7;
+    color: #d4d4d8;
+    white-space: pre-line;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rules-container">
+  
+  <div class="rules-header">
+    <span class="rules-badge">
+      Comprehensive Rules Engine
+    </span>
+    <h1 class="rules-title">
+      Star Wars: Unlimited Comprehensive Rules
+    </h1>
+    <p class="rules-subtitle">
+      Full canonical rules hierarchy with deep permalinks, copyable citations, and cross-references.
+    </p>
+  </div>
+
+  <div class="rules-layout">
+    
+    <!-- Sidebar / TOC -->
+    <aside class="rules-sidebar">
+      <div class="rules-sidebar-title">
+        Rules Sections
+      </div>
+      <nav class="rules-nav">
+        {% for sec in all_sections %}
+          <a href="{{ base_path }}/rule/{{ sec.slug }}"
+             class="rules-nav-link {% if current_section and current_section.slug == sec.slug %}active{% endif %}">
+            <span style="color: var(--accent); font-weight: 700; font-family: monospace;">§{{ sec.section_id }}</span>
+            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ sec.title }}</span>
+          </a>
+        {% endfor %}
+      </nav>
+    </aside>
+
+    <!-- Main Content Display -->
+    <main>
+      {% if sections_to_display %}
+        {% for sec in sections_to_display %}
+          <section id="sec-{{ sec.section_id }}" class="rules-section-box">
+            <div class="rules-section-header">
+              <div>
+                <span style="font-family: monospace; font-size: 0.95rem; font-weight: 700; color: var(--accent); margin-right: 0.5rem;">
+                  §{{ sec.section_id }}
+                </span>
+                <h2 style="display: inline; font-family: 'Space Grotesk', sans-serif; font-size: 1.45rem; font-weight: 700; color: #fff;">
+                  {{ sec.title }}
+                </h2>
+              </div>
+              <button onclick="copyCitation('SWU CR §{{ sec.section_id }} ({{ sec.title }})', '{{ base_path }}/rule/{{ sec.slug }}')"
+                      class="rules-copy-btn">
+                Copy Citation
+              </button>
+            </div>
+
+            <div class="rules-content-body">
+              {{ sec.content }}
+            </div>
+          </section>
+        {% endfor %}
+      {% endif %}
+    </main>
+
+  </div>
+
+</div>
+
+<script>
+function copyCitation(text, url) {
+  const full = text + ' — ' + window.location.origin + url;
+  navigator.clipboard.writeText(full).then(() => {
+    alert('Citation copied to clipboard:\n' + full);
+  });
+}
+</script>
+{% endblock %}
