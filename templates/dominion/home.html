@@ -1,23 +1,26 @@
 {% extends "dominion/base.html" %}
 
-{% block title %}Dominion Card Catalog &amp; Rules Index — AvaScry{% endblock %}
+{% block title %}Dominion Card Rulings, Errata &amp; Synergies — AvaScry{% endblock %}
 
 {% block head_extra %}
-<meta name="description" content="Complete Dominion card database: all expansions, 1st and 2nd edition cards, costs, and official rules rulings.">
+<meta name="description" content="Search official Donald X. Vaccarino rulings, 1st vs 2nd edition errata, and card synergy across all Dominion sets.">
 <style>
   .hero {
     margin-bottom: 2.5rem;
   }
   .hero h1 {
-    font-family: 'Outfit', sans-serif;
-    font-size: 2.5rem;
+    font-family: 'Cinzel', serif;
+    font-size: 2.3rem;
     font-weight: 800;
     margin-bottom: 0.5rem;
+    color: #fff;
+    letter-spacing: 0.03em;
   }
   .hero p {
     color: var(--muted);
-    font-size: 1.1rem;
-    max-width: 650px;
+    font-size: 1.05rem;
+    max-width: 680px;
+    line-height: 1.6;
   }
   .card-grid {
     display: grid;
@@ -41,11 +44,12 @@
     border-color: var(--accent);
   }
   .card-cell-name {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.2rem;
+    font-family: 'Cinzel', serif;
+    font-size: 1.15rem;
     font-weight: 700;
     color: #fff;
     margin-bottom: 0.35rem;
+    letter-spacing: 0.02em;
   }
   .card-cell-meta {
     font-size: 0.85rem;
@@ -59,8 +63,8 @@
 
 {% block content %}
 <div class="hero">
-  <h1>Dominion Intelligence Index</h1>
-  <p>Authoritative card texts, costs, 1e vs 2e comparisons, and official rules clarifications across {{ total_cards }} cards and {{ total_expansions }} expansions.</p>
+  <h1>Dominion Official Rules &amp; Card Synergies</h1>
+  <p>Official Donald X. Vaccarino rulings, 1e vs 2e comparisons, and card interactions across {{ total_cards }} cards and {{ total_expansions }} expansions.</p>
 </div>
 
 <div class="card-grid">
