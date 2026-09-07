@@ -4,6 +4,7 @@ Connects directly to MongoDB database 'avascry_dominion'.
 Serves HTML, Markdown (.md), JSON, sitemaps, and llms.txt endpoints for bots and humans.
 """
 
+import re
 from fastapi import APIRouter, Request, HTTPException, Response
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -162,7 +163,23 @@ async def dominion_card_html(request: Request, slug: str):
         
     versions = list(db.card_versions.find({"card_id": f"card:{slug}"}))
     rulings = list(db.rulings.find({"card_id": f"card:{slug}"}))
-    
+
+    def _format_rules(text: str) -> str:
+        if not text:
+            return ""
+        # Format coin token tags
+        t = re.sub(r'(\d+)\s*<\*COIN\*>', r'+\1 Coin', text)
+        t = t.replace("<*COIN*>", "Coin")
+        # Format paragraph / line break tokens
+        t = re.sub(r'(?:<n>\s*)+', '\n\n', t)
+        return t.strip()
+
+    for v in versions:
+        v["printed_rules_text"] = _format_rules(v.get("printed_rules_text", ""))
+
+    for r in rulings:
+        r["answer"] = _format_rules(r.get("answer", ""))
+
     return templates.TemplateResponse(
         request=request,
         name="dominion/card.html",
