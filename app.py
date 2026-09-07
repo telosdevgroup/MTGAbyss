@@ -127,11 +127,19 @@ async def subdomain_routing_middleware(request: Request, call_next):
 
 
 if __name__ == "__main__":
+    import signal
     import uvicorn
+
+    # Ensure Windows console passes Ctrl+C directly to Python without swallowing it
+    try:
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+    except Exception:
+        pass
+
     uvicorn.run(
         "app:app",
         host="127.0.0.1",
         port=8004,
-        reload=True,
+        reload=False,
         access_log=False
     )

@@ -64,7 +64,7 @@ def test_necromunda_endpoints():
     assert 'AvaScry Necromunda' in r.text
     r = client.get('/necromunda/sitemap.xml')
     assert r.status_code == 200
-    assert '<loc>https://necromunda.avascry.com/weapon/heavy-bolter</loc>' in r.text
+    assert '<loc>https://necromunda.avascry.com/weapon/autogun</loc>' in r.text
 
     # 6. Test Subdomain Host Routing
     r = client.get('/', headers={'host': 'necromunda.avascry.com'})

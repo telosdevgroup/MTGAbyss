@@ -268,6 +268,10 @@ def _clean_json_fence(text: str) -> str:
 
 def _extract_card_art_info(card_doc: dict):
     raw = card_doc.get("raw", {})
+    image_status = card_doc.get("image_status") or raw.get("image_status")
+    if image_status in ("placeholder", "missing"):
+        return None, None
+
     image_url = None
     image_uris = raw.get("image_uris") or card_doc.get("image_uris")
     if image_uris and isinstance(image_uris, dict):
@@ -279,6 +283,9 @@ def _extract_card_art_info(card_doc: dict):
             face_uris = card_faces[0].get("image_uris")
             if face_uris and isinstance(face_uris, dict):
                 image_url = face_uris.get("art_crop") or face_uris.get("normal") or face_uris.get("large")
+
+    if not image_url:
+        return None, None
 
     meta = {
         "illustration_id": raw.get("illustration_id") or card_doc.get("illustration_id"),
@@ -318,21 +325,23 @@ def process_art_vl(self, illustration_id: str, force: bool = False, model: str =
         if existing:
             return f"Illustration {illustration_id} already analyzed (status=complete). Skipping."
 
-    # 2. Query representative English printing with art crop
+    # 2. Query representative English printing with clean art crop (strictly no placeholders/non-English)
     card_doc = db["cards"].find_one({
+        "lang": "en",
+        "image_status": {"$nin": ["placeholder", "missing"]},
         "$or": [
-            {"illustration_id": illustration_id, "lang": "en"},
-            {"raw.illustration_id": illustration_id, "lang": "en"},
             {"illustration_id": illustration_id},
             {"raw.illustration_id": illustration_id},
         ]
     })
     if not card_doc:
-        raise ValueError(f"No card found in DB matching illustration_id: {illustration_id}")
+        print(f"[VL SKIP] No clean English printing with art crop found for illustration_id: {illustration_id}. Skipping.")
+        return f"Illustration {illustration_id} has no clean English scan. Skipping."
 
     image_url, meta = _extract_card_art_info(card_doc)
     if not image_url:
-        raise ValueError(f"No image URL found for illustration_id: {illustration_id}")
+        print(f"[VL SKIP] No valid art crop found for illustration_id: {illustration_id}. Skipping.")
+        return f"Illustration {illustration_id} has no valid art crop. Skipping."
 
     card_name = meta.get("card_name", "Unknown")
 

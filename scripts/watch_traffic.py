@@ -765,7 +765,7 @@ class TrafficTracker:
         self.current_sec_count = 0
         self.last_hit_epoch = time.time()
 
-    def add_request(self, dt: datetime, cat: str, status: int, path: str, ip: str, badge: str, ct: str = "", lat: int = 0, surf_tag: str = "", site: str = ""):
+    def add_request(self, dt: datetime, cat: str, status: int, path: str, ip: str, badge: str, ct: str = "", lat: int = 0, surf_tag: str = "", site: str = "", method: str = "GET"):
         now_epoch = dt.timestamp()
         self.last_hit_epoch = time.time()
         
@@ -815,6 +815,7 @@ class TrafficTracker:
             "badge": badge,
             "site": site_key,
             "status": status,
+            "method": method,
             "path": path,
             "ip": ip,
             "cat": cat,
@@ -1160,9 +1161,25 @@ def render_dashboard(tracker: TrafficTracker):
                 s_key = hit.get("site", "mtg")
                 s_badge = SITE_BADGES.get(s_key, SITE_BADGES["other"])
                 
+                # Caller / Bot badge
+                badge = hit.get("badge", "")
+                if any(k in badge.lower() for k in ("-user", "chatgpt-user", "claude-user", "perplexity-user")):
+                    badge_str = f"{YELLOW}{BOLD}⭐ {badge:<13}{RESET}"
+                elif "meta" in badge.lower():
+                    badge_str = f"{YELLOW}{badge:<15}{RESET}"
+                elif "google" in badge.lower():
+                    badge_str = f"{GREEN}{badge:<15}{RESET}"
+                elif "apple" in badge.lower():
+                    badge_str = f"{CYAN}{badge:<15}{RESET}"
+                elif "amazon" in badge.lower():
+                    badge_str = f"{YELLOW}{badge:<15}{RESET}"
+                else:
+                    badge_str = f"{badge:<15}"
+
+                lat_val = f"({hit.get('lat', 0):3d}ms)" if hit.get('lat') else "  -   "
+
                 surf_tag = hit.get("surf_tag", "").strip()
                 if surf_tag:
-                    # Clean brackets
                     raw_surf = surf_tag.strip("[] ").strip()
                     rt_badge = ROUTE_BADGES.get(SURFACE_CODE_TO_ROUTE.get(raw_surf, ""), None)
                     if not rt_badge:
@@ -1174,8 +1191,9 @@ def render_dashboard(tracker: TrafficTracker):
                 ft = hit.get("file_type", "other")
                 ft_badge = FORMAT_BADGES.get(ft, f"{DIM}[OTHR]{RESET}")
 
-                path_str = hit['path'][:56]
-                output.append(f"  {s_badge} {rt_badge} {ft_badge} {path_str}")
+                method = hit.get("method", "GET")
+                path_str = hit['path'][:52]
+                output.append(f"  {s_badge} {badge_str} {lat_val} {rt_badge} {ft_badge} -> {method} {path_str}")
 
     # ==========================================
     # VIEW 2: STORAGE & DATABASE METER
@@ -1687,7 +1705,8 @@ def tail_log_file(tracker: TrafficTracker, from_now: bool = False):
                         continue
                     lat_val = int(m.group("lat")) if m.group("lat") else 0
                     site_val = infer_site(site_raw, path)
-                    tracker.add_request(ts, cat, status, path, ip, badge, ct, lat_val, surf_tag, site=site_val)
+                    method = m.group("method") if "method" in m.groupdict() and m.group("method") else "GET"
+                    tracker.add_request(ts, cat, status, path, ip, badge, ct, lat_val, surf_tag, site=site_val, method=method)
         while True:
             line = f.readline()
             if line:
@@ -1703,7 +1722,7 @@ def tail_log_file(tracker: TrafficTracker, from_now: bool = False):
                         badge = m.group("badge")
                         site_raw = m.group("site") or ""
                         status = int(m.group("status"))
-                        method = m.group("method")
+                        method = m.group("method") if "method" in m.groupdict() and m.group("method") else "GET"
                         path = m.group("path")
                         surf_tag, fmt_tag = parse_log_tags(m.group("tags"))
                         ct = f"[{fmt_tag}]" if fmt_tag else ""
@@ -1712,7 +1731,7 @@ def tail_log_file(tracker: TrafficTracker, from_now: bool = False):
                             continue
                         lat_val = int(m.group("lat")) if m.group("lat") else 0
                         site_val = infer_site(site_raw, path)
-                        tracker.add_request(ts, cat, status, path, ip, badge, ct, lat_val, surf_tag, site=site_val)
+                        tracker.add_request(ts, cat, status, path, ip, badge, ct, lat_val, surf_tag, site=site_val, method=method)
             else:
                 time.sleep(0.1)
 

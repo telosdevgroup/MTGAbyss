@@ -27,15 +27,23 @@ def main():
         {
             "$match": {
                 "lang": "en",
-                "$or": [
-                    {"illustration_id": {"$exists": True, "$ne": None}},
-                    {"raw.illustration_id": {"$exists": True, "$ne": None}}
-                ],
-                "$or": [
-                    {"image_uris.art_crop": {"$exists": True}},
-                    {"raw.image_uris.art_crop": {"$exists": True}},
-                    {"card_faces.image_uris.art_crop": {"$exists": True}},
-                    {"raw.card_faces.image_uris.art_crop": {"$exists": True}}
+                "image_status": {"$nin": ["placeholder", "missing"]},
+                "raw.image_status": {"$nin": ["placeholder", "missing"]},
+                "$and": [
+                    {
+                        "$or": [
+                            {"illustration_id": {"$exists": True, "$ne": None}},
+                            {"raw.illustration_id": {"$exists": True, "$ne": None}}
+                        ]
+                    },
+                    {
+                        "$or": [
+                            {"image_uris.art_crop": {"$exists": True, "$ne": None}},
+                            {"raw.image_uris.art_crop": {"$exists": True, "$ne": None}},
+                            {"card_faces.image_uris.art_crop": {"$exists": True, "$ne": None}},
+                            {"raw.card_faces.image_uris.art_crop": {"$exists": True, "$ne": None}}
+                        ]
+                    }
                 ]
             }
         },

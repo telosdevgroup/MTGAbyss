@@ -149,10 +149,10 @@ async def necromunda_sitemap(request: Request):
     db = get_necromunda_db()
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    weapons = list(db.weapons.find({}, {"slug": 1}))
-    traits = list(db.traits.find({}, {"slug": 1}))
-    houses = list(db.houses.find({}, {"slug": 1}))
-    skills = list(db.skills.find({}, {"slug": 1}))
+    weapons = list(db.weapons.find({}, {"slug": 1}).sort("name", 1).limit(7))
+    traits = list(db.traits.find({}, {"slug": 1}).sort("name", 1).limit(7))
+    houses = list(db.houses.find({}, {"slug": 1}).sort("name", 1).limit(7))
+    skills = list(db.skills.find({}, {"slug": 1}).sort("name", 1).limit(7))
 
     urls = [
         f'  <url><loc>https://necromunda.avascry.com/</loc><lastmod>{today}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>',

@@ -93,8 +93,12 @@ async def card_name_shortcut(request: Request, slug: str):
     
     # 1. Fast direct lookup by slug, printing_slug, or card name
     card = db["cards"].find_one({"slug": slug}) or db["cards"].find_one({"printing_slug": slug})
-    
-    # 2. Check if slug has a set code suffix (e.g. "scrib-nibblers-wwk" -> base="scrib-nibblers", set="wwk")
+
+    # 2. Fast lookup by full card name slug (e.g. "water-wurm" is the actual card name!)
+    if not card:
+        card = find_card_by_slug(db, slug)
+
+    # 3. Check if slug has a set code suffix (e.g. "scrib-nibblers-wwk" -> base="scrib-nibblers", set="wwk")
     if not card and '-' in slug:
         parts = slug.split('-')
         if len(parts) >= 2 and len(parts[-1]) in (3, 4):
@@ -102,10 +106,6 @@ async def card_name_shortcut(request: Request, slug: str):
             base_card = find_card_by_slug(db, card_slug)
             if base_card and base_card.get("oracle_id"):
                 card = db["cards"].find_one({"oracle_id": base_card["oracle_id"], "set": set_code}) or base_card
-
-    # 3. Lookup full slug
-    if not card:
-        card = find_card_by_slug(db, slug)
     
     if card:
         oracle_id = card.get("oracle_id")
@@ -123,7 +123,7 @@ async def card_name_shortcut(request: Request, slug: str):
     # Fallback to direct printing route
     return RedirectResponse(url=f"/printing/{slug}{ext}", status_code=303)
 
-def format_card_markdown(card_doc: dict, printings_count: int = 1, rulings: list = None, similar_cards: list = None) -> str:
+def format_card_markdown(card_doc: dict, printings_count: int = 1, rulings: list = None, similar_cards: list = None, visual_artwork: dict = None) -> str:
     """Format structured, machine-native Markdown with YAML frontmatter for AI agents and LLMs."""
     name = card_doc.get("name", "Unknown Card")
     mana_cost = card_doc.get("mana_cost") or "N/A"
@@ -197,6 +197,39 @@ def format_card_markdown(card_doc: dict, printings_count: int = 1, rulings: list
 
     if flavor_text:
         lines.append(f"> *{flavor_text}*\n")
+
+    if visual_artwork and visual_artwork.get("vision_observations"):
+        obs = visual_artwork["vision_observations"]
+        lines.append("## Visual Art Observations (Qwen3-VL 8B)")
+        if obs.get("visual_summary"):
+            lines.append(f"> *{obs['visual_summary']}*\n")
+        if obs.get("subjects"):
+            lines.append(f"- **Subjects:** {', '.join(obs['subjects'])}")
+        if obs.get("setting"):
+            lines.append(f"- **Setting:** {', '.join(obs['setting'])}")
+        if obs.get("dominant_colors"):
+            lines.append(f"- **Dominant Colors:** {', '.join(obs['dominant_colors'])}")
+        if obs.get("style_descriptors"):
+            lines.append(f"- **Style Descriptors:** {', '.join(obs['style_descriptors'])}")
+        if obs.get("lighting"):
+            lines.append(f"- **Lighting:** {obs['lighting']}")
+        if obs.get("composition"):
+            lines.append(f"- **Composition:** {obs['composition']}")
+        if obs.get("mood_keywords"):
+            lines.append(f"- **Atmospheric Mood:** {', '.join(obs['mood_keywords'])}")
+        lines.append("")
+
+    if visual_artwork and visual_artwork.get("top_neighbors"):
+        sub_neighbors = visual_artwork["top_neighbors"].get("by_subject", [])
+        if sub_neighbors:
+            lines.append("## Top 7 Nearest Visual Neighbors (Qwen3-Embedding 4096-d)")
+            for idx, vn in enumerate(sub_neighbors[:7], 1):
+                vn_name = vn.get("card_name", "Card")
+                vn_slug = vn.get("slug", "")
+                vn_set = vn.get("set", "")
+                vn_art = vn.get("artist", "")
+                lines.append(f"{idx}. [{vn_name}](/printing/{vn_slug}.md) ({vn_set}) by {vn_art}")
+            lines.append("")
 
     if similar_cards:
         lines.append("## Top 4096-Dim Neural Synergies")
@@ -384,9 +417,12 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
         card = db["cards"].find_one({"slug": identifier})
 
     # 2. Fast lookup by full slug before de-duplication (preserves double-named cards like Art Series and Reversible cards)
+    # Skip if last token is a known language code (e.g., -fr, -de, -ko, -es, -zhs) to avoid 500ms regex scans on set codes
     if not card and '-' in identifier:
         parts = identifier.split('-')
-        if len(parts) >= 2:
+        if len(parts) >= 3 and parts[-1].lower() in KNOWN_LANG_CODES:
+            pass  # Handled directly by step 4 (3a) in 1ms!
+        elif len(parts) >= 2:
             card_slug, set_code = "-".join(parts[:-1]), parts[-1].lower()
             base_card = find_card_by_slug(db, card_slug)
             if base_card:
@@ -872,6 +908,50 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
     except Exception as e:
         pass
 
+    # Load Visual Artwork Analysis & Top 7 Nearest Visual Neighbors (Qwen3-VL & 4096-dim Qwen3-Embedding)
+    visual_artwork = None
+    visual_similarities = None
+    illustration_id = card.get("illustration_id") or (card.get("raw") or {}).get("illustration_id")
+    if illustration_id:
+        try:
+            analysis_doc = db["vl_art_analysis"].find_one({"illustration_id": illustration_id, "status": "complete"})
+            sim_art_doc = db["vl_art_similarities"].find_one({"illustration_id": illustration_id})
+            if analysis_doc or sim_art_doc:
+                raw_neighbors = (sim_art_doc.get("top_neighbors") if sim_art_doc else {}) or {}
+                formatted_neighbors = {}
+                for category in ["by_subject", "by_vibe", "by_scene"]:
+                    cat_list = raw_neighbors.get(category, [])
+                    formatted_cat = []
+                    for n in cat_list:
+                        n_name = n.get("card_name", "Card")
+                        n_set = (n.get("set") or "").lower()
+                        n_slug = slugify(n_name)
+                        n_pslug = f"{n_slug}-{n_set}" if n_set else n_slug
+                        formatted_cat.append({
+                            "card_name": n_name,
+                            "slug": n_pslug,
+                            "artist": n.get("artist", "Unknown"),
+                            "set": n_set.upper(),
+                            "image_url": n.get("image_url", ""),
+                            "score": round(float(n.get("score", 0)), 4),
+                            "illustration_id": n.get("illustration_id", "")
+                        })
+                    formatted_neighbors[category] = formatted_cat
+
+                visual_similarities = formatted_neighbors
+                visual_artwork = {
+                    "illustration_id": illustration_id,
+                    "artist": card.get("artist") or "Unknown",
+                    "vision_observations": (analysis_doc.get("vision_observations") if analysis_doc else {}) or {},
+                    "top_neighbors": formatted_neighbors,
+                    "links": {
+                        "art_json": f"https://avascry.com/art/{illustration_id}.json",
+                        "art_markdown": f"https://avascry.com/art/{illustration_id}.md"
+                    }
+                }
+        except Exception:
+            pass
+
     # Content Negotiation: Check for AI Agent / LLM requesting Markdown, JSON, XML, or CSV
     accept_header = request.headers.get("accept", "").lower()
     requested_format = request.query_params.get("format", "").lower()
@@ -883,6 +963,12 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
         f'</printing/{safe_canonical_slug}.xml>; rel="alternate"; type="application/xml", '
         f'</printing/{safe_canonical_slug}.csv>; rel="alternate"; type="text/csv"'
     )
+    if illustration_id:
+        safe_ill_id = safe_header_segment(str(illustration_id))
+        link_header_val += (
+            f', </art/{safe_ill_id}.json>; rel="related"; type="application/json"'
+            f', </art/{safe_ill_id}.md>; rel="related"; type="text/markdown"'
+        )
 
     # ONLY return raw data formats if explicitly requested via extension (.json, .md, .xml, .csv) or ?format=
     if is_json or requested_format == "json":
@@ -915,6 +1001,7 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
             "rarity": card.get("rarity") or "",
             "artist": card.get("artist") or "",
             "oracle_id": oracle_id,
+            "illustration_id": illustration_id,
             "image_uris": {
                 "normal": card_norm,
                 "large": card_large
@@ -936,7 +1023,8 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
                 for r in rulings
             ],
             "printings_count": len(printings),
-            "similar_cards": similar_cards[:6]
+            "similar_cards": similar_cards[:6],
+            "visual_artwork": visual_artwork
         }
         return JSONResponse(
             content=card_json,
@@ -948,7 +1036,7 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
         )
 
     if is_md or requested_format in ("md", "markdown"):
-        md_text = format_card_markdown(card, printings_count=len(printings), rulings=rulings, similar_cards=similar_cards)
+        md_text = format_card_markdown(card, printings_count=len(printings), rulings=rulings, similar_cards=similar_cards, visual_artwork=visual_artwork)
         return Response(
             content=md_text,
             media_type="text/markdown; charset=utf-8",
@@ -1008,6 +1096,8 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
             "mechanics": mechanics,
             "lure": lure,
             "similar_cards": similar_cards,
+            "visual_artwork": visual_artwork,
+            "visual_similarities": visual_similarities,
             "is_saved": is_saved
         },
         headers={
@@ -1358,3 +1448,130 @@ async def similar_cards_json(slug: str, request: Request, background_tasks: Back
 @card_router.head("/similar/{slug}")
 async def similar_cards_head(slug: str, request: Request, background_tasks: BackgroundTasks):
     return await similar_cards_page(slug, request, background_tasks)
+
+# =====================================================================
+# ART OBSERVATIONS & VISUAL NEIGHBORS (SELLMO & MULTIMODAL MACHINE FOOD)
+# =====================================================================
+
+@card_router.get("/art/{illustration_id}.md", include_in_schema=False)
+async def art_detail_markdown(request: Request, illustration_id: str):
+    clean_id = illustration_id.replace(".md", "").strip()
+    db = get_mongo_db()
+    analysis_doc = db["vl_art_analysis"].find_one({"illustration_id": clean_id, "status": "complete"})
+    sim_doc = db["vl_art_similarities"].find_one({"illustration_id": clean_id})
+    if not analysis_doc and not sim_doc:
+        raise HTTPException(status_code=404, detail="Art analysis not found")
+
+    source = (analysis_doc.get("source") if analysis_doc else {}) or {}
+    card_name = source.get("card_name") or "Unknown"
+    artist = source.get("artist") or "Unknown"
+    obs = (analysis_doc.get("vision_observations") if analysis_doc else {}) or {}
+    top_n = (sim_doc.get("top_neighbors") if sim_doc else {}) or {}
+
+    lines = [
+        "---",
+        f'illustration_id: "{clean_id}"',
+        f'card_name: "{card_name}"',
+        f'artist: "{artist}"',
+        f'vl_model: "{analysis_doc.get("model", "qwen3-vl:latest") if analysis_doc else "unknown"}"',
+        f'embedding_model: "{sim_doc.get("model", "qwen3-embedding:8b") if sim_doc else "unknown"}"',
+        f'canonical_url: "https://avascry.com/art/{clean_id}.json"',
+        "---",
+        f"\n# Visual Artwork Analysis: {card_name}",
+        f"**Artist:** {artist} | **Set:** {(source.get('set') or '').upper()} #{source.get('collector_number', '')}\n",
+        f"## Literal Visual Summary\n{obs.get('visual_summary', 'N/A')}\n",
+        "## Visual Elements Breakdown",
+        f"- **Primary Subjects:** {', '.join(obs.get('subjects', [])) or 'None'}",
+        f"- **Setting & Environment:** {', '.join(obs.get('setting', [])) or 'None'}",
+        f"- **Dominant Palette:** {', '.join(obs.get('dominant_colors', [])) or 'None'}",
+        f"- **Style Descriptors:** {', '.join(obs.get('style_descriptors', [])) or 'None'}",
+        f"- **Lighting:** {obs.get('lighting', 'N/A')}",
+        f"- **Composition:** {obs.get('composition', 'N/A')}",
+        f"- **Atmospheric Mood:** {', '.join(obs.get('mood_keywords', [])) or 'None'}\n",
+    ]
+
+    if top_n:
+        lines.append("## Top 7 Nearest Visual Neighbors (Prime Qwen3-Embedding:8B)")
+        for category, label in [("by_subject", "By Subject & Entities"), ("by_vibe", "By Vibe & Aesthetic"), ("by_scene", "By Scene & Composition")]:
+            neighbors = top_n.get(category, [])
+            if neighbors:
+                lines.append(f"\n### {label}")
+                for idx, n in enumerate(neighbors, 1):
+                    n_name = n.get("card_name", "Unknown")
+                    n_art = n.get("artist", "Unknown")
+                    n_set = (n.get("set") or "").upper()
+                    n_ill = n.get("illustration_id", "")
+                    lines.append(f"{idx}. **{n_name}** ({n_set}) by {n_art} ([Art Report](/art/{n_ill}.md))")
+
+    md_content = "\n".join(lines)
+    return Response(
+        content=md_content,
+        media_type="text/markdown; charset=utf-8",
+        headers={
+            "Vary": "Accept",
+            "Link": f'</art/{clean_id}.json>; rel="alternate"; type="application/json"',
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
+
+@card_router.get("/art/{illustration_id}", include_in_schema=False)
+@card_router.get("/art/{illustration_id}.json", include_in_schema=False)
+async def art_detail_json(request: Request, illustration_id: str):
+    if illustration_id.lower().endswith(".md"):
+        return await art_detail_markdown(request, illustration_id)
+    clean_id = illustration_id.replace(".json", "").strip()
+    db = get_mongo_db()
+    analysis_doc = db["vl_art_analysis"].find_one({"illustration_id": clean_id, "status": "complete"})
+    sim_doc = db["vl_art_similarities"].find_one({"illustration_id": clean_id})
+    if not analysis_doc and not sim_doc:
+        raise HTTPException(status_code=404, detail="Art analysis not found")
+
+    source = (analysis_doc.get("source") if analysis_doc else {}) or {}
+    card_name = source.get("card_name") or "Unknown"
+    artist = source.get("artist") or "Unknown"
+    raw_neighbors = (sim_doc.get("top_neighbors") if sim_doc else {}) or {}
+
+    formatted_neighbors = {}
+    for category in ["by_subject", "by_vibe", "by_scene"]:
+        cat_list = raw_neighbors.get(category, [])
+        formatted_cat = []
+        for n in cat_list:
+            n_name = n.get("card_name", "Card")
+            n_set = (n.get("set") or "").lower()
+            n_slug = slugify(n_name)
+            n_pslug = f"{n_slug}-{n_set}" if n_set else n_slug
+            formatted_cat.append({
+                "card_name": n_name,
+                "slug": n_pslug,
+                "artist": n.get("artist", "Unknown"),
+                "set": n_set.upper(),
+                "image_url": n.get("image_url", ""),
+                "score": round(float(n.get("score", 0)), 4),
+                "illustration_id": n.get("illustration_id", "")
+            })
+        formatted_neighbors[category] = formatted_cat
+
+    content = {
+        "illustration_id": clean_id,
+        "card_name": card_name,
+        "artist": artist,
+        "set": source.get("set", "").lower(),
+        "collector_number": source.get("collector_number", ""),
+        "image_url": source.get("image_url", ""),
+        "model_vl": (analysis_doc.get("model") if analysis_doc else "qwen3-vl:latest"),
+        "model_embedding": (sim_doc.get("model") if sim_doc else "qwen3-embedding:8b"),
+        "vision_observations": (analysis_doc.get("vision_observations") if analysis_doc else {}) or {},
+        "top_neighbors": formatted_neighbors,
+        "links": {
+            "json": f"https://avascry.com/art/{clean_id}.json",
+            "markdown": f"https://avascry.com/art/{clean_id}.md"
+        }
+    }
+    return JSONResponse(
+        content=content,
+        headers={
+            "Vary": "Accept",
+            "Link": f'</art/{clean_id}.md>; rel="alternate"; type="text/markdown"',
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )

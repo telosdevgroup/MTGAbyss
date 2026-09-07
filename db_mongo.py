@@ -106,6 +106,20 @@ def ensure_indexes(db):
     vl_art.create_index("status")
     vl_art.create_index("source.oracle_id")
 
+    # Visual art embeddings collection indexes
+    vl_embed = db["vl_art_embeddings"]
+    vl_embed.create_index(
+        [("illustration_id", pymongo.ASCENDING), ("model", pymongo.ASCENDING)],
+        unique=True
+    )
+
+    # Visual art similarities (top 7 neighbors) collection indexes
+    vl_sim = db["vl_art_similarities"]
+    vl_sim.create_index(
+        [("illustration_id", pymongo.ASCENDING), ("model", pymongo.ASCENDING)],
+        unique=True
+    )
+
 
 
 

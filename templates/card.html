@@ -53,6 +53,45 @@
   }
   </script>
 
+  {% if visual_artwork and visual_artwork.vision_observations %}
+  {% set vo = visual_artwork.vision_observations %}
+  <!-- Schema.org VisualArtwork for Multimodal AI Search & Google Images (SELLMO) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "VisualArtwork",
+    "name": {{ (card.printed_name ~ " Artwork") | tojson }},
+    "artist": {
+      "@type": "Person",
+      "name": {{ (card.artist or "Unknown") | tojson }}
+    },
+    "description": {{ (vo.visual_summary or "") | tojson }},
+    "abstract": {{ (vo.visual_summary or "") | tojson }},
+    "image": {{ (card.large_image_url or card.image_url) | tojson }},
+    "thumbnailUrl": {{ card.image_url | tojson }},
+    "color": {{ ((vo.dominant_colors or []) | join(', ')) | tojson }},
+    "about": {{ (((vo.subjects or []) + (vo.visible_objects or []))) | tojson }},
+    "keywords": {{ ((vo.style_descriptors or []) + (vo.mood_keywords or [])) | tojson }},
+    "additionalProperty": [
+      {% for style in (vo.style_descriptors or []) %}
+      {
+        "@type": "PropertyValue",
+        "name": "Visual Style Descriptor",
+        "value": {{ style | tojson }}
+      }{% if not loop.last or (vo.mood_keywords or []) %},{% endif %}
+      {% endfor %}
+      {% for mood in (vo.mood_keywords or []) %}
+      {
+        "@type": "PropertyValue",
+        "name": "Atmospheric Mood",
+        "value": {{ mood | tojson }}
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+  </script>
+  {% endif %}
+
   <!-- Google Breadcrumbs Structured Data -->
   <script type="application/ld+json">
   {
@@ -124,8 +163,8 @@
          fetchpriority="high"
          width="488"
          height="680"
-         alt="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} - {{ card.set_name }} (#{{ card.collector_number }}){% if card.artist and card.artist != 'Unknown' %} - Illustrated by {{ card.artist }}{% endif %} - Magic: The Gathering Card"
-         title="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} card art — {{ card.set_name }}{% if card.artist and card.artist != 'Unknown' %} — {{ card.artist }}{% endif %}">
+         alt="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} - {{ card.set_name }} (#{{ card.collector_number }}){% if card.artist and card.artist != 'Unknown' %} - Illustrated by {{ card.artist }}{% endif %}{% if visual_artwork and visual_artwork.vision_observations and visual_artwork.vision_observations.visual_summary %} - {{ visual_artwork.vision_observations.visual_summary }}{% endif %} - Magic: The Gathering Card"
+         title="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} card art — {{ card.set_name }}{% if card.artist and card.artist != 'Unknown' %} — {{ card.artist }}{% endif %}{% if visual_artwork and visual_artwork.vision_observations and visual_artwork.vision_observations.visual_summary %} — {{ visual_artwork.vision_observations.visual_summary }}{% endif %}">
   </div>
 
   {% if card.has_image_note %}
@@ -499,6 +538,144 @@
     </a>
     {% endfor %}
   </div>
+</section>
+{% endif %}
+
+{% if visual_similarities and (visual_similarities.by_subject or visual_similarities.by_vibe or visual_similarities.by_scene) %}
+<!-- ======================================================= -->
+<!-- SECTION: VISUALLY SIMILAR ART                           -->
+<!-- ======================================================= -->
+<section style="margin: 4.5rem 0 3rem; padding-top: 1.5rem;">
+  <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h3 style="font-size: 1.6rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 0.6rem; margin: 0 0 0.35rem 0;">
+        <span>🎨</span> Visually Similar Art
+      </h3>
+      <p style="font-size: 0.95rem; color: var(--muted); margin: 0; line-height: 1.4;">
+        Card art sharing visual themes, lighting, and composition.
+      </p>
+    </div>
+
+    <!-- Dimension Switcher Tabs -->
+    <div style="display: flex; gap: 0.5rem; background: var(--surface); padding: 0.3rem; border-radius: var(--radius-pill); border: 1px solid var(--border);">
+      {% if visual_similarities.by_subject %}
+      <button type="button" 
+              id="btn-art-subject" 
+              class="art-tab-btn active"
+              onclick="switchArtTab('subject')"
+              style="padding: 0.45rem 1.1rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 700; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: #fff; transition: all 0.15s ease;">
+        Subject
+      </button>
+      {% endif %}
+      {% if visual_similarities.by_vibe %}
+      <button type="button" 
+              id="btn-art-vibe" 
+              class="art-tab-btn"
+              onclick="switchArtTab('vibe')"
+              style="padding: 0.45rem 1.1rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 700; cursor: pointer; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.05); color: var(--muted); transition: all 0.15s ease;">
+        Vibe &amp; Style
+      </button>
+      {% endif %}
+      {% if visual_similarities.by_scene %}
+      <button type="button" 
+              id="btn-art-scene" 
+              class="art-tab-btn"
+              onclick="switchArtTab('scene')"
+              style="padding: 0.45rem 1.1rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 700; cursor: pointer; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.05); color: var(--muted); transition: all 0.15s ease;">
+        Scene &amp; Setting
+      </button>
+      {% endif %}
+    </div>
+  </div>
+
+  {% for cat_key, cat_name in [('subject', 'by_subject'), ('vibe', 'by_vibe'), ('scene', 'by_scene')] %}
+  {% set cat_items = visual_similarities[cat_name] if visual_similarities else [] %}
+  {% if cat_items %}
+  <div id="art-grid-{{ cat_key }}" 
+       class="art-grid-group" 
+       style="display: {% if loop.first %}grid{% else %}none{% endif %}; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.75rem;">
+    {% for sim in cat_items[:6] %}
+    <a href="/card/{{ sim.slug }}" 
+       style="display: block; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem; text-decoration: none; color: inherit; transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;"
+       onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='var(--accent)'; this.style.boxShadow='0 16px 36px rgba(0,0,0,0.4)';"
+       onmouseout="this.style.transform='none'; this.style.borderColor='var(--border)'; this.style.boxShadow='none';">
+      
+      <!-- Big Art Frame -->
+      <div style="width: 100%; aspect-ratio: 4/3; border-radius: 8px; overflow: hidden; background: #000; margin-bottom: 0.85rem;">
+        <img src="{{ sim.image_url }}" 
+             alt="{{ sim.card_name }} art by {{ sim.artist }}" 
+             loading="lazy" 
+             style="width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.25s ease;"
+             onmouseover="this.style.transform='scale(1.03)';"
+             onmouseout="this.style.transform='scale(1.0)';">
+      </div>
+      
+      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; margin-bottom: 0.25rem;">
+        <div style="font-weight: 800; font-size: 1.05rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          {{ sim.card_name }}
+        </div>
+        <span style="font-weight: 700; text-transform: uppercase; font-size: 0.72rem; color: var(--accent); background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2); padding: 0.12rem 0.45rem; border-radius: 4px; flex-shrink: 0;">
+          {{ sim.set }}
+        </span>
+      </div>
+      <div style="font-size: 0.85rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        Illustrated by <span style="color: var(--text); font-weight: 600;">{{ sim.artist }}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endfor %}
+
+  <!-- Machine Food Links Placed Underneath -->
+  {% if visual_artwork and visual_artwork.illustration_id %}
+  <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem; font-size: 0.78rem; color: var(--muted);">
+    <span>Developer &amp; AI:</span>
+    <a href="/art/{{ visual_artwork.illustration_id }}.json" 
+       target="_blank"
+       style="display: inline-flex; align-items: center; gap: 0.25rem; color: var(--muted); text-decoration: none; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); padding: 0.2rem 0.55rem; border-radius: 4px; transition: color 0.15s, border-color 0.15s;"
+       onmouseover="this.style.color='var(--accent)'; this.style.borderColor='var(--accent)';"
+       onmouseout="this.style.color='var(--muted)'; this.style.borderColor='var(--border)';">
+      <span>JSON API</span>
+      <span style="font-size: 0.85rem;">&rarr;</span>
+    </a>
+    <a href="/art/{{ visual_artwork.illustration_id }}.md" 
+       target="_blank"
+       style="display: inline-flex; align-items: center; gap: 0.25rem; color: var(--muted); text-decoration: none; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); padding: 0.2rem 0.55rem; border-radius: 4px; transition: color 0.15s, border-color 0.15s;"
+       onmouseover="this.style.color='var(--accent)'; this.style.borderColor='var(--accent)';"
+       onmouseout="this.style.color='var(--muted)'; this.style.borderColor='var(--border)';">
+      <span>Markdown</span>
+      <span style="font-size: 0.85rem;">&rarr;</span>
+    </a>
+  </div>
+  {% endif %}
+
+  <script>
+  function switchArtTab(tabName) {
+    var btns = document.querySelectorAll('.art-tab-btn');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.remove('active');
+      btns[i].style.background = 'rgba(255, 255, 255, 0.05)';
+      btns[i].style.color = 'var(--muted)';
+      btns[i].style.borderColor = 'var(--border)';
+    }
+    var activeBtn = document.getElementById('btn-art-' + tabName);
+    if (activeBtn) {
+      activeBtn.classList.add('active');
+      activeBtn.style.background = 'var(--accent)';
+      activeBtn.style.color = '#fff';
+      activeBtn.style.borderColor = 'var(--accent)';
+    }
+    var grids = document.querySelectorAll('.art-grid-group');
+    for (var j = 0; j < grids.length; j++) {
+      grids[j].style.display = 'none';
+    }
+    var targetGrid = document.getElementById('art-grid-' + tabName);
+    if (targetGrid) {
+      targetGrid.style.display = 'grid';
+    }
+  }
+  </script>
 </section>
 {% endif %}
 

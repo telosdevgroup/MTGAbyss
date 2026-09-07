@@ -79,10 +79,10 @@ async def bot_probe_shield_middleware(request: Request, call_next):
                 headers={"Retry-After": "1", "X-Shield": "The-Abyss-RateLimit"}
             )
         try:
-            sem._value -= 1
+            await sem.acquire()
             return await call_next(request)
         finally:
-            sem._value += 1
+            sem.release()
 
     # 1. CMS & WordPress Exploit Scanners -> Trap & Honeypot
     is_cms_probe = any(k in norm_path for k in PROBE_KEYWORDS)
