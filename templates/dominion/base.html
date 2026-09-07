@@ -5,9 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}AvaScry Dominion — Official Card Rulings &amp; Synergies{% endblock %}</title>
   
+  {% block canonical %}
+  <link rel="canonical" href="https://dominion.avascry.com/">
+  {% endblock %}
+
   <meta name="theme-color" content="#1a1c23">
   <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+
+  {% block og_tags %}
+  <meta property="og:site_name" content="AvaScry Dominion">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="AvaScry Dominion — Official Card Rulings &amp; Synergies">
+  <meta property="og:description" content="Explore official Donald X. Vaccarino rulings, 1st vs 2nd edition errata, and card synergy across all Dominion expansions.">
+  <meta property="og:url" content="https://dominion.avascry.com/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AvaScry Dominion — Official Card Rulings &amp; Synergies">
+  <meta name="twitter:description" content="Explore official Donald X. Vaccarino rulings, 1st vs 2nd edition errata, and card synergy across all Dominion expansions.">
+  {% endblock %}
   
   <!-- Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -2,6 +2,24 @@
 
 {% block title %}{{ card.name }} — Dominion Rules, Cost & FAQ | AvaScry{% endblock %}
 
+{% block canonical %}
+<link rel="canonical" href="https://dominion.avascry.com/card/{{ card.slug }}">
+{% endblock %}
+
+{% block og_tags %}
+<meta property="og:site_name" content="AvaScry Dominion">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{ card.name }} — Dominion Rules, Cost &amp; FAQ | AvaScry">
+<meta property="og:description" content="{{ card.name }} Dominion card: {{ card.card_kinds | join(', ') | title }}. {% if versions and versions[0].cost.coins %}Cost: {{ versions[0].cost.coins }} Coins.{% endif %} Official Donald X. Vaccarino FAQ rulings and card errata.">
+<meta property="og:url" content="https://dominion.avascry.com/card/{{ card.slug }}">
+<meta property="og:image" content="https://dominion.avascry.com/images/{{ card.slug }}.jpg">
+<meta property="og:image:alt" content="{{ card.name }} Dominion Card">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ card.name }} — Dominion Rules, Cost &amp; FAQ | AvaScry">
+<meta name="twitter:description" content="{{ card.name }} Dominion card: {{ card.card_kinds | join(', ') | title }}. {% if versions and versions[0].cost.coins %}Cost: {{ versions[0].cost.coins }} Coins.{% endif %} Official Donald X. Vaccarino FAQ rulings and card errata.">
+<meta name="twitter:image" content="https://dominion.avascry.com/images/{{ card.slug }}.jpg">
+{% endblock %}
+
 {% block head_extra %}
 <meta name="description" content="{{ card.name }} Dominion card: cost, types, rules text, and official Donald X. Vaccarino FAQ rulings.">
 <link rel="alternate" type="text/markdown" href="/card/{{ card.slug }}.md" title="{{ card.name }} Markdown">
@@ -17,6 +35,7 @@
       "@id": "https://dominion.avascry.com/card/{{ card.slug }}#webpage",
       "url": "https://dominion.avascry.com/card/{{ card.slug }}",
       "name": "{{ card.name }} — Dominion Card & Rules",
+      "description": "Rules, cost, editions, and official FAQ rulings for {{ card.name }} in Dominion.",
       "isPartOf": {
         "@type": "WebSite",
         "@id": "https://dominion.avascry.com/#website",
@@ -25,19 +44,67 @@
       }
     },
     {
-      "@type": "Thing",
+      "@type": "BreadcrumbList",
+      "@id": "https://dominion.avascry.com/card/{{ card.slug }}#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Dominion",
+          "item": "https://dominion.avascry.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "{{ (card.card_kinds[0] if card.card_kinds else 'Kingdom') | title }} Cards",
+          "item": "https://dominion.avascry.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "{{ card.name }}",
+          "item": "https://dominion.avascry.com/card/{{ card.slug }}"
+        }
+      ]
+    },
+    {
+      "@type": ["IndividualProduct", "Thing"],
       "@id": "https://dominion.avascry.com/card/{{ card.slug }}#card",
       "name": "{{ card.name }}",
       "url": "https://dominion.avascry.com/card/{{ card.slug }}",
-      "description": "Dominion {{ card.card_kinds | join(', ') }} card."
-    }
-    {% if rulings %}
-    ,
+      "image": "https://dominion.avascry.com/images/{{ card.slug }}.jpg",
+      "description": "Dominion {{ card.card_kinds | join(', ') | title }} card.",
+      "category": "Dominion Card Game",
+      "brand": {
+        "@type": "Brand",
+        "name": "Rio Grande Games"
+      }
+    },
     {
       "@type": "FAQPage",
       "@id": "https://dominion.avascry.com/card/{{ card.slug }}#faq",
       "mainEntity": [
+        {% if versions and versions[0].printed_rules_text %}
+        {
+          "@type": "Question",
+          "name": "What are the rules and effects of {{ card.name }} in Dominion?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": {{ versions[0].printed_rules_text | tojson }}
+          }
+        },
+        {% endif %}
+        {
+          "@type": "Question",
+          "name": "What is the cost of {{ card.name }} in Dominion?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "{% if versions and versions[0].cost.coins %}{{ versions[0].cost.coins }} Coins{% endif %}{% if versions and versions[0].cost.debt %} +{{ versions[0].cost.debt }} Debt{% endif %}{% if versions and versions[0].cost.potion %} +1 Potion{% endif %}{% if versions and not versions[0].cost.coins and not versions[0].cost.debt and not versions[0].cost.potion %}0 Coins{% endif %} ({{ card.card_kinds | join(', ') | title }})."
+          }
+        }
+        {% if rulings %}
         {% for r in rulings %}
+        ,
         {
           "@type": "Question",
           "name": {{ r.question | tojson }},
@@ -45,11 +112,11 @@
             "@type": "Answer",
             "text": {{ r.answer | tojson }}
           }
-        }{% if not loop.last %},{% endif %}
+        }
         {% endfor %}
+        {% endif %}
       ]
     }
-    {% endif %}
   ]
 }
 </script>
@@ -193,6 +260,29 @@
     border-top: 1px solid #e2e8f0;
     padding-top: 0.5rem;
   }
+  .card-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+  }
+  .card-meta-item dt {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .card-meta-item dd {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 0.2rem;
+  }
   .format-links {
     margin-top: 2rem;
     padding-top: 1.25rem;
@@ -213,11 +303,25 @@
 {% endblock %}
 
 {% block content %}
-<article class="card-page" data-game="dominion" data-card-slug="{{ card.slug }}">
-  <nav aria-label="Breadcrumb" style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;">
-    <a href="/dominion" style="color: var(--muted); text-decoration: none;">Dominion</a>
+<article class="card-page" data-game="dominion" data-card-slug="{{ card.slug }}" itemscope itemtype="https://schema.org/IndividualProduct">
+  <meta itemprop="name" content="{{ card.name }}">
+  <meta itemprop="image" content="https://dominion.avascry.com/images/{{ card.slug }}.jpg">
+  
+  <nav aria-label="Breadcrumb" itemscope itemtype="https://schema.org/BreadcrumbList" style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1.25rem;">
+    <span itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+      <a itemprop="item" href="/dominion" style="color: var(--muted); text-decoration: none;"><span itemprop="name">Dominion</span></a>
+      <meta itemprop="position" content="1" />
+    </span>
     <span aria-hidden="true">&nbsp;/&nbsp;</span>
-    <span style="color: var(--text);">{{ card.name }}</span>
+    <span itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+      <a itemprop="item" href="/dominion" style="color: var(--muted); text-decoration: none;"><span itemprop="name">{{ (card.card_kinds[0] if card.card_kinds else 'Kingdom') | title }} Cards</span></a>
+      <meta itemprop="position" content="2" />
+    </span>
+    <span aria-hidden="true">&nbsp;/&nbsp;</span>
+    <span itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+      <span itemprop="name" style="color: var(--text); font-weight: 600;">{{ card.name }}</span>
+      <meta itemprop="position" content="3" />
+    </span>
   </nav>
 
   <div class="card-layout">
@@ -226,7 +330,8 @@
         <img 
           id="dominion-card-img"
           src="/dominion/images/{{ card.slug }}.jpg" 
-          alt="{{ card.name }} Dominion Card"
+          alt="{{ card.name }} Dominion Card Scan"
+          title="{{ card.name }} Dominion Card"
           width="300"
           height="465"
           loading="eager"
@@ -279,18 +384,51 @@
         </div>
       </header>
 
+      <!-- Key Card Attributes Definition List for Search Snippets -->
+      <dl class="card-meta-grid">
+        <div class="card-meta-item">
+          <dt>Types</dt>
+          <dd>{{ card.card_kinds | join(', ') | title }}</dd>
+        </div>
+        <div class="card-meta-item">
+          <dt>Cost</dt>
+          <dd>
+            {% if versions and versions[0].cost.coins %}{{ versions[0].cost.coins }} Coins{% endif %}
+            {% if versions and versions[0].cost.debt %}+{{ versions[0].cost.debt }} Debt{% endif %}
+            {% if versions and versions[0].cost.potion %}+1 Potion{% endif %}
+            {% if versions and not versions[0].cost.coins and not versions[0].cost.debt and not versions[0].cost.potion %}0 Coins{% endif %}
+          </dd>
+        </div>
+        <div class="card-meta-item">
+          <dt>Kingdom</dt>
+          <dd>{{ 'Yes' if card.is_kingdom_card else 'No' }}</dd>
+        </div>
+        <div class="card-meta-item">
+          <dt>Editions</dt>
+          <dd>{{ versions | length }} Printing{% if versions | length > 1 %}s{% endif %}</dd>
+        </div>
+        {% if rulings %}
+        <div class="card-meta-item">
+          <dt>Official FAQ</dt>
+          <dd>{{ rulings | length }} Ruling{% if rulings | length > 1 %}s{% endif %}</dd>
+        </div>
+        {% endif %}
+      </dl>
+
       {% if versions and versions[0].printed_rules_text %}
       <section aria-labelledby="primary-rules-heading">
-        <h2 id="primary-rules-heading" class="sr-only">Rules Text</h2>
-        <div class="rules-box">
+        <h2 id="primary-rules-heading" style="font-family: 'Cinzel', serif; font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: #0f172a;">
+          Card Text &amp; Rules Effect
+        </h2>
+        <div class="rules-box" itemprop="description">
           {{ versions[0].printed_rules_text }}
         </div>
       </section>
       {% endif %}
 
       <section aria-labelledby="editions-heading" style="margin-bottom: 2.5rem;">
-        <h2 id="editions-heading" style="font-family: 'Outfit', sans-serif; font-size: 1.35rem; margin-bottom: 1rem;">
-          Expansions &amp; Editions
+        <h2 id="editions-heading" style="font-family: 'Cinzel', serif; font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: #0f172a;">
+          Expansions &amp; Printings
         </h2>
         {% for v in versions %}
         <div class="version-item">
@@ -312,15 +450,17 @@
 
       {% if rulings %}
       <section id="official-rulings" aria-labelledby="rulings-heading">
-        <h2 id="rulings-heading" style="font-family: 'Outfit', sans-serif; font-size: 1.35rem; margin-bottom: 1rem;">
+        <h2 id="rulings-heading" style="font-family: 'Cinzel', serif; font-size: 1.25rem; font-weight: 700; margin-bottom: 1.15rem; color: #0f172a;">
           Official Rules &amp; Interaction FAQ
         </h2>
         {% for r in rulings %}
-        <div class="ruling-card">
-          <div class="ruling-q">{{ r.question }}</div>
-          <div class="ruling-a">{{ r.answer }}</div>
+        <article class="ruling-card" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <h3 class="ruling-q" itemprop="name">{{ r.question }}</h3>
+          <div class="ruling-a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">{{ r.answer }}</div>
+          </div>
           <span class="authority-badge">&bull; Authority: {{ r.authority.name }} ({{ r.authority.authority_type }})</span>
-        </div>
+        </article>
         {% endfor %}
       </section>
       {% endif %}

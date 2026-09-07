@@ -1,9 +1,61 @@
 {% extends "dominion/base.html" %}
 
-{% block title %}Dominion Card Rulings, Errata &amp; Synergies — AvaScry{% endblock %}
+{% block title %}Dominion Card Database — Official Rules, Errata & Rulings | AvaScry{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://dominion.avascry.com/">
+{% endblock %}
+
+{% block og_tags %}
+<meta property="og:site_name" content="AvaScry Dominion">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Dominion Card Database — Official Rules, Errata & Rulings | AvaScry">
+<meta property="og:description" content="Complete Dominion card database featuring official Donald X. Vaccarino rulings, 1st vs 2nd edition errata, card costs, and machine-readable endpoints.">
+<meta property="og:url" content="https://dominion.avascry.com/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dominion Card Database — Official Rules, Errata & Rulings | AvaScry">
+<meta name="twitter:description" content="Complete Dominion card database featuring official Donald X. Vaccarino rulings, 1st vs 2nd edition errata, card costs, and machine-readable endpoints.">
+{% endblock %}
 
 {% block head_extra %}
-<meta name="description" content="Search official Donald X. Vaccarino rulings, 1st vs 2nd edition errata, and card synergy across all Dominion sets.">
+<meta name="description" content="Complete Dominion card database featuring official Donald X. Vaccarino rulings, 1st vs 2nd edition errata, card costs, and machine-readable endpoints.">
+
+<!-- Schema.org JSON-LD Graph for Home Catalog -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://dominion.avascry.com/#website",
+      "url": "https://dominion.avascry.com/",
+      "name": "AvaScry Dominion",
+      "description": "Official Dominion Card Rulings, Errata, and Card Search Index.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "AvaScry",
+        "url": "https://avascry.com"
+      }
+    },
+    {
+      "@type": "CollectionPage",
+      "@id": "https://dominion.avascry.com/#catalog",
+      "url": "https://dominion.avascry.com/",
+      "name": "Dominion Card Database — Official Rules, Errata & Rulings",
+      "description": "Index of {{ total_cards }} cards across {{ total_expansions }} Dominion sets with Donald X. Vaccarino rulings.",
+      "isPartOf": {
+        "@type": "WebSite",
+        "@id": "https://dominion.avascry.com/#website"
+      },
+      "about": {
+        "@type": "Thing",
+        "name": "Dominion",
+        "sameAs": "https://en.wikipedia.org/wiki/Dominion_(card_game)"
+      }
+    }
+  ]
+}
+</script>
 <style>
   .hero {
     margin-bottom: 2.5rem;

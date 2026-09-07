@@ -84,20 +84,44 @@ async def dominion_llms_full_txt():
         
     return "\n".join(lines)
 
+@dominion_router.get("/robots.txt", response_class=PlainTextResponse)
+async def dominion_robots_txt():
+    """Standard crawl directives for Dominion subdomain."""
+    return (
+        "User-agent: *\n"
+        "Allow: /\n\n"
+        "Sitemap: https://dominion.avascry.com/sitemap.xml\n"
+    )
+
 @dominion_router.get("/sitemap.xml", response_class=Response)
 async def dominion_sitemap_xml():
-    """Automated XML sitemap for Dominion cards."""
+    """Automated XML sitemap with Google Image extensions for Dominion cards."""
+    import datetime
+    today = datetime.date.today().isoformat()
     db = get_dominion_db()
-    cards = list(db.cards.find({}, {"slug": 1}))
+    cards = list(db.cards.find({}, {"slug": 1, "name": 1}))
     xml = [
         '<?xml version="1.0" encoding="UTF-8"?>',
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-        '  <url><loc>https://dominion.avascry.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>',
-        '  <url><loc>https://dominion.avascry.com/llms.txt</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>',
-        '  <url><loc>https://dominion.avascry.com/llms-full.txt</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
+        f'  <url><loc>https://dominion.avascry.com/</loc><lastmod>{today}</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>',
+        f'  <url><loc>https://dominion.avascry.com/llms.txt</loc><lastmod>{today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>',
+        f'  <url><loc>https://dominion.avascry.com/llms-full.txt</loc><lastmod>{today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>'
     ]
     for c in cards:
-        xml.append(f'  <url><loc>https://dominion.avascry.com/card/{c["slug"]}</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>')
+        slug = c.get("slug", "")
+        name = c.get("name", slug).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+        xml.append(
+            f'  <url>\n'
+            f'    <loc>https://dominion.avascry.com/card/{slug}</loc>\n'
+            f'    <lastmod>{today}</lastmod>\n'
+            f'    <changefreq>monthly</changefreq>\n'
+            f'    <priority>0.8</priority>\n'
+            f'    <image:image>\n'
+            f'      <image:loc>https://dominion.avascry.com/images/{slug}.jpg</image:loc>\n'
+            f'      <image:title>{name} Dominion Card</image:title>\n'
+            f'    </image:image>\n'
+            f'  </url>'
+        )
     xml.append('</urlset>')
     return Response(content="\n".join(xml), media_type="application/xml")
 
