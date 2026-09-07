@@ -1,0 +1,81 @@
+{% extends "necromunda/base.html" %}
+
+{% block title %}About AvaScry Necromunda — Underhive Armory &amp; Tactics Lexicon{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://necromunda.avascry.com/about">
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 2rem auto 4rem; padding: 0 1.5rem;">
+  <article style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+    <header style="margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem;">
+      <div style="display: inline-block; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 0.5rem;">
+        Underhive Archive // Database Dossier
+      </div>
+      <h1 style="font-family: 'Chakra Petch', sans-serif; font-size: 2.2rem; font-weight: 700; color: #fff; margin: 0 0 0.5rem 0;">
+        About AvaScry Necromunda
+      </h1>
+      <p style="color: var(--muted); font-size: 1rem; margin: 0; line-height: 1.6;">
+        Tactical weapon profiles, rule traits, clan house registries, and skill trees for tabletop Necromunda skirmish campaigns.
+      </p>
+    </header>
+
+    <div style="line-height: 1.7; color: #cbd5e1; display: flex; flex-direction: column; gap: 2rem;">
+      <section>
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.35rem; color: #fff; margin-bottom: 0.75rem;">
+          Mission &amp; Purpose
+        </h2>
+        <p>
+          AvaScry Necromunda is an independent, community-driven reference engine and tactical lexicon built for arbitrators, campaign leaders, and gang commanders fighting in the grim industrial depths of Necromunda's Underhive.
+        </p>
+        <p style="margin-top: 0.75rem;">
+          Our goal is to eliminate rules disputes and rulebook table-flipping during intense campaign scenarios by presenting instantly searchable, authoritative weapon statistics, weapon trait mechanics, clan house doctrines, and skill progression trees on desktop, tablet, and mobile browsers.
+        </p>
+      </section>
+
+      <section>
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.35rem; color: #fff; margin-bottom: 0.75rem;">
+          Data Integrity &amp; Coverage
+        </h2>
+        <p>
+          Every armory entry and trait description is indexed from official tabletop publications, errata revisions, and rules supplements:
+        </p>
+        <ul style="padding-left: 1.5rem; margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; color: var(--muted);">
+          <li><strong style="color: #fff;">Underhive Armory Profiles</strong>: Full ranged and close-combat weapon matrices including Short/Long range brackets, accuracy modifiers (+/–), Strength, Damage, Armor Piercing (AP), Ammo rolls, and trait combinations.</li>
+          <li><strong style="color: #fff;">Rules &amp; Trait Lexicon</strong>: In-depth breakdowns of combat traits (e.g., Blast, Rapid Fire, Seismic, Versatile, Toxin, Rad-Phage) with precise mechanical resolutions.</li>
+          <li><strong style="color: #fff;">Clan House Manifests</strong>: Historical background, tactical combat doctrines, house-specific equipment lists, and unique rules for Houses Escher, Goliath, Orlock, Van Saar, Delaque, and Cawdor.</li>
+          <li><strong style="color: #fff;">Universal Skill Sets</strong>: Complete skill trees across Agility, Brawn, Combat, Cunning, Ferocity, Leadership, and Shooting disciplines.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.35rem; color: #fff; margin-bottom: 0.75rem;">
+          Machine-Readable Architecture
+        </h2>
+        <p>
+          In addition to our responsive human interface, AvaScry Necromunda delivers full structured Markdown (<code>.md</code>) and JSON (<code>.json</code>) representations for every weapon, trait, clan house, and skill. Machine crawlers, AI assistants, and community tabletop tools can interface via our published <a href="{{ base_path }}/llms.txt" style="color: var(--accent); text-decoration: underline;">llms.txt</a> and sitemap indices.
+        </p>
+      </section>
+
+      <section>
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.35rem; color: #fff; margin-bottom: 0.75rem;">
+          Fair Use &amp; Trademark Notice
+        </h2>
+        <p style="font-size: 0.9rem; color: var(--muted);">
+          Necromunda, Warhammer 40,000, Citadel, and all associated logos, illustrations, names, and characters are trademarks or registered trademarks of Games Workshop Limited. AvaScry Necromunda is an independent, unofficial fan resource created under the Fair Use doctrine (17 U.S.C. § 107) for identification, commentary, and gameplay reference. AvaScry is neither endorsed by nor affiliated with Games Workshop.
+        </p>
+      </section>
+
+      <section style="background: rgba(255, 87, 34, 0.05); border: 1px solid rgba(255, 87, 34, 0.2); border-radius: 6px; padding: 1.25rem;">
+        <h3 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.1rem; color: #fff; margin-bottom: 0.5rem;">
+          Get in Touch
+        </h3>
+        <p style="margin: 0; font-size: 0.95rem; color: var(--muted);">
+          Spotted an errata discrepancy, outdated weapon cost, or have an arbitrator utility feature suggestion? Reach out via our <a href="{{ base_path }}/contact" style="color: var(--accent); font-weight: 600; text-decoration: underline;">Contact</a> form.
+        </p>
+      </section>
+    </div>
+  </article>
+</div>
+{% endblock %}

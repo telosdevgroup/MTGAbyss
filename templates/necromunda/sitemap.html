@@ -1,0 +1,258 @@
+{% extends "necromunda/base.html" %}
+
+{% block title %}AvaScry Necromunda — Directory &amp; Sitemap Index{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://necromunda.avascry.com/sitemap.html">
+<link rel="alternate" type="text/markdown" href="https://necromunda.avascry.com/sitemap.md">
+<link rel="alternate" type="application/xml" href="https://necromunda.avascry.com/sitemap.xml">
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .sitemap-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .sitemap-title {
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.02em;
+  }
+  .sitemap-desc {
+    color: var(--muted);
+    font-size: 0.95rem;
+    max-width: 800px;
+    line-height: 1.6;
+  }
+  .sitemap-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.75rem;
+    margin-bottom: 2rem;
+  }
+  .section-title {
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding-bottom: 0.5rem;
+  }
+  .section-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-weight: normal;
+  }
+  .sitemap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.6rem 1.25rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .sitemap-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45rem 0.6rem;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.88rem;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .sitemap-item:hover {
+    background: rgba(255,255,255,0.04);
+    border-color: var(--border);
+  }
+  .sitemap-link {
+    color: #e2e8f0;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 0.5rem;
+  }
+  .sitemap-link:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+  .badge-group {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .badge-md {
+    background: #0f172a;
+    color: #38bdf8;
+    border: 1px solid #1e293b;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    text-decoration: none;
+  }
+  .badge-md:hover {
+    background: #1e293b;
+    color: #7dd3fc;
+  }
+  .badge-json {
+    background: #1e1b4b;
+    color: #fbbf24;
+    border: 1px solid #312e81;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    text-decoration: none;
+  }
+  .badge-json:hover {
+    background: #312e81;
+    color: #fde68a;
+  }
+  .badge-manifest {
+    background: #1e293b;
+    color: #cbd5e1;
+    border: 1px solid #334155;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .badge-manifest:hover {
+    background: #334155;
+    color: #fff;
+  }
+  .category-subtitle {
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.25rem 0 0.6rem 0;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px dashed rgba(255,255,255,0.08);
+  }
+  .category-subtitle:first-child {
+    margin-top: 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sitemap-header">
+  <div style="font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; color: var(--muted); margin-bottom: 0.5rem;">
+    <a href="{{ base_path or '/' }}" style="color: var(--accent); text-decoration: none;">Hub</a> / Sitemap Directory
+  </div>
+  <h1 class="sitemap-title">Underhive Lexicon &amp; Armory Sitemap</h1>
+  <p class="sitemap-desc">
+    Complete directory of all weapons, clan houses, rules traits, and skills across the Underhive armory. Each entry offers direct browser views alongside structured Markdown (.md) and JSON endpoints.
+  </p>
+  <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
+    <a href="{{ base_path }}/sitemap.md" class="badge-manifest">sitemap.md</a>
+    <a href="{{ base_path }}/sitemap.xml" class="badge-manifest">sitemap.xml</a>
+    <a href="{{ base_path }}/llms.txt" class="badge-manifest">llms.txt</a>
+    <a href="{{ base_path }}/llms-full.txt" class="badge-manifest">llms-full.txt</a>
+  </div>
+</div>
+
+<!-- Clan Houses -->
+<section class="sitemap-section">
+  <div class="section-title">
+    <span>Clan Houses &amp; Gang Rosters</span>
+    <span class="section-count">{{ houses|length }} factions</span>
+  </div>
+  <ul class="sitemap-grid">
+    {% for h in houses %}
+    <li class="sitemap-item">
+      <a href="{{ base_path }}/house/{{ h.slug }}" class="sitemap-link" title="{{ h.name }}">{{ h.name }}</a>
+      <div class="badge-group">
+        <a href="{{ base_path }}/house/{{ h.slug }}.md" class="badge-md">MD</a>
+        <a href="{{ base_path }}/house/{{ h.slug }}.json" class="badge-json">JSON</a>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<!-- Weapons by Category -->
+<section class="sitemap-section">
+  <div class="section-title">
+    <span>Armory Weapons</span>
+    <span class="section-count">{{ weapons|length }} profiles</span>
+  </div>
+  {% for category, cat_weapons in weapon_groups.items() %}
+    <div class="category-subtitle">{{ category }} ({{ cat_weapons|length }})</div>
+    <ul class="sitemap-grid" style="margin-bottom: 1.25rem;">
+      {% for w in cat_weapons %}
+      <li class="sitemap-item">
+        <a href="{{ base_path }}/weapon/{{ w.slug }}" class="sitemap-link" title="{{ w.name }}">{{ w.name }}</a>
+        <div class="badge-group">
+          <a href="{{ base_path }}/weapon/{{ w.slug }}.md" class="badge-md">MD</a>
+          <a href="{{ base_path }}/weapon/{{ w.slug }}.json" class="badge-json">JSON</a>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  {% endfor %}
+</section>
+
+<!-- Weapon Traits -->
+<section class="sitemap-section">
+  <div class="section-title">
+    <span>Weapon Traits Lexicon</span>
+    <span class="section-count">{{ traits|length }} traits</span>
+  </div>
+  <ul class="sitemap-grid">
+    {% for t in traits %}
+    <li class="sitemap-item">
+      <a href="{{ base_path }}/trait/{{ t.slug }}" class="sitemap-link" title="{{ t.name }}">{{ t.name }}</a>
+      <div class="badge-group">
+        <a href="{{ base_path }}/trait/{{ t.slug }}.md" class="badge-md">MD</a>
+        <a href="{{ base_path }}/trait/{{ t.slug }}.json" class="badge-json">JSON</a>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<!-- Skill Disciplines -->
+<section class="sitemap-section">
+  <div class="section-title">
+    <span>Skills &amp; Tactics</span>
+    <span class="section-count">{{ skills|length }} skills</span>
+  </div>
+  {% for tree, tree_skills in skill_groups.items() %}
+    <div class="category-subtitle">{{ tree }} ({{ tree_skills|length }})</div>
+    <ul class="sitemap-grid" style="margin-bottom: 1.25rem;">
+      {% for s in tree_skills %}
+      <li class="sitemap-item">
+        <a href="{{ base_path }}/skill/{{ s.slug }}" class="sitemap-link" title="{{ s.name }}">{{ s.name }}</a>
+        <div class="badge-group">
+          <a href="{{ base_path }}/skill/{{ s.slug }}.md" class="badge-md">MD</a>
+          <a href="{{ base_path }}/skill/{{ s.slug }}.json" class="badge-json">JSON</a>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  {% endfor %}
+</section>
+{% endblock %}

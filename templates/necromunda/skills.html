@@ -1,6 +1,84 @@
 {% extends "necromunda/base.html" %}
 
-{% block title %}Skill Disciplines ({{ total_skills }} Trees) — AvaScry Necromunda{% endblock %}
+{% block title %}Skill Disciplines ({{ total_skills }} Skills) — AvaScry Necromunda{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://necromunda.avascry.com/skills">
+<link rel="alternate" type="text/markdown" href="https://necromunda.avascry.com/sitemap.md">
+<link rel="alternate" type="application/xml" href="https://necromunda.avascry.com/sitemap.xml">
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .skill-search-container {
+    position: relative;
+    max-width: 540px;
+    margin-top: 1.25rem;
+  }
+  .skill-search-input {
+    width: 100%;
+    padding: 0.75rem 2.75rem 0.75rem 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    color: #fff;
+    background: #141722;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .skill-search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.15);
+  }
+  .skill-search-clear {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+    display: none;
+  }
+  .skill-search-clear:hover {
+    color: #fff;
+  }
+  .skill-count-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.75rem;
+    font-size: 0.82rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+  }
+  .cat-btn {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease;
+  }
+  .cat-btn.active {
+    background: rgba(255,87,34,0.25) !important;
+    border-color: var(--accent) !important;
+    color: #ff7043 !important;
+    font-weight: 700;
+  }
+  .no-matches-panel {
+    display: none;
+    background: var(--card-bg);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    margin-top: 1.5rem;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
 <div style="margin-bottom: 2rem;">
@@ -11,14 +89,57 @@
   <p style="color: var(--muted); font-size: 0.95rem;">
     Comprehensive tables of fighter abilities, D6 advancement tables, and combat passive rulings.
   </p>
+
+  <div class="skill-search-container">
+    <input 
+      type="search" 
+      id="skillFilterInput" 
+      class="skill-search-input" 
+      placeholder="Filter by skill, discipline, or rules (e.g. leap, iron jaw, agility)..." 
+      autocomplete="off"
+      spellcheck="false"
+      aria-label="Filter skill disciplines"
+    />
+    <button type="button" id="skillFilterClear" class="skill-search-clear" aria-label="Clear filter">&times;</button>
+  </div>
+
+  {% if trees %}
+  <div style="display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;" id="skillTreePillRow">
+    <button type="button" class="badge-mono cat-btn active" data-cat="all">All Trees</button>
+    {% for tree in trees %}
+    <button type="button" class="badge-mono cat-btn" data-cat="{{ tree|lower }}">{{ tree }}</button>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="skill-count-row">
+    <span id="skillFilterStatus">Showing {{ total_skills }} of {{ total_skills }} skills</span>
+    <span style="font-size: 0.75rem; opacity: 0.7;">Press <kbd style="background: #1e2430; padding: 2px 5px; border-radius: 3px; border: 1px solid var(--border);">Esc</kbd> to clear</span>
+  </div>
 </div>
 
-<div class="grid-cards">
+<div class="no-matches-panel" id="noSkillMatchesPanel">
+  <div style="font-family: 'Chakra Petch', sans-serif; font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 0.4rem;">
+    No Matching Skills Found
+  </div>
+  <p style="color: var(--muted); font-size: 0.88rem; margin-bottom: 1rem;">
+    No skills matched your query or discipline selection. Try resetting filters.
+  </p>
+  <button type="button" class="badge-mono badge-accent" id="resetSkillFilterBtn" style="cursor: pointer; border-radius: 4px; padding: 6px 14px; font-size: 0.82rem;">
+    Reset Filters
+  </button>
+</div>
+
+<div class="grid-cards" id="skillsGrid">
   {% for s in skills %}
-  <div class="hive-card">
+  <div class="hive-card skill-card"
+       data-name="{{ s.name|lower }}"
+       data-tree="{{ (s.tree or '')|lower }}"
+       data-rules="{{ s.rules_text|lower }}"
+       data-tactics="{{ s.tactics|lower }}">
     <div>
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
-        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.35rem; font-weight: 700;">
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.25rem; font-weight: 700;">
           <a href="{{ base_path }}/skill/{{ s.slug }}" style="color: #fff;">{{ s.name }}</a>
         </h2>
         <span class="badge-mono badge-accent">{{ s.tree }}</span>
@@ -40,4 +161,104 @@
   </div>
   {% endfor %}
 </div>
+
+<script>
+(function() {
+  const input = document.getElementById('skillFilterInput');
+  const clearBtn = document.getElementById('skillFilterClear');
+  const status = document.getElementById('skillFilterStatus');
+  const noMatches = document.getElementById('noSkillMatchesPanel');
+  const cards = Array.from(document.querySelectorAll('.skill-card'));
+  const treeButtons = Array.from(document.querySelectorAll('#skillTreePillRow .cat-btn'));
+  const total = cards.length;
+  let activeTree = 'all';
+
+  function filterSkills() {
+    const rawVal = input.value.trim().toLowerCase();
+    clearBtn.style.display = rawVal.length > 0 ? 'block' : 'none';
+
+    let matchCount = 0;
+    cards.forEach(card => {
+      const name = card.dataset.name || '';
+      const tree = card.dataset.tree || '';
+      const rules = card.dataset.rules || '';
+      const tactics = card.dataset.tactics || '';
+
+      const treeMatch = (activeTree === 'all') || (tree === activeTree);
+      if (!treeMatch) {
+        card.style.display = 'none';
+        return;
+      }
+
+      const textMatch = !rawVal || name.includes(rawVal) || rules.includes(rawVal) || tactics.includes(rawVal);
+      if (textMatch) {
+        card.style.display = '';
+        matchCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    let treeLabel = activeTree === 'all' ? '' : ` in ${activeTree}`;
+    if (rawVal) {
+      status.textContent = `Showing ${matchCount} of ${total} skills${treeLabel} for "${rawVal}"`;
+    } else if (activeTree !== 'all') {
+      status.textContent = `Showing ${matchCount} of ${total} skills${treeLabel}`;
+    } else {
+      status.textContent = `Showing ${total} of ${total} skills`;
+    }
+
+    if (matchCount === 0) {
+      noMatches.style.display = 'block';
+    } else {
+      noMatches.style.display = 'none';
+    }
+  }
+
+  treeButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      treeButtons.forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      activeTree = this.dataset.cat;
+      filterSkills();
+    });
+  });
+
+  input.addEventListener('input', filterSkills);
+
+  clearBtn.addEventListener('click', function() {
+    input.value = '';
+    filterSkills();
+    input.focus();
+  });
+
+  const resetBtn = document.getElementById('resetSkillFilterBtn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function() {
+      input.value = '';
+      activeTree = 'all';
+      treeButtons.forEach(b => {
+        if (b.dataset.cat === 'all') b.classList.add('active');
+        else b.classList.remove('active');
+      });
+      filterSkills();
+      input.focus();
+    });
+  }
+
+  window.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.activeElement === input) {
+      if (input.value) {
+        input.value = '';
+        filterSkills();
+      } else {
+        input.blur();
+      }
+    } else if (e.key === '/' && document.activeElement !== input) {
+      e.preventDefault();
+      input.focus();
+    }
+  });
+})();
+</script>
 {% endblock %}

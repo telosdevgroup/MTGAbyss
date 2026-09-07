@@ -118,7 +118,7 @@
             <a href="{{ base_path }}/house/{{ h.slug }}" style="color: #fff;">{{ h.name }}</a>
           </h3>
         </div>
-        <div style="font-size: 0.82rem; color: var(--accent); font-weight: 600; margin-bottom: 0.75rem;">{{ h.title }}</div>
+        <div style="font-size: 0.82rem; color: var(--muted); font-weight: 400; margin-bottom: 0.75rem; font-style: italic;">{{ h.title }}</div>
         <p style="font-size: 0.86rem; color: var(--muted); line-height: 1.5; margin-bottom: 1rem;">
           {{ h.specialty }}
         </p>
@@ -140,7 +140,7 @@
 </section>
 
 <!-- Weapon Traits Preview -->
-<section>
+<section style="margin-bottom: 3rem;">
   <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.25rem;">
     <div>
       <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.4rem; font-weight: 700; text-transform: uppercase;">
@@ -166,6 +166,45 @@
         <em>FAQ / Synergy:</em> {{ t.faq }}
       </div>
     </a>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Skill Disciplines & Upgrades -->
+<section style="margin-bottom: 3rem;">
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.25rem;">
+    <div>
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.4rem; font-weight: 700; text-transform: uppercase;">
+        Skill Disciplines &amp; Upgrades
+      </h2>
+      <p style="color: var(--muted); font-size: 0.85rem;">Fighter advancement, passive abilities, and tactical specializations</p>
+    </div>
+    <a href="{{ base_path }}/skills" style="font-size: 0.85rem; color: var(--accent); font-weight: 600;">View All Skills &rarr;</a>
+  </div>
+
+  <div class="grid-cards">
+    {% for s in skills[:6] %}
+    <div class="hive-card">
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
+          <h3 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.15rem; font-weight: 700;">
+            <a href="{{ base_path }}/skill/{{ s.slug }}" style="color: #fff;">{{ s.name }}</a>
+          </h3>
+          <span class="badge-mono badge-accent">{{ s.tree }}</span>
+        </div>
+        <p style="font-size: 0.86rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 0.75rem;">
+          {{ s.rules_text }}
+        </p>
+      </div>
+      <div>
+        <div style="font-size: 0.78rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 0.5rem; margin-bottom: 0.5rem;">
+          <em>Tactics:</em> {{ s.tactics }}
+        </div>
+        <div style="border-top: 1px solid var(--border); padding-top: 0.5rem;">
+          <a href="{{ base_path }}/skill/{{ s.slug }}" style="color: var(--accent); font-size: 0.82rem; font-weight: 600;">View Skill Details &rarr;</a>
+        </div>
+      </div>
+    </div>
     {% endfor %}
   </div>
 </section>

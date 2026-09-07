@@ -18,11 +18,11 @@
   <meta property="og:site_name" content="AvaScry Necromunda">
   <meta property="og:type" content="website">
   <meta property="og:title" content="AvaScry Necromunda — Underhive Armory &amp; Tactics Lexicon">
-  <meta property="og:description" content="High-precision Underhive armory, weapon profiles, rule traits, clan houses, and skill trees for Necromunda skirmish warfare.">
+  <meta property="og:description" content="Tactical reference, weapon profiles, rule traits, clan houses, and skill trees for Necromunda skirmish warfare.">
   <meta property="og:url" content="https://necromunda.avascry.com/">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="AvaScry Necromunda — Underhive Armory">
-  <meta name="twitter:description" content="High-precision Underhive armory, weapon profiles, rule traits, clan houses, and skill trees for Necromunda.">
+  <meta name="twitter:description" content="Tactical reference, weapon profiles, rule traits, clan houses, and skill trees for Necromunda skirmish warfare.">
   {% endblock %}
 
   <!-- System Typography & Zero External Font Latency -->
@@ -278,18 +278,28 @@
             AvaScry <span style="color: var(--accent);">Necromunda</span>
           </div>
           <p style="margin: 0; line-height: 1.5; font-size: 0.84rem;">
-            High-precision Underhive armory, weapon profiles, rule traits, clan houses, and skill trees for Necromunda skirmish warfare. Grounded for both human gang leaders and AI search agents.
+            High-precision Underhive armory, weapon profiles, rule traits, clan houses, and skill trees for Necromunda skirmish warfare.
           </p>
         </div>
 
         {% include "partials/network_games.html" %}
 
         <div>
-          <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #a1a1aa; margin-bottom: 0.6rem;">Tri-Surface &amp; AGO</div>
+          <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #a1a1aa; margin-bottom: 0.6rem;">Legal &amp; Support</div>
           <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
+            <li><a href="{{ base_path }}/about">About AvaScry</a></li>
+            <li><a href="{{ base_path }}/contact">Contact</a></li>
+            <li><a href="{{ base_path }}/privacy">Privacy Policy</a></li>
+            <li><a href="{{ base_path }}/terms">Terms of Service</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #a1a1aa; margin-bottom: 0.6rem;">Index</div>
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
+            <li><a href="{{ base_path }}/sitemap.html">Sitemap Directory</a></li>
+            <li><a href="{{ base_path }}/sitemap.md">Markdown Index</a></li>
             <li><a href="{{ base_path }}/sitemap.xml">XML Sitemap</a></li>
-            <li><a href="{{ base_path }}/llms.txt">LLM Manifest (llms.txt)</a></li>
-            <li><a href="{{ base_path }}/llms-full.txt">Full Corpus (llms-full.txt)</a></li>
           </ul>
         </div>
       </div>

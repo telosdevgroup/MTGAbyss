@@ -2,6 +2,84 @@
 
 {% block title %}Underhive Armory ({{ total_weapons }} Weapons) — AvaScry Necromunda{% endblock %}
 
+{% block canonical %}
+<link rel="canonical" href="https://necromunda.avascry.com/weapons">
+<link rel="alternate" type="text/markdown" href="https://necromunda.avascry.com/sitemap.md">
+<link rel="alternate" type="application/xml" href="https://necromunda.avascry.com/sitemap.xml">
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .weapon-search-container {
+    position: relative;
+    max-width: 540px;
+    margin-top: 1.25rem;
+  }
+  .weapon-search-input {
+    width: 100%;
+    padding: 0.75rem 2.75rem 0.75rem 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    color: #fff;
+    background: #141722;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .weapon-search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.15);
+  }
+  .weapon-search-clear {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+    display: none;
+  }
+  .weapon-search-clear:hover {
+    color: #fff;
+  }
+  .weapon-count-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.75rem;
+    font-size: 0.82rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+  }
+  .cat-btn {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease;
+  }
+  .cat-btn.active {
+    background: rgba(255,87,34,0.25) !important;
+    border-color: var(--accent) !important;
+    color: #ff7043 !important;
+    font-weight: 700;
+  }
+  .no-matches-panel {
+    display: none;
+    background: var(--card-bg);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    margin-top: 1.5rem;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div style="margin-bottom: 2rem;">
   <div class="brand-tag" style="display: inline-block; margin-bottom: 0.5rem;">MUNITIONS &amp; FIREARMS</div>
@@ -12,17 +90,52 @@
     Tactical profiles, credit costs, trading post rarity, and weapon trait interactions across Hive Primus.
   </p>
 
-  <div style="display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;">
-    <a href="{{ base_path }}/weapons" class="badge-mono badge-accent">All Categories</a>
+  <div class="weapon-search-container">
+    <input 
+      type="search" 
+      id="weaponFilterInput" 
+      class="weapon-search-input" 
+      placeholder="Filter by name, trait, or rules (e.g. bolter, melta, rapid fire)..." 
+      autocomplete="off"
+      spellcheck="false"
+      aria-label="Filter underhive weapons"
+    />
+    <button type="button" id="weaponFilterClear" class="weapon-search-clear" aria-label="Clear filter">&times;</button>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;" id="categoryPillRow">
+    <button type="button" class="badge-mono cat-btn active" data-cat="all">All Categories</button>
     {% for cat in categories %}
-    <a href="#cat-{{ cat|lower|replace(' ', '-') }}" class="badge-mono">{{ cat }}</a>
+    <button type="button" class="badge-mono cat-btn" data-cat="{{ cat|lower }}">{{ cat }}</button>
     {% endfor %}
+  </div>
+
+  <div class="weapon-count-row">
+    <span id="weaponFilterStatus">Showing {{ total_weapons }} of {{ total_weapons }} weapons</span>
+    <span style="font-size: 0.75rem; opacity: 0.7;">Press <kbd style="background: #1e2430; padding: 2px 5px; border-radius: 3px; border: 1px solid var(--border);">Esc</kbd> to clear</span>
   </div>
 </div>
 
-<div class="grid-cards">
+<div class="no-matches-panel" id="noWeaponMatchesPanel">
+  <div style="font-family: 'Chakra Petch', sans-serif; font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 0.4rem;">
+    No Matching Weapons Found
+  </div>
+  <p style="color: var(--muted); font-size: 0.88rem; margin-bottom: 1rem;">
+    No armory profiles matched your search or category selection. Try resetting filters.
+  </p>
+  <button type="button" class="badge-mono badge-accent" id="resetWeaponFilterBtn" style="cursor: pointer; border-radius: 4px; padding: 6px 14px; font-size: 0.82rem;">
+    Reset Filters
+  </button>
+</div>
+
+<div class="grid-cards" id="weaponsGrid">
   {% for w in weapons %}
-  <div class="hive-card" id="cat-{{ w.category|lower|replace(' ', '-') }}">
+  <div class="hive-card weapon-card" 
+       data-name="{{ w.name|lower }}" 
+       data-category="{{ w.category|lower }}" 
+       data-rarity="{{ w.rarity|lower }}" 
+       data-traits="{{ w.traits|join(' ')|lower }}" 
+       data-desc="{{ w.description|lower }}">
     <div>
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
         <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.25rem; font-weight: 700;">
@@ -71,7 +184,7 @@
     <div>
       <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
         {% for t in w.traits %}
-        <a href="{{ base_path }}/traits" style="font-size: 0.72rem; background: #222736; color: #ff7043; border: 1px solid #323a4f; padding: 2px 7px; border-radius: 3px; font-family: 'JetBrains Mono', monospace;">{{ t }}</a>
+        <a href="{{ base_path }}/trait/{{ t|slugify }}" style="font-size: 0.72rem; background: #222736; color: #ff7043; border: 1px solid #323a4f; padding: 2px 7px; border-radius: 3px; font-family: 'JetBrains Mono', monospace;">{{ t }}</a>
         {% endfor %}
       </div>
       <div style="border-top: 1px solid var(--border); padding-top: 0.55rem;">
@@ -81,4 +194,118 @@
   </div>
   {% endfor %}
 </div>
+
+<script>
+(function() {
+  const input = document.getElementById('weaponFilterInput');
+  const clearBtn = document.getElementById('weaponFilterClear');
+  const status = document.getElementById('weaponFilterStatus');
+  const noMatches = document.getElementById('noWeaponMatchesPanel');
+  const cards = Array.from(document.querySelectorAll('.weapon-card'));
+  const catButtons = Array.from(document.querySelectorAll('.cat-btn'));
+  const total = cards.length;
+  let activeCategory = 'all';
+
+  function filterWeapons() {
+    const rawVal = input.value.trim().toLowerCase();
+    clearBtn.style.display = rawVal.length > 0 ? 'block' : 'none';
+
+    let matchCount = 0;
+    cards.forEach(card => {
+      const cat = card.dataset.category || '';
+      const catMatch = (activeCategory === 'all') || (cat === activeCategory);
+
+      if (!catMatch) {
+        card.style.display = 'none';
+        return;
+      }
+
+      if (!rawVal) {
+        card.style.display = '';
+        matchCount++;
+        return;
+      }
+
+      const name = card.dataset.name || '';
+      const rarity = card.dataset.rarity || '';
+      const traits = card.dataset.traits || '';
+      const desc = card.dataset.desc || '';
+
+      const textMatch = name.includes(rawVal) || 
+                        rarity.includes(rawVal) || 
+                        traits.includes(rawVal) || 
+                        desc.includes(rawVal) || 
+                        cat.includes(rawVal);
+
+      if (textMatch) {
+        card.style.display = '';
+        matchCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    let catLabel = activeCategory === 'all' ? '' : ` in ${activeCategory}`;
+    if (rawVal) {
+      status.textContent = `Showing ${matchCount} of ${total} weapons${catLabel} for "${rawVal}"`;
+    } else if (activeCategory !== 'all') {
+      status.textContent = `Showing ${matchCount} of ${total} weapons${catLabel}`;
+    } else {
+      status.textContent = `Showing ${total} of ${total} weapons`;
+    }
+
+    if (matchCount === 0) {
+      noMatches.style.display = 'block';
+    } else {
+      noMatches.style.display = 'none';
+    }
+  }
+
+  // Category pill handlers
+  catButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      catButtons.forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      activeCategory = this.dataset.cat;
+      filterWeapons();
+    });
+  });
+
+  input.addEventListener('input', filterWeapons);
+
+  clearBtn.addEventListener('click', function() {
+    input.value = '';
+    filterWeapons();
+    input.focus();
+  });
+
+  const resetBtn = document.getElementById('resetWeaponFilterBtn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function() {
+      input.value = '';
+      activeCategory = 'all';
+      catButtons.forEach(b => {
+        if (b.dataset.cat === 'all') b.classList.add('active');
+        else b.classList.remove('active');
+      });
+      filterWeapons();
+      input.focus();
+    });
+  }
+
+  window.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.activeElement === input) {
+      if (input.value) {
+        input.value = '';
+        filterWeapons();
+      } else {
+        input.blur();
+      }
+    } else if (e.key === '/' && document.activeElement !== input) {
+      e.preventDefault();
+      input.focus();
+    }
+  });
+})();
+</script>
 {% endblock %}

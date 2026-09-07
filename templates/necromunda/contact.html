@@ -1,0 +1,154 @@
+{% extends "necromunda/base.html" %}
+
+{% block title %}Contact — AvaScry Necromunda{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://necromunda.avascry.com/contact">
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .contact-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: #0f121a;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .contact-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+  .contact-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 700;
+    font-family: 'Chakra Petch', sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #cbd5e1;
+    margin-bottom: 0.4rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 760px; margin: 2rem auto 4rem; padding: 0 1.5rem;">
+  <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+    <header style="margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem;">
+      <h1 style="font-family: 'Chakra Petch', sans-serif; font-size: 2.2rem; font-weight: 700; color: #fff; margin: 0 0 0.5rem 0;">
+        Contact Us
+      </h1>
+      <p style="color: var(--muted); font-size: 0.95rem; margin: 0; line-height: 1.5;">
+        Have a question, feedback, errata correction, or suggestion? Send us a message below and our team will get back to you.
+      </p>
+    </header>
+
+    {% if success %}
+      <div style="background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 6px; padding: 1.5rem; margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem; color: #4ade80; font-family: 'Chakra Petch', sans-serif; font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">
+          <span>✓</span> Message Sent!
+        </div>
+        <p style="margin: 0 0 1.25rem 0; font-size: 0.92rem; color: #cbd5e1; line-height: 1.5;">
+          Thank you! Your message has been received. If you provided an email or Discord tag, we will follow up with you shortly.
+        </p>
+        <a href="{{ base_path or '/' }}" style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--accent); color: #fff; padding: 0.6rem 1.2rem; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 0.85rem; border-radius: 4px; text-decoration: none;">
+          &larr; Back to Armory Hub
+        </a>
+      </div>
+    {% else %}
+
+      {% if error %}
+        <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 6px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; color: #f87171; font-size: 0.92rem;">
+          {{ error }}
+        </div>
+      {% endif %}
+
+      <form method="POST" action="{{ base_path }}/contact" style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- Anti-Spam Honeypot Trap -->
+        <div style="display: none;" aria-hidden="true">
+          <label for="website_url">Leave empty</label>
+          <input type="text" id="website_url" name="website_url" tabindex="-1" autocomplete="off">
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+          <div>
+            <label for="name" class="contact-label">
+              Your Name <span style="color: var(--accent);">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="name" 
+              name="name" 
+              required 
+              placeholder="e.g. Alex"
+              class="contact-input"
+            >
+          </div>
+          <div>
+            <label for="contact" class="contact-label">
+              Email or Discord Tag <span style="color: var(--accent);">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="contact" 
+              name="contact" 
+              required 
+              placeholder="e.g. alex@example.com or @username"
+              class="contact-input"
+            >
+          </div>
+        </div>
+
+        <div>
+          <label for="message" class="contact-label">
+            Your Message <span style="color: var(--accent);">*</span>
+          </label>
+          <textarea 
+            id="message" 
+            name="message" 
+            rows="6" 
+            required 
+            placeholder="How can we help? (e.g. feedback, errata, rules question, feature idea...)"
+            class="contact-input"
+            style="resize: vertical;"
+          ></textarea>
+        </div>
+
+        <div>
+          <button 
+            type="submit" 
+            style="background: var(--accent); color: #fff; border: none; padding: 0.8rem 1.75rem; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: transform 0.15s ease, box-shadow 0.15s ease;"
+          >
+            <span>Send Message</span> &rarr;
+          </button>
+        </div>
+      </form>
+
+      <div style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;">
+        <div>
+          <div style="font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; color: var(--accent); margin-bottom: 0.25rem;">
+            Operating Entity
+          </div>
+          <div style="font-size: 0.88rem; color: #fff; font-weight: 600;">Telos Development Group LLC</div>
+          <div style="font-size: 0.82rem; color: var(--muted);">Direct: telosdevgroup@gmail.com</div>
+        </div>
+        <div>
+          <div style="font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; color: var(--accent); margin-bottom: 0.25rem;">
+            Support Response
+          </div>
+          <div style="font-size: 0.88rem; color: #fff; font-weight: 600;">Direct Developer Notification</div>
+          <div style="font-size: 0.82rem; color: var(--muted);">Messages are sent directly to the team</div>
+        </div>
+      </div>
+
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

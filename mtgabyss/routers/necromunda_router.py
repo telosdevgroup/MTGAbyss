@@ -6,6 +6,8 @@ Serves HTML, Markdown (.md), JSON, sitemaps, and llms.txt endpoints for bots and
 
 from datetime import datetime, timezone
 import json
+import random
+import time
 from fastapi import APIRouter, Request, HTTPException, Response
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -35,15 +37,30 @@ def get_base_prefix(request: Request) -> str:
 @necromunda_router.get("", response_class=HTMLResponse)
 @necromunda_router.get("/", response_class=HTMLResponse)
 async def necromunda_home(request: Request):
-    cache_key = "necro:home_data"
+    cache_key = f"necro:home_data:{int(time.time() // 3600)}"
     cached = RAM_CACHE.get(cache_key)
     if not cached:
         db = get_necromunda_db()
+        weapons = list(db.weapons.find({}, {"_id": 0}))
+        traits = list(db.traits.find({}, {"_id": 0}))
+        houses = list(db.houses.find({}, {"_id": 0}))
+        skills = list(db.skills.find({}, {"_id": 0}))
+
+        total_w, total_t, total_h, total_s = len(weapons), len(traits), len(houses), len(skills)
+        random.shuffle(weapons)
+        random.shuffle(traits)
+        random.shuffle(houses)
+        random.shuffle(skills)
+
         cached = {
-            "weapons": list(db.weapons.find({}, {"_id": 0}).sort("name", 1)),
-            "traits": list(db.traits.find({}, {"_id": 0}).sort("name", 1)),
-            "houses": list(db.houses.find({}, {"_id": 0}).sort("name", 1)),
-            "skills": list(db.skills.find({}, {"_id": 0}).sort("name", 1)),
+            "weapons": weapons,
+            "traits": traits,
+            "houses": houses,
+            "skills": skills,
+            "total_weapons": total_w,
+            "total_traits": total_t,
+            "total_houses": total_h,
+            "total_skills": total_s,
         }
         set_ram_cache(cache_key, cached)
 
@@ -57,10 +74,10 @@ async def necromunda_home(request: Request):
             "traits": cached["traits"],
             "houses": cached["houses"],
             "skills": cached["skills"],
-            "total_weapons": len(cached["weapons"]),
-            "total_traits": len(cached["traits"]),
-            "total_houses": len(cached["houses"]),
-            "total_skills": len(cached["skills"]),
+            "total_weapons": cached["total_weapons"],
+            "total_traits": cached["total_traits"],
+            "total_houses": cached["total_houses"],
+            "total_skills": cached["total_skills"],
         }
     )
 
@@ -195,6 +212,111 @@ async def necromunda_sitemap(request: Request):
     return Response(content=xml, media_type="application/xml")
 
 
+@necromunda_router.get("/sitemap.html", response_class=HTMLResponse)
+async def necromunda_sitemap_html(request: Request):
+    """HTML master sitemap directory with discrete .md and .json format badges."""
+    cache_key = "necro:sitemap_data"
+    cached = RAM_CACHE.get(cache_key)
+    if not cached:
+        db = get_necromunda_db()
+        weapons = list(db.weapons.find({}, {"_id": 0}).sort("name", 1))
+        traits = list(db.traits.find({}, {"_id": 0}).sort("name", 1))
+        houses = list(db.houses.find({}, {"_id": 0}).sort("name", 1))
+        skills = list(db.skills.find({}, {"_id": 0}).sort("name", 1))
+
+        # Group weapons by category
+        weapon_groups = {}
+        for w in weapons:
+            cat = w.get("category", "General Weapons")
+            weapon_groups.setdefault(cat, []).append(w)
+
+        # Group skills by tree
+        skill_groups = {}
+        for s in skills:
+            tree = s.get("tree", "General Skills")
+            skill_groups.setdefault(tree, []).append(s)
+
+        cached = {
+            "weapons": weapons,
+            "traits": traits,
+            "houses": houses,
+            "skills": skills,
+            "weapon_groups": weapon_groups,
+            "skill_groups": skill_groups,
+        }
+        set_ram_cache(cache_key, cached)
+
+    base_path = get_base_prefix(request)
+    return templates.TemplateResponse(
+        request=request,
+        name="necromunda/sitemap.html",
+        context={
+            "base_path": base_path,
+            "weapons": cached["weapons"],
+            "traits": cached["traits"],
+            "houses": cached["houses"],
+            "skills": cached["skills"],
+            "weapon_groups": cached["weapon_groups"],
+            "skill_groups": cached["skill_groups"],
+        }
+    )
+
+
+@necromunda_router.get("/sitemap.md", response_class=PlainTextResponse)
+async def necromunda_sitemap_md():
+    """Markdown sitemap linking all Underhive entities, rules, and machine manifests."""
+    db = get_necromunda_db()
+    weapons = list(db.weapons.find({}, {"name": 1, "slug": 1, "category": 1, "_id": 0}).sort("name", 1))
+    traits = list(db.traits.find({}, {"name": 1, "slug": 1, "_id": 0}).sort("name", 1))
+    houses = list(db.houses.find({}, {"name": 1, "slug": 1, "title": 1, "_id": 0}).sort("name", 1))
+    skills = list(db.skills.find({}, {"name": 1, "slug": 1, "tree": 1, "_id": 0}).sort("name", 1))
+
+    lines = [
+        "# AvaScry Necromunda — Master Sitemap & Knowledge Directory (Markdown)",
+        "",
+        "> Structured Necromunda Underhive skirmish armory, weapon profiles, rule traits, clan houses, and skill trees.",
+        "",
+        "## Core Manifests & Indexes",
+        "- [Armory Hub](https://necromunda.avascry.com/)",
+        "- [HTML Master Sitemap](https://necromunda.avascry.com/sitemap.html)",
+        "- [XML Sitemap Index](https://necromunda.avascry.com/sitemap.xml)",
+        "- [LLM Navigational Manifest (`/llms.txt`)](https://necromunda.avascry.com/llms.txt)",
+        "- [Full Knowledge Corpus (`/llms-full.txt`)](https://necromunda.avascry.com/llms-full.txt)",
+        "",
+        f"## Clan Houses & Gang Rosters ({len(houses)})",
+    ]
+    for h in houses:
+        lines.append(f"- [{h['name']}](https://necromunda.avascry.com/house/{h['slug']}) • [MD](https://necromunda.avascry.com/house/{h['slug']}.md) • [JSON](https://necromunda.avascry.com/house/{h['slug']}.json)")
+
+    lines.append(f"\n## Armory Weapons ({len(weapons)})")
+    # Group weapons by category
+    cat_map = {}
+    for w in weapons:
+        cat_map.setdefault(w.get("category", "General"), []).append(w)
+
+    for cat, cat_weps in cat_map.items():
+        lines.append(f"\n### {cat} ({len(cat_weps)})")
+        for w in cat_weps:
+            lines.append(f"- [{w['name']}](https://necromunda.avascry.com/weapon/{w['slug']}) • [MD](https://necromunda.avascry.com/weapon/{w['slug']}.md) • [JSON](https://necromunda.avascry.com/weapon/{w['slug']}.json)")
+
+    lines.append(f"\n## Weapon Traits Lexicon ({len(traits)})")
+    for t in traits:
+        lines.append(f"- [{t['name']}](https://necromunda.avascry.com/trait/{t['slug']}) • [MD](https://necromunda.avascry.com/trait/{t['slug']}.md) • [JSON](https://necromunda.avascry.com/trait/{t['slug']}.json)")
+
+    lines.append(f"\n## Skills & Tactics ({len(skills)})")
+    tree_map = {}
+    for s in skills:
+        tree_map.setdefault(s.get("tree", "General"), []).append(s)
+
+    for tree, tree_sk in tree_map.items():
+        lines.append(f"\n### {tree} ({len(tree_sk)})")
+        for s in tree_sk:
+            lines.append(f"- [{s['name']}](https://necromunda.avascry.com/skill/{s['slug']}) • [MD](https://necromunda.avascry.com/skill/{s['slug']}.md) • [JSON](https://necromunda.avascry.com/skill/{s['slug']}.json)")
+
+    return PlainTextResponse("\n".join(lines), media_type="text/markdown; charset=utf-8")
+
+
+
 # ==========================================
 # WEAPONS CATALOG & DETAIL (TRI-SURFACE)
 # ==========================================
@@ -303,6 +425,7 @@ async def necromunda_weapon_detail(request: Request, slug: str):
 async def necromunda_traits_list(request: Request):
     db = get_necromunda_db()
     traits = list(db.traits.find({}, {"_id": 0}).sort("name", 1))
+    categories = sorted(list(set(t.get("category") for t in traits if t.get("category"))))
     base_path = get_base_prefix(request)
     return templates.TemplateResponse(
         request=request,
@@ -310,6 +433,7 @@ async def necromunda_traits_list(request: Request):
         context={
             "base_path": base_path,
             "traits": traits,
+            "categories": categories,
             "total_traits": len(traits)
         }
     )
@@ -442,6 +566,12 @@ canonical_url: "https://necromunda.avascry.com/house/{slug}"
 ## Clan Lore
 {house.get('lore')}
 """
+    if house.get("roster"):
+        md += "\n## Official Fighter Class Roster\n| Class | Role | Base Cost | M | WS | BS | S | T | W | I | A | Ld | Cl | Wil | Int |\n"
+        md += "| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
+        for f in house["roster"]:
+            md += f"| {f['title']} | {f['role']} | {f['cost_credits']}cr | {f['m']} | {f['ws']} | {f['bs']} | {f['s']} | {f['t']} | {f['w']} | {f['i']} | {f['a']} | {f['ld']} | {f['cl']} | {f['wil']} | {f['int']} |\n"
+
     return PlainTextResponse(md, media_type="text/markdown; charset=utf-8")
 
 
@@ -471,6 +601,7 @@ async def necromunda_house_detail(request: Request, slug: str):
 async def necromunda_skills_list(request: Request):
     db = get_necromunda_db()
     skills = list(db.skills.find({}, {"_id": 0}).sort("name", 1))
+    trees = sorted(list(set(s.get("tree") for s in skills if s.get("tree"))))
     base_path = get_base_prefix(request)
     return templates.TemplateResponse(
         request=request,
@@ -478,6 +609,7 @@ async def necromunda_skills_list(request: Request):
         context={
             "base_path": base_path,
             "skills": skills,
+            "trees": trees,
             "total_skills": len(skills)
         }
     )
@@ -534,3 +666,98 @@ async def necromunda_skill_detail(request: Request, slug: str):
             "skill": skill,
         }
     )
+
+
+@necromunda_router.get("/about", response_class=HTMLResponse)
+async def necromunda_about(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="necromunda/about.html",
+        context={"base_path": get_base_prefix(request)}
+    )
+
+
+@necromunda_router.get("/privacy", response_class=HTMLResponse)
+async def necromunda_privacy(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="necromunda/privacy.html",
+        context={"base_path": get_base_prefix(request)}
+    )
+
+
+@necromunda_router.get("/terms", response_class=HTMLResponse)
+async def necromunda_terms(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="necromunda/terms.html",
+        context={"base_path": get_base_prefix(request)}
+    )
+
+
+@necromunda_router.get("/contact", response_class=HTMLResponse)
+async def necromunda_contact(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="necromunda/contact.html",
+        context={"base_path": get_base_prefix(request), "success": False, "error": None}
+    )
+
+
+@necromunda_router.post("/contact", response_class=HTMLResponse)
+async def necromunda_contact_post(request: Request):
+    form = await request.form()
+    honeypot = form.get("website_url", "").strip()
+    if honeypot:
+        return templates.TemplateResponse(
+            request=request,
+            name="necromunda/contact.html",
+            context={"base_path": get_base_prefix(request), "success": True, "error": None}
+        )
+
+    name = str(form.get("name", "")).strip()
+    contact_info = str(form.get("contact", "")).strip()
+    category = str(form.get("category", "")).strip()
+    message = str(form.get("message", "")).strip()
+
+    if not name or not contact_info or not message:
+        return templates.TemplateResponse(
+            request=request,
+            name="necromunda/contact.html",
+            context={
+                "base_path": get_base_prefix(request),
+                "success": False,
+                "error": "Please fill out all required fields before submitting."
+            }
+        )
+
+    try:
+        from mtgabyss.routers.auth_router import send_discord_notification
+        fields = [
+            {"name": "Subsite", "value": "AvaScry Necromunda (necromunda.avascry.com)", "inline": True},
+            {"name": "Sender", "value": name, "inline": True},
+            {"name": "Contact", "value": contact_info, "inline": True},
+        ]
+        if category:
+            fields.append({"name": "Category", "value": category, "inline": True})
+        fields.append({"name": "Message", "value": message[:1024], "inline": False})
+
+        title_str = f"📩 [Necromunda Contact] Message from {name}"
+        if category:
+            title_str = f"📩 [Necromunda Contact] {category} from {name}"
+
+        await send_discord_notification(
+            title=title_str,
+            description=f"New contact message received on **necromunda.avascry.com** from **{name}**.",
+            color=0xff5722,
+            fields=fields
+        )
+    except Exception as exc:
+        print(f"[Necromunda Contact Error] Failed to dispatch Discord notification: {exc}")
+
+    return templates.TemplateResponse(
+        request=request,
+        name="necromunda/contact.html",
+        context={"base_path": get_base_prefix(request), "success": True, "error": None}
+    )
+

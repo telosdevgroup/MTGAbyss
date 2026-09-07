@@ -1,0 +1,87 @@
+{% extends "necromunda/base.html" %}
+
+{% block title %}Terms of Service — AvaScry Necromunda{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://necromunda.avascry.com/terms">
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 2rem auto 4rem; padding: 0 1.5rem;">
+  <article style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+    <header style="margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem;">
+      <div style="display: inline-block; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 0.5rem;">
+        Legal Agreement // Usage Terms
+      </div>
+      <h1 style="font-family: 'Chakra Petch', sans-serif; font-size: 2.2rem; font-weight: 700; color: #fff; margin: 0 0 0.5rem 0;">
+        Terms of Service
+      </h1>
+      <p style="color: var(--muted); font-size: 0.95rem; margin: 0;">
+        Effective Date: September 2026 &bull; Published by Telos Development Group LLC
+      </p>
+    </header>
+
+    <div style="line-height: 1.7; color: #cbd5e1; display: flex; flex-direction: column; gap: 2rem;">
+      <section>
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.3rem; color: #fff; margin-bottom: 0.75rem;">
+          1. Agreement to Terms
+        </h2>
+        <p>
+          By visiting, browsing, or utilizing the services provided at AvaScry Necromunda (<code>necromunda.avascry.com</code>), you acknowledge and agree to abide by these Terms of Service. If you do not consent to these terms in full, please discontinue usage of this site immediately.
+        </p>
+      </section>
+
+      <section>
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.3rem; color: #fff; margin-bottom: 0.75rem;">
+          2. Intellectual Property &amp; Fair Use Disclaimer
+        </h2>
+        <p>
+          Necromunda, Warhammer 40,000, Citadel, and all associated names, images, factions, weapon titles, and clan houses are registered trademarks and intellectual property of Games Workshop Limited. AvaScry Necromunda is an independent, unofficial fan resource created for rules reference, gang construction, tactical study, and arbitrator campaign management.
+        </p>
+        <p style="margin-top: 0.75rem;">
+          All tabletop statistics, weapon profiles, trait text summaries, and lore designations are curated under the Fair Use doctrine (17 U.S.C. § 107) for non-commercial educational reference, commentary, and critique. AvaScry is neither endorsed by nor affiliated with Games Workshop.
+        </p>
+      </section>
+
+      <section>
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.3rem; color: #fff; margin-bottom: 0.75rem;">
+          3. Permitted Use &amp; Automated Access (AI &amp; Bot Policy)
+        </h2>
+        <p>
+          You are granted a limited, revocable license to access our database for personal reference, hobby gang planning, and campaign arbitration.
+        </p>
+        <p style="margin-top: 0.75rem;">
+          We support responsible machine indexing and AI agent queries via dedicated machine endpoints (including <code>/weapon/{slug}.md</code>, <code>/weapon/{slug}.json</code>, <code>/trait/{slug}.md</code>, and <code>/llms.txt</code>). Automated crawlers must observe directives in our <code>/robots.txt</code> and maintain polite request frequencies. Scraping activities that degrade server performance or attempt to circumvent security controls are strictly forbidden.
+        </p>
+      </section>
+
+      <section>
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.3rem; color: #fff; margin-bottom: 0.75rem;">
+          4. Disclaimer of Warranties &amp; Accuracy
+        </h2>
+        <p>
+          AvaScry Necromunda is provided on an &ldquo;as is&rdquo; and &ldquo;as available&rdquo; basis without warranties of any kind, whether express or implied. While we strive to maintain complete and current accuracy with official Games Workshop FAQ updates and rules errata, clerical errors may occur. In competitive scenario play or sanctioned tournaments, players and arbitrators should defer to printed Games Workshop publications and event judges.
+        </p>
+      </section>
+
+      <section>
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.3rem; color: #fff; margin-bottom: 0.75rem;">
+          5. Limitation of Liability
+        </h2>
+        <p>
+          Under no circumstances shall Telos Development Group LLC, its developers, or contributors be held liable for any direct, indirect, incidental, or consequential damages resulting from the use or inability to use this service, or any reliance placed upon rules information presented herein.
+        </p>
+      </section>
+
+      <section>
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.3rem; color: #fff; margin-bottom: 0.75rem;">
+          6. Inquiries &amp; Legal Notices
+        </h2>
+        <p>
+          If you have questions regarding these terms, or wish to submit an intellectual property clarification, please contact us through our <a href="{{ base_path }}/contact" style="color: var(--accent); font-weight: 600; text-decoration: underline;">Contact Dispatch Form</a> or email <a href="mailto:telosdevgroup@gmail.com" style="color: var(--accent); text-decoration: underline;">telosdevgroup@gmail.com</a>.
+        </p>
+      </section>
+    </div>
+  </article>
+</div>
+{% endblock %}
