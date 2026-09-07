@@ -12,9 +12,11 @@ from fastapi.templating import Jinja2Templates
 from db_mongo import get_mongo_db
 
 from mtgabyss.shared.cache import RAM_CACHE, set_ram_cache
+from mtgabyss.shared.helpers import slugify
 
 necromunda_router = APIRouter(prefix="", tags=["Necromunda"])
 templates = Jinja2Templates(directory="templates")
+templates.env.filters["slugify"] = slugify
 
 
 def get_necromunda_db():

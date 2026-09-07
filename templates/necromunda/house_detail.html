@@ -31,7 +31,7 @@
           <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 700;">House Signature Weaponry:</div>
           <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.35rem;">
             {% for w in house.signature_weapons %}
-            <span class="badge-mono">{{ w }}</span>
+            <a href="{{ base_path }}/weapon/{{ w|slugify }}" class="badge-mono" style="transition: border-color 0.15s, color 0.15s;">{{ w }}</a>
             {% endfor %}
           </div>
         </div>
