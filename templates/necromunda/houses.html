@@ -15,9 +15,11 @@
 
 <div class="grid-cards">
   {% for h in houses %}
-  <a href="{{ base_path }}/house/{{ h.slug }}" class="hive-card">
+  <div class="hive-card">
     <div>
-      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.35rem; font-weight: 700; color: #fff;">{{ h.name }}</h2>
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.35rem; font-weight: 700;">
+        <a href="{{ base_path }}/house/{{ h.slug }}" style="color: #fff;">{{ h.name }}</a>
+      </h2>
       <div style="font-size: 0.85rem; color: var(--accent); font-weight: 600; margin-bottom: 0.75rem;">{{ h.title }}</div>
       <p style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 1rem;">
         {{ h.specialty }}
@@ -25,7 +27,7 @@
     </div>
 
     <div>
-      <div style="margin-bottom: 0.6rem;">
+      <div style="margin-bottom: 0.75rem;">
         <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 700;">Favored Weapons:</div>
         <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.25rem;">
           {% for w in h.signature_weapons %}
@@ -34,15 +36,11 @@
         </div>
       </div>
 
-      <div style="display: flex; gap: 0.5rem; font-size: 0.72rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 0.4rem;">
-        <span>Format: HTML</span>
-        <span>•</span>
-        <a href="{{ base_path }}/house/{{ h.slug }}.md" style="color: var(--accent);">.md</a>
-        <span>•</span>
-        <a href="{{ base_path }}/house/{{ h.slug }}.json" style="color: var(--accent);">.json</a>
+      <div style="border-top: 1px solid var(--border); padding-top: 0.55rem;">
+        <a href="{{ base_path }}/house/{{ h.slug }}" style="color: var(--accent); font-size: 0.82rem; font-weight: 600;">View House Dossier &rarr;</a>
       </div>
     </div>
-  </a>
+  </div>
   {% endfor %}
 </div>
 {% endblock %}

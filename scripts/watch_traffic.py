@@ -342,27 +342,34 @@ def classify_badge(badge: str, ip: str = "", path: str = "", ct: str = "") -> st
 def classify_route(path: str) -> str:
     """Classify requested URL route into logical domain surfaces."""
     clean = path.split("?")[0].lower()
-    if clean.startswith(("/printing/", "/card/")):
+    # Strip leading sub-site prefix for surface classification
+    sub_path = clean
+    for prefix in ("/dominion", "/swu"):
+        if sub_path.startswith(prefix):
+            sub_path = sub_path[len(prefix):] or "/"
+            break
+
+    if sub_path.startswith(("/printing/", "/card/")):
         return "printing"
-    elif clean.startswith("/similar/"):
+    elif sub_path.startswith("/similar/"):
         return "similar"
-    elif clean.startswith(("/vector/", "/vector")):
+    elif sub_path.startswith(("/vector/", "/vector")):
         return "vector"
-    elif clean.startswith("/artist/"):
+    elif sub_path.startswith("/artist/"):
         return "artist"
-    elif clean.startswith("/set/") or clean == "/sets":
+    elif sub_path.startswith("/set/") or sub_path in ("/sets", "/set"):
         return "set"
-    elif clean.startswith(("/commander", "/commanders")):
+    elif sub_path.startswith(("/commander", "/commanders")):
         return "commander"
-    elif clean.startswith(("/images/", "/image/")) or clean.endswith((".jpg", ".png", ".webp", ".gif", ".ico")):
+    elif sub_path.startswith(("/images/", "/image/")) or sub_path.endswith((".jpg", ".png", ".webp", ".gif", ".ico")):
         return "images"
-    elif clean.startswith("/sitemap") or "sitemap" in clean:
+    elif sub_path.startswith("/sitemap") or "sitemap" in sub_path:
         return "sitemap"
-    elif clean in ("/", "/index", "/home", "/favicon.ico"):
+    elif sub_path in ("/", "/index", "/home", "/favicon.ico"):
         return "home"
-    elif clean.startswith(("/deck", "/smartdeck", "/stash")):
+    elif sub_path.startswith(("/deck", "/smartdeck", "/stash")):
         return "decks"
-    elif clean.startswith(("/static/", "/assets/")) or clean.endswith((".css", ".js", ".woff", ".woff2", ".ttf")):
+    elif sub_path.startswith(("/static/", "/assets/")) or sub_path.endswith((".css", ".js", ".woff", ".woff2", ".ttf")):
         return "assets"
     return "other"
 

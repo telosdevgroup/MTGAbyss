@@ -74,12 +74,8 @@
         <a href="{{ base_path }}/traits" style="font-size: 0.72rem; background: #222736; color: #ff7043; border: 1px solid #323a4f; padding: 2px 7px; border-radius: 3px; font-family: 'JetBrains Mono', monospace;">{{ t }}</a>
         {% endfor %}
       </div>
-      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 0.55rem;">
-        <a href="{{ base_path }}/weapon/{{ w.slug }}" style="color: var(--accent); font-weight: 600;">View Profile &rarr;</a>
-        <div style="display: flex; gap: 0.4rem;">
-          <a href="{{ base_path }}/weapon/{{ w.slug }}.md" class="badge-mono" style="font-size: 0.68rem;">.md</a>
-          <a href="{{ base_path }}/weapon/{{ w.slug }}.json" class="badge-mono" style="font-size: 0.68rem;">.json</a>
-        </div>
+      <div style="border-top: 1px solid var(--border); padding-top: 0.55rem;">
+        <a href="{{ base_path }}/weapon/{{ w.slug }}" style="color: var(--accent); font-weight: 600; font-size: 0.85rem;">View Profile &rarr;</a>
       </div>
     </div>
   </div>

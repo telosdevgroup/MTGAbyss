@@ -15,10 +15,12 @@
 
 <div class="grid-cards">
   {% for s in skills %}
-  <a href="{{ base_path }}/skill/{{ s.slug }}" class="hive-card">
+  <div class="hive-card">
     <div>
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
-        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.35rem; font-weight: 700; color: #fff;">{{ s.name }}</h2>
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.35rem; font-weight: 700;">
+          <a href="{{ base_path }}/skill/{{ s.slug }}" style="color: #fff;">{{ s.name }}</a>
+        </h2>
         <span class="badge-mono badge-accent">{{ s.tree }}</span>
       </div>
       <p style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 1rem;">
@@ -31,15 +33,11 @@
         <em>Tactics:</em> {{ s.tactics }}
       </div>
 
-      <div style="display: flex; gap: 0.5rem; font-size: 0.72rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 0.4rem;">
-        <span>Format: HTML</span>
-        <span>•</span>
-        <a href="{{ base_path }}/skill/{{ s.slug }}.md" style="color: var(--accent);">.md</a>
-        <span>•</span>
-        <a href="{{ base_path }}/skill/{{ s.slug }}.json" style="color: var(--accent);">.json</a>
+      <div style="border-top: 1px solid var(--border); padding-top: 0.55rem;">
+        <a href="{{ base_path }}/skill/{{ s.slug }}" style="color: var(--accent); font-size: 0.82rem; font-weight: 600;">View Skill Details &rarr;</a>
       </div>
     </div>
-  </a>
+  </div>
   {% endfor %}
 </div>
 {% endblock %}

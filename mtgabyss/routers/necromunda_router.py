@@ -11,6 +11,8 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from db_mongo import get_mongo_db
 
+from mtgabyss.shared.cache import RAM_CACHE, set_ram_cache
+
 necromunda_router = APIRouter(prefix="", tags=["Necromunda"])
 templates = Jinja2Templates(directory="templates")
 
@@ -31,11 +33,17 @@ def get_base_prefix(request: Request) -> str:
 @necromunda_router.get("", response_class=HTMLResponse)
 @necromunda_router.get("/", response_class=HTMLResponse)
 async def necromunda_home(request: Request):
-    db = get_necromunda_db()
-    weapons = list(db.weapons.find({}, {"_id": 0}).sort("name", 1))
-    traits = list(db.traits.find({}, {"_id": 0}).sort("name", 1))
-    houses = list(db.houses.find({}, {"_id": 0}).sort("name", 1))
-    skills = list(db.skills.find({}, {"_id": 0}).sort("name", 1))
+    cache_key = "necro:home_data"
+    cached = RAM_CACHE.get(cache_key)
+    if not cached:
+        db = get_necromunda_db()
+        cached = {
+            "weapons": list(db.weapons.find({}, {"_id": 0}).sort("name", 1)),
+            "traits": list(db.traits.find({}, {"_id": 0}).sort("name", 1)),
+            "houses": list(db.houses.find({}, {"_id": 0}).sort("name", 1)),
+            "skills": list(db.skills.find({}, {"_id": 0}).sort("name", 1)),
+        }
+        set_ram_cache(cache_key, cached)
 
     base_path = get_base_prefix(request)
     return templates.TemplateResponse(
@@ -43,14 +51,14 @@ async def necromunda_home(request: Request):
         name="necromunda/home.html",
         context={
             "base_path": base_path,
-            "weapons": weapons,
-            "traits": traits,
-            "houses": houses,
-            "skills": skills,
-            "total_weapons": len(weapons),
-            "total_traits": len(traits),
-            "total_houses": len(houses),
-            "total_skills": len(skills),
+            "weapons": cached["weapons"],
+            "traits": cached["traits"],
+            "houses": cached["houses"],
+            "skills": cached["skills"],
+            "total_weapons": len(cached["weapons"]),
+            "total_traits": len(cached["traits"]),
+            "total_houses": len(cached["houses"]),
+            "total_skills": len(cached["skills"]),
         }
     )
 
