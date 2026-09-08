@@ -15,58 +15,43 @@
   </header>
 
   <!-- Online Contact Form Section -->
-  <section style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 2rem; margin-bottom: 3rem;">
-    <h2 style="font-size: 1.3rem; font-weight: 700; margin: 0 0 0.5rem 0; color: var(--text);">Send a Direct Message</h2>
+  <section style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 2rem; margin-bottom: 2.5rem;">
+    <h2 style="font-size: 1.3rem; font-weight: 700; margin: 0 0 0.5rem 0; color: var(--text);">Drop Us a Note</h2>
     <p style="color: var(--muted); font-size: 0.9rem; margin: 0 0 1.5rem 0;">
-      Leave a message below to alert our developers directly in our central team channel.
+      Got feedback, a bug to report, or an idea for the site? Drop us a note below — we're a small team building AvaScry and we read every message.
     </p>
-    {% set include_category = true %}
     {% set contact_action = "/contact" %}
     {% include "shared/contact_form.html" %}
   </section>
 
   <!-- Channels Grid -->
-  <div style=display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
     
     <!-- General & Support -->
-    <div style=background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem;>
-      <div style=font-size: 1.4rem; margin-bottom: 0.5rem;>✉️</div>
-      <h2 style=font-size: 1.15rem; font-weight: 700; margin: 0 0 0.5rem 0; color: var(--text);>General Support &amp; Feedback</h2>
-      <p style=font-size: 0.88rem; color: var(--muted); margin: 0 0 1rem 0;>
-        For bug reports, data inconsistencies, suggestions, or account assistance.
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem;">
+      <div style="font-size: 1.4rem; margin-bottom: 0.5rem;">✉️</div>
+      <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0 0 0.5rem 0; color: var(--text);">Direct Email</h2>
+      <p style="font-size: 0.88rem; color: var(--muted); margin: 0 0 1rem 0;">
+        Prefer your email client? Feel free to reach out directly anytime.
       </p>
-      <a href=mailto:telosdevgroup@gmail.com?subject=AvaScry%20Support%20Request style=display: inline-block; background: var(--accent); color: #fff; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; border-radius: var(--radius-pill); text-decoration: none;>
-        Email Support
+      <a href="mailto:telosdevgroup@gmail.com?subject=AvaScry%20Feedback" style="display: inline-block; background: var(--accent); color: #fff; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; border-radius: var(--radius-pill); text-decoration: none;">
+        telosdevgroup@gmail.com
       </a>
     </div>
 
     <!-- Publisher & Advertising -->
-    <div style=background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem;>
-      <div style=font-size: 1.4rem; margin-bottom: 0.5rem;>🤝</div>
-      <h2 style=font-size: 1.15rem; font-weight: 700; margin: 0 0 0.5rem 0; color: var(--text);>Partnerships &amp; Business</h2>
-      <p style=font-size: 0.88rem; color: var(--muted); margin: 0 0 1rem 0;>
-        For advertising inquiries, sponsorship opportunities, affiliate integrations, or publisher partnerships.
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem;">
+      <div style="font-size: 1.4rem; margin-bottom: 0.5rem;">🤝</div>
+      <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0 0 0.5rem 0; color: var(--text);">Partnerships &amp; Projects</h2>
+      <p style="font-size: 0.88rem; color: var(--muted); margin: 0 0 1rem 0;">
+        Interested in collaborations, card data tooling, or advertising partnerships? Let's chat.
       </p>
-      <a href=mailto:telosdevgroup@gmail.com?subject=AvaScry%20Partnership%20Inquiry style=display: inline-block; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; border-radius: var(--radius-pill); text-decoration: none;>
-        Business Inquiries
+      <a href="mailto:telosdevgroup@gmail.com?subject=AvaScry%20Partnership" style="display: inline-block; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; border-radius: var(--radius-pill); text-decoration: none;">
+        Partner With Us
       </a>
     </div>
 
   </div>
-
-  <!-- Operational Details -->
-  <section style=background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2.5rem;>
-    <h3 style=font-size: 1.05rem; font-weight: 700; margin: 0 0 0.75rem 0; color: var(--text);>Operator Information</h3>
-    <p style=font-size: 0.88rem; color: var(--muted); margin: 0 0 0.5rem 0;>
-      <strong>Operating Entity:</strong> Telos Development Group LLC
-    </p>
-    <p style=font-size: 0.88rem; color: var(--muted); margin: 0 0 0.5rem 0;>
-      <strong>Primary Contact:</strong> <a href=mailto:telosdevgroup@gmail.com style=color: var(--accent); text-decoration: underline;>telosdevgroup@gmail.com</a>
-    </p>
-    <p style=font-size: 0.88rem; color: var(--muted); margin: 0;>
-      <strong>Response SLA:</strong> We typically respond to legitimate developer, partnership, and user inquiries within 1–2 business days.
-    </p>
-  </section>
 
   <!-- Legal Notice Reference -->
   <section style=border-top: 1px solid var(--border); padding-top: 1.5rem;>

@@ -41,10 +41,10 @@ async def process_contact_submission(
     if extra_field_name:
         extra_val = str(form.get(extra_field_name, "")).strip()
 
-    if not name or not contact_info or not message:
+    if not contact_info or not message:
         return {
             "success": False,
-            "error": "Please fill out all required fields before submitting.",
+            "error": "Please provide your contact info and a message.",
             "values": {
                 "name": name,
                 "contact": contact_info,
@@ -53,13 +53,15 @@ async def process_contact_submission(
             }
         }
 
+    display_name = name or contact_info
+
     # Truncate message to standardized length limit
     clipped_message = message[:MAX_MESSAGE_LENGTH]
 
     # 2. Build Discord embed
     fields = [
         {"name": "Subsite", "value": subsite_name, "inline": True},
-        {"name": "Sender", "value": name, "inline": True},
+        {"name": "Sender", "value": display_name, "inline": True},
         {"name": "Contact", "value": contact_info, "inline": True},
     ]
 
@@ -68,8 +70,8 @@ async def process_contact_submission(
 
     fields.append({"name": "Message", "value": clipped_message, "inline": False})
 
-    title = f"📩 [{subsite_name}] Message from {name}"
-    description = f"New inquiry received on **{subsite_name}** from **{name}**."
+    title = f"📩 [{subsite_name}] Message from {display_name}"
+    description = f"New inquiry received on **{subsite_name}** from **{display_name}**."
 
     try:
         await auth_module.send_discord_notification(
