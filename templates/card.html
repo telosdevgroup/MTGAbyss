@@ -502,6 +502,11 @@
         <p style="font-size: 0.88rem; color: var(--muted); margin: 0; line-height: 1.4;">
           {{ t('sim_section_sub', current_lang or 'en') }}
         </p>
+        <a href="/methodology" 
+           style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; font-weight: 600; color: var(--muted); text-decoration: none; background: var(--surface); border: 1px solid var(--border); padding: 0.15rem 0.55rem; border-radius: var(--radius-pill);" 
+           title="How similarity is calculated using 4,096-dimensional high-parameter embeddings">
+          <span>🧠 4,096-Dim Neural Synergy</span>
+        </a>
         <a href="/similar/{{ card.slug }}" 
            style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; font-weight: 700; color: var(--accent); text-decoration: none; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); padding: 0.25rem 0.75rem; border-radius: var(--radius-pill); transition: background 0.15s, border-color 0.15s;"
            onmouseover="this.style.background='rgba(56, 189, 248, 0.16)'; this.style.borderColor='var(--accent)';"

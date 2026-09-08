@@ -61,6 +61,26 @@
     </div>
   </div>
 
+  <!-- Set Explorer Guide Callout -->
+  <div style="background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 1.15rem 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 280px;">
+      <h2 style="font-size: 0.92rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin: 0 0 0.35rem 0;">
+        Set Overview &amp; Explorer Guide
+      </h2>
+      <p style="font-size: 0.86rem; color: var(--muted); margin: 0; line-height: 1.55;">
+        Browse the complete visual checklist for <strong>{{ set_doc.name }}</strong> ({{ set_doc.code|upper }}). Filter printings by rarity, examine high-resolution scans, view rulings, and discover synergistic Commander archetypes powered by AvaScry's neural engine.
+      </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+      <a href="/search?q=set%3A{{ set_doc.code }}" style="font-size: 0.8rem; font-weight: 700; color: var(--text); background: rgba(255,255,255,0.06); border: 1px solid var(--border); padding: 0.35rem 0.85rem; border-radius: var(--radius-pill); text-decoration: none;" onmouseover="this.style.borderColor='var(--accent)';" onmouseout="this.style.borderColor='var(--border)';">
+        Search in Set &rarr;
+      </a>
+      <a href="/guides" style="font-size: 0.8rem; font-weight: 700; color: var(--accent); background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); padding: 0.35rem 0.85rem; border-radius: var(--radius-pill); text-decoration: none;">
+        Strategy Guides &rarr;
+      </a>
+    </div>
+  </div>
+
   <!-- Composed Spotlight Module -->
   {% if spotlight %}
   <section class="spotlight-block" style="background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.75rem; margin-bottom: 2.75rem; box-shadow: 0 12px 30px rgba(0,0,0,0.25);">

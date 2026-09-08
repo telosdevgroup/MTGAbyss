@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Magic: The Gathering Guides & Strategy Hub | AvaScry{% endblock %}
+{% block meta_description %}Explore authoritative Magic: The Gathering deckbuilding guides, Commander theory, set primers, and deep dives into neural card discovery on AvaScry.{% endblock %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 2rem auto 5rem; padding: 0 1.25rem;">
+
+  <!-- Hero Banner -->
+  <header style="margin-bottom: 3.5rem; text-align: center; max-width: 760px; margin-left: auto; margin-right: auto;">
+    <div style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); padding: 0.25rem 0.85rem; border-radius: var(--radius-pill); margin-bottom: 1rem;">
+      <span>📖</span> Strategy &amp; Editorial Hub
+    </div>
+    <h1 style="font-size: 2.6rem; font-weight: 800; letter-spacing: -0.025em; margin: 0 0 0.85rem 0; color: var(--text); line-height: 1.2;">
+      AvaScry Strategy &amp; Guides
+    </h1>
+    <p style="font-size: 1.1rem; color: var(--muted); margin: 0; line-height: 1.6;">
+      Authoritative Commander blueprints, format primers, mana base mathematics, and deep dives into high-dimensional card intelligence.
+    </p>
+  </header>
+
+  <!-- Featured / Hero Article Spotlight -->
+  {% if guides %}
+  {% set hero_guide = guides[0] %}
+  <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; margin-bottom: 3rem; display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 2rem; align-items: center; box-shadow: 0 16px 36px rgba(0,0,0,0.25);" class="hero-guide-grid">
+    <div>
+      <div style="display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 0.2rem 0.65rem; border-radius: var(--radius-pill); margin-bottom: 0.85rem;">
+        ★ Featured Guide
+      </div>
+      <h2 style="font-size: 1.75rem; font-weight: 800; color: var(--text); margin: 0 0 0.75rem 0; line-height: 1.3;">
+        <a href="/guides/{{ hero_guide.slug }}" style="color: inherit; text-decoration: none;" onmouseover="this.style.color='var(--accent)';" onmouseout="this.style.color='var(--text)';">
+          {{ hero_guide.title }}
+        </a>
+      </h2>
+      <p style="font-size: 0.95rem; color: var(--muted); line-height: 1.6; margin: 0 0 1.25rem 0;">
+        {{ hero_guide.summary }}
+      </p>
+      <div style="display: flex; align-items: center; gap: 1rem; font-size: 0.8rem; color: var(--muted); margin-bottom: 1.5rem; flex-wrap: wrap;">
+        <span><strong>By:</strong> {{ hero_guide.author }}</span>
+        <span>&bull;</span>
+        <span>⏱️ {{ hero_guide.read_time }}</span>
+        <span>&bull;</span>
+        <span>🏷️ {{ hero_guide.category }}</span>
+      </div>
+      <a href="/guides/{{ hero_guide.slug }}" class="btn-hero-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.65rem 1.4rem; font-size: 0.9rem; font-weight: 700;">
+        Read Full Guide &rarr;
+      </a>
+    </div>
+
+    {% if hero_guide.hero_card %}
+    <div style="display: flex; justify-content: center;">
+      <a href="/guides/{{ hero_guide.slug }}" style="display: block; text-decoration: none; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.03)';" onmouseout="this.style.transform='none';">
+        <img src="{{ hero_guide.hero_card.image_url }}" alt="{{ hero_guide.hero_card.name }}" style="width: 220px; border-radius: 10px; box-shadow: 0 16px 36px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.1);" onerror="this.onerror=null; this.src='https://cards.scryfall.io/normal/front/0/4/04002706-2236-4b79-bdea-4f263e43cb9c.jpg?1783911518';">
+      </a>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Article Cards Grid -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.75rem;">
+    {% for g in guides %}
+    <article style="background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;"
+             onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='var(--accent)'; this.style.boxShadow='0 12px 28px rgba(0,0,0,0.2)';"
+             onmouseout="this.style.transform='none'; this.style.borderColor='var(--border)'; this.style.boxShadow='none';">
+      
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; font-size: 0.76rem;">
+          <span style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); color: var(--accent); font-weight: 700; padding: 0.2rem 0.55rem; border-radius: var(--radius-pill);">
+            {{ g.category }}
+          </span>
+          <span style="color: var(--muted); font-weight: 600;">{{ g.read_time }}</span>
+        </div>
+
+        <h2 style="font-size: 1.25rem; font-weight: 800; margin: 0 0 0.65rem 0; line-height: 1.35;">
+          <a href="/guides/{{ g.slug }}" style="color: var(--text); text-decoration: none;" onmouseover="this.style.color='var(--accent)';" onmouseout="this.style.color='var(--text)';">
+            {{ g.title }}
+          </a>
+        </h2>
+
+        <p style="font-size: 0.88rem; color: var(--muted); line-height: 1.6; margin: 0 0 1.25rem 0;">
+          {{ g.summary }}
+        </p>
+      </div>
+
+      <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.78rem; color: var(--muted); font-weight: 600;">{{ g.published_date }}</span>
+        <a href="/guides/{{ g.slug }}" style="font-size: 0.85rem; font-weight: 700; color: var(--accent); text-decoration: none;">
+          Read Guide &rarr;
+        </a>
+      </div>
+
+    </article>
+    {% endfor %}
+  </div>
+
+  <!-- Bottom Commander Deck Builder CTA Banner -->
+  <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 2.75rem 2rem; margin-top: 4rem; text-align: center; box-shadow: 0 16px 36px rgba(0,0,0,0.35);">
+    <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.35); padding: 0.3rem 0.85rem; border-radius: 9999px; font-size: 0.78rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1.25rem;">
+      <span>✨ Neural Deck Crafting</span>
+    </div>
+    <h2 style="font-size: 1.75rem; font-weight: 800; color: var(--text); margin: 0 0 0.85rem 0; line-height: 1.3;">
+      Ready to Build Your Next Commander Masterpiece?
+    </h2>
+    <p style="font-size: 0.98rem; color: var(--muted); max-width: 640px; margin: 0 auto 1.75rem auto; line-height: 1.6;">
+      Harness AvaScry's 4,096-dimensional embeddings and automated mana curve analytics to assemble synergistic 100-card EDH decks in seconds.
+    </p>
+    <div style="display: inline-flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+      <a href="/commander" class="btn-hero-primary" style="text-decoration: none; padding: 0.75rem 1.6rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px;">
+        Open Commander Deck Builder &rarr;
+      </a>
+      <a href="/search" class="btn-hero-secondary" style="text-decoration: none; padding: 0.75rem 1.6rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px;">
+        Explore All Cards
+      </a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

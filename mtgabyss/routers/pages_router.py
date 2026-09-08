@@ -1,6 +1,6 @@
 import os
 from typing import Optional
-from fastapi import APIRouter, Request, BackgroundTasks, Response
+from fastapi import APIRouter, Request, BackgroundTasks, Response, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from db_mongo import get_mongo_db
 import i18n
@@ -88,6 +88,47 @@ async def about_page(request: Request):
         request=request,
         name="about.html",
         context={"current_lang": lang, "active_nav": "about"}
+    )
+
+@pages_router.get("/methodology", response_class=HTMLResponse)
+async def methodology_page(request: Request):
+    lang = i18n.get_locale(request)
+    return templates.TemplateResponse(
+        request=request,
+        name="methodology.html",
+        context={"current_lang": lang, "active_nav": "methodology"}
+    )
+
+@pages_router.get("/guides", response_class=HTMLResponse)
+async def guides_catalog(request: Request):
+    from mtgabyss.data.guides import GUIDES
+    lang = i18n.get_locale(request)
+    guides_list = list(GUIDES.values())
+    return templates.TemplateResponse(
+        request=request,
+        name="guides/index.html",
+        context={
+            "current_lang": lang,
+            "active_nav": "guides",
+            "guides": guides_list
+        }
+    )
+
+@pages_router.get("/guides/{slug}", response_class=HTMLResponse)
+async def guide_detail(slug: str, request: Request):
+    from mtgabyss.data.guides import GUIDES
+    guide = GUIDES.get(slug.lower().strip())
+    if not guide:
+        raise HTTPException(status_code=404, detail="Guide not found")
+    lang = i18n.get_locale(request)
+    return templates.TemplateResponse(
+        request=request,
+        name="guides/detail.html",
+        context={
+            "current_lang": lang,
+            "active_nav": "guides",
+            "guide": guide
+        }
     )
 
 @pages_router.get("/contact", response_class=HTMLResponse)

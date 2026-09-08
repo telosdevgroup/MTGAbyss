@@ -42,6 +42,7 @@ from mtgabyss.shared.cache import RAM_CACHE, set_ram_cache
 from mtgabyss.dominion_router import dominion_router
 from mtgabyss.swu_router import swu_router
 from mtgabyss.routers.necromunda_router import necromunda_router
+from mtgabyss.routers.minecraft_router import minecraft_router
 
 # Extracted MTG Routers
 from mtgabyss.routers.static_router import static_router
@@ -83,6 +84,7 @@ app.mount("/images", StaticFiles(directory="public/images"), name="images")
 app.include_router(dominion_router, prefix="/dominion")
 app.include_router(swu_router, prefix="/swu")
 app.include_router(necromunda_router, prefix="/necromunda")
+app.include_router(minecraft_router, prefix="/minecraft")
 
 # Extracted MTG Routers
 app.include_router(static_router)
@@ -101,6 +103,26 @@ app.include_router(api_router)
 # Note: FastAPI evaluates HTTP middlewares in reverse registration order.
 register_access_logger(app)  # executes request_logger & add_localization_context
 register_bot_shield(app)     # executes bot_probe_shield_middleware
+
+
+@app.middleware("http")
+async def machine_format_robots_middleware(request: Request, call_next):
+    """
+    Ensure raw machine-format endpoints (.json, .md, .csv, .xml, /vector/*) return
+    X-Robots-Tag: noindex, nofollow so search engines index solely the canonical HTML
+    surfaces, preventing duplicate thin-content penalties while keeping data open for LLMs.
+    """
+    response = await call_next(request)
+    path = request.scope.get("path", "").lower()
+    
+    # Exclude public manifests from noindex
+    exempt_paths = {"/manifest.json", "/openapi.json", "/robots.txt", "/sitemap.xml", "/llms.txt", "/llms-full.txt"}
+    
+    if path not in exempt_paths:
+        if path.startswith("/vector/") or path.endswith((".json", ".md", ".csv", ".xml")):
+            response.headers["X-Robots-Tag"] = "noindex, nofollow"
+
+    return response
 
 
 @app.middleware("http")
@@ -129,6 +151,9 @@ async def subdomain_routing_middleware(request: Request, call_next):
     elif sub == "necromunda":
         if not path.startswith(("/necromunda", "/images")):
             request.scope["path"] = "/necromunda" + path
+    elif sub == "minecraft":
+        if not path.startswith(("/minecraft", "/images")):
+            request.scope["path"] = "/minecraft" + path
     return await call_next(request)
 
 

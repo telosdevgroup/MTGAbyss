@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Methodology & Architecture — Neural Card Intelligence | AvaScry{% endblock %}
+{% block meta_description %}Technical methodology behind AvaScry: 4,096-dimensional vector embeddings, cosine synergy calculations, algorithmic Commander curve synthesis, and open data sourcing.{% endblock %}
+
+{% block content %}
+<div style="max-width: 920px; margin: 2.5rem auto 5rem; padding: 0 1.25rem; line-height: 1.75; color: var(--text);">
+
+  <!-- Hero Header -->
+  <header style="margin-bottom: 3.5rem; border-bottom: 1.5px solid var(--border); padding-bottom: 2rem;">
+    <div style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); padding: 0.25rem 0.85rem; border-radius: var(--radius-pill); margin-bottom: 1rem;">
+      <span>🔬</span> Technical Architecture &amp; Data Science
+    </div>
+    <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -0.025em; margin: 0 0 0.85rem 0; line-height: 1.2; color: var(--text);">
+      AvaScry Methodology &amp; Engineering
+    </h1>
+    <p style="font-size: 1.15rem; color: var(--muted); margin: 0; line-height: 1.6; max-width: 820px;">
+      How high-parameter neural language models, vector geometry, and combinatorial graph heuristics power real-time discovery for <em>Magic: The Gathering</em>.
+    </p>
+  </header>
+
+  <!-- Section 1: Neural Vector Embeddings -->
+  <section style="margin-bottom: 3.5rem;">
+    <h2 style="font-size: 1.65rem; font-weight: 800; color: var(--text); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.65rem;">
+      <span style="color: var(--accent);">1.</span> High-Dimensional Neural Embeddings
+    </h2>
+    <p style="color: var(--muted); margin-bottom: 1.25rem;">
+      Traditional card databases query static structured fields: colors, type lines, mana costs, and substring matches on Oracle text. While syntax filters are effective for precise lookups, they cannot capture <em>abstract functional roles</em>, <em>tempo pressure</em>, or <em>implicit mechanical relationships</em>.
+    </p>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1.5rem;">
+      <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0 0 0.75rem 0; color: var(--text);">The 4,096-Dimensional Vector Pipeline</h3>
+      <p style="font-size: 0.92rem; color: var(--muted); margin-bottom: 1rem; line-height: 1.65;">
+        AvaScry translates every unique Oracle card into a 4,096-dimensional dense floating-point vector using an adapted <strong>Qwen 8B</strong> high-parameter transformer embedding model. The embedding prompt synthesizes:
+      </p>
+      <ul style="color: var(--muted); font-size: 0.9rem; padding-left: 1.5rem; margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem;">
+        <li><strong>Full Oracle Rules Syntax:</strong> Complete ability statements, triggers, replacement effects, and activation costs.</li>
+        <li><strong>Game Mechanical Profile:</strong> Power, toughness, loyalty, speed (instant vs. sorcery), and mana curve tier.</li>
+        <li><strong>Functional Role Classification:</strong> Ramp, spot removal, mass wipe, card draw engine, tutor, sacrificial outlet, or finisher.</li>
+      </ul>
+      <p style="font-size: 0.92rem; color: var(--muted); margin: 0; line-height: 1.65;">
+        Vectors are unit-normalized upon generation. Semantic similarity between two cards \(A\) and \(B\) is computed using the cosine similarity metric:
+      </p>
+      <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-sm); padding: 0.85rem 1.25rem; margin: 0.85rem 0; font-family: monospace; font-size: 0.95rem; color: var(--accent); text-align: center;">
+        Cosine Similarity = (A &bull; B) / (||A|| &times; ||B||)
+      </div>
+      <p style="font-size: 0.85rem; color: var(--muted); margin: 0;">
+        This enables AvaScry to identify functional analogues (e.g. recognizing that <em>Deadly Rollick</em> and <em>Snuff Out</em> fulfill the same tempo role) even when their written card text shares zero identical keywords.
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 2: SmartDeck Algorithmic Synthesis -->
+  <section style="margin-bottom: 3.5rem;">
+    <h2 style="font-size: 1.65rem; font-weight: 800; color: var(--text); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.65rem;">
+      <span style="color: var(--accent);">2.</span> SmartDeck Curve &amp; Synergy Mathematics
+    </h2>
+    <p style="color: var(--muted); margin-bottom: 1.25rem;">
+      The <strong>SmartDeck Builder</strong> combines neural vector clustering with combinatorial card curve modeling to generate balanced, playable 100-card Commander lists in real time.
+    </p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
+      <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem;">
+        <div style="font-size: 1.2rem; margin-bottom: 0.35rem;">📊</div>
+        <h3 style="font-size: 1.02rem; font-weight: 700; margin: 0 0 0.4rem 0; color: var(--text);">Mana Base &amp; Pip Ratio Balancing</h3>
+        <p style="font-size: 0.86rem; color: var(--muted); margin: 0; line-height: 1.6;">
+          Calculates the exact ratio of colored mana symbols across all 99 non-commander cards to determine land source distribution, dual land weighting, and basic land counts.
+        </p>
+      </div>
+
+      <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem;">
+        <div style="font-size: 1.2rem; margin-bottom: 0.35rem;">⚡</div>
+        <h3 style="font-size: 1.02rem; font-weight: 700; margin: 0 0 0.4rem 0; color: var(--text);">Functional Package Density</h3>
+        <p style="font-size: 0.86rem; color: var(--muted); margin: 0; line-height: 1.6;">
+          Ensures core Commander baseline requirements: 10–12 ramp spells, 10+ card advantage engines, 8–10 targeted interaction pieces, and 2–3 board resets scaled to commander mana value.
+        </p>
+      </div>
+
+      <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem;">
+        <div style="font-size: 1.2rem; margin-bottom: 0.35rem;">🔗</div>
+        <h3 style="font-size: 1.02rem; font-weight: 700; margin: 0 0 0.4rem 0; color: var(--text);">Archetype Vector Proximity</h3>
+        <p style="font-size: 0.86rem; color: var(--muted); margin: 0; line-height: 1.6;">
+          Weights candidate cards by their angular distance to the Commander's embedding vector, surfacing specific win-cons and synergistic enablers over generic good-stuff.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Data Coverage & Update Cycles -->
+  <section style="margin-bottom: 3.5rem;">
+    <h2 style="font-size: 1.65rem; font-weight: 800; color: var(--text); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.65rem;">
+      <span style="color: var(--accent);">3.</span> Data Ingestion &amp; Archive Coverage
+    </h2>
+    <p style="color: var(--muted); margin-bottom: 1.25rem;">
+      AvaScry maintains a live, comprehensive archive of Magic's 30+ year history, synchronized regularly with authoritative community data sources.
+    </p>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem; text-align: center; margin-bottom: 1.5rem;">
+        <div style="border-right: 1px solid var(--border); padding-right: 1rem;">
+          <div style="font-size: 1.8rem; font-weight: 800; color: var(--accent);">34,800+</div>
+          <div style="font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase;">Unique Oracle Cards</div>
+        </div>
+        <div style="border-right: 1px solid var(--border); padding-right: 1rem;">
+          <div style="font-size: 1.8rem; font-weight: 800; color: var(--accent);">105,000+</div>
+          <div style="font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase;">Card Printings</div>
+        </div>
+        <div style="border-right: 1px solid var(--border); padding-right: 1rem;">
+          <div style="font-size: 1.8rem; font-weight: 800; color: var(--accent);">1,000+</div>
+          <div style="font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase;">Sets &amp; Expansions</div>
+        </div>
+        <div>
+          <div style="font-size: 1.8rem; font-weight: 800; color: var(--accent);">11</div>
+          <div style="font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase;">Localized Languages</div>
+        </div>
+      </div>
+      <p style="font-size: 0.9rem; color: var(--muted); margin: 0; line-height: 1.65;">
+        Card metadata, collector details, and high-resolution artwork scans are ingested via the public <a href="https://scryfall.com" target="_blank" rel="noopener noreferrer" style="color: var(--accent); font-weight: 600; text-decoration: underline;">Scryfall API</a>. Official rules adjudications and comprehensive rulings are updated in accordance with the Wizards of the Coast Comprehensive Rules changes accompanying each major set release.
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 4: AI & Agent Access Architecture -->
+  <section style="margin-bottom: 3.5rem;">
+    <h2 style="font-size: 1.65rem; font-weight: 800; color: var(--text); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.65rem;">
+      <span style="color: var(--accent);">4.</span> Open Access for AI Agents &amp; Developers
+    </h2>
+    <p style="color: var(--muted); margin-bottom: 1.25rem;">
+      AvaScry champions open web accessibility for both human deckbuilders and modern autonomous AI agents. Every resource is accessible across three distinct programmatic surfaces:
+    </p>
+    <ul style="color: var(--muted); font-size: 0.92rem; padding-left: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
+      <li><strong>Human Web Surface:</strong> Interactive, accessible, dark/light-responsive HTML pages optimized for desktop and mobile devices.</li>
+      <li><strong>Machine Markdown Surface:</strong> Clean, token-efficient Markdown representations (<code>/printing/{slug}.md</code>) tailored for direct LLM ingestion.</li>
+      <li><strong>Deterministic JSON API:</strong> High-speed JSON endpoints (<code>/printing/{slug}.json</code> and <code>/vector/{slug}.json</code>) providing raw structured data and 4096-dim vector arrays.</li>
+    </ul>
+    <p style="font-size: 0.88rem; color: var(--muted); margin: 0;">
+      Read more about our developer endpoints and AI manifests on our <a href="/developers" style="color: var(--accent); font-weight: 600; text-decoration: underline;">Developer Integration Hub</a> and <a href="/llms.txt" style="color: var(--accent); font-weight: 600; text-decoration: underline;">llms.txt</a>.
+    </p>
+  </section>
+
+  <!-- Section 5: Legal & Contact -->
+  <section style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem;">
+    <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0 0 0.6rem 0; color: var(--text);">Attribution &amp; Fan Content Policy</h3>
+    <p style="font-size: 0.85rem; color: var(--muted); margin: 0 0 0.85rem 0; line-height: 1.6;">
+      AvaScry is unofficial Fan Content permitted under the Wizards of the Coast Fan Content Policy. Portions of the materials used are property of Wizards of the Coast LLC, a subsidiary of Hasbro, Inc. &copy; Wizards of the Coast LLC.
+    </p>
+    <p style="font-size: 0.85rem; color: var(--muted); margin: 0; line-height: 1.6;">
+      Maintained by <strong>Telos Development Group LLC</strong>. For algorithmic inquiries, bug reports, or partnership discussions, reach out to <a href="mailto:telosdevgroup@gmail.com?subject=AvaScry%20Architecture%20Inquiry" style="color: var(--accent); font-weight: 600; text-decoration: underline;">telosdevgroup@gmail.com</a>.
+    </p>
+  </section>
+
+</div>
+{% endblock %}

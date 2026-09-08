@@ -21,9 +21,14 @@
   {% endif %}
   {% block meta %}{% endblock %}
 
-  <!-- Google AdSense -->
+  <!-- Google AdSense Account Verification (Always present for domain ownership verification) -->
   <meta name="google-adsense-account" content="ca-pub-7283717447639840">
+  {% block adsense %}
+  {% set req_path = request.url.path if request is defined and request and request.url else '' %}
+  {% if not disable_ads and not no_ads and not req_path.startswith(('/auth', '/dashboard', '/privacy', '/terms', '/contact', '/random')) %}
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7283717447639840" crossorigin="anonymous"></script>
+  {% endif %}
+  {% endblock %}
 
   <!-- PWA Web App Manifest & Theme Color -->
   <link rel="manifest" href="/manifest.json">
@@ -131,6 +136,7 @@
       <nav itemscope itemtype="https://schema.org/SiteNavigationElement" aria-label="Main Navigation" style="display: flex; align-items: center; gap: 1.15rem;">
         <a itemprop="url" href="/live-gallery" class="{% if active_nav == 'live-gallery' %}active{% endif %}"><span itemprop="name">{{ t('nav_live_gallery', current_lang or 'en') }}</span></a>
         <a itemprop="url" href="/commander" class="{% if active_nav == 'commander' %}active{% endif %}" title="SmartDeck — Intelligent Deck Completer"><span itemprop="name">{{ t('nav_deck_builder', current_lang or 'en') }}</span></a>
+        <a itemprop="url" href="/guides" class="{% if active_nav == 'guides' %}active{% endif %}" title="Strategy, Deckbuilding &amp; Set Primers"><span itemprop="name">Guides</span></a>
         <a itemprop="url" href="/developers" class="{% if active_nav == 'developers' %}active{% endif %}" title="Developers &amp; AI Integration Hub"><span itemprop="name">{% set api_label = t('nav_api', current_lang or 'en') %}{{ 'API &amp; Docs' if api_label == 'nav_api' else api_label }}</span></a>
         <a itemprop="url" href="/random" title="Jump to a random card"><span itemprop="name">{{ t('nav_random', current_lang or 'en') }}</span></a>
         
@@ -200,6 +206,7 @@
         <div style="font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.9rem;">Explore</div>
         <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem;">
           <li><a href="/live-gallery" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Live Gallery</a></li>
+          <li><a href="/guides" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Strategy &amp; Guides</a></li>
           <li><a href="/sets" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Sets</a></li>
           <li><a href="/artists" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Artists</a></li>
           <li><a href="/random" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Random Card</a></li>
@@ -222,6 +229,7 @@
         <div style="font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.9rem;">Company</div>
         <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem;">
           <li><a href="/about" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">About AvaScry</a></li>
+          <li><a href="/methodology" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Methodology &amp; Science</a></li>
           <li><a href="/contact" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Contact &amp; Support</a></li>
           <li><a href="/privacy" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Privacy Policy</a></li>
           <li><a href="/terms" style="font-size: 0.85rem; color: var(--muted); text-decoration: none;" onmouseover="this.style.color='var(--text)';" onmouseout="this.style.color='var(--muted)';">Terms of Use</a></li>

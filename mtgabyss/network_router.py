@@ -13,6 +13,7 @@ SUBDOMAIN_ROUTING_MAP: Dict[str, str] = {
     "dominion": "avascry_dominion",
     "swu": "avascry_swu",
     "necromunda": "avascry_necromunda",
+    "minecraft": "avascry_minecraft",
     "lorcana": "avascry_lorcana",
     "netrunner": "avascry_netrunner",
     "onepiece": "avascry_onepiece"
@@ -25,6 +26,7 @@ def extract_subdomain(host: str) -> Optional[str]:
       'dominion.avascry.com' -> 'dominion'
       'dominion.localhost:8004' -> 'dominion'
       'necromunda.avascry.com' -> 'necromunda'
+      'minecraft.avascry.com' -> 'minecraft'
       'avascry.com' -> None
       'www.avascry.com' -> None
     """
@@ -43,6 +45,7 @@ SITE_BADGES: Dict[str, Tuple[str, str]] = {
     "dominion": ("\033[96m[DOM ]\033[0m", "[DOM ]"),
     "swu": ("\033[95m[SWU ]\033[0m", "[SWU ]"),
     "necromunda": ("\033[91m\033[1m[NECR]\033[0m", "[NECR]"),
+    "minecraft": ("\033[92m[MINE]\033[0m", "[MINE]"),
     "lorcana": ("\033[94m[LORC]\033[0m", "[LORC]"),
     "netrunner": ("\033[92m[NETR]\033[0m", "[NETR]"),
     "onepiece": ("\033[91m[ONEP]\033[0m", "[ONEP]"),
