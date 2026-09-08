@@ -47,3 +47,13 @@ def test_set_detail_contains_explorer_guide():
     assert "Set Overview &amp; Explorer Guide" in res.text or "Set Overview & Explorer Guide" in res.text
     assert 'href="/guides"' in res.text
     assert '<link rel="canonical" href="https://avascry.com/set/mh3">' in res.text
+
+def test_sitemaps_contain_guides():
+    """Verify that sitemap.xml, sitemap.html, sitemap.md, and llms.txt all contain all guide URLs."""
+    for sitemap_url in ["/sitemap.xml", "/sitemap.html", "/sitemap.md", "/llms.txt"]:
+        res = client.get(sitemap_url, headers={"host": "avascry.com"})
+        assert res.status_code == 200
+        assert "avascry.com/guides" in res.text or "/guides" in res.text
+        for slug in GUIDES.keys():
+            assert slug in res.text
+

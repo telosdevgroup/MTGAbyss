@@ -1,522 +1,562 @@
 <?xml version="1.0" encoding="utf-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://mtgabyss.com/</loc>
+    <loc>https://avascry.com/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/search.html</loc>
+    <loc>https://avascry.com/search.html</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/sitemap.html</loc>
+    <loc>https://avascry.com/guides</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://avascry.com/methodology</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://avascry.com/guides/commander-deckbuilding-8x8</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://avascry.com/guides/modern-horizons-3-primer</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://avascry.com/guides/commander-mana-base-guide</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://avascry.com/guides/neural-similarity-engine</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://avascry.com/guides/interaction-packages-by-color</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://avascry.com/guides/6-hidden-commanders-neural-embeddings</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://avascry.com/sitemap.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/scurry-oak</loc>
+    <loc>https://avascry.com/card/scurry-oak</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/wakandan-royal-guard</loc>
+    <loc>https://avascry.com/card/wakandan-royal-guard</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/llanowar-druid</loc>
+    <loc>https://avascry.com/card/llanowar-druid</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/sol-talisman</loc>
+    <loc>https://avascry.com/card/sol-talisman</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/carnivorous-plant</loc>
+    <loc>https://avascry.com/card/carnivorous-plant</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/stoneforge-acolyte</loc>
+    <loc>https://avascry.com/card/stoneforge-acolyte</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/vindictive-mob</loc>
+    <loc>https://avascry.com/card/vindictive-mob</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/foundry-inspector</loc>
+    <loc>https://avascry.com/card/foundry-inspector</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/dovin-baan</loc>
+    <loc>https://avascry.com/card/dovin-baan</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/inspired-ultimatum</loc>
+    <loc>https://avascry.com/card/inspired-ultimatum</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/cerebral-download</loc>
+    <loc>https://avascry.com/card/cerebral-download</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/auriok-champion</loc>
+    <loc>https://avascry.com/card/auriok-champion</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/fountainport</loc>
+    <loc>https://avascry.com/card/fountainport</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/stream-hopper</loc>
+    <loc>https://avascry.com/card/stream-hopper</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/tapestry-of-the-ages</loc>
+    <loc>https://avascry.com/card/tapestry-of-the-ages</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/hixus-prison-warden</loc>
+    <loc>https://avascry.com/card/hixus-prison-warden</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/hydroblast</loc>
+    <loc>https://avascry.com/card/hydroblast</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/brazen-upstart</loc>
+    <loc>https://avascry.com/card/brazen-upstart</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/butcher-of-the-horde</loc>
+    <loc>https://avascry.com/card/butcher-of-the-horde</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/game-preserve</loc>
+    <loc>https://avascry.com/card/game-preserve</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/campus-guide</loc>
+    <loc>https://avascry.com/card/campus-guide</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/mardu-warshrieker</loc>
+    <loc>https://avascry.com/card/mardu-warshrieker</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/saprazzan-outrigger</loc>
+    <loc>https://avascry.com/card/saprazzan-outrigger</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/searslicer-goblin-searslicer-goblin</loc>
+    <loc>https://avascry.com/card/searslicer-goblin-searslicer-goblin</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/smoke-blessing</loc>
+    <loc>https://avascry.com/card/smoke-blessing</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/humble-naturalist</loc>
+    <loc>https://avascry.com/card/humble-naturalist</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/dauthi-mindripper</loc>
+    <loc>https://avascry.com/card/dauthi-mindripper</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/mystic-sanctuary</loc>
+    <loc>https://avascry.com/card/mystic-sanctuary</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/the-philosopher</loc>
+    <loc>https://avascry.com/card/the-philosopher</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/distract-the-hydra</loc>
+    <loc>https://avascry.com/card/distract-the-hydra</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/elemental-elemental</loc>
+    <loc>https://avascry.com/card/elemental-elemental</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/the-wondrous-wasp</loc>
+    <loc>https://avascry.com/card/the-wondrous-wasp</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/smellerbee-rebel-fighter</loc>
+    <loc>https://avascry.com/card/smellerbee-rebel-fighter</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/straw-soldiers</loc>
+    <loc>https://avascry.com/card/straw-soldiers</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/acidic-sliver</loc>
+    <loc>https://avascry.com/card/acidic-sliver</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/arcane-bombardment</loc>
+    <loc>https://avascry.com/card/arcane-bombardment</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/crosiss-charm</loc>
+    <loc>https://avascry.com/card/crosiss-charm</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/snake-of-the-golden-grove</loc>
+    <loc>https://avascry.com/card/snake-of-the-golden-grove</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/urban-daggertooth</loc>
+    <loc>https://avascry.com/card/urban-daggertooth</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/hardlight-containment</loc>
+    <loc>https://avascry.com/card/hardlight-containment</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/electrosiphon</loc>
+    <loc>https://avascry.com/card/electrosiphon</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/cryptic-annelid</loc>
+    <loc>https://avascry.com/card/cryptic-annelid</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/oasis-gardener</loc>
+    <loc>https://avascry.com/card/oasis-gardener</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/heat-of-battle</loc>
+    <loc>https://avascry.com/card/heat-of-battle</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/familys-favor-familys-favor</loc>
+    <loc>https://avascry.com/card/familys-favor-familys-favor</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/fateful-absence</loc>
+    <loc>https://avascry.com/card/fateful-absence</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/thunder-brute</loc>
+    <loc>https://avascry.com/card/thunder-brute</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/regal-sliver</loc>
+    <loc>https://avascry.com/card/regal-sliver</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/tradewind-rider-avatar</loc>
+    <loc>https://avascry.com/card/tradewind-rider-avatar</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/death-frenzy</loc>
+    <loc>https://avascry.com/card/death-frenzy</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/ayara-first-of-locthwain</loc>
+    <loc>https://avascry.com/card/ayara-first-of-locthwain</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/hostility</loc>
+    <loc>https://avascry.com/card/hostility</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/moment-of-silence</loc>
+    <loc>https://avascry.com/card/moment-of-silence</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/sun-ce-young-conquerer</loc>
+    <loc>https://avascry.com/card/sun-ce-young-conquerer</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/ben-rubin-decklist</loc>
+    <loc>https://avascry.com/card/ben-rubin-decklist</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/scrapyard-recombiner</loc>
+    <loc>https://avascry.com/card/scrapyard-recombiner</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/reinforced-bulwark</loc>
+    <loc>https://avascry.com/card/reinforced-bulwark</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/black-scarab</loc>
+    <loc>https://avascry.com/card/black-scarab</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/deliberate</loc>
+    <loc>https://avascry.com/card/deliberate</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/sokkas-charge-sokkas-charge</loc>
+    <loc>https://avascry.com/card/sokkas-charge-sokkas-charge</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/hulk-brutal-brawler</loc>
+    <loc>https://avascry.com/card/hulk-brutal-brawler</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/disorienting-choice</loc>
+    <loc>https://avascry.com/card/disorienting-choice</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/heliod-the-radiant-dawn-heliod-the-warped-eclipse</loc>
+    <loc>https://avascry.com/card/heliod-the-radiant-dawn-heliod-the-warped-eclipse</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/zuko-tutorial</loc>
+    <loc>https://avascry.com/card/zuko-tutorial</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/elven-cache</loc>
+    <loc>https://avascry.com/card/elven-cache</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/barkshell-blessing</loc>
+    <loc>https://avascry.com/card/barkshell-blessing</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/unleash-the-inferno</loc>
+    <loc>https://avascry.com/card/unleash-the-inferno</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/crimson-hellkite</loc>
+    <loc>https://avascry.com/card/crimson-hellkite</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/svend-geertsen-bio</loc>
+    <loc>https://avascry.com/card/svend-geertsen-bio</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/rosethorn-acolyte-seasonal-ritual</loc>
+    <loc>https://avascry.com/card/rosethorn-acolyte-seasonal-ritual</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/neurok-hoversail</loc>
+    <loc>https://avascry.com/card/neurok-hoversail</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/scoured-barrens</loc>
+    <loc>https://avascry.com/card/scoured-barrens</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/femeref-archers</loc>
+    <loc>https://avascry.com/card/femeref-archers</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/form-of-the-dragon</loc>
+    <loc>https://avascry.com/card/form-of-the-dragon</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/brightclimb-pathway-grimclimb-pathway</loc>
+    <loc>https://avascry.com/card/brightclimb-pathway-grimclimb-pathway</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/seal-of-doom</loc>
+    <loc>https://avascry.com/card/seal-of-doom</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/favor-of-jukai</loc>
+    <loc>https://avascry.com/card/favor-of-jukai</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/grafdiggers-cage</loc>
+    <loc>https://avascry.com/card/grafdiggers-cage</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/krenkos-buzzcrusher</loc>
+    <loc>https://avascry.com/card/krenkos-buzzcrusher</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/rankle-master-of-pranks</loc>
+    <loc>https://avascry.com/card/rankle-master-of-pranks</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/hatred</loc>
+    <loc>https://avascry.com/card/hatred</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/cursed-firebreathing-yogurt</loc>
+    <loc>https://avascry.com/card/cursed-firebreathing-yogurt</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/shining-armor</loc>
+    <loc>https://avascry.com/card/shining-armor</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/tazeem-roilmage-tazeem-roilmage</loc>
+    <loc>https://avascry.com/card/tazeem-roilmage-tazeem-roilmage</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/evaporate</loc>
+    <loc>https://avascry.com/card/evaporate</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/stupor</loc>
+    <loc>https://avascry.com/card/stupor</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/renegades-getaway</loc>
+    <loc>https://avascry.com/card/renegades-getaway</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/reckless-imp</loc>
+    <loc>https://avascry.com/card/reckless-imp</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/insect</loc>
+    <loc>https://avascry.com/card/insect</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/moonveil-regent-moonveil-regent</loc>
+    <loc>https://avascry.com/card/moonveil-regent-moonveil-regent</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/wilhelt-the-rotcleaver</loc>
+    <loc>https://avascry.com/card/wilhelt-the-rotcleaver</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/toski-bearer-of-secrets</loc>
+    <loc>https://avascry.com/card/toski-bearer-of-secrets</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/silver-myr</loc>
+    <loc>https://avascry.com/card/silver-myr</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/purple-worm-purple-worm</loc>
+    <loc>https://avascry.com/card/purple-worm-purple-worm</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/chakram-retriever</loc>
+    <loc>https://avascry.com/card/chakram-retriever</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/trumpeting-armodon</loc>
+    <loc>https://avascry.com/card/trumpeting-armodon</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/soul-nova</loc>
+    <loc>https://avascry.com/card/soul-nova</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/flip-the-switch</loc>
+    <loc>https://avascry.com/card/flip-the-switch</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/karlov-of-the-ghost-council</loc>
+    <loc>https://avascry.com/card/karlov-of-the-ghost-council</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/red-ghost-intangible-genius</loc>
+    <loc>https://avascry.com/card/red-ghost-intangible-genius</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mtgabyss.com/card/tigra-feline-fury</loc>
+    <loc>https://avascry.com/card/tigra-feline-fury</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>

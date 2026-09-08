@@ -183,9 +183,95 @@
       box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
     }
 
+    /* Mobile Navigation & Divided Groups */
+    .mobile-nav-toggle {
+      display: none;
+      background: #18181b;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 1.25rem;
+      line-height: 1;
+      padding: 0.45rem 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .nav-links-group {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+    .nav-divider {
+      display: inline-block;
+      width: 1px;
+      height: 16px;
+      background: var(--border);
+      margin: 0 0.25rem;
+    }
+    .nav-user-group {
+      display: inline-flex;
+      align-items: center;
+    }
+
     @media (max-width: 768px) {
-      .header-inner { flex-direction: column; align-items: flex-start; }
-      nav { flex-wrap: wrap; gap: 1rem; width: 100%; }
+      .header-inner {
+        flex-wrap: wrap;
+        padding: 0.75rem 1.25rem;
+      }
+      .mobile-nav-toggle {
+        display: block;
+      }
+      nav#main-navigation {
+        display: none !important;
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 1.15rem !important;
+        background: #18181b;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 1.25rem 1rem;
+        margin-top: 0.75rem;
+        box-shadow: 0 16px 36px rgba(0,0,0,0.6);
+      }
+      nav#main-navigation.nav-open {
+        display: flex !important;
+      }
+      .nav-links-group {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.75rem !important;
+        width: 100%;
+      }
+      .nav-links-group a {
+        font-size: 1rem !important;
+        width: 100%;
+        padding: 0.35rem 0.5rem;
+      }
+      .nav-divider {
+        display: block !important;
+        width: 100% !important;
+        height: 1px !important;
+        background: var(--border) !important;
+        margin: 0.2rem 0 !important;
+      }
+      .nav-user-group {
+        width: 100%;
+        display: flex !important;
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+      }
+      .nav-user-group .discord-sign-in-btn {
+        justify-content: center !important;
+        width: 100% !important;
+        padding: 0.65rem 1rem !important;
+        font-size: 0.95rem !important;
+      }
+      .nav-user-group .user-profile-menu,
+      .nav-user-group > div {
+        width: 100% !important;
+        justify-content: space-between !important;
+      }
     }
   </style>
   {% block extra_head %}{% endblock %}
@@ -197,29 +283,41 @@
         AvaScry <span style="color: var(--accent);">SWU</span>
         <span class="logo-badge">Star Wars: Unlimited</span>
       </a>
-      <nav aria-label="SWU Navigation" style="display: flex; align-items: center; gap: 1.25rem;">
-        <a href="{{ base_path or '/' }}">Card Catalog</a>
-        <a href="{{ base_path or '/' }}?type=Leader">Leaders</a>
-        <a href="{{ base_path or '/' }}?type=Base">Bases</a>
-        <a href="{{ base_path }}/keywords">Keywords</a>
-        <a href="{{ base_path }}/rules">Rules</a>
-        <a href="{{ base_path }}/rulings">Clarifications</a>
-        <a href="{{ base_path }}/random">Random</a>
 
-        <div class="swu-auth-controls" style="display: inline-flex; align-items: center; margin-left: 0.5rem;">
+      <!-- Mobile Hamburger Button -->
+      <button class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="main-navigation">
+        <span id="mobile-nav-icon" aria-hidden="true">&#9776;</span>
+      </button>
+
+      <nav id="main-navigation" aria-label="SWU Navigation" style="display: flex; align-items: center; gap: 1.25rem;">
+        <!-- Group 1: Navigation Links -->
+        <div class="nav-links-group">
+          <a href="{{ base_path or '/' }}">Card Catalog</a>
+          <a href="{{ base_path or '/' }}?type=Leader">Leaders</a>
+          <a href="{{ base_path or '/' }}?type=Base">Bases</a>
+          <a href="{{ base_path }}/keywords">Keywords</a>
+          <a href="{{ base_path }}/rules">Rules</a>
+          <a href="{{ base_path }}/rulings">Clarifications</a>
+          <a href="{{ base_path }}/random">Random</a>
+        </div>
+
+        <span class="nav-divider" aria-hidden="true"></span>
+
+        <!-- Group 2: User Profile or Discord Sign In -->
+        <div class="nav-user-group">
         {% if user %}
-          <div style="display: inline-flex; align-items: center; gap: 0.35rem;">
-            <a href="https://avascry.com/dashboard" title="View Your Account Dashboard" style="display: inline-flex; align-items: center; gap: 0.45rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 9999px; padding: 0.2rem 0.65rem 0.2rem 0.25rem; text-decoration: none; color: var(--text);">
+          <div style="display: inline-flex; align-items: center; gap: 0.35rem; width: 100%;">
+            <a href="https://avascry.com/dashboard" title="View Your Account Dashboard" style="display: inline-flex; align-items: center; gap: 0.45rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 9999px; padding: 0.3rem 0.65rem; text-decoration: none; color: var(--text); flex: 1;">
               {% if user.picture %}
                 <img src="{{ user.picture }}" alt="{{ user.name }}" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover;">
               {% else %}
                 <div style="width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; font-weight: 700;">{{ user.name[0] if user.name else 'U' }}</div>
               {% endif %}
-              <span style="font-size: 0.8rem; font-weight: 700; max-width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              <span style="font-size: 0.82rem; font-weight: 700; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                 {% if user.discord_username %}@{{ user.discord_username }}{% else %}{{ user.name }}{% endif %}
               </span>
             </a>
-            <a href="/auth/logout" title="Sign out" aria-label="Sign out" style="color: var(--muted); font-size: 0.75rem; text-decoration: none; padding: 0.2rem 0.35rem; border-radius: 50%;">✕</a>
+            <a href="/auth/logout" title="Sign out" aria-label="Sign out" style="color: var(--muted); font-size: 0.85rem; text-decoration: none; padding: 0.3rem 0.5rem; border-radius: 50%; border: 1px solid var(--border); background: var(--card-bg);">✕</a>
           </div>
         {% else %}
           {% include "partials/discord_login_button.html" %}
@@ -279,6 +377,22 @@
       </div>
     </div>
   </footer>
+  <script>
+    (function(){
+      var navToggle = document.getElementById('mobile-nav-toggle');
+      var mainNav = document.getElementById('main-navigation');
+      var navIcon = document.getElementById('mobile-nav-icon');
+      if (navToggle && mainNav) {
+        navToggle.addEventListener('click', function(){
+          var isOpen = mainNav.classList.toggle('nav-open');
+          navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+          if (navIcon) {
+            navIcon.innerHTML = isOpen ? '&#10005;' : '&#9776;';
+          }
+        });
+      }
+    })();
+  </script>
 </body>
 </html>
 

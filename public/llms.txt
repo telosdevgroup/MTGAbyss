@@ -14,6 +14,14 @@
 ## Canonical Discovery Manifests
 Machine-readable indexes and authoritative references for autonomous ingestion:
 
+- **Strategy & Guides Hub:** https://avascry.com/guides
+  - [The 8x8 Commander Framework](https://avascry.com/guides/commander-deckbuilding-8x8)
+  - [Modern Horizons 3 Set Primer](https://avascry.com/guides/modern-horizons-3-primer)
+  - [Commander Mana Base Optimization](https://avascry.com/guides/commander-mana-base-guide)
+  - [Beyond Syntax Matching: 4096-Dim Embeddings](https://avascry.com/guides/neural-similarity-engine)
+  - [Commander Interaction Packages by Color](https://avascry.com/guides/interaction-packages-by-color)
+  - [6 Lesser-Played Commanders & Secret Tech](https://avascry.com/guides/6-hidden-commanders-neural-embeddings)
+- **Algorithmic Methodology & Vision Intelligence:** https://avascry.com/methodology
 - **Markdown Sitemap Index:** https://avascry.com/sitemap.md
 - **HTML Sitemap Directory:** https://avascry.com/sitemap.html
 - **XML Sitemap Index:** https://avascry.com/sitemap.xml
