@@ -201,7 +201,11 @@ async def dominion_llms_txt(request: Request):
             "## Endpoints\n"
             "- HTML: https://dominion.avascry.com/card/{slug}\n"
             "- Markdown: https://dominion.avascry.com/card/{slug}.md\n"
-            "- JSON: https://dominion.avascry.com/card/{slug}.json\n"
+            "- JSON: https://dominion.avascry.com/card/{slug}.json\n\n"
+            "## Unified Discord Identity & Network SSO\n"
+            "- Part of the unified AvaScry Card Network (MTG, SWU, Dominion, Necromunda).\n"
+            "- Single Discord OAuth sign-in shared network-wide across dominion.avascry.com and all sister domains.\n"
+            "- Built for tabletop Discord groups with saved Kingdom presets and 1-click sharing.\n"
         ),
         media_type="text/plain; charset=utf-8",
         headers={
@@ -230,7 +234,11 @@ async def dominion_llms_full_txt():
         "# AvaScry Dominion — Full Rules & Card Corpus",
         "Game: Dominion",
         "Source: Rio Grande Games / Official Dominion Rules",
-        f"Total Cards: {len(cards)}\n"
+        f"Total Cards: {len(cards)}\n",
+        "## Authentication & Discord Integration Architecture",
+        "- Network SSO: Single Discord authentication session operates network-wide across avascry.com, swu.avascry.com, dominion.avascry.com, and necromunda.avascry.com.",
+        "- Zero-Password Tabletop Identity: User profile and kingdom generator bookmarks synchronize via Discord without email or password management.",
+        "- Discord Bot Ready: Structured card markdown and JSON payloads are optimized for Discord bot integrations and community card lookups.\n",
     ]
     
     for c in cards:
@@ -440,6 +448,120 @@ async def dominion_sitemap_xml():
     sitemap_content = "\n".join(xml)
     set_cached("dominion_sitemap_xml", sitemap_content)
     return Response(content=sitemap_content, media_type="application/xml", headers={"Cache-Control": "public, max-age=86400"})
+
+@dominion_router.get("/sitemap.html", response_class=HTMLResponse)
+async def dominion_sitemap_html(request: Request):
+    """
+    Complete HTML Directory & Visual Sitemap for Dominion.
+    Organizes all 819 cards alphabetically, by expansion, and by landscape types,
+    with tri-surface links (.html, .md, .json) and fast jump navigation.
+    """
+    db = get_dominion_db()
+    all_cards = list(db.cards.find({}, {"_id": 0}).sort("name", 1))
+
+    # Version cost map
+    versions = list(db.card_versions.find({}, {"_id": 0, "card_id": 1, "cost": 1, "expansion_tag": 1}))
+    versions_by_card = {}
+    for v in versions:
+        cid = v.get("card_id")
+        if cid:
+            versions_by_card.setdefault(cid, []).append(v)
+
+    expansions = list(db.expansions.find({}, {"_id": 0, "set_tag": 1, "name": 1}))
+    exp_name_map = {e.get("set_tag", "").lower(): e.get("name") for e in expansions if e.get("set_tag")}
+
+    # Enrich cards
+    for c in all_cards:
+        slug = c.get("slug")
+        cvs = versions_by_card.get(f"card:{slug}", [])
+        c["cost"] = cvs[0].get("cost", {}) if cvs else {}
+        c["expansions"] = list(dict.fromkeys([v.get("expansion_tag", "").lower() for v in cvs if v.get("expansion_tag")]))
+
+    # Group alphabetically
+    letters_dict = {}
+    for c in all_cards:
+        first = (c.get("name", "")[:1].upper()) or "#"
+        if not first.isalpha():
+            first = "#"
+        letters_dict.setdefault(first, []).append(c)
+
+    sorted_letters = sorted(letters_dict.keys(), key=lambda x: (x == "#", x))
+    cards_by_letter = [{"letter": let, "cards": letters_dict[let]} for let in sorted_letters]
+
+    # Group by expansion
+    sets_dict = {}
+    for c in all_cards:
+        for exp in c.get("expansions", []):
+            exp_clean = exp_name_map.get(exp) or format_expansion_name(exp)
+            sets_dict.setdefault(exp_clean, []).append(c)
+    cards_by_set = sorted([{"set_name": k, "cards": v} for k, v in sets_dict.items()], key=lambda x: x["set_name"])
+
+    # Landscapes & Non-Supply
+    landscapes = [c for c in all_cards if any(k in ["event", "landmark", "project", "way", "ally", "trait"] for k in [x.lower() for x in c.get("card_kinds", [])])]
+
+    return templates.TemplateResponse(
+        request=request,
+        name="dominion/sitemap.html",
+        context={
+            "cards_by_letter": cards_by_letter,
+            "cards_by_set": cards_by_set,
+            "landscapes": landscapes,
+            "letters": sorted_letters,
+            "total_cards": len(all_cards),
+            "total_sets": len(cards_by_set),
+            "base_path": get_base_prefix(request)
+        },
+        headers={
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
+
+@dominion_router.get("/sitemap.md", response_class=PlainTextResponse)
+async def dominion_sitemap_markdown():
+    """Structured Markdown Sitemap & Index for bots, LLMs, and crawlers."""
+    cached = get_cached("dominion_sitemap_md", ttl_seconds=86400)
+    if cached:
+        return PlainTextResponse(
+            content=cached,
+            media_type="text/markdown; charset=utf-8",
+            headers={"Cache-Control": "public, max-age=86400"}
+        )
+
+    db = get_dominion_db()
+    all_cards = list(db.cards.find({}, {"_id": 0, "name": 1, "slug": 1, "card_kinds": 1, "is_kingdom_card": 1}).sort("name", 1))
+
+    md = [
+        "# AvaScry Dominion — Markdown Directory & Sitemap Index",
+        "Canonical index of all Dominion cards, official Donald X. Vaccarino rulings, and API endpoints.\n",
+        "## Machine Endpoints",
+        "- Human HTML Directory: https://dominion.avascry.com/sitemap.html",
+        "- Markdown Sitemap: https://dominion.avascry.com/sitemap.md",
+        "- XML Image Sitemap: https://dominion.avascry.com/sitemap.xml",
+        "- LLM Context Manifest: https://dominion.avascry.com/llms.txt",
+        "- Full Corpus Export: https://dominion.avascry.com/llms-full.txt",
+        "- Rules Architecture: https://dominion.avascry.com/rules.md",
+        "- Expansions Manifest: https://dominion.avascry.com/sets.md",
+        "- Kingdom Generator: https://dominion.avascry.com/kingdom-generator\n",
+        f"## Complete Card Catalog ({len(all_cards)} Cards)",
+        "| Card | Types | Kingdom | HTML | Markdown | JSON |",
+        "|---|---|:---:|:---:|:---:|:---:|"
+    ]
+
+    for c in all_cards:
+        slug = c.get("slug")
+        name = c.get("name")
+        kinds = ", ".join(c.get("card_kinds", []))
+        is_kg = "Yes" if c.get("is_kingdom_card") else "No"
+        md.append(f"| [{name}](https://dominion.avascry.com/card/{slug}) | {kinds} | {is_kg} | [HTML](https://dominion.avascry.com/card/{slug}) | [MD](https://dominion.avascry.com/card/{slug}.md) | [JSON](https://dominion.avascry.com/card/{slug}.json) |")
+
+    content = "\n".join(md)
+    set_cached("dominion_sitemap_md", content)
+    return PlainTextResponse(
+        content=content,
+        media_type="text/markdown; charset=utf-8",
+        headers={"Cache-Control": "public, max-age=86400"}
+    )
 
 @dominion_router.get("/random")
 async def dominion_random_card(request: Request):

@@ -51,6 +51,14 @@ AI agents, LLMs, Discord bots, and developers can retrieve token-efficient Markd
   - Latest Rulings Feed: `https://avascry.com/feed/rulings.xml`
 - **Raw 4096-Dim Neural Vector Embeddings (Qwen 8B):** `https://avascry.com/vector/<card-slug>.json`
 
+## Unified Discord Identity & Network Single Sign-On (SSO)
+AvaScry operates as a unified multi-game card network spanning Magic: The Gathering, Star Wars: Unlimited, Dominion, and Necromunda.
+
+- **Unified Network SSO**: A single Discord OAuth session authenticates users across all game subdomains (`avascry.com`, `swu.avascry.com`, `dominion.avascry.com`, `necromunda.avascry.com`).
+- **Discord-Exclusive Privacy**: Zero passwords, zero email collection, and no credential fatigue. User identity, saved Commander brews, and collection state synchronize across all devices via Discord OAuth.
+- **Discord Community & Pod Integration**: Designed for tabletop Discord pods with 1-click deck sharing, card embeds, and community errata lookup.
+- **Bot & API Readiness**: Clean token-efficient Markdown (`.md`) and JSON (`.json`) endpoints power Discord bots for `/card`, `/rules`, and `/deck` lookups.
+
 ## High-Priority Seed Hubs & Long-Tail Anchors
 
 ### Mox Diamond — Complete Multilingual Edition Suite

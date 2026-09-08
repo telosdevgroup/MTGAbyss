@@ -1,0 +1,420 @@
+{% extends "dominion/base.html" %}
+
+{% block title %}Dominion Complete Sitemap &amp; Card Index — AvaScry{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://dominion.avascry.com/sitemap.html">
+<link rel="alternate" type="text/markdown" href="https://dominion.avascry.com/sitemap.md">
+<link rel="alternate" type="application/xml" href="https://dominion.avascry.com/sitemap.xml">
+{% endblock %}
+
+{% block og_tags %}
+<meta property="og:site_name" content="AvaScry Dominion">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Dominion Complete Sitemap &amp; Card Index — AvaScry">
+<meta property="og:description" content="Complete directory and sitemap index for all {{ total_cards }} Dominion cards, official Donald X. Vaccarino rulings, 43 expansions, and Tri-Surface endpoints.">
+<meta property="og:url" content="https://dominion.avascry.com/sitemap.html">
+{% endblock %}
+
+{% block head_extra %}
+<meta name="description" content="Complete directory and sitemap index for all {{ total_cards }} Dominion cards, official Donald X. Vaccarino rulings, 43 expansions, and Tri-Surface endpoints.">
+
+<style>
+  .sm-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-bottom: 3.5rem;
+  }
+
+  .sm-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 2rem;
+    color: #f8fafc;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .sm-title {
+    font-family: 'Cinzel', serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fbbf24;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .sm-subtitle {
+    font-size: 0.95rem;
+    color: #94a3b8;
+    max-width: 820px;
+    line-height: 1.6;
+  }
+
+  .sm-endpoints-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+  }
+
+  .sm-pill-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #f8fafc;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s ease;
+  }
+  .sm-pill-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #fbbf24;
+    color: #fbbf24;
+  }
+
+  /* Alphabetical Jump Bar */
+  .sm-alpha-nav {
+    position: sticky;
+    top: 4.5rem;
+    z-index: 40;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.65rem 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  }
+
+  .sm-letter-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--text);
+    text-decoration: none;
+    transition: background 0.12s, color 0.12s;
+  }
+  .sm-letter-btn:hover {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* Sections */
+  .sm-section {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .sm-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .sm-section-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .sm-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem 1rem;
+  }
+
+  .sm-card-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: all 0.12s ease;
+  }
+  .sm-card-row:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+  }
+
+  .sm-card-main {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow: hidden;
+  }
+
+  .sm-card-cost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #f59e0b;
+    color: #78350f;
+    font-size: 0.72rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .sm-card-link {
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sm-card-link:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  .sm-tri-badges {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  .sm-badge {
+    font-size: 0.68rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    font-weight: 700;
+    text-decoration: none;
+    font-family: ui-monospace, monospace;
+  }
+  .sm-badge-md {
+    background: #0f172a;
+    color: #38bdf8;
+  }
+  .sm-badge-md:hover {
+    background: #1e293b;
+    color: #7dd3fc;
+  }
+  .sm-badge-json {
+    background: #1e1b4b;
+    color: #fbbf24;
+  }
+  .sm-badge-json:hover {
+    background: #312e81;
+    color: #fde68a;
+  }
+
+  .sm-tabs-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+  }
+  .sm-tab-btn {
+    padding: 0.45rem 1rem;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.15s ease;
+  }
+  .sm-tab-btn.active {
+    background: var(--accent);
+    color: #ffffff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sm-container">
+  <!-- Hero / Directory Header -->
+  <div class="sm-hero">
+    <h1 class="sm-title">
+      Dominion Master Sitemap &amp; Card Index
+    </h1>
+    <p class="sm-subtitle">
+      Comprehensive directory linking all {{ total_cards }} cards, official Donald X. Vaccarino rulings, errata comparisons, and {{ total_sets }} expansions across the Dominion deck-building game. Built for both players and AI knowledge agents.
+    </p>
+
+    <!-- Quick Machine Endpoints -->
+    <div class="sm-endpoints-row">
+      <a href="{{ base_path }}/sitemap.md" class="sm-pill-link">
+        <span>📄</span> sitemap.md (Markdown Index)
+      </a>
+      <a href="{{ base_path }}/sitemap.xml" class="sm-pill-link">
+        <span>🗺️</span> sitemap.xml (Google Image Index)
+      </a>
+      <a href="{{ base_path }}/llms.txt" class="sm-pill-link">
+        <span>🤖</span> llms.txt (Agent Context)
+      </a>
+      <a href="{{ base_path }}/llms-full.txt" class="sm-pill-link">
+        <span>📦</span> llms-full.txt (Full Corpus)
+      </a>
+      <a href="{{ base_path }}/rules.md" class="sm-pill-link">
+        <span>📜</span> rules.md (Complete Rules)
+      </a>
+      <a href="{{ base_path }}/sets.md" class="sm-pill-link">
+        <span>🏰</span> sets.md (Sets Manifest)
+      </a>
+      <a href="{{ base_path }}/kingdom-generator" class="sm-pill-link" style="border-color: #f59e0b; color: #fbbf24;">
+        <span>🎲</span> Kingdom Generator
+      </a>
+    </div>
+  </div>
+
+  <!-- Navigation View Toggle -->
+  <div class="sm-tabs-row">
+    <button class="sm-tab-btn active" id="tab-alpha" onclick="switchView('alpha')">Alphabetical (A–Z)</button>
+    <button class="sm-tab-btn" id="tab-sets" onclick="switchView('sets')">By Expansion ({{ total_sets }} Sets)</button>
+    <button class="sm-tab-btn" id="tab-landscapes" onclick="switchView('landscapes')">Landscapes &amp; Non-Supply ({{ landscapes | length }})</button>
+  </div>
+
+  <!-- View 1: Alphabetical (A–Z) -->
+  <div id="view-alpha">
+    <!-- Sticky Letter Jump Bar -->
+    <nav class="sm-alpha-nav" aria-label="Alphabetical Jump">
+      <span style="font-size: 0.8rem; font-weight: 700; color: var(--muted); margin-right: 0.25rem;">Jump:</span>
+      {% for let in letters %}
+      <a href="#letter-{{ let }}" class="sm-letter-btn">{{ let }}</a>
+      {% endfor %}
+    </nav>
+
+    <div style="display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.25rem;">
+      {% for group in cards_by_letter %}
+      <section class="sm-section" id="letter-{{ group.letter }}">
+        <div class="sm-section-header">
+          <h2 class="sm-section-title">{{ group.letter }}</h2>
+          <span style="font-size: 0.82rem; color: var(--muted); font-weight: 600;">{{ group.cards | length }} Cards</span>
+        </div>
+
+        <div class="sm-card-grid">
+          {% for card in group.cards %}
+          <div class="sm-card-row">
+            <div class="sm-card-main">
+              {% set cost_coins = card.cost.coins if card.cost and card.cost.coins is defined else (card.cost.coin if card.cost and card.cost.coin is defined else 0) %}
+              <span class="sm-card-cost" title="Cost: {{ cost_coins }} Coins">{{ cost_coins }}</span>
+              <a href="{{ base_path }}/card/{{ card.slug }}" class="sm-card-link" title="{{ card.name }}">
+                {{ card.name }}
+              </a>
+            </div>
+            <div class="sm-tri-badges">
+              <a href="{{ base_path }}/card/{{ card.slug }}.md" class="sm-badge sm-badge-md" title="Markdown representation">MD</a>
+              <a href="{{ base_path }}/card/{{ card.slug }}.json" class="sm-badge sm-badge-json" title="JSON representation">JSON</a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- View 2: By Expansion -->
+  <div id="view-sets" style="display: none; flex-direction: column; gap: 1.5rem;">
+    {% for set_item in cards_by_set %}
+    <section class="sm-section">
+      <div class="sm-section-header">
+        <h2 class="sm-section-title">{{ set_item.set_name }}</h2>
+        <span style="font-size: 0.82rem; color: var(--muted); font-weight: 600;">{{ set_item.cards | length }} Cards</span>
+      </div>
+
+      <div class="sm-card-grid">
+        {% for card in set_item.cards %}
+        <div class="sm-card-row">
+          <div class="sm-card-main">
+            {% set cost_coins = card.cost.coins if card.cost and card.cost.coins is defined else (card.cost.coin if card.cost and card.cost.coin is defined else 0) %}
+            <span class="sm-card-cost" title="Cost: {{ cost_coins }} Coins">{{ cost_coins }}</span>
+            <a href="{{ base_path }}/card/{{ card.slug }}" class="sm-card-link" title="{{ card.name }}">
+              {{ card.name }}
+            </a>
+          </div>
+          <div class="sm-tri-badges">
+            <a href="{{ base_path }}/card/{{ card.slug }}.md" class="sm-badge sm-badge-md" title="Markdown">MD</a>
+            <a href="{{ base_path }}/card/{{ card.slug }}.json" class="sm-badge sm-badge-json" title="JSON">JSON</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </div>
+
+  <!-- View 3: Landscapes & Non-Supply -->
+  <div id="view-landscapes" style="display: none; flex-direction: column; gap: 1.5rem;">
+    <section class="sm-section">
+      <div class="sm-section-header">
+        <h2 class="sm-section-title">Landscapes, Events, Projects &amp; Ways</h2>
+        <span style="font-size: 0.82rem; color: var(--muted); font-weight: 600;">{{ landscapes | length }} Cards</span>
+      </div>
+
+      <div class="sm-card-grid">
+        {% for card in landscapes %}
+        <div class="sm-card-row">
+          <div class="sm-card-main">
+            {% set cost_coins = card.cost.coins if card.cost and card.cost.coins is defined else (card.cost.coin if card.cost and card.cost.coin is defined else 0) %}
+            <span class="sm-card-cost" title="Cost: {{ cost_coins }} Coins">{{ cost_coins }}</span>
+            <a href="{{ base_path }}/card/{{ card.slug }}" class="sm-card-link" title="{{ card.name }}">
+              {{ card.name }}
+            </a>
+          </div>
+          <div class="sm-tri-badges">
+            <span style="font-size: 0.7rem; color: var(--muted); text-transform: capitalize; margin-right: 0.25rem;">
+              {{ (card.card_kinds or []) | join(', ') }}
+            </span>
+            <a href="{{ base_path }}/card/{{ card.slug }}.md" class="sm-badge sm-badge-md" title="Markdown">MD</a>
+            <a href="{{ base_path }}/card/{{ card.slug }}.json" class="sm-badge sm-badge-json" title="JSON">JSON</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+  function switchView(viewName) {
+    const views = ['alpha', 'sets', 'landscapes'];
+    views.forEach(v => {
+      const el = document.getElementById('view-' + v);
+      const btn = document.getElementById('tab-' + v);
+      if (v === viewName) {
+        el.style.display = 'flex';
+        btn.classList.add('active');
+      } else {
+        el.style.display = 'none';
+        btn.classList.remove('active');
+      }
+    });
+  }
+</script>
+{% endblock %}

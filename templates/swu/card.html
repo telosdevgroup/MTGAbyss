@@ -354,12 +354,22 @@
     <!-- Synergy / Related Cards in Set -->
     {% if synergy_cards %}
       <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
-        <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">
-          Related &amp; Synergy Cards
-        </h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+          <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.5rem;">
+            <span>⚡ Mechanically Similar &amp; Synergy Cards</span>
+          </h3>
+          <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+            <a href="{{ base_path }}/similar/{{ card.slug }}.md" target="_blank" style="font-size: 0.72rem; font-weight: 700; color: #a1a1aa; background: #18181b; border: 1px solid var(--border); padding: 0.2rem 0.45rem; border-radius: 4px; text-decoration: none;" title="Markdown Representation for AI Bots">[MD]</a>
+            <a href="{{ base_path }}/similar/{{ card.slug }}.json" target="_blank" style="font-size: 0.72rem; font-weight: 700; color: #a1a1aa; background: #18181b; border: 1px solid var(--border); padding: 0.2rem 0.45rem; border-radius: 4px; text-decoration: none;" title="JSON API Representation">[JSON]</a>
+            <a href="{{ base_path }}/vector/{{ card.slug }}.json" target="_blank" style="font-size: 0.72rem; font-weight: 700; color: #a1a1aa; background: #18181b; border: 1px solid var(--border); padding: 0.2rem 0.45rem; border-radius: 4px; text-decoration: none;" title="4096-Dim Neural Vector">[Vector]</a>
+            <a href="{{ base_path }}/similar/{{ card.slug }}" style="font-size: 0.8rem; font-weight: 600; color: #ef4444; text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem; margin-left: 0.25rem;">
+              View Full Graph &rarr;
+            </a>
+          </div>
+        </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.25rem;">
           {% for sc in synergy_cards %}
-            <a href="{{ base_path }}/card/{{ sc.slug }}" style="background: #09090b; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; text-decoration: none; display: flex; flex-direction: column; transition: transform 0.15s, border-color 0.15s;"
+            <a href="{{ base_path }}/card/{{ sc.slug }}" style="background: #09090b; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; text-decoration: none; display: flex; flex-direction: column; transition: transform 0.15s, border-color 0.15s; position: relative;"
                onmouseover="this.style.borderColor='rgba(239,68,68,0.6)'; this.style.transform='translateY(-2px)';"
                onmouseout="this.style.borderColor='var(--border)'; this.style.transform='none';">
               <div style="aspect-ratio: {% if sc.type in ['Leader', 'Base'] %}1.393{% else %}0.714{% endif %}; background: #0c0c0f; display: flex; align-items: center; justify-content: center; overflow: hidden;">
@@ -369,8 +379,15 @@
                   <div style="font-size: 0.75rem; color: var(--muted); padding: 0.5rem; text-align: center;">{{ sc.title or sc.name }}</div>
                 {% endif %}
               </div>
-              <div style="padding: 0.5rem 0.6rem; font-size: 0.78rem; font-weight: 600; color: #fff; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-top: 1px solid var(--border);">
-                {{ sc.title or sc.name }}
+              <div style="padding: 0.5rem 0.6rem; border-top: 1px solid var(--border);">
+                <div style="font-size: 0.78rem; font-weight: 600; color: #fff; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  {{ sc.title or sc.name }}
+                </div>
+                {% if sc.subtitle %}
+                  <div style="font-size: 0.7rem; color: #a1a1aa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">
+                    {{ sc.subtitle }}
+                  </div>
+                {% endif %}
               </div>
             </a>
           {% endfor %}

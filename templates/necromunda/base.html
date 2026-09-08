@@ -279,10 +279,7 @@
             <a href="/auth/logout" title="Sign out" aria-label="Sign out" style="color: var(--muted); font-size: 0.75rem; text-decoration: none; padding: 0.2rem 0.35rem; border-radius: 2px;">✕</a>
           </div>
         {% else %}
-          <a href="/auth/login" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.32rem 0.85rem; border-radius: 4px; background: rgba(255,87,34,0.15); border: 1px solid var(--accent); color: var(--accent); font-size: 0.8rem; font-weight: 700; text-decoration: none; font-family: 'Chakra Petch', sans-serif; letter-spacing: 0.05em; text-transform: uppercase;">
-            <span aria-hidden="true" style="font-size: 0.85rem;">💀</span>
-            Sign In
-          </a>
+          {% include "partials/discord_login_button.html" %}
         {% endif %}
         </div>
       </nav>

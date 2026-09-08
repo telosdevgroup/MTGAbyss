@@ -372,12 +372,24 @@ async def swu_card_markdown(slug: str, request: Request):
         lines.append("\n## Official Rules & Clarifications\n")
         lines.append(card.get("rules"))
 
+    # Append mechanically similar cards from neural similarity graph
+    sim_doc = db.similar_cards.find_one({"$or": [{"slug": card.get("slug")}, {"slug": slug}]})
+    if sim_doc and sim_doc.get("similar"):
+        lines.append("\n## Mechanically Similar Cards\n")
+        for sc in sim_doc["similar"][:6]:
+            t = sc.get("title") or sc.get("slug")
+            sub = f": {sc.get('subtitle')}" if sc.get("subtitle") else ""
+            pct = int(round(sc.get("score", 0) * 100))
+            lines.append(f"- [{t}{sub}](https://swu.avascry.com/card/{sc.get('slug')}) — {pct}% match ({sc.get('type')}, {', '.join(sc.get('aspects', [])) or 'Neutral'})")
+        lines.append(f"\n[View all similar cards and neural similarity graph](https://swu.avascry.com/similar/{card.get('slug')})")
+
     lines.append(f"\n*Source: AvaScry Star Wars Unlimited (https://swu.avascry.com/card/{card.get('slug')})*")
     return Response(
         content="\n".join(lines),
         media_type="text/markdown; charset=utf-8",
         headers={
             "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Link": f'</card/{card.get("slug", slug)}>; rel="canonical", </similar/{card.get("slug", slug)}.md>; rel="related"',
             "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
         }
     )
@@ -513,42 +525,56 @@ async def swu_card_detail(slug: str, request: Request):
     if next_card and not next_card.get("card_number"):
         next_card["card_number"] = next_card.get("number")
 
-    # Similar/synergy cards: same traits or aspects, deduplicated by card title
-    traits = card.get("traits", [])
-    aspects = card.get("aspects", [])
-    current_title = card.get("title") or card.get("name")
-    synergy_query = {
-        "slug": {"$ne": card.get("slug")},
-        "variant_type": {"$nin": ["Foil", "Hyperspace Foil", "Prestige Foil", "Prestige Serialized"]},
-        "$or": [
-            {"traits": {"$in": traits}} if traits else {},
-            {"aspects": {"$in": aspects}} if aspects else {}
-        ]
-    }
-    synergy_query["$or"] = [cond for cond in synergy_query["$or"] if cond]
+    # Similar/synergy cards: query precomputed neural similarity graph, with fallback to trait/aspect query
     synergy_cards = []
-    if synergy_query["$or"]:
-        raw_synergy = list(db.cards.find(synergy_query, {
-            "_id": 0, "slug": 1, "title": 1, "name": 1, "subtitle": 1, "art_front": 1, "front_image": 1, "type": 1, "cost": 1, "variant_type": 1
-        }).limit(30))
-        seen_titles = {current_title} if current_title else set()
-        for sc in raw_synergy:
-            t = sc.get("title") or sc.get("name")
-            if not t or t in seen_titles:
-                continue
-            seen_titles.add(t)
-            sc["title"] = t
-            sc_slug = sc.get("slug") or ""
+    sim_doc = db.similar_cards.find_one({"$or": [{"slug": card_slug}, {"slug": slug}]})
+    if sim_doc and sim_doc.get("similar"):
+        for sc in sim_doc["similar"][:6]:
+            sc_copy = dict(sc)
+            sc_slug = sc_copy.get("slug") or ""
             base_sc_slug = sc_slug[:-1] if sc_slug.endswith(("F", "f")) else sc_slug
             if os.path.isfile(f"public/images/swu/{sc_slug}_front.png"):
-                sc["art_front"] = f"/images/swu/{sc_slug}_front.png"
+                sc_copy["art_front"] = f"/images/swu/{sc_slug}_front.png"
             elif os.path.isfile(f"public/images/swu/{base_sc_slug}_front.png"):
-                sc["art_front"] = f"/images/swu/{base_sc_slug}_front.png"
+                sc_copy["art_front"] = f"/images/swu/{base_sc_slug}_front.png"
             else:
-                sc["art_front"] = sc.get("local_image_front") or sc.get("art_front") or sc.get("front_image")
-            synergy_cards.append(sc)
-            if len(synergy_cards) >= 6:
-                break
+                sc_copy["art_front"] = sc_copy.get("art_front")
+            synergy_cards.append(sc_copy)
+    else:
+        traits = card.get("traits", [])
+        aspects = card.get("aspects", [])
+        current_title = card.get("title") or card.get("name")
+        synergy_query = {
+            "slug": {"$ne": card.get("slug")},
+            "variant_type": {"$nin": ["Foil", "Hyperspace Foil", "Prestige Foil", "Prestige Serialized"]},
+            "$or": [
+                {"traits": {"$in": traits}} if traits else {},
+                {"aspects": {"$in": aspects}} if aspects else {}
+            ]
+        }
+        synergy_query["$or"] = [cond for cond in synergy_query["$or"] if cond]
+        if synergy_query["$or"]:
+            raw_synergy = list(db.cards.find(synergy_query, {
+                "_id": 0, "slug": 1, "title": 1, "name": 1, "subtitle": 1, "art_front": 1, "front_image": 1, "type": 1, "cost": 1, "variant_type": 1
+            }).limit(30))
+            seen_titles = {current_title} if current_title else set()
+            for sc in raw_synergy:
+                t = sc.get("title") or sc.get("name")
+                if not t or t in seen_titles:
+                    continue
+                seen_titles.add(t)
+                sc["title"] = t
+                sc_slug = sc.get("slug") or ""
+                base_sc_slug = sc_slug[:-1] if sc_slug.endswith(("F", "f")) else sc_slug
+                if os.path.isfile(f"public/images/swu/{sc_slug}_front.png"):
+                    sc["art_front"] = f"/images/swu/{sc_slug}_front.png"
+                elif os.path.isfile(f"public/images/swu/{base_sc_slug}_front.png"):
+                    sc["art_front"] = f"/images/swu/{base_sc_slug}_front.png"
+                else:
+                    sc["art_front"] = sc.get("local_image_front") or sc.get("art_front") or sc.get("front_image")
+                synergy_cards.append(sc)
+                if len(synergy_cards) >= 6:
+                    break
 
     return templates.TemplateResponse(
         request=request,
@@ -563,7 +589,226 @@ async def swu_card_detail(slug: str, request: Request):
         headers={
             "Vary": "Accept",
             "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
-            "Link": f'</card/{card.get("slug", slug)}.md>; rel="alternate"; type="text/markdown", </card/{card.get("slug", slug)}.json>; rel="alternate"; type="application/json", </card/{card.get("slug", slug)}.xml>; rel="alternate"; type="application/xml"',
+            "Link": f'</card/{card.get("slug", slug)}.md>; rel="alternate"; type="text/markdown", </card/{card.get("slug", slug)}.json>; rel="alternate"; type="application/json", </card/{card.get("slug", slug)}.xml>; rel="alternate"; type="application/xml", </similar/{card.get("slug", slug)}>; rel="related", </similar/{card.get("slug", slug)}.json>; rel="related"',
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
+
+# ---------------------------------------------------------
+# Feature: Neural Embeddings & Similarity Graph Endpoints
+# ---------------------------------------------------------
+@swu_router.get("/vector/{identifier}", include_in_schema=False)
+@swu_router.get("/vector/{identifier}.json", include_in_schema=False)
+@swu_router.head("/vector/{identifier}", include_in_schema=False)
+@swu_router.head("/vector/{identifier}.json", include_in_schema=False)
+async def swu_vector_embedding(identifier: str):
+    """Expose raw 4096-dimensional Qwen 8B vector embedding for a Star Wars: Unlimited card."""
+    clean_id = identifier.lower().replace(".json", "").strip()
+    if not clean_id or clean_id in ("", ".", "..", ".md", ".json"):
+        raise HTTPException(status_code=404, detail="Vector embedding not found")
+
+    db = get_swu_db()
+
+    # 1. Match directly in embeddings_swu by slug or title
+    doc = db.embeddings_swu.find_one({
+        "$or": [
+            {"slug": clean_id},
+            {"title": {"$regex": f"^{re.escape(clean_id.replace('-', ' '))}$", "$options": "i"}}
+        ]
+    })
+
+    # 2. If not found, resolve canonical card via similar_cards or cards collection
+    if not doc:
+        sim_doc = db.similar_cards.find_one({"slug": clean_id})
+        if sim_doc and sim_doc.get("canonical_slug"):
+            doc = db.embeddings_swu.find_one({"slug": sim_doc["canonical_slug"]})
+        if not doc:
+            card_doc = db.cards.find_one({"$or": [{"slug": clean_id}, {"name_slug": clean_id}]})
+            if card_doc:
+                t = (card_doc.get("title") or card_doc.get("name") or "").strip()
+                sub = (card_doc.get("subtitle") or "").strip()
+                doc = db.embeddings_swu.find_one({"title": t, "subtitle": sub})
+
+    if not doc:
+        raise HTTPException(status_code=404, detail="Vector embedding not found")
+
+    slug = doc.get("slug") or clean_id
+    title = doc.get("title") or clean_id.replace('-', ' ').title()
+    embedding = doc.get("embedding", [])
+
+    return JSONResponse(
+        content={
+            "name": title,
+            "subtitle": doc.get("subtitle", ""),
+            "slug": slug,
+            "model": doc.get("model") or "qwen3-embedding:8b",
+            "dimensions": len(embedding) or 4096,
+            "version": "1.0",
+            "context_text": doc.get("context_text", ""),
+            "links": {
+                "vector": f"https://swu.avascry.com/vector/{slug}.json",
+                "similar": f"https://swu.avascry.com/similar/{slug}.json",
+                "html": f"https://swu.avascry.com/card/{slug}",
+                "markdown": f"https://swu.avascry.com/similar/{slug}.md"
+            },
+            "embedding": embedding
+        },
+        headers={
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+            "Access-Control-Allow-Origin": "*",
+            "Link": f'</similar/{slug}.json>; rel="related"; type="application/json", </card/{slug}>; rel="up"',
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
+
+@swu_router.get("/similar/{slug}.md", response_class=PlainTextResponse)
+@swu_router.head("/similar/{slug}.md")
+async def swu_similar_cards_markdown(slug: str, request: Request):
+    db = get_swu_db()
+    card = db.cards.find_one({"$or": [{"slug": slug}, {"name_slug": slug}]}, {"_id": 0})
+    if not card:
+        raise HTTPException(status_code=404, detail="Card not found")
+
+    title = card.get("title") or card.get("name") or "Card"
+    subtitle = f": {card.get('subtitle')}" if card.get("subtitle") else ""
+
+    lines = [
+        f"# Mechanically Similar Cards to {title}{subtitle}",
+        f"**Source Card:** [{title}{subtitle}](https://swu.avascry.com/card/{card.get('slug')})",
+        f"**Aspects:** {', '.join(card.get('aspects', [])) or 'Neutral'} | **Traits:** {', '.join(card.get('traits', [])) or 'None'}",
+        "\nComputed via 4096-dimensional neural vector embeddings (`qwen3-embedding:8b`) across all unique Star Wars Unlimited cards.\n",
+        "## Top Similar Cards\n"
+    ]
+
+    sim_doc = db.similar_cards.find_one({"$or": [{"slug": card.get("slug")}, {"slug": slug}]})
+    similar = sim_doc.get("similar", []) if sim_doc else []
+
+    if not similar:
+        lines.append("*(No similarity records precomputed for this card)*")
+    else:
+        for idx, sc in enumerate(similar, 1):
+            sc_title = sc.get("title") or sc.get("slug")
+            sc_sub = f": {sc.get('subtitle')}" if sc.get("subtitle") else ""
+            pct = int(round(sc.get("score", 0) * 100))
+            aspects = ", ".join(sc.get("aspects", [])) or "Neutral"
+            traits = ", ".join(sc.get("traits", [])) or "None"
+            stats = []
+            if sc.get("cost") is not None:
+                stats.append(f"Cost: {sc.get('cost')}")
+            if sc.get("power") is not None:
+                stats.append(f"Power: {sc.get('power')}")
+            if sc.get("hp") is not None:
+                stats.append(f"HP: {sc.get('hp')}")
+            stat_str = f" | {', '.join(stats)}" if stats else ""
+            lines.append(f"{idx}. **[{sc_title}{sc_sub}](https://swu.avascry.com/card/{sc.get('slug')})** — **{pct}% match**")
+            lines.append(f"   - Type: {sc.get('type', 'Unknown')} | Aspects: {aspects} | Traits: {traits}{stat_str}")
+
+    lines.append(f"\n*Source: AvaScry Star Wars Unlimited Neural Graph (https://swu.avascry.com/similar/{card.get('slug')})*")
+
+    return Response(
+        content="\n".join(lines),
+        media_type="text/markdown; charset=utf-8",
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Link": f'</similar/{card.get("slug", slug)}>; rel="canonical", </similar/{card.get("slug", slug)}.json>; rel="alternate"; type="application/json"',
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
+
+@swu_router.get("/similar/{slug}.json", response_class=JSONResponse)
+@swu_router.head("/similar/{slug}.json")
+async def swu_similar_cards_json(slug: str, request: Request):
+    db = get_swu_db()
+    card = db.cards.find_one({"$or": [{"slug": slug}, {"name_slug": slug}]}, {"_id": 0})
+    if not card:
+        raise HTTPException(status_code=404, detail="Card not found")
+
+    sim_doc = db.similar_cards.find_one({"$or": [{"slug": card.get("slug")}, {"slug": slug}]})
+    similar = sim_doc.get("similar", []) if sim_doc else []
+    card_slug = card.get("slug", slug)
+
+    data = {
+        "card": {
+            "slug": card.get("slug"),
+            "title": card.get("title") or card.get("name"),
+            "subtitle": card.get("subtitle") or "",
+            "type": card.get("type"),
+            "aspects": card.get("aspects", []),
+            "traits": card.get("traits", []),
+            "cost": card.get("cost"),
+            "power": card.get("power"),
+            "hp": card.get("hp")
+        },
+        "algorithm": "4096-dimensional Qwen 8B Cosine Similarity",
+        "model": "qwen3-embedding:8b",
+        "dimension": 4096,
+        "count": len(similar),
+        "links": {
+            "vector": f"https://swu.avascry.com/vector/{card_slug}.json",
+            "similar": f"https://swu.avascry.com/similar/{card_slug}.json",
+            "html": f"https://swu.avascry.com/card/{card_slug}",
+            "markdown": f"https://swu.avascry.com/similar/{card_slug}.md"
+        },
+        "similar": similar
+    }
+
+    return JSONResponse(
+        content=data,
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Access-Control-Allow-Origin": "*",
+            "Link": f'</similar/{card_slug}>; rel="canonical", </similar/{card_slug}.md>; rel="alternate"; type="text/markdown", </vector/{card_slug}.json>; rel="alternate"; type="application/json"',
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
+
+@swu_router.get("/similar/{slug}", response_class=HTMLResponse)
+@swu_router.head("/similar/{slug}")
+async def swu_similar_cards_page(slug: str, request: Request):
+    db = get_swu_db()
+    card = db.cards.find_one({"$or": [{"slug": slug}, {"name_slug": slug}]}, {"_id": 0})
+    if not card:
+        raise HTTPException(status_code=404, detail="Card not found")
+
+    if not card.get("title"):
+        card["title"] = card.get("name") or "Unknown"
+    card_slug = card.get("slug") or ""
+    base_card_slug = card_slug[:-1] if card_slug.endswith(("F", "f")) else card_slug
+
+    if os.path.isfile(f"public/images/swu/{card_slug}_front.png"):
+        card["art_front"] = f"/images/swu/{card_slug}_front.png"
+    elif os.path.isfile(f"public/images/swu/{base_card_slug}_front.png"):
+        card["art_front"] = f"/images/swu/{base_card_slug}_front.png"
+    else:
+        card["art_front"] = card.get("local_image_front") or card.get("art_front") or card.get("front_image")
+
+    similar_cards = []
+    sim_doc = db.similar_cards.find_one({"$or": [{"slug": card_slug}, {"slug": slug}]})
+    if sim_doc and sim_doc.get("similar"):
+        for sc in sim_doc["similar"]:
+            sc_copy = dict(sc)
+            sc_slug = sc_copy.get("slug") or ""
+            base_sc_slug = sc_slug[:-1] if sc_slug.endswith(("F", "f")) else sc_slug
+            if os.path.isfile(f"public/images/swu/{sc_slug}_front.png"):
+                sc_copy["art_front"] = f"/images/swu/{sc_slug}_front.png"
+            elif os.path.isfile(f"public/images/swu/{base_sc_slug}_front.png"):
+                sc_copy["art_front"] = f"/images/swu/{base_sc_slug}_front.png"
+            else:
+                sc_copy["art_front"] = sc_copy.get("art_front")
+            similar_cards.append(sc_copy)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="swu/similar.html",
+        context={
+            "card": card,
+            "similar_cards": similar_cards,
+            "base_path": get_base_prefix(request),
+        },
+        headers={
+            "Vary": "Accept",
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Link": f'</similar/{card.get("slug", slug)}.md>; rel="alternate"; type="text/markdown", </similar/{card.get("slug", slug)}.json>; rel="alternate"; type="application/json", </card/{card.get("slug", slug)}>; rel="up"',
             "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
         }
     )
@@ -804,8 +1049,12 @@ async def swu_llms_txt(request: Request):
 
 ## LLM Retrieval Guidelines
 - Base URL: https://swu.avascry.com
+- Master HTML Sitemap: https://swu.avascry.com/sitemap.html
+- Master Markdown Sitemap: https://swu.avascry.com/sitemap.md
 - Machine readable format for any card: https://swu.avascry.com/card/{slug}.md
 - Machine JSON format for any card: https://swu.avascry.com/card/{slug}.json
+- Neural Vector Embedding (4096-dim): https://swu.avascry.com/vector/{slug}.json
+- Neural Similarity Recommendations: https://swu.avascry.com/similar/{slug}.md
 - Machine JSON format for any keyword: https://swu.avascry.com/keyword/{slug}.json
 - Full XML Sitemap: https://swu.avascry.com/sitemap.xml
 
@@ -829,6 +1078,11 @@ async def swu_llms_txt(request: Request):
 - Cunning (Yellow): Bounce, exhaust, discard, trickery.
 - Heroism (White): Light side characters and allies.
 - Villainy (Black): Empire, Sith, and scoundrels.
+
+## Unified Discord Identity & Network SSO
+- Part of the unified AvaScry Card Network (MTG, SWU, Dominion, Necromunda).
+- Single Discord OAuth sign-in shared network-wide across `swu.avascry.com` and all sister domains.
+- Built for Star Wars tabletop pods with 1-click deck sharing, card embeds, and community errata lookup directly to Discord servers.
 """
     return PlainTextResponse(
         content=content,
@@ -852,6 +1106,10 @@ async def swu_llms_full_txt():
         "Publisher: Fantasy Flight Games / Lucasfilm Ltd.",
         f"Total Cards: {len(cards)}",
         f"Total Keywords: {len(keywords)}\n",
+        "## Unified Discord Identity & Network Single Sign-On (SSO)",
+        "- Part of the unified AvaScry Card Network (MTG, SWU, Dominion, Necromunda).",
+        "- Exclusive Discord OAuth authentication shared network-wide across all sister domains.",
+        "- Shared Discord identity powers cross-game deck stash synchronization, Discord pod sharing, and community errata lookup.\n",
         "## Keywords & Combat Mechanics"
     ]
     for kw in keywords:
@@ -975,6 +1233,11 @@ async def swu_sets_md():
 | **JTL** | Jump to Lightspeed | March 2025 | Yes |
 | **LAW** | Legends of the Force | July 2025 | Yes |
 | **SEC** | Secrets of Power | November 2025 | Yes |
+
+## Authentication & Discord Community Features
+- **Network SSO**: Authentication operates across the entire AvaScry network (`avascry.com`, `swu.avascry.com`, `dominion.avascry.com`, `necromunda.avascry.com`) using a single Discord OAuth session.
+- **Zero-Password Tabletop Identity**: No email or password management required; user profile, collections, and custom SWU decklists synchronize via Discord.
+- **Pod-Ready**: Structured Markdown and JSON payloads are optimized for Discord community bots, visual deck previews, and tournament rules lookups.
 """
     return PlainTextResponse(
         content=content,
@@ -1007,6 +1270,156 @@ format-negotiation:
         content=content,
         media_type="text/plain; charset=utf-8",
         headers={"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
+    )
+
+SWU_SITEMAP_CACHE = None
+SWU_SITEMAP_CACHE_TS = 0.0
+
+def get_swu_sitemap_data():
+    global SWU_SITEMAP_CACHE, SWU_SITEMAP_CACHE_TS
+    import time
+    now = time.time()
+    if SWU_SITEMAP_CACHE and (now - SWU_SITEMAP_CACHE_TS) < 3600:
+        return SWU_SITEMAP_CACHE
+
+    db = get_swu_db()
+
+    # 1. Sets
+    sets = []
+    raw_sets = list(db.sets.find({}, {"_id": 0}))
+    for s in raw_sets:
+        code = s.get("setId") or s.get("code") or ""
+        name = s.get("fullName") or s.get("name") or code
+        count = s.get("numberCards") or s.get("card_count") or 0
+        if code:
+            sets.append({"code": code, "name": name, "card_count": count})
+    if not sets:
+        set_aggr = list(db.cards.aggregate([
+            {"$group": {"_id": "$expansion.code", "name": {"$first": "$expansion.name"}, "card_count": {"$sum": 1}}},
+            {"$sort": {"_id": 1}}
+        ]))
+        sets = [{"code": s["_id"], "name": s.get("name") or s["_id"], "card_count": s["card_count"]} for s in set_aggr if s.get("_id")]
+
+    # 2. Keywords
+    keywords = list(db.keywords.find({}, {"_id": 0, "slug": 1, "name": 1}).sort("name", 1))
+
+    # 3. Canonical cards grouped alphabetically
+    cards_cursor = db.cards.find({}, {
+        "_id": 0, "slug": 1, "title": 1, "name": 1, "subtitle": 1, "variant_type": 1, "card_number": 1
+    }).sort([("variant_type", -1), ("card_number", 1)])
+
+    canonical_map = {}
+    for c in cards_cursor:
+        t = (c.get("title") or c.get("name") or "").strip()
+        sub = (c.get("subtitle") or "").strip()
+        if not t:
+            continue
+        c["title"] = t
+        c["subtitle"] = sub
+        key = f"{t.lower()}::{sub.lower()}"
+        if key not in canonical_map:
+            canonical_map[key] = c
+        else:
+            existing_var = str(canonical_map[key].get("variant_type", "")).lower()
+            new_var = str(c.get("variant_type", "")).lower()
+            if new_var in ("normal", "none", "") and existing_var not in ("normal", "none", ""):
+                canonical_map[key] = c
+
+    unique_cards = sorted(canonical_map.values(), key=lambda x: (x["title"].lower(), x.get("subtitle", "").lower()))
+
+    import string
+    alphabet = list(string.ascii_uppercase) + ["#"]
+    cards_by_letter = {letter: [] for letter in alphabet}
+
+    for c in unique_cards:
+        first = c["title"][0].upper() if c["title"] else "#"
+        if first in cards_by_letter:
+            cards_by_letter[first].append(c)
+        else:
+            cards_by_letter["#"].append(c)
+
+    cards_by_letter = {k: v for k, v in cards_by_letter.items() if v}
+
+    cached_data = {
+        "sets": sets,
+        "keywords": keywords,
+        "total_cards": len(unique_cards),
+        "unique_cards": unique_cards,
+        "cards_by_letter": cards_by_letter,
+        "alphabet": alphabet
+    }
+    SWU_SITEMAP_CACHE = cached_data
+    SWU_SITEMAP_CACHE_TS = now
+    return cached_data
+
+@swu_router.get("/sitemap.html", response_class=HTMLResponse)
+@swu_router.head("/sitemap.html")
+async def swu_sitemap_html(request: Request):
+    """High-density zero-JS HTML Master Sitemap with crawler multi-badges."""
+    data = get_swu_sitemap_data()
+    return templates.TemplateResponse(
+        request=request,
+        name="swu/sitemap.html",
+        context={
+            "base_path": get_base_prefix(request),
+            "sets": data["sets"],
+            "keywords": data["keywords"],
+            "total_cards": data["total_cards"],
+            "cards_by_letter": data["cards_by_letter"],
+            "alphabet": data["alphabet"]
+        },
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Link": '</sitemap.md>; rel="alternate"; type="text/markdown", </sitemap.xml>; rel="alternate"; type="application/xml"',
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
+
+@swu_router.get("/sitemap.md", response_class=PlainTextResponse)
+@swu_router.head("/sitemap.md")
+async def swu_sitemap_markdown():
+    """Ultra-dense plain-text Markdown sitemap for AI crawlers (ClaudeBot, GPTBot, Perplexity)."""
+    data = get_swu_sitemap_data()
+    lines = [
+        "# Star Wars: Unlimited Master Machine Sitemap",
+        "> Complete directory of canonical cards, expansions, keywords, rules citations, neural vectors, and similarity graphs.",
+        f"\n- **Base URL:** https://swu.avascry.com",
+        f"- **Canonical Cards:** {data['total_cards']}",
+        f"- **Expansions:** {len(data['sets'])}",
+        f"- **Keywords:** {len(data['keywords'])}",
+        f"- **HTML Master Directory:** https://swu.avascry.com/sitemap.html",
+        f"- **XML Sitemap:** https://swu.avascry.com/sitemap.xml",
+        f"- **LLMs Manifest:** https://swu.avascry.com/llms.txt",
+        "\n## Expansions & Sets"
+    ]
+    for s in data["sets"]:
+        lines.append(f"- [{s['name']} ({s['code']})](https://swu.avascry.com/?set={s['code']}) — {s['card_count']} cards")
+
+    lines.append("\n## Keywords & Game Mechanics")
+    for kw in data["keywords"]:
+        lines.append(f"- [{kw['name']}](https://swu.avascry.com/keyword/{kw['slug']}) • [MD](https://swu.avascry.com/keyword/{kw['slug']}.md) • [JSON](https://swu.avascry.com/keyword/{kw['slug']}.json)")
+
+    lines.append("\n## Comprehensive Rules & Rulings")
+    lines.append("- [Comprehensive Rules Index](https://swu.avascry.com/rules) • [MD](https://swu.avascry.com/rules.md) • [JSON](https://swu.avascry.com/rules.json)")
+    lines.append("- [Official Card Rulings & Errata](https://swu.avascry.com/rulings)")
+
+    lines.append(f"\n## Canonical Cards Directory ({data['total_cards']})")
+    for c in data["unique_cards"]:
+        title = c["title"]
+        sub = f": {c['subtitle']}" if c.get("subtitle") else ""
+        slug = c["slug"]
+        lines.append(f"- [{title}{sub}](https://swu.avascry.com/card/{slug}) • [MD](https://swu.avascry.com/card/{slug}.md) • [JSON](https://swu.avascry.com/card/{slug}.json) • [Vector](https://swu.avascry.com/vector/{slug}.json) • [Similar](https://swu.avascry.com/similar/{slug})")
+
+    content = "\n".join(lines)
+    return PlainTextResponse(
+        content=content,
+        media_type="text/markdown; charset=utf-8",
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "X-Markdown-Tokens": str(len(content.split())),
+            "Link": '</sitemap.html>; rel="alternate"; type="text/html", </sitemap.xml>; rel="alternate"; type="application/xml"',
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
     )
 
 @swu_router.get("/sitemap.xml", response_class=Response)
@@ -1056,6 +1469,7 @@ async def swu_robots_txt():
         """User-agent: *
 Allow: /
 Sitemap: https://swu.avascry.com/sitemap.xml
+Sitemap: https://swu.avascry.com/sitemap.html
 """,
         media_type="text/plain; charset=utf-8",
         headers={"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}

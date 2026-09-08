@@ -222,10 +222,7 @@
             <a href="/auth/logout" title="Sign out" aria-label="Sign out" style="color: var(--muted); font-size: 0.75rem; text-decoration: none; padding: 0.2rem 0.35rem; border-radius: 50%;">✕</a>
           </div>
         {% else %}
-          <a href="/auth/login" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.32rem 0.85rem; border-radius: 9999px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; font-size: 0.8rem; font-weight: 700; text-decoration: none; transition: background 0.15s;">
-            <span aria-hidden="true" style="font-size: 0.85rem;">⚡</span>
-            Sign In
-          </a>
+          {% include "partials/discord_login_button.html" %}
         {% endif %}
         </div>
       </nav>
@@ -263,6 +260,8 @@
         <div>
           <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #a1a1aa; margin-bottom: 0.6rem;">Developer &amp; Bots</div>
           <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
+            <li><a href="{{ base_path }}/sitemap.html">HTML Sitemap Directory</a></li>
+            <li><a href="{{ base_path }}/sitemap.md">Markdown Sitemap (AI)</a></li>
             <li><a href="{{ base_path }}/sitemap.xml">XML Sitemap</a></li>
             <li><a href="{{ base_path }}/robots.txt">Robots.txt</a></li>
             <li><a href="{{ base_path }}/llms.txt">LLM Training (llms.txt)</a></li>

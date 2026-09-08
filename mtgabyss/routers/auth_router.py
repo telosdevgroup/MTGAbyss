@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from db_mongo import get_mongo_db
 import i18n
 from mtgabyss.shared.helpers import templates
+from mtgabyss.network_router import extract_subdomain, get_request_host
 
 auth_router = APIRouter()
 
@@ -40,6 +41,21 @@ def is_safe_redirect(url: Optional[str]) -> bool:
             return False
     return False
 
+def resolve_redirect_url(request: Request, next_url: Optional[str], fallback_path: str = "/dashboard") -> str:
+    """Resolve redirect target, ensuring relative paths on subsites retain the subsite origin."""
+    host = get_request_host(request)
+    sub = extract_subdomain(host)
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+
+    if next_url and is_safe_redirect(next_url):
+        if next_url.startswith("/") and sub:
+            return f"{proto}://{host}{next_url}"
+        return next_url
+
+    if sub:
+        return f"{proto}://{host}/"
+    return fallback_path
+
 def get_base_url(request: Request) -> str:
     """Resolve correct base URL honoring Cloudflare / reverse proxy headers."""
     env_base = os.environ.get("APP_BASE_URL", "").strip().rstrip("/")
@@ -47,6 +63,14 @@ def get_base_url(request: Request) -> str:
         return env_base
     proto = request.headers.get("x-forwarded-proto", request.url.scheme)
     host = request.headers.get("x-forwarded-host", request.headers.get("host", request.url.netloc))
+    host_parts = host.split(":")
+    hostname = host_parts[0].lower()
+    port_str = f":{host_parts[1]}" if len(host_parts) > 1 else ""
+
+    if hostname == "avascry.com" or hostname.endswith(".avascry.com"):
+        return f"{proto}://avascry.com"
+    if hostname.endswith(".localhost"):
+        return f"{proto}://localhost{port_str}"
     return f"{proto}://{host}"
 
 async def send_discord_notification(title: str, description: str, color: int = 0x5865F2, fields: Optional[List[Dict[str, Any]]] = None, image_url: Optional[str] = None):
@@ -79,7 +103,7 @@ async def send_discord_notification(title: str, description: str, color: int = 0
 
 @auth_router.get("/auth/login", response_class=HTMLResponse)
 async def auth_login_choice(request: Request, next: Optional[str] = None):
-    redirect_target = next if is_safe_redirect(next) else "/dashboard"
+    redirect_target = resolve_redirect_url(request, next, fallback_path="/dashboard")
     lang = i18n.get_locale(request)
     return templates.TemplateResponse(
         request=request,
@@ -94,12 +118,18 @@ async def auth_login_choice(request: Request, next: Optional[str] = None):
     )
 
 @auth_router.get("/auth/discord/login")
-async def auth_discord_login(request: Request, next: Optional[str] = None):
+async def auth_discord_login(request: Request, next: Optional[str] = None, popup: Optional[str] = None):
     client_id = os.environ.get("DISCORD_CLIENT_ID", "").strip()
     if not client_id:
         return HTMLResponse("<h3>Error: DISCORD_CLIENT_ID is not configured in .env</h3>", status_code=500)
     
-    redirect_target = next if is_safe_redirect(next) else "/dashboard"
+    if popup == "1":
+        request.session["is_popup"] = True
+    else:
+        request.session.pop("is_popup", None)
+    
+    return_target = next or request.headers.get("referer")
+    redirect_target = resolve_redirect_url(request, return_target, fallback_path="/dashboard")
     redirect_uri = f"{get_base_url(request)}/auth/discord/callback"
     request.session["oauth_next"] = redirect_target
     
@@ -119,20 +149,24 @@ async def auth_discord_login(request: Request, next: Optional[str] = None):
             "scope": "identify email",
             "redirect_uri": redirect_uri,
             "state": oauth_state,
-            "prompt": "consent"
         }).__str__()
     )
     return RedirectResponse(url=auth_url, status_code=303)
 
 @auth_router.get("/auth/discord/callback")
 async def auth_discord_callback(request: Request, code: Optional[str] = None, state: Optional[str] = None, error: Optional[str] = None):
+    is_popup = request.session.get("is_popup", False)
     if error or not code:
         print(f"[Discord Callback] Error received: {error}")
+        if request.session.pop("is_popup", False):
+            return HTMLResponse("<script>window.close();</script>", status_code=200)
         return RedirectResponse(url=f"/auth/login?auth_error={error or 'cancelled'}", status_code=303)
     
     saved_state = request.session.pop("oauth_state", None)
     if not saved_state or not state or not secrets.compare_digest(saved_state, state):
         print("[Discord Callback] State mismatch detected")
+        if request.session.pop("is_popup", False):
+            return HTMLResponse("<script>window.close();</script>", status_code=200)
         return RedirectResponse(url="/auth/login?auth_error=invalid_oauth_state", status_code=303)
     
     client_id = os.environ.get("DISCORD_CLIENT_ID", "").strip()
@@ -241,172 +275,44 @@ async def auth_discord_callback(request: Request, code: Optional[str] = None, st
             "picture": user_doc.get("picture", "")
         }
         
+        is_popup = request.session.pop("is_popup", False)
         raw_next = request.session.pop("oauth_next", None)
         next_url = raw_next if is_safe_redirect(raw_next) else "/dashboard"
+        
+        if is_popup:
+            popup_html = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Authentication Complete</title></head>
+<body style="background:#090a0f;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:system-ui,-apple-system,sans-serif;">
+<div style="text-align:center;">
+  <p style="font-weight:700;font-size:1.1rem;margin:0 0 0.5rem;">Signed in with Discord</p>
+  <p style="font-size:0.85rem;color:#a1a1aa;margin:0;">Returning to application...</p>
+</div>
+<script>
+  try {{
+    if (window.opener && !window.opener.closed) {{
+      window.opener.location.reload();
+      window.close();
+    }} else {{
+      window.location.href = "{next_url}";
+    }}
+  }} catch (e) {{
+    window.location.href = "{next_url}";
+  }}
+</script>
+</body>
+</html>"""
+            return HTMLResponse(content=popup_html, status_code=200)
+
         return RedirectResponse(url=next_url, status_code=303)
     except Exception as e:
         print(f"[Discord Callback] Exception: {e}")
-        return RedirectResponse(url="/auth/login?auth_error=oauth_failed", status_code=303)
-
-@auth_router.get("/auth/google/login")
-async def auth_google_login(request: Request, next: Optional[str] = None):
-    client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
-    if not client_id or "your-domain" in client_id:
-        return HTMLResponse("<h3>Error: GOOGLE_CLIENT_ID is not configured in .env</h3>", status_code=500)
-    
-    redirect_target = next if is_safe_redirect(next) else "/dashboard"
-    redirect_uri = f"{get_base_url(request)}/auth/google/callback"
-    request.session["oauth_next"] = redirect_target
-    
-    # If already logged in, store linking user ID
-    curr_user = request.session.get("user")
-    if curr_user and curr_user.get("id"):
-        request.session["linking_user_id"] = curr_user["id"]
-    
-    # Generate cryptographic one-time state nonce
-    oauth_state = secrets.token_urlsafe(32)
-    request.session["oauth_state"] = oauth_state
-    
-    auth_url = (
-        "https://accounts.google.com/o/oauth2/v2/auth?"
-        + httpx.QueryParams({
-            "client_id": client_id,
-            "response_type": "code",
-            "scope": "openid email profile",
-            "redirect_uri": redirect_uri,
-            "state": oauth_state,
-            "access_type": "online",
-            "prompt": "select_account"
-        }).__str__()
-    )
-    return RedirectResponse(url=auth_url, status_code=303)
-
-@auth_router.get("/auth/google/callback")
-async def auth_google_callback(request: Request, code: Optional[str] = None, state: Optional[str] = None, error: Optional[str] = None):
-    if error or not code:
-        print(f"[OAuth Callback] Error parameter received: {error}")
-        return RedirectResponse(url=f"/auth/login?auth_error={error or 'cancelled'}", status_code=303)
-    
-    # Verify state parameter (strictly require both saved state and incoming state)
-    saved_state = request.session.pop("oauth_state", None)
-    if not saved_state or not state or not secrets.compare_digest(saved_state, state):
-        print("[OAuth Callback] State mismatch or missing state detected")
-        return RedirectResponse(url="/auth/login?auth_error=invalid_oauth_state", status_code=303)
-    
-    client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
-    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
-    redirect_uri = f"{get_base_url(request)}/auth/google/callback"
-    
-    try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            # Exchange authorization code for token
-            token_resp = await client.post(
-                "https://oauth2.googleapis.com/token",
-                data={
-                    "code": code,
-                    "client_id": client_id,
-                    "client_secret": client_secret,
-                    "redirect_uri": redirect_uri,
-                    "grant_type": "authorization_code",
-                },
-                headers={"Content-Type": "application/x-www-form-urlencoded"}
-            )
-            if token_resp.status_code != 200:
-                print(f"[OAuth Callback] Token error: {token_resp.text}")
-                return RedirectResponse(url="/auth/login?auth_error=token_exchange_failed", status_code=303)
-
-            token_data = token_resp.json()
-            access_token = token_data.get("access_token")
-            
-            # Fetch user profile info
-            user_resp = await client.get(
-                "https://www.googleapis.com/oauth2/v3/userinfo",
-                headers={"Authorization": f"Bearer {access_token}"}
-            )
-            if user_resp.status_code != 200:
-                print(f"[OAuth Callback] Userinfo error: {user_resp.text}")
-                return RedirectResponse(url="/auth/login?auth_error=userinfo_failed", status_code=303)
-
-            profile = user_resp.json()
-            
-        google_sub = profile.get("sub")
-        if not google_sub:
-            print("[OAuth Callback] Missing Google sub in profile")
-            return RedirectResponse(url="/auth/login?auth_error=missing_sub", status_code=303)
-            
-        email = profile.get("email", "")
-        db = get_mongo_db()
-        now = datetime.now(timezone.utc).isoformat()
-        
-        # Dual-identity merge / link
-        linking_user_id = request.session.pop("linking_user_id", None)
-        existing_user = None
-        if linking_user_id:
-            try:
-                from bson import ObjectId
-                existing_user = db["users"].find_one({"_id": ObjectId(linking_user_id)})
-            except Exception:
-                pass
-
-        if not existing_user:
-            query = {"google_sub": google_sub}
-            if email:
-                query = {"$or": [{"google_sub": google_sub}, {"email": email}]}
-            existing_user = db["users"].find_one(query)
-        if existing_user:
-            update_data = {
-                "google_sub": google_sub,
-                "email": email or existing_user.get("email", ""),
-                "picture": profile.get("picture", existing_user.get("picture", "")),
-                "updated_at": now
-            }
-            if not existing_user.get("name"):
-                update_data["name"] = profile.get("name", "Magic Player")
-            db["users"].update_one({"_id": existing_user["_id"]}, {"$set": update_data})
-            user_doc = db["users"].find_one({"_id": existing_user["_id"]})
-        else:
-            new_doc = {
-                "google_sub": google_sub,
-                "email": email,
-                "name": profile.get("name", "Magic Player"),
-                "picture": profile.get("picture", ""),
-                "created_at": now,
-                "updated_at": now
-            }
-            res = db["users"].insert_one(new_doc)
-            user_doc = db["users"].find_one({"_id": res.inserted_id})
-            google_name = profile.get("name", "Magic Player")
-            asyncio.create_task(send_discord_notification(
-                title="✨ New User Signup (Google)",
-                description=f"**{google_name}** joined AvaScry via Google!",
-                color=0x4285F4,
-                fields=[
-                    {"name": "Name", "value": google_name, "inline": True},
-                    {"name": "Account ID", "value": str(res.inserted_id), "inline": True}
-                ]
-            ))
-        
-        # Set session
-        request.session["user"] = {
-            "id": str(user_doc["_id"]),
-            "google_sub": google_sub,
-            "discord_username": user_doc.get("discord_username"),
-            "name": user_doc.get("name", "Magic Player"),
-            "email": user_doc.get("email", ""),
-            "picture": user_doc.get("picture", "")
-        }
-        
-        raw_next = request.session.pop("oauth_next", None)
-        next_url = raw_next if is_safe_redirect(raw_next) else "/dashboard"
-        print(f"[OAuth Callback] Successfully authenticated user: {user_doc.get('name')} -> Redirecting to {next_url}")
-        return RedirectResponse(url=next_url, status_code=303)
-        
-    except Exception as e:
-        print(f"[OAuth Callback] Exception: {e}")
+        if request.session.pop("is_popup", False):
+            return HTMLResponse("<script>window.close();</script>", status_code=200)
         return RedirectResponse(url="/auth/login?auth_error=oauth_failed", status_code=303)
 
 @auth_router.get("/auth/logout")
-async def auth_logout(request: Request, next: Optional[str] = "/commander"):
+async def auth_logout(request: Request, next: Optional[str] = None):
     request.session.clear()
-    target = next if is_safe_redirect(next) else "/commander"
+    target = resolve_redirect_url(request, next, fallback_path="/commander")
     return RedirectResponse(url=target, status_code=303)

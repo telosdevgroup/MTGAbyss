@@ -38,6 +38,19 @@ AI agents, LLMs, Discord bots, and developers can retrieve token-efficient Markd
   - Latest Rulings Feed: `https://avascry.com/feed/rulings.xml`
 - **Raw 4096-Dim Neural Vector Embeddings (Qwen 8B):** `https://avascry.com/vector/<card-slug>.json`
 
+## Authentication & Discord Integration Architecture
+
+AvaScry provides unified Single Sign-On (SSO) and community deckbuilding across its multi-game network:
+
+- **Network-Wide SSO**: Authentication utilizes Discord OAuth2 with wildcard cookie domain propagation (`Domain=.avascry.com`). Signing in once grants immediate authenticated access across all four game platforms:
+  - Magic: The Gathering: `https://avascry.com`
+  - Star Wars: Unlimited: `https://swu.avascry.com`
+  - Dominion: `https://dominion.avascry.com`
+  - Necromunda Underhive: `https://necromunda.avascry.com`
+- **Discord-Exclusive Identity & Privacy**: AvaScry does not require email addresses, passwords, or separate account credentials. All saved deck builds, autosaved Commander brews, user collections, and preferences synchronize seamlessly across devices via Discord OAuth identity.
+- **Discord Community & Pod Sharing**: Built directly for tabletop gaming pods and Discord servers. Enables 1-click sharing of decklists, visual spoiler embeds, and rules adjudications directly to Discord channels.
+- **Bot & API Integration**: Clean, machine-readable Markdown (`.md`) and JSON (`.json`) endpoints power Discord bots for `/card`, `/rules`, and `/deck` lookups without HTML parsing overhead.
+
 ## High-Priority Seed Hubs & Long-Tail Anchors
 
 ### Mox Diamond — Complete Multilingual Edition Suite

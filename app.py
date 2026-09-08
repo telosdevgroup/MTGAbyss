@@ -26,7 +26,7 @@ if os.name == 'nt':
 
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from starlette.middleware.sessions import SessionMiddleware
+from mtgabyss.middleware.network_session import NetworkSessionMiddleware
 
 from mtgabyss.network_router import extract_subdomain, get_request_host
 from mtgabyss.middleware.bot_shield import register_bot_shield
@@ -61,7 +61,7 @@ SESSION_SECRET_KEY = os.environ.get("SESSION_SECRET_KEY", "fallback-insecure-sec
 SESSION_COOKIE_DOMAIN = os.environ.get("SESSION_COOKIE_DOMAIN", "").strip() or None
 
 app.add_middleware(
-    SessionMiddleware,
+    NetworkSessionMiddleware,
     secret_key=SESSION_SECRET_KEY,
     session_cookie="avascry_session",
     domain=SESSION_COOKIE_DOMAIN,
@@ -114,17 +114,20 @@ async def subdomain_routing_middleware(request: Request, call_next):
     """
     host = get_request_host(request)
     sub = extract_subdomain(host)
+    path = request.scope.get("path", "")
+
+    # Network-wide routes exempt from subdomain prefixing
+    if path.startswith(("/auth", "/static")):
+        return await call_next(request)
+
     if sub == "dominion":
-        path = request.scope.get("path", "")
         if not path.startswith("/dominion") and not path.startswith("/static"):
             request.scope["path"] = "/dominion" + path
     elif sub == "swu":
-        path = request.scope.get("path", "")
-        if not path.startswith("/swu") and not path.startswith("/static") and not path.startswith("/images"):
+        if not path.startswith(("/swu", "/images")):
             request.scope["path"] = "/swu" + path
     elif sub == "necromunda":
-        path = request.scope.get("path", "")
-        if not path.startswith("/necromunda") and not path.startswith("/static") and not path.startswith("/images"):
+        if not path.startswith(("/necromunda", "/images")):
             request.scope["path"] = "/necromunda" + path
     return await call_next(request)
 

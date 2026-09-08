@@ -125,6 +125,8 @@ class DominionSiteBlaster:
             ("/sets.md", 200, "text/markdown"),
             ("/.well-known/ai-content", 200, "text/plain"),
             ("/sitemap.xml", 200, "application/xml"),
+            ("/sitemap.html", 200, "text/html"),
+            ("/sitemap.md", 200, "text/markdown"),
             ("/llms.txt", 200, "text/plain"),
             ("/llms-full.txt", 200, "text/plain"),
             ("/privacy", 200, "text/html"),
@@ -359,6 +361,7 @@ class DominionSiteBlaster:
             ("/rules.md", ["# Dominion Complete Rules", "Action Phase", "Buy Phase"]),
             ("/rules.json", ["Dominion", "Donald X. Vaccarino", "Action"]),
             ("/sitemap.xml", ["<urlset", "<loc>https://dominion.avascry.com/card/"]),
+            ("/sitemap.md", ["# AvaScry Dominion", "Complete Card Catalog", "/card/"]),
         ]
 
         for path, expected_fragments in manifests:

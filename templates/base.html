@@ -152,10 +152,7 @@
             <a href="/auth/logout" title="Sign out" aria-label="Sign out" style="color: var(--muted); font-size: 0.75rem; text-decoration: none; padding: 0.2rem 0.4rem; border-radius: 50%;">✕</a>
           </div>
         {% else %}
-          <a href="/auth/login" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.85rem; border-radius: var(--radius-pill); background: var(--surface); border: 1.5px solid var(--border); color: var(--text); font-size: 0.82rem; font-weight: 700; text-decoration: none;">
-            <span aria-hidden="true">🧙‍♂️</span>
-            {{ t('nav_sign_in', current_lang or 'en') }}
-          </a>
+          {% include "partials/discord_login_button.html" %}
         {% endif %}
         
         <!-- Language Selector Dropdown -->

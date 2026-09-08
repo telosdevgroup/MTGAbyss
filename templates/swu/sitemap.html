@@ -1,0 +1,172 @@
+{% extends "swu/base.html" %}
+
+{% block title %}Star Wars: Unlimited Master Sitemap &amp; Directory | AvaScry SWU{% endblock %}
+{% block meta_description %}Complete HTML directory and machine sitemap of all Star Wars Unlimited cards, expansions, keywords, rules citations, neural vectors, and similarity graphs.{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://swu.avascry.com/sitemap.html">
+{% endblock %}
+
+{% block alternates %}
+<link rel="alternate" type="text/markdown" title="Markdown Sitemap for AI Agents" href="/sitemap.md">
+<link rel="alternate" type="application/xml" title="XML Sitemap for Search Engines" href="/sitemap.xml">
+<link rel="alternate" type="text/plain" title="LLM Training Manifest" href="/llms.txt">
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem;">
+
+  <!-- Header Banner -->
+  <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+      <div>
+        <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(239, 68, 68, 0.15); color: #f87171; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: 9999px; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid rgba(239, 68, 68, 0.3);">
+          ⚡ High-Density Master Directory
+        </div>
+        <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 2.1rem; font-weight: 700; color: #fff; margin: 0 0 0.5rem 0; line-height: 1.2;">
+          Star Wars: Unlimited Sitemap &amp; Machine Index
+        </h1>
+        <p style="color: var(--muted); font-size: 0.95rem; margin: 0; max-width: 800px; line-height: 1.5;">
+          Complete canonical directory of {{ total_cards }} cards, {{ sets|length }} expansions, {{ keywords|length }} mechanics, and official rules citations with multi-surface crawler badges for AI models, search bots, and developers.
+        </p>
+      </div>
+
+      <!-- Quick Feeds for AI Bots -->
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <a href="{{ base_path }}/sitemap.md" target="_blank" style="background: #18181b; border: 1px solid var(--border); color: #e4e4e7; font-size: 0.8rem; font-weight: 600; padding: 0.5rem 0.9rem; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+          <span>📄</span> Markdown Sitemap
+        </a>
+        <a href="{{ base_path }}/sitemap.xml" target="_blank" style="background: #18181b; border: 1px solid var(--border); color: #e4e4e7; font-size: 0.8rem; font-weight: 600; padding: 0.5rem 0.9rem; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+          <span>🗺️</span> XML Sitemap
+        </a>
+        <a href="{{ base_path }}/llms.txt" target="_blank" style="background: #18181b; border: 1px solid var(--border); color: #e4e4e7; font-size: 0.8rem; font-weight: 600; padding: 0.5rem 0.9rem; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+          <span>🤖</span> llms.txt
+        </a>
+      </div>
+    </div>
+
+    <!-- Jump Anchor Bar -->
+    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; font-size: 0.82rem;">
+      <span style="color: var(--muted); font-weight: 700; margin-right: 0.3rem;">Jump to:</span>
+      <a href="#sets" style="color: #ef4444; text-decoration: none; font-weight: 600; padding: 0.15rem 0.45rem; background: rgba(239,68,68,0.1); border-radius: 4px;">Sets</a>
+      <a href="#keywords" style="color: #60a5fa; text-decoration: none; font-weight: 600; padding: 0.15rem 0.45rem; background: rgba(96,165,250,0.1); border-radius: 4px;">Keywords</a>
+      <a href="#rules" style="color: #a78bfa; text-decoration: none; font-weight: 600; padding: 0.15rem 0.45rem; background: rgba(167,139,250,0.1); border-radius: 4px;">Rules</a>
+      <span style="color: rgba(255,255,255,0.2); margin: 0 0.2rem;">|</span>
+      {% for letter in alphabet %}
+        {% if letter in cards_by_letter %}
+          <a href="#letter-{{ letter }}" style="color: #e4e4e7; text-decoration: none; font-weight: 700; padding: 0.15rem 0.4rem; border-radius: 4px; background: #18181b; border: 1px solid var(--border);">{{ letter }}</a>
+        {% else %}
+          <span style="color: #52525b; padding: 0.15rem 0.4rem;">{{ letter }}</span>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div style="background: rgba(24, 24, 27, 0.6); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1.25rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; font-size: 0.78rem; color: var(--muted);">
+    <span style="font-weight: 700; color: #fff;">Crawler Surfaces:</span>
+    <span style="display: inline-flex; align-items: center; gap: 0.35rem;"><span style="color: #38bdf8; font-weight: 700; background: #0f172a; padding: 1px 6px; border-radius: 4px; border: 1px solid #1e293b;">[MD]</span> Markdown Entity</span>
+    <span style="display: inline-flex; align-items: center; gap: 0.35rem;"><span style="color: #f59e0b; font-weight: 700; background: #1c1917; padding: 1px 6px; border-radius: 4px; border: 1px solid #292524;">[JSON]</span> REST API Data</span>
+    <span style="display: inline-flex; align-items: center; gap: 0.35rem;"><span style="color: #a855f7; font-weight: 700; background: #1e1b4b; padding: 1px 6px; border-radius: 4px; border: 1px solid #312e81;">[Vector]</span> 4096-Dim Float Embedding</span>
+    <span style="display: inline-flex; align-items: center; gap: 0.35rem;"><span style="color: #ef4444; font-weight: 700; background: #271416; padding: 1px 6px; border-radius: 4px; border: 1px solid #451a1e;">[Similar]</span> Neural Cosine Graph</span>
+  </div>
+
+  <!-- Section 1: Expansions & Sets -->
+  <div id="sets" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
+      <h2 style="font-size: 1.2rem; font-weight: 700; color: #fff; margin: 0;">Expansions &amp; Sets</h2>
+      <span style="font-size: 0.8rem; color: var(--muted); font-weight: 600;">{{ sets|length }} Sets</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.75rem;">
+      {% for s in sets %}
+        <div style="background: #09090b; border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-weight: 700; color: #ef4444; font-size: 0.85rem; margin-right: 0.4rem;">[{{ s.code }}]</span>
+            <a href="{{ base_path }}/?set={{ s.code }}" style="color: #fff; text-decoration: none; font-size: 0.88rem; font-weight: 600;">{{ s.name }}</a>
+          </div>
+          <span style="font-size: 0.75rem; color: var(--muted);">{{ s.card_count }} cards</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Section 2: Keywords & Game Mechanics -->
+  <div id="keywords" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
+      <h2 style="font-size: 1.2rem; font-weight: 700; color: #fff; margin: 0;">Keywords &amp; Mechanics</h2>
+      <span style="font-size: 0.8rem; color: var(--muted); font-weight: 600;">{{ keywords|length }} Mechanics</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.6rem;">
+      {% for kw in keywords %}
+        <div style="background: #09090b; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+          <a href="{{ base_path }}/keyword/{{ kw.slug }}" style="color: #60a5fa; text-decoration: none; font-size: 0.86rem; font-weight: 600;">{{ kw.name }}</a>
+          <div style="display: flex; gap: 0.3rem;">
+            <a href="{{ base_path }}/keyword/{{ kw.slug }}.md" style="font-size: 0.7rem; color: #38bdf8; background: #0f172a; border: 1px solid #1e293b; padding: 1px 5px; border-radius: 3px; text-decoration: none;">[MD]</a>
+            <a href="{{ base_path }}/keyword/{{ kw.slug }}.json" style="font-size: 0.7rem; color: #f59e0b; background: #1c1917; border: 1px solid #292524; padding: 1px 5px; border-radius: 3px; text-decoration: none;">[JSON]</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Section 3: Official Rules & Rulings -->
+  <div id="rules" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
+      <h2 style="font-size: 1.2rem; font-weight: 700; color: #fff; margin: 0;">Comprehensive Rules &amp; Rulings Directory</h2>
+      <div style="display: flex; gap: 0.5rem;">
+        <a href="{{ base_path }}/rules.md" style="font-size: 0.75rem; color: #38bdf8; background: #0f172a; border: 1px solid #1e293b; padding: 0.2rem 0.5rem; border-radius: 4px; text-decoration: none;">Rules Markdown</a>
+        <a href="{{ base_path }}/rules.json" style="font-size: 0.75rem; color: #f59e0b; background: #1c1917; border: 1px solid #292524; padding: 0.2rem 0.5rem; border-radius: 4px; text-decoration: none;">Rules JSON</a>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.6rem;">
+      <div style="background: #09090b; border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 0.85rem;">
+        <a href="{{ base_path }}/rules" style="color: #a78bfa; font-weight: 600; font-size: 0.88rem; text-decoration: none;">Comprehensive Rules Index</a>
+        <div style="font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem;">Full official section breakdown (1.0 - 8.0)</div>
+      </div>
+      <div style="background: #09090b; border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 0.85rem;">
+        <a href="{{ base_path }}/rulings" style="color: #a78bfa; font-weight: 600; font-size: 0.88rem; text-decoration: none;">Official Card Rulings &amp; Errata</a>
+        <div style="font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem;">All competitive card clarifications &amp; FAQ entries</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Canonical Cards A-Z -->
+  <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0;">Canonical Cards Directory (A–Z)</h2>
+      <span style="font-size: 0.85rem; color: var(--muted); font-weight: 600;">{{ total_cards }} Canonical Cards</span>
+    </div>
+
+    {% for letter in alphabet %}
+      {% if letter in cards_by_letter %}
+        <div id="letter-{{ letter }}" style="margin-bottom: 2rem;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; padding-bottom: 0.35rem; border-bottom: 1px solid rgba(255,255,255,0.06);">
+            <span style="font-family: 'Space Grotesk', sans-serif; font-size: 1.35rem; font-weight: 800; color: #ef4444;">{{ letter }}</span>
+            <span style="font-size: 0.78rem; color: var(--muted);">({{ cards_by_letter[letter]|length }} cards)</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 0.5rem;">
+            {% for c in cards_by_letter[letter] %}
+              <div style="background: #09090b; border: 1px solid var(--border); border-radius: 6px; padding: 0.45rem 0.75rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+                <div style="min-width: 0; flex: 1;">
+                  <a href="{{ base_path }}/card/{{ c.slug }}" style="color: #fff; text-decoration: none; font-size: 0.84rem; font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    {{ c.title }}{% if c.subtitle %} <span style="color: #a1a1aa; font-weight: 400; font-size: 0.78rem;">— {{ c.subtitle }}</span>{% endif %}
+                  </a>
+                </div>
+
+                <div style="display: flex; gap: 0.25rem; flex-shrink: 0;">
+                  <a href="{{ base_path }}/card/{{ c.slug }}.md" title="Markdown Feed" style="font-size: 0.68rem; color: #38bdf8; background: #0f172a; border: 1px solid #1e293b; padding: 1px 4px; border-radius: 3px; text-decoration: none;">[MD]</a>
+                  <a href="{{ base_path }}/card/{{ c.slug }}.json" title="JSON API" style="font-size: 0.68rem; color: #f59e0b; background: #1c1917; border: 1px solid #292524; padding: 1px 4px; border-radius: 3px; text-decoration: none;">[JSON]</a>
+                  <a href="{{ base_path }}/vector/{{ c.slug }}.json" title="4096-Dim Neural Vector" style="font-size: 0.68rem; color: #a855f7; background: #1e1b4b; border: 1px solid #312e81; padding: 1px 4px; border-radius: 3px; text-decoration: none;">[Vector]</a>
+                  <a href="{{ base_path }}/similar/{{ c.slug }}" title="Neural Similarity Graph" style="font-size: 0.68rem; color: #ef4444; background: #271416; border: 1px solid #451a1e; padding: 1px 4px; border-radius: 3px; text-decoration: none;">[Similar]</a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+
+  </div>
+</div>
+{% endblock %}

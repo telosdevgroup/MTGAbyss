@@ -477,6 +477,130 @@ class NecromundaSiteBlaster:
                 self.log_fail("routing symmetry", p, f"Subdomain={r_sub.status_code}, Prefix={r_pfx.status_code}")
 
     # =========================================================================
+    # 11. COMBAT BALLISTICS & AMMO RELIABILITY INVARIANTS
+    # =========================================================================
+    def test_combat_ballistics_suite(self):
+        print("\n--- [11/13] Running Combat Ballistics & Ammo Invariants ---")
+        all_weapons = list(self.db.weapons.find({}, {"_id": 0}))
+        if not all_weapons:
+            self.log_fail("ballistics corpus", "db.weapons", "No weapon records found")
+            return
+
+        sample_size = len(all_weapons) if self.deep else min(15, len(all_weapons))
+        sample = self.rng.sample(all_weapons, sample_size)
+        self.log_pass("ballistics sample", f"Evaluating ballistics for {len(sample)} weapons (deep={self.deep})")
+
+        ammo_pattern = re.compile(r"^([2-6]\+|\-|D6)$")
+        for w in sample:
+            name = w.get("name", "Unknown")
+            slug = w.get("slug", "")
+            cost = w.get("cost_credits")
+            damage = w.get("damage")
+            ap = w.get("armor_piercing")
+            ammo = str(w.get("ammo", "")).strip()
+
+            # Cost invariant
+            if isinstance(cost, (int, float)) and cost >= 0:
+                pass
+            else:
+                self.log_fail("weapon cost", slug, f"Invalid credit cost: {cost}")
+
+            # Damage invariant (Necromunda weapons deal >= 1 damage unless Web/Entangle chemical weapons which deal 0 direct damage)
+            traits = [t.lower() for t in w.get("traits", [])]
+            is_web_or_entangle = any("web" in t or "entangle" in t for t in traits)
+            if damage is None or (isinstance(damage, (int, float)) and damage < 0) or (isinstance(damage, (int, float)) and damage == 0 and not is_web_or_entangle):
+                self.log_fail("weapon damage", slug, f"Damage must be >= 1 (or 0 for Web/Entangle): {damage}")
+
+
+            # Armor piercing invariant (AP in Necromunda is 0 or negative integer, e.g. -1, -2, -3)
+            if ap is not None and isinstance(ap, (int, float)) and ap > 0:
+                self.log_warn("weapon ap", slug, f"AP is positive (+{ap}); typically 0 or negative in Necromunda")
+
+            # Ammo check reliability invariant
+            if ammo and (ammo_pattern.match(ammo) or ammo in ["-", "2+", "3+", "4+", "5+", "6+"]):
+                pass
+            else:
+                self.log_warn("weapon ammo", slug, f"Non-standard ammo check notation: '{ammo}'")
+
+        self.log_pass("ballistics invariants", f"Verified profile invariants across {len(sample)} weapons")
+
+    # =========================================================================
+    # 12. GANG ROSTER & FIGHTER CLASS INVARIANTS
+    # =========================================================================
+    def test_gang_roster_loadouts_suite(self):
+        print("\n--- [12/13] Running Gang Roster & Fighter Class Invariants ---")
+        all_houses = list(self.db.houses.find({}, {"_id": 0}))
+        if not all_houses:
+            self.log_fail("houses roster corpus", "db.houses", "No clan houses found")
+            return
+
+        fighter_roles_seen = set()
+        total_fighters_checked = 0
+
+        for h in all_houses:
+            house_name = h.get("name", "Unknown House")
+            roster = h.get("roster", [])
+            if not roster:
+                self.log_fail("house roster", house_name, "House has an empty fighter roster")
+                continue
+
+            for f in roster:
+                total_fighters_checked += 1
+                role = f.get("role", "")
+                title = f.get("title", "")
+                cost = f.get("cost_credits")
+                fighter_roles_seen.add(role)
+
+                # Fighter cost bound
+                if not isinstance(cost, (int, float)) or cost <= 0:
+                    self.log_fail("fighter cost", f"{house_name} -> {title}", f"Invalid fighter cost: {cost}")
+
+                # Characteristics bound
+                t = f.get("t")
+                w = f.get("w")
+                if isinstance(t, int) and (t < 1 or t > 10):
+                    self.log_fail("fighter toughness", f"{house_name} -> {title}", f"Toughness out of bounds: {t}")
+                if isinstance(w, int) and (w < 1 or w > 10):
+                    self.log_fail("fighter wounds", f"{house_name} -> {title}", f"Wounds out of bounds: {w}")
+
+        self.log_pass("roster loadout", f"Validated {total_fighters_checked} fighters across {len(all_houses)} Houses (Roles: {', '.join(sorted(fighter_roles_seen))})")
+
+    # =========================================================================
+    # 13. STANDARDIZED CONTACT 500-CHAR & HONEYPOT INVARIANTS
+    # =========================================================================
+    def test_contact_payload_limits_suite(self):
+        print("\n--- [13/13] Running Contact 500-Char & Payload Limits Suite ---")
+        # 1. Check frontend counter and maxlength
+        r_get = self.get("/contact")
+        if r_get.status_code == 200:
+            if 'maxlength="500"' in r_get.text and 'id="char-counter"' in r_get.text:
+                self.log_pass("contact bounds ui", "HTML includes maxlength='500' and #char-counter element")
+            else:
+                self.log_fail("contact bounds ui", "/contact", "Missing maxlength='500' or #char-counter")
+        else:
+            self.log_fail("contact bounds ui", "/contact", f"Status {r_get.status_code}")
+
+        # 2. Over-length payload dispatch test (must be clipped to 500 characters by backend)
+        oversized_message = "Necromunda tactical underhive transmission " + ("X" * 600)
+        with patch('mtgabyss.routers.auth_router.send_discord_notification', new_callable=AsyncMock) as mock_notify:
+            r_post = self.post("/contact", data={
+                "name": "Underhive Arbitrator",
+                "contact": "arbitrator@precinct.org",
+                "message": oversized_message
+            })
+            if r_post.status_code == 200 and "Message Sent!" in r_post.text:
+                if mock_notify.called:
+                    dispatched_msg = mock_notify.call_args.kwargs['fields'][-1]['value']
+                    if len(dispatched_msg) <= 500:
+                        self.log_pass("contact payload limit", f"Oversized message (643 chars) clipped to {len(dispatched_msg)} chars in Discord webhook")
+                    else:
+                        self.log_fail("contact payload limit", "/contact", f"Payload exceeded 500 chars: {len(dispatched_msg)}")
+                else:
+                    self.log_fail("contact payload limit", "/contact", "Webhook notification not dispatched")
+            else:
+                self.log_fail("contact payload limit", "/contact", f"Status {r_post.status_code} or missing confirmation")
+
+    # =========================================================================
     # MAIN RUNNER
     # =========================================================================
     def run_all(self) -> int:
@@ -496,6 +620,9 @@ class NecromundaSiteBlaster:
         self.test_discovery_manifests()
         self.test_boundary_and_404()
         self.test_subdomain_routing_symmetry()
+        self.test_combat_ballistics_suite()
+        self.test_gang_roster_loadouts_suite()
+        self.test_contact_payload_limits_suite()
 
         elapsed = time.time() - self.start_time
 

@@ -104,7 +104,11 @@ async def necromunda_llms_txt(request: Request):
         "- Weapon Detail: https://necromunda.avascry.com/weapon/{slug} (.md, .json)\n"
         "- Trait Detail: https://necromunda.avascry.com/trait/{slug} (.md, .json)\n"
         "- Clan House: https://necromunda.avascry.com/house/{slug} (.md, .json)\n"
-        "- Skill Tree: https://necromunda.avascry.com/skill/{slug} (.md, .json)\n"
+        "- Skill Tree: https://necromunda.avascry.com/skill/{slug} (.md, .json)\n\n"
+        "## Unified Discord Identity & Network SSO\n"
+        "- Part of the unified AvaScry Card Network (MTG, SWU, Dominion, Necromunda).\n"
+        "- Single Discord OAuth sign-in shared network-wide across necromunda.avascry.com and all sister domains.\n"
+        "- Built for Underhive skirmish campaigns with weapon and fighter tactics sharing directly to Discord.\n"
     )
 
 
@@ -124,6 +128,10 @@ async def necromunda_llms_full_txt():
         f"Total Traits: {len(traits)}",
         f"Total Houses: {len(houses)}",
         f"Total Skills: {len(skills)}\n",
+        "## Authentication & Discord Integration Architecture",
+        "- Network SSO: Single Discord authentication session operates network-wide across avascry.com, swu.avascry.com, dominion.avascry.com, and necromunda.avascry.com.",
+        "- Zero-Password Tabletop Identity: User profile and gang loadouts synchronize via Discord without email or password management.",
+        "- Discord Bot Ready: Structured weapon, trait, and clan house endpoints are optimized for Discord community bots and skirmish lookups.\n",
         "---",
         "## WEAPON TRAITS\n"
     ]

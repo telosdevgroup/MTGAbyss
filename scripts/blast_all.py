@@ -35,6 +35,7 @@ if REPO_ROOT not in sys.path:
 from scripts.site_blaster import SiteBlaster
 from scripts.dominion_site_blaster import DominionSiteBlaster
 from scripts.swu_site_blaster import SWUSiteBlaster
+from scripts.necromunda_site_blaster import NecromundaSiteBlaster
 
 
 def run_blasters(
@@ -59,6 +60,7 @@ def run_blasters(
         "mtg": ("Magic: The Gathering", SiteBlaster),
         "dominion": ("Dominion", DominionSiteBlaster),
         "swu": ("Star Wars: Unlimited", SWUSiteBlaster),
+        "necromunda": ("Necromunda", NecromundaSiteBlaster),
     }
 
     results = []
@@ -146,13 +148,13 @@ def main():
         "--games",
         type=str,
         default="all",
-        help="Comma-separated list of games to blast: all, mtg, dominion, swu (default: all)"
+        help="Comma-separated list of games to blast: all, mtg, dominion, swu, necromunda (default: all)"
     )
     args = parser.parse_args()
 
     games_arg = args.games.strip().lower()
     if games_arg == "all":
-        selected_games = ["mtg", "dominion", "swu"]
+        selected_games = ["mtg", "dominion", "swu", "necromunda"]
     else:
         selected_games = [g.strip() for g in games_arg.split(",") if g.strip()]
 

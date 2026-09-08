@@ -21,6 +21,7 @@ import time
 import math
 import random
 import argparse
+import urllib.parse
 from typing import List, Dict, Any, Optional, Tuple, Set
 
 # Ensure stdout/stderr handle UTF-8 cleanly on Windows
@@ -212,6 +213,17 @@ class SiteBlaster:
                     else:
                         self.log_warn("entity card HTML", f"{name} ({p_slug})", "Card name missing from HTML response",
                                       {"printing_slug": p_slug, "oracle_id": oracle_id})
+
+                    # Schema.org & OpenGraph validation
+                    if '<script type="application/ld+json">' in resp_html.text:
+                        self.log_pass("card Schema.org", f"{p_slug} contains JSON-LD metadata")
+                    else:
+                        self.log_warn("card Schema.org", f"{p_slug}", "Missing application/ld+json script tag")
+
+                    if 'property="og:image"' in resp_html.text and 'property="og:title"' in resp_html.text:
+                        self.log_pass("card OpenGraph", f"{p_slug} OpenGraph meta tags verified")
+                    else:
+                        self.log_warn("card OpenGraph", f"{p_slug}", "Missing og:image or og:title meta tags")
                 else:
                     self.log_fail("entity card HTML", f"/printing/{p_slug}", f"status {resp_html.status_code}",
                                   {"printing_slug": p_slug, "oracle_id": oracle_id, "status": resp_html.status_code})
@@ -1541,6 +1553,9 @@ class SiteBlaster:
         subdomain_cases = [
             ("dominion.avascry.com", "/", 200, "Dominion Subdomain Home"),
             ("swu.avascry.com", "/", 200, "Star Wars Unlimited Subdomain Home"),
+            ("necromunda.avascry.com", "/", 200, "Necromunda Subdomain Home"),
+            ("necromunda.avascry.com", "/weapons", 200, "Necromunda Weapons Index"),
+            ("necromunda.avascry.com", "/houses", 200, "Necromunda Houses Index"),
             ("avascry.com", "/", 200, "MTG Root Home"),
             ("avascry.com", "/heartbeat.txt", 200, "MTG Heartbeat"),
         ]
@@ -1565,6 +1580,151 @@ class SiteBlaster:
                     self.log_fail("subdomain xfh", f"{host}{path}", f"expected {expected_status}, got {resp_xfh.status_code}")
             except Exception as e:
                 self.log_fail("subdomain xfh", f"{host}{path}", str(e))
+
+    # =========================================================================
+    # =========================================================================
+    # 24. CONTACT & BOT HONEYPOT RESILIENCE ACROSS ALL SITES
+    # =========================================================================
+    def test_contact_and_honeypot(self):
+        """
+        Verify unified contact form presentation, validation, and anti-bot honeypot suppression
+        across all active game subsites (MTG, SWU, Dominion, Necromunda).
+        """
+        contact_hosts = [
+            ("avascry.com", "/contact", "MTG Contact"),
+            ("swu.avascry.com", "/contact", "SWU Contact"),
+            ("dominion.avascry.com", "/contact", "Dominion Contact"),
+            ("necromunda.avascry.com", "/contact", "Necromunda Contact"),
+        ]
+
+        for host, path, label in contact_hosts:
+            try:
+                resp = self.get(path, headers={"Host": host})
+                if resp.status_code == 200:
+                    text = resp.text
+                    if '<form' in text and 'name="website_url"' in text and 'name="message"' in text:
+                        self.log_pass("contact form", f"{label} ({host}{path}) rendered with honeypot field 'website_url'")
+                    else:
+                        self.log_fail("contact form", f"{host}{path}", "Form or honeypot field 'website_url' missing from HTML")
+                else:
+                    self.log_fail("contact form", f"{host}{path}", f"status {resp.status_code}")
+            except Exception as e:
+                self.log_fail("contact form", f"{host}{path}", str(e))
+
+        # 2. POST /contact with bot honeypot populated (anti-spam catch)
+        try:
+            bot_payload = {
+                "name": "SpamBot 9000",
+                "contact": "spambot@example.com",
+                "message": "Buy cheap backlinks now!",
+                "website_url": "http://spamsite.evil.com"
+            }
+            if self._is_testclient:
+                resp_bot = self.client.post("/contact", data=bot_payload)
+            else:
+                resp_bot = self.client.post(f"{self.base_url}/contact", data=bot_payload)
+
+            if resp_bot.status_code in (200, 302, 303):
+                self.log_pass("contact honeypot", f"Bot submission handled safely [{resp_bot.status_code}]")
+            else:
+                self.log_fail("contact honeypot", "/contact", f"Unexpected status on bot catch: {resp_bot.status_code}")
+        except Exception as e:
+            self.log_fail("contact honeypot", "/contact", str(e))
+
+        # 3. POST /contact with missing required fields (validation check)
+        try:
+            invalid_payload = {
+                "name": "",
+                "contact": "",
+                "message": "",
+                "website_url": ""
+            }
+            if self._is_testclient:
+                resp_val = self.client.post("/contact", data=invalid_payload)
+            else:
+                resp_val = self.client.post(f"{self.base_url}/contact", data=invalid_payload)
+
+            if resp_val.status_code == 200:
+                self.log_pass("contact validation", "Empty submission caught by form validation without error 500")
+            else:
+                self.log_fail("contact validation", "/contact", f"Expected 200 validation response, got {resp_val.status_code}")
+        except Exception as e:
+            self.log_fail("contact validation", "/contact", str(e))
+
+    # =========================================================================
+    # 25. AUTH & CROSS-SUBDOMAIN SSO INVARIANTS
+    # =========================================================================
+    def test_auth_surfaces(self):
+        """
+        Verify user authentication endpoints, OAuth SSO dispatch, safe redirect filtering,
+        and header Sign-In UI presence across all game sites.
+        """
+        auth_cases = [
+            ("/auth/login", 200, "Auth Login Portal"),
+            ("/auth/discord/login", 303, "Discord OAuth Dispatch"),
+            ("/auth/logout", 303, "Logout Redirect"),
+        ]
+        for route, expected_status, label in auth_cases:
+            try:
+                resp = self.get(route)
+                if resp.status_code == expected_status:
+                    self.log_pass("auth surface", f"{label} ({route}) -> [{resp.status_code}]")
+                else:
+                    self.log_fail("auth surface", route, f"expected {expected_status}, got {resp.status_code}")
+            except Exception as e:
+                self.log_fail("auth surface", route, str(e))
+
+        # Open-redirect prevention & safe redirect targets
+        redirect_scenarios = [
+            ("/auth/login?next=/dashboard", "/dashboard", True, "safe relative path"),
+            ("/auth/login?next=https://swu.avascry.com/card/luke-skywalker", "https://swu.avascry.com/card/luke-skywalker", True, "trusted SWU subdomain"),
+            ("/auth/login?next=https://dominion.avascry.com/random", "https://dominion.avascry.com/random", True, "trusted Dominion subdomain"),
+            ("/auth/login?next=https://necromunda.avascry.com/weapons", "https://necromunda.avascry.com/weapons", True, "trusted Necromunda subdomain"),
+            ("/auth/login?next=https://evil.com/phish", "/dashboard", False, "blocked untrusted external domain"),
+            ("/auth/login?next=//attacker.org", "/dashboard", False, "blocked protocol-relative URL"),
+        ]
+
+        for req_url, expected_target, should_preserve, desc in redirect_scenarios:
+            try:
+                resp = self.get(req_url)
+                if resp.status_code == 200:
+                    text = resp.text
+                    if should_preserve:
+                        target_encoded = expected_target.replace("://", "%3A//")
+                        enc_target = urllib.parse.quote_plus(expected_target)
+                        if expected_target in text or target_encoded in text or enc_target in text or html.escape(expected_target) in text:
+                            self.log_pass("auth safe redirect", f"Preserved {desc} -> {expected_target}")
+                        else:
+                            self.log_fail("auth safe redirect", req_url, f"Expected {expected_target} in response HTML")
+                    else:
+                        if "evil.com" not in text and "attacker.org" not in text:
+                            self.log_pass("auth open-redirect defense", f"Purged {desc} -> defaulted to safe target")
+                        else:
+                            self.log_fail("auth open-redirect defense", req_url, "Malicious target leaked into response HTML")
+                else:
+                    self.log_fail("auth redirect", req_url, f"Unexpected status {resp.status_code}")
+            except Exception as e:
+                self.log_fail("auth redirect", req_url, str(e))
+
+        # Header Sign-In UI verification across network sites
+        subsite_navs = [
+            ("avascry.com", "/", "MTG Home"),
+            ("swu.avascry.com", "/", "SWU Home"),
+            ("dominion.avascry.com", "/", "Dominion Home"),
+            ("necromunda.avascry.com", "/", "Necromunda Home"),
+        ]
+        for host, path, label in subsite_navs:
+            try:
+                resp = self.get(path, headers={"Host": host})
+                if resp.status_code == 200:
+                    if ('/auth/discord/login' in text or '/auth/login' in text) and ('Sign In with Discord' in text or 'Sign In' in text):
+                        self.log_pass("subsite auth nav", f"{label} ({host}) displays unified Sign In with Discord control")
+                    else:
+                        self.log_warn("subsite auth nav", f"{host}{path}", "Sign In link not detected in navbar")
+                else:
+                    self.log_fail("subsite auth nav", f"{host}{path}", f"Status {resp.status_code}")
+            except Exception as e:
+                self.log_fail("subsite auth nav", f"{host}{path}", str(e))
 
     # =========================================================================
     # MAIN RUNNER
@@ -1603,6 +1763,8 @@ class SiteBlaster:
             ("Visual Artwork & Multi-Modal Similarity Surfaces", self.test_visual_artwork_and_similarities),
             ("Multilingual Performance & Benchmark Invariants", self.test_multilingual_performance_invariants),
             ("Network Subdomain Routing & Proxy Symmetry", self.test_network_subdomain_routing),
+            ("Contact Form & Bot Honeypot Resilience", self.test_contact_and_honeypot),
+            ("Auth & SSO Login Invariants", self.test_auth_surfaces),
         ]
 
         total_suites = len(suites)

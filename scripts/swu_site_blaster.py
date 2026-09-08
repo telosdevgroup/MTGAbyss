@@ -330,6 +330,102 @@ class SWUSiteBlaster:
                 self.log_fail("card XML format", f"/card/{slug}.xml", str(e))
 
     # =========================================================================
+    # 2b. NEURAL EMBEDDINGS & SIMILARITY GRAPH
+    # =========================================================================
+    def test_similarity_graph(self):
+        print("\n--- [2b/10] Running Neural Embeddings & Similarity Graph Suite ---")
+        docs = list(self.db.similar_cards.find({}, {"_id": 0, "slug": 1, "title": 1, "similar": 1}).limit(50))
+        if not docs:
+            self.log_fail("similarity suite", "Mongo similar_cards", "No records found in avascry_swu.similar_cards")
+            return
+
+        sample_cards = self.rng.sample(docs, min(8, len(docs)))
+        for item in sample_cards:
+            slug = item.get("slug")
+            name = item.get("title")
+
+            # 1. HTML Similarity Page
+            try:
+                resp_html = self.get(f"/similar/{slug}")
+                if resp_html.status_code == 200:
+                    text = resp_html.text
+                    if "Similar to" in text or name in text:
+                        self.log_pass("similar HTML", f"{name} (/similar/{slug})")
+                    else:
+                        self.log_fail("similar HTML", f"/similar/{slug}", "HTML missing card title or header")
+
+                    # Check Schema.org CollectionPage and ItemList
+                    if "CollectionPage" in text and "ItemList" in text:
+                        self.log_pass("similar Schema.org", f"{slug} Schema.org ItemList validated")
+                    else:
+                        self.log_warn("similar Schema.org", f"/similar/{slug}", "Missing CollectionPage or ItemList structured data")
+
+                    if f"/similar/{slug}.md" in text and f"/similar/{slug}.json" in text:
+                        self.log_pass("similar alternates", f"{slug} alternate links present in HTML")
+                    else:
+                        self.log_warn("similar alternates", f"/similar/{slug}", "Missing alternate links for MD/JSON")
+                else:
+                    self.log_fail("similar HTML", f"/similar/{slug}", f"Status {resp_html.status_code}")
+            except Exception as e:
+                self.log_fail("similar HTML", f"/similar/{slug}", str(e))
+
+            # 2. Markdown Similarity Endpoint
+            try:
+                resp_md = self.get(f"/similar/{slug}.md")
+                if resp_md.status_code == 200:
+                    if "# Mechanically Similar Cards to" in resp_md.text and "Top Similar Cards" in resp_md.text:
+                        self.log_pass("similar Markdown", f"{name} (/similar/{slug}.md)")
+                    else:
+                        self.log_fail("similar Markdown", f"/similar/{slug}.md", "Missing expected markdown headers")
+                    if "max-age=3600" in resp_md.headers.get("cache-control", ""):
+                        self.log_pass("similar Markdown cache", f"{slug}.md Cache-Control verified")
+                else:
+                    self.log_fail("similar Markdown", f"/similar/{slug}.md", f"Status {resp_md.status_code}")
+            except Exception as e:
+                self.log_fail("similar Markdown", f"/similar/{slug}.md", str(e))
+
+            # 3. JSON Similarity API Endpoint
+            try:
+                resp_json = self.get(f"/similar/{slug}.json")
+                if resp_json.status_code == 200:
+                    data = resp_json.json()
+                    if data.get("model") == "qwen3-embedding:8b" and data.get("dimension") == 4096:
+                        self.log_pass("similar JSON model", f"{slug}.json (4096-dim qwen3-embedding:8b)")
+                    else:
+                        self.log_fail("similar JSON model", f"/similar/{slug}.json", f"Unexpected model metadata: {data.get('model')}")
+
+                    similar_list = data.get("similar", [])
+                    if len(similar_list) > 0 and "score" in similar_list[0]:
+                        self.log_pass("similar JSON list", f"{name} returned {len(similar_list)} ranked similar cards (top score: {similar_list[0]['score']})")
+                    else:
+                        self.log_fail("similar JSON list", f"/similar/{slug}.json", "Empty or invalid similar cards array")
+                else:
+                    self.log_fail("similar JSON API", f"/similar/{slug}.json", f"Status {resp_json.status_code}")
+            except Exception as e:
+                self.log_fail("similar JSON API", f"/similar/{slug}.json", str(e))
+
+            # 4. Raw Neural Vector Endpoint (/vector/{slug}.json)
+            try:
+                resp_vec = self.get(f"/vector/{slug}.json")
+                if resp_vec.status_code == 200:
+                    vec_data = resp_vec.json()
+                    emb = vec_data.get("embedding", [])
+                    dims = vec_data.get("dimensions", 0)
+                    if len(emb) == 4096 and dims == 4096:
+                        self.log_pass("raw neural vector", f"{name} (/vector/{slug}.json) -> exactly 4,096 float dimensions")
+                    else:
+                        self.log_fail("raw neural vector", f"/vector/{slug}.json", f"Expected 4096 dimensions, got {len(emb)}")
+
+                    if emb and isinstance(emb[0], float):
+                        self.log_pass("raw vector precision", f"{slug} float precision validated ({emb[0]:.6f})")
+                    else:
+                        self.log_fail("raw vector precision", f"/vector/{slug}.json", "Vector values are not floats")
+                else:
+                    self.log_fail("raw neural vector", f"/vector/{slug}.json", f"Status {resp_vec.status_code}")
+            except Exception as e:
+                self.log_fail("raw neural vector", f"/vector/{slug}.json", str(e))
+
+    # =========================================================================
     # 3. KEYWORDS & RULES CITATION ENGINE
     # =========================================================================
     def test_keywords_and_rules(self):
@@ -513,8 +609,10 @@ class SWUSiteBlaster:
             ("/llms.txt", ["Star Wars: Unlimited", "https://swu.avascry.com/"]),
             ("/llms-full.txt", ["Star Wars: Unlimited", "Game: Star Wars: Unlimited"]),
             ("/.well-known/ai-content", ["domain: swu.avascry.com", "ai-train: allowed"]),
-            ("/robots.txt", ["User-agent: *", "https://swu.avascry.com/sitemap.xml"]),
+            ("/robots.txt", ["User-agent: *", "https://swu.avascry.com/sitemap.xml", "https://swu.avascry.com/sitemap.html"]),
             ("/sitemap.xml", ["<urlset", "/card/", "/keywords", "/rules"]),
+            ("/sitemap.html", ["Machine Index", "Canonical Cards Directory", "[MD]", "[JSON]", "[Vector]", "[Similar]"]),
+            ("/sitemap.md", ["# Star Wars: Unlimited Master Machine Sitemap", "## Expansions & Sets", "## Keywords & Game Mechanics", "## Canonical Cards Directory", "[Vector]"]),
         ]
 
         for path, expected_fragments in manifests:
@@ -585,6 +683,7 @@ class SWUSiteBlaster:
             ("/keyword/definitely-not-a-real-keyword-12345.json", 404),
             ("/keyword/definitely-not-a-real-keyword-12345.md", 404),
             ("/rule/99-99-definitely-not-a-real-rule", 404),
+            ("/vector/definitely-not-a-real-swu-card-12345.json", 404),
             ("/card/", 404),
         ]
 
@@ -630,6 +729,7 @@ class SWUSiteBlaster:
 
         self.test_core_routes()
         self.test_entity_cards()
+        self.test_similarity_graph()
         self.test_keywords_and_rules()
         self.test_clarifications_and_rulings()
         self.test_search_and_filters()
