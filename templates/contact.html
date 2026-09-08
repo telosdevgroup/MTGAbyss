@@ -14,16 +14,6 @@
     </p>
   </header>
 
-  <!-- Online Contact Form Section -->
-  <section style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 2rem; margin-bottom: 2.5rem;">
-    <h2 style="font-size: 1.3rem; font-weight: 700; margin: 0 0 0.5rem 0; color: var(--text);">Drop Us a Note</h2>
-    <p style="color: var(--muted); font-size: 0.9rem; margin: 0 0 1.5rem 0;">
-      Got feedback, a bug to report, or an idea for the site? Drop us a note below — we're a small team building AvaScry and we read every message.
-    </p>
-    {% set contact_action = "/contact" %}
-    {% include "shared/contact_form.html" %}
-  </section>
-
   <!-- Channels Grid -->
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
     
@@ -52,6 +42,16 @@
     </div>
 
   </div>
+
+  <!-- Online Contact Form Section -->
+  <section style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 2rem; margin-bottom: 2.5rem;">
+    <h2 style="font-size: 1.3rem; font-weight: 700; margin: 0 0 0.5rem 0; color: var(--text);">Drop Us a Note</h2>
+    <p style="color: var(--muted); font-size: 0.9rem; margin: 0 0 1.5rem 0;">
+      Got feedback, a bug to report, or an idea for the site? Drop us a note below — we're a small team building AvaScry and we read every message.
+    </p>
+    {% set contact_action = "/contact" %}
+    {% include "shared/contact_form.html" %}
+  </section>
 
   <!-- Legal Notice Reference -->
   <section style=border-top: 1px solid var(--border); padding-top: 1.5rem;>
