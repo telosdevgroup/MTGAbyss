@@ -301,10 +301,10 @@ def find_card_by_slug(db, slug: str) -> Optional[dict]:
     if cache_key in RAM_CACHE:
         return RAM_CACHE[cache_key]
 
-    # 1. Exact Title Case & Unslugged
-    card = db["cards"].find_one({"name": title_name})
+    # 1. Exact Title Case & Unslugged (English first)
+    card = db["cards"].find_one({"name": title_name, "lang": "en"})
     if not card and unslugged != title_name:
-        card = db["cards"].find_one({"name": unslugged})
+        card = db["cards"].find_one({"name": unslugged, "lang": "en"})
 
     # 1b. Standard MTG Title Casing (e.g. "Vanguard of the Rose", "Lord of the Undead")
     if not card and '-' in clean:
@@ -314,16 +314,16 @@ def find_card_by_slug(db, slug: str) -> Optional[dict]:
             for i, w in enumerate(words)
         )
         if mtg_title not in (title_name, unslugged):
-            card = db["cards"].find_one({"name": mtg_title})
+            card = db["cards"].find_one({"name": mtg_title, "lang": "en"})
 
-    # 2. Direct slug match
+    # 2. Direct slug match (English first)
     if not card:
-        card = db["cards"].find_one({"slug": clean})
+        card = db["cards"].find_one({"slug": clean, "lang": "en"})
 
     # 3. Direct hyphenated card names (e.g. "Investi-Gate")
     if not card:
         hyphen_title = "-".join(w.capitalize() for w in clean.split('-'))
-        card = db["cards"].find_one({"name": hyphen_title})
+        card = db["cards"].find_one({"name": hyphen_title, "lang": "en"})
 
     # 4. Comma & Apostrophe variants (e.g. "Jace, the Mind Sculptor", "Hero's Uncle")
     words = clean.split('-')
@@ -333,17 +333,26 @@ def find_card_by_slug(db, slug: str) -> Optional[dict]:
             (w[:-1].capitalize() + "'s") if (w.endswith('s') and not w.endswith('ss') and len(w) > 2) else w.capitalize()
             for w in words
         )
-        card = db["cards"].find_one({"name": apos_cand})
+        card = db["cards"].find_one({"name": apos_cand, "lang": "en"})
 
         # 4b. Comma separated (Jace, the Mind Sculptor)
         if not card:
             rest = " ".join(w if w.lower() in ("the", "of", "in", "to", "at", "for", "and", "a", "an") else w.capitalize() for w in words[1:])
-            card = db["cards"].find_one({"name": f"{words[0].capitalize()}, {rest}"})
+            card = db["cards"].find_one({"name": f"{words[0].capitalize()}, {rest}", "lang": "en"})
 
-    # 5. Fallback to full regex
+    # 5. Fallback to full regex (English first)
     if not card:
         pattern = slug_to_name_regex(clean)
-        card = db["cards"].find_one({"name": pattern})
+        card = db["cards"].find_one({"name": pattern, "lang": "en"})
+
+    # 6. Ultimate fallback without lang filter if no English print exists
+    if not card:
+        card = (
+            db["cards"].find_one({"name": title_name})
+            or (db["cards"].find_one({"name": unslugged}) if unslugged != title_name else None)
+            or db["cards"].find_one({"slug": clean})
+            or db["cards"].find_one({"name": pattern if 'pattern' in locals() else slug_to_name_regex(clean)})
+        )
 
     if card:
         set_ram_cache(cache_key, card)

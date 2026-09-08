@@ -51,6 +51,21 @@
     <priority>0.85</priority>
   </url>
   <url>
+    <loc>https://avascry.com/guides/cards-with-similar-art-dark-atmospheric-fantasy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://avascry.com/guides/anatomy-of-a-search-rhystic-study-synergies</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://avascry.com/guides/evolution-of-countermagic-mtg-history</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
     <loc>https://avascry.com/sitemap.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

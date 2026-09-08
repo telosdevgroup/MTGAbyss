@@ -58,3 +58,18 @@ def test_sitemaps_contain_guides():
         for slug in GUIDES.keys():
             assert slug in res.text
 
+
+def test_card_name_shortcut_resolves_to_english_oracle_printing():
+    """Verify /card/<slug> shortcuts resolve to canonical English Oracle printings."""
+    for slug in ["sol-ring", "swords-to-plowshares", "rhystic-study", "beast-within"]:
+        res = client.get(f"/card/{slug}", headers={"host": "avascry.com"}, follow_redirects=False)
+        assert res.status_code == 303
+        loc = res.headers.get("location")
+        assert loc.startswith("/printing/")
+        # Follow the redirect and verify card page is in English
+        detail_res = client.get(loc, headers={"host": "avascry.com"})
+        assert detail_res.status_code == 200
+        # Main h1 title and hero image alt must display English card name
+        card_name_normalized = slug.replace('-', ' ')
+        assert f">{card_name_normalized}<" in detail_res.text.lower() or f"alt=\"{card_name_normalized}" in detail_res.text.lower()
+

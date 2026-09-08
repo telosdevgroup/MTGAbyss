@@ -398,6 +398,183 @@ GUIDES = {
                 ]
             }
         ]
+    },
+    "cards-with-similar-art-dark-atmospheric-fantasy": {
+        "slug": "cards-with-similar-art-dark-atmospheric-fantasy",
+        "title": "Cards with Similar Art: The Dark Atmospheric Fantasy of Modern Magic",
+        "subtitle": "An aesthetic journey across chiaroscuro, haunted surrealism, and the visual hallmarks that tie Magic's most evocative card illustrations together.",
+        "category": "Art & Aesthetics",
+        "read_time": "5 min read",
+        "published_date": "2026-09-08",
+        "updated_date": "2026-09-08",
+        "author": "AvaScry Visual Arts",
+        "hero_card": {
+            "name": "Soulherder",
+            "slug": "soulherder",
+            "image_url": "https://cards.scryfall.io/normal/front/2/6/2600a51b-0dae-431e-a0a7-2b1421706a6a.jpg?1783930455",
+            "art_crop_url": "https://cards.scryfall.io/art_crop/front/2/6/2600a51b-0dae-431e-a0a7-2b1421706a6a.jpg?1783930455",
+            "artist": "Seb McKinnon",
+            "set_name": "Modern Horizons",
+            "set_code": "mh1"
+        },
+        "summary": "Magic: The Gathering is celebrated as much for its gallery-grade visual narrative as its rules engine. We explore the eerie, painterly visual spectrum anchored by Soulherder, connecting kindred illustrations through mood, texture, and light.",
+        "takeaways": [
+            "Visual similarity connects cards across different sets, mechanics, and eras through shared painterly mood and lighting palette.",
+            "Dark atmospheric fantasy relies on muted earthy undertones, stark silhouetted forms, and delicate light fractures.",
+            "Thematic Commander decks built around cohesive art and illustration styles create unforgettable aesthetic experiences across the table.",
+            "AvaScry's art matching lets collectors and cube designers curate visually harmonious binder spreads."
+        ],
+        "sections": [
+            {
+                "heading": "The Haunting Silhouette: Soulherder and Spectral Elegance",
+                "paragraphs": [
+                    "Few modern card illustrations possess the haunting allure of Soulherder. Illustrated with textured, atmospheric brushwork, the card captures a tall, faceless specter gathering stray soul-wreaths in an ethereal marsh.",
+                    "The visual palette relies on high contrast: pale bone-white robes against deep desaturated teals and charcoal shadows. This creates an immediate dreamlike stillness that lingers in player memory far beyond its blinking game mechanic."
+                ],
+                "cards": [
+                    {"name": "Soulherder", "slug": "soulherder", "image_url": "https://cards.scryfall.io/normal/front/2/6/2600a51b-0dae-431e-a0a7-2b1421706a6a.jpg?1783930455", "role": "Featured Subject"}
+                ]
+            },
+            {
+                "heading": "Shadow, Sinew & Nightmare: Kindred Compositions",
+                "paragraphs": [
+                    "When evaluating cards that share Soulherder's aesthetic resonance, pieces like Bedevil and Chalice of the Void emerge as striking visual counterparts. Each piece eschews generic high-fantasy gloss in favor of tactile distress, visceral shadow shapes, and ominous psychological weight.",
+                    "Notice how Bedevil utilizes jagged, tendril-like forms to create disorientation, while Chalice of the Void employs solitary focus and oppressive negative space to command visual gravity."
+                ],
+                "cards": [
+                    {"name": "Bedevil", "slug": "bedevil", "image_url": "https://cards.scryfall.io/normal/front/3/a/3aa75527-99bc-426a-bdae-ca9cd17beeec.jpg?1783920845", "role": "Visceral Nightmare"},
+                    {"name": "Chalice of the Void", "slug": "chalice-of-the-void", "image_url": "https://cards.scryfall.io/normal/front/4/e/4e6a9ef6-4244-4b02-a947-e88c69604379.jpg?1783926936", "role": "Negative Space"}
+                ]
+            },
+            {
+                "heading": "Brewing for Aesthetic Cohesion",
+                "paragraphs": [
+                    "A growing movement in casual Commander is 'Art Tribal'—constructing decks where every inclusion adheres to a unified illustration language. Playing an Espers deck composed exclusively of eerie, watercolor-tinted folklore pieces turns every round into an interactive art exhibition.",
+                    "Explore cards with similar art below each card page to discover complementary paintings that share your favorite artist's spirit."
+                ]
+            }
+        ]
+    },
+    "anatomy-of-a-search-rhystic-study-synergies": {
+        "slug": "anatomy-of-a-search-rhystic-study-synergies",
+        "title": "Anatomy of a Search: 30 Functional Companions to Rhystic Study",
+        "subtitle": "Deconstructing what happens when you query Magic's most infamous tax engine: from tier-1 format pillars to overlooked budget answers.",
+        "category": "Deckbuilding & Discovery",
+        "read_time": "6 min read",
+        "published_date": "2026-09-08",
+        "updated_date": "2026-09-08",
+        "author": "AvaScry Editorial Team",
+        "hero_card": {
+            "name": "Rhystic Study",
+            "slug": "rhystic-study",
+            "image_url": "https://cards.scryfall.io/normal/front/0/3/03ac9b21-8c79-49ec-a0df-0fd22e4a0ed7.jpg?1783940306",
+            "art_crop_url": "https://cards.scryfall.io/art_crop/front/0/3/03ac9b21-8c79-49ec-a0df-0fd22e4a0ed7.jpg?1783940306",
+            "artist": "Terese Nielsen",
+            "set_name": "Commander 2011",
+            "set_code": "cm1"
+        },
+        "summary": "Rhystic Study is a Commander institution because it punishes opponents simply for executing their turns. We break down the natural tiers of cards that share this operational DNA—helping you find the right balance of tax, velocity, and budget substitutions.",
+        "takeaways": [
+            "Rhystic Study operates as an asymmetric tax: opponents either slow their mana development or supply you with endless card advantage.",
+            "Tier 1 companions include Mystic Remora and Esper Sentinel, which scale identically with multiplayer pod actions.",
+            "Punishment draw engines like Ledger Shredder and Faerie Mastermind trigger on opponent game choices without asking 'Do you pay the 1?'.",
+            "Budget hidden gems like Verity Circle offer targeted tax-and-draw power for a tiny fraction of staple prices."
+        ],
+        "sections": [
+            {
+                "heading": "Tier 1: Direct Non-Creature & Cast Taxing",
+                "paragraphs": [
+                    "The closest operational relatives to Rhystic Study are Mystic Remora and Esper Sentinel. While Remora requires cumulative upkeep, its 4-mana tax is practically insurmountable in the early turns, routinely drawing four to six cards before sacrifice.",
+                    "Esper Sentinel shifts this tax into White at a single mana, scaling with your commander's equipment buffs to demand increasingly exorbitant tolls from opponents."
+                ],
+                "cards": [
+                    {"name": "Rhystic Study", "slug": "rhystic-study", "image_url": "https://cards.scryfall.io/normal/front/0/3/03ac9b21-8c79-49ec-a0df-0fd22e4a0ed7.jpg?1783940306", "role": "The Benchmark"},
+                    {"name": "Mystic Remora", "slug": "mystic-remora", "image_url": "https://cards.scryfall.io/normal/front/9/1/91129aeb-eed5-4b98-896f-fb3bab48b25d.jpg?1783942632", "role": "Early-Turn Velocity"},
+                    {"name": "Esper Sentinel", "slug": "esper-sentinel", "image_url": "https://cards.scryfall.io/normal/front/4/c/4cff1878-3f23-4a0a-ad79-28a44921cca8.jpg?1784377123", "role": "White Mana Tax"}
+                ]
+            },
+            {
+                "heading": "Tier 2: Action-Triggered Draw Velocity",
+                "paragraphs": [
+                    "Rather than asking permission, modern card design has evolved toward reactive draw triggers. Ledger Shredder and Faerie Mastermind reward you whenever an opponent double-spells or draws extra cards.",
+                    "These companions circumvent taxing fatigue at casual tables: instead of slowing down the table's pace of play, they simply ensure your hand stays just as loaded as the leading player."
+                ],
+                "cards": [
+                    {"name": "Ledger Shredder", "slug": "ledger-shredder", "image_url": "https://cards.scryfall.io/normal/front/d/7/d7e530ea-ba51-4f7a-bf56-b657a48e86ae.jpg?1783923146", "role": "Connive Engine"},
+                    {"name": "Faerie Mastermind", "slug": "faerie-mastermind", "image_url": "https://cards.scryfall.io/normal/front/0/4/04692219-8850-4b05-aa60-64f32b0daade.jpg?1783929487", "role": "Flash Symbiosis"}
+                ]
+            },
+            {
+                "heading": "Tier 3: The Overlooked Budget Alternative",
+                "paragraphs": [
+                    "When building on a budget, cards like Verity Circle provide tremendous asymmetric card flow against tap-heavy commanders, mana dorks, and creature abilities.",
+                    "By understanding the functional categories behind top staples, you can build decks that match high-power velocity without matching high-dollar price tags."
+                ],
+                "cards": [
+                    {"name": "Verity Circle", "slug": "verity-circle", "image_url": "https://cards.scryfall.io/normal/front/0/7/07574b6a-de37-42a4-8584-2e3f440315be.jpg?1783936426", "role": "Budget Tap Punisher"}
+                ]
+            }
+        ]
+    },
+    "evolution-of-countermagic-mtg-history": {
+        "slug": "evolution-of-countermagic-mtg-history",
+        "title": "The Evolution of Countermagic: From 1993 Beta to Modern Efficiency",
+        "subtitle": "How thirty years of stack interaction evolved from hard two-mana answers to tempo mana drains, free pitch spells, and surgical modern answers.",
+        "category": "History & Mechanics",
+        "read_time": "6 min read",
+        "published_date": "2026-09-08",
+        "updated_date": "2026-09-08",
+        "author": "AvaScry Editorial Team",
+        "hero_card": {
+            "name": "Counterspell",
+            "slug": "counterspell",
+            "image_url": "https://cards.scryfall.io/normal/front/0/4/04e9c7ee-fa0a-4712-b5e0-ca9b19e2c65a.jpg?1783944648",
+            "art_crop_url": "https://cards.scryfall.io/art_crop/front/0/4/04e9c7ee-fa0a-4712-b5e0-ca9b19e2c65a.jpg?1783944648",
+            "artist": "Mark Poole",
+            "set_name": "Collector's Edition",
+            "set_code": "ced"
+        },
+        "summary": "Stack interaction defines blue's identity in Magic. From the baseline simplicity of Richard Garfield's Counterspell to zero-mana force effects and modal staples, this retrospective explores how stack battles transformed over three decades.",
+        "takeaways": [
+            "Original 1993 Counterspell established UU as the benchmark cost for unconditional spell denial.",
+            "Early expansions introduced devastating tempo swings like Mana Drain and Force of Will, proving that mana acceleration or zero-mana flexibility warp format speed.",
+            "Modern Commander shifted priority from hard universal counters to hyper-efficient 1-mana surgical answers like Swan Song and Flusterstorm.",
+            "Free 'Commander protection' spells like Fierce Guardianship fundamentally altered how players evaluate threat safety."
+        ],
+        "sections": [
+            {
+                "heading": "The Origin: Two Blue Mana and Clean Simplicity",
+                "paragraphs": [
+                    "When Alpha released in 1993, Counterspell represented the cleanest answer in gaming: pay UU, and target spell is placed into the graveyard before ever resolving.",
+                    "For years, standard deck design revolved around leaving two blue mana open. But as Magic accelerated, holding up two colored pips began to restrict a player's ability to develop their own board state."
+                ],
+                "cards": [
+                    {"name": "Counterspell", "slug": "counterspell", "image_url": "https://cards.scryfall.io/normal/front/0/4/04e9c7ee-fa0a-4712-b5e0-ca9b19e2c65a.jpg?1783944648", "role": "The Universal Standard"}
+                ]
+            },
+            {
+                "heading": "The Tempo Revolution: Mana Drain and Force of Will",
+                "paragraphs": [
+                    "Legends turned stack denial into explosive acceleration with Mana Drain, converting countered mana into colorless fuel on your next turn. In 1996, Alliances introduced Force of Will, shattering the golden rule of Magic by allowing players to interact with an empty mana pool by exiling a blue card.",
+                    "Force of Will remains the ultimate safety valve against turn-1 combo kills, cementing free interaction as the cornerstone of eternal formats."
+                ],
+                "cards": [
+                    {"name": "Mana Drain", "slug": "mana-drain", "image_url": "https://cards.scryfall.io/normal/front/1/4/14099438-a75f-49b9-9f7c-40025191d1f4.jpg?1783903555", "role": "Tempo Accelerator"},
+                    {"name": "Force of Will", "slug": "force-of-will", "image_url": "https://cards.scryfall.io/normal/front/0/d/0d840284-ce56-4e4f-822f-8b237a261d1e.jpg?1783921741", "role": "Pitch Protection"}
+                ]
+            },
+            {
+                "heading": "The Modern Era: 1-Mana Precision & Flusterstorm",
+                "paragraphs": [
+                    "In multiplayer Commander, tapping out for 3-mana counters like Cancel is virtually unplayable. Modern deck construction prizes 1-mana answers with minor compensations: Swan Song gives a 2/2 bird, and An Offer You Can't Refuse creates two treasures.",
+                    "Meanwhile, Storm answers like Flusterstorm provide unassailable defense during stack counter-wars, illustrating how stack interaction has matured from brute force denial into surgical precision."
+                ],
+                "cards": [
+                    {"name": "Flusterstorm", "slug": "flusterstorm", "image_url": "https://cards.scryfall.io/normal/front/d/b/db9735d9-4aac-4175-8ec8-fc9bfd8f2c5c.jpg?1783944887", "role": "Storm Defense"},
+                    {"name": "Swan Song", "slug": "swan-song", "image_url": "https://cards.scryfall.io/normal/front/0/0/00346399-bfb1-4f16-aefb-e6cb0f4a478b.jpg?1783917409", "role": "1-Mana Precision"}
+                ]
+            }
+        ]
     }
 }
 
@@ -478,7 +655,18 @@ AUTOLINK_CARD_MAP = {
     "Victimize": "victimize",
     "Wood Elves": "wood-elves",
     "Sylvan Library": "sylvan-library",
-    "Night's Whisper": "nights-whisper"
+    "Night's Whisper": "nights-whisper",
+    "Soulherder": "soulherder",
+    "Bedevil": "bedevil",
+    "Chalice of the Void": "chalice-of-the-void",
+    "Mystic Remora": "mystic-remora",
+    "Esper Sentinel": "esper-sentinel",
+    "Ledger Shredder": "ledger-shredder",
+    "Faerie Mastermind": "faerie-mastermind",
+    "Verity Circle": "verity-circle",
+    "Mana Drain": "mana-drain",
+    "Force of Will": "force-of-will",
+    "Flusterstorm": "flusterstorm"
 }
 
 # Sort longest names first to prevent partial substring matches

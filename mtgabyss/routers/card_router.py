@@ -91,8 +91,13 @@ async def card_name_shortcut(request: Request, slug: str):
 
     db = get_mongo_db()
     
-    # 1. Fast direct lookup by slug, printing_slug, or card name
-    card = db["cards"].find_one({"slug": slug}) or db["cards"].find_one({"printing_slug": slug})
+    # 1. Fast direct lookup by slug, printing_slug, or card name (prefer English)
+    card = (
+        db["cards"].find_one({"slug": slug, "lang": "en"})
+        or db["cards"].find_one({"printing_slug": slug, "lang": "en"})
+        or db["cards"].find_one({"slug": slug})
+        or db["cards"].find_one({"printing_slug": slug})
+    )
 
     # 2. Fast lookup by full card name slug (e.g. "water-wurm" is the actual card name!)
     if not card:
@@ -105,17 +110,26 @@ async def card_name_shortcut(request: Request, slug: str):
             card_slug, set_code = "-".join(parts[:-1]), parts[-1].lower()
             base_card = find_card_by_slug(db, card_slug)
             if base_card and base_card.get("oracle_id"):
-                card = db["cards"].find_one({"oracle_id": base_card["oracle_id"], "set": set_code}) or base_card
+                card = (
+                    db["cards"].find_one({"oracle_id": base_card["oracle_id"], "set": set_code, "lang": "en"})
+                    or db["cards"].find_one({"oracle_id": base_card["oracle_id"], "set": set_code})
+                    or base_card
+                )
     
     if card:
         oracle_id = card.get("oracle_id")
         if oracle_id:
-            # Find earliest / original Oracle printing in English
-            oracle_cards = list(db["cards"].find({"oracle_id": oracle_id, "lang": "en"}).limit(20))
-            if oracle_cards:
-                oracle_card = min(oracle_cards, key=lambda x: str(x.get("released_at") or "9999"))
-            else:
-                oracle_card = card
+            # Find canonical / earliest original Oracle printing in English
+            oracle_card = db["cards"].find_one(
+                {"oracle_id": oracle_id, "lang": "en"},
+                sort=[("released_at", 1)]
+            )
+            if not oracle_card:
+                # If no English print exists, fall back to earliest release
+                oracle_card = db["cards"].find_one(
+                    {"oracle_id": oracle_id},
+                    sort=[("released_at", 1)]
+                ) or card
             c_slug = slugify(oracle_card.get("name") or "")
             c_set = (oracle_card.get("set") or "").lower()
             return RedirectResponse(url=f"/printing/{c_slug}-{c_set}{ext}", status_code=303)
@@ -408,13 +422,13 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
     if cache_key in RAM_CACHE:
         card = RAM_CACHE[cache_key]
 
-    # 1. Direct indexed match by printing_slug or id or slug
+    # 1. Direct indexed match by printing_slug or id or slug (prefer English)
     if not card:
-        card = db["cards"].find_one({"printing_slug": identifier})
+        card = db["cards"].find_one({"printing_slug": identifier, "lang": "en"}) or db["cards"].find_one({"printing_slug": identifier})
     if not card:
         card = db["cards"].find_one({"id": identifier})
     if not card:
-        card = db["cards"].find_one({"slug": identifier})
+        card = db["cards"].find_one({"slug": identifier, "lang": "en"}) or db["cards"].find_one({"slug": identifier})
 
     # 2. Fast lookup by full slug before de-duplication (preserves double-named cards like Art Series and Reversible cards)
     # Skip if last token is a known language code (e.g., -fr, -de, -ko, -es, -zhs) to avoid 500ms regex scans on set codes
