@@ -824,9 +824,6 @@
               </div>
               <div class="related-card-meta">
                 <span>{{ (rel.card_kinds or ['Action']) | join(', ') }}</span>
-                {% if rel.similarity %}
-                <span style="font-weight: 600; color: #0284c7;">{{ (rel.similarity * 100) | int }}% Match</span>
-                {% endif %}
               </div>
             </div>
           </a>
