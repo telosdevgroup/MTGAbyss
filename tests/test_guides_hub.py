@@ -26,6 +26,8 @@ def test_guide_detail_pages_render_and_have_schema():
         assert "https://schema.org" in res.text
         assert "TechArticle" in res.text
         assert f"https://avascry.com/guides/{slug}" in res.text
+        assert "Featured Artwork" in res.text
+        assert "Explore Art Gallery &amp; Neural Vision Match" in res.text or "Explore Art Gallery & Neural Vision Match" in res.text
 
 def test_nonexistent_guide_returns_404():
     """Verify requesting an invalid guide slug returns 404."""

@@ -20,6 +20,9 @@ GUIDES = {
             "name": "Sol Ring",
             "slug": "sol-ring-ecc",
             "image_url": "https://cards.scryfall.io/normal/front/0/4/04002706-2236-4b79-bdea-4f263e43cb9c.jpg?1783911518",
+            "art_crop_url": "https://cards.scryfall.io/art_crop/front/0/4/04002706-2236-4b79-bdea-4f263e43cb9c.jpg?1783911518",
+            "artist": "Daria Aksenova",
+            "set_name": "Lorwyn Eclipsed Commander",
             "set_code": "ecc"
         },
         "summary": "Building a consistent 100-card singleton Commander deck can feel overwhelming. The 8x8 theory provides an intuitive mathematical framework: dividing 64 non-land card slots into 8 focused categories of 8 cards each.",
@@ -81,6 +84,9 @@ GUIDES = {
             "name": "Ulalek, Fused Atrocity",
             "slug": "ulalek-fused-atrocity-m3c",
             "image_url": "https://cards.scryfall.io/normal/front/3/c/3c8d8b30-d935-4919-8693-8629a6847e47.jpg?1783911400",
+            "art_crop_url": "https://cards.scryfall.io/art_crop/front/3/c/3c8d8b30-d935-4919-8693-8629a6847e47.jpg?1783911400",
+            "artist": "Alex Konstad",
+            "set_name": "Modern Horizons 3 Commander",
             "set_code": "mh3"
         },
         "summary": "Modern Horizons 3 represents one of the most powerful expansions in modern Magic history. From the resurgence of colorless Eldrazi power to the revival of Energy counters, here is how to navigate its impact.",
@@ -131,6 +137,9 @@ GUIDES = {
             "name": "Command Tower",
             "slug": "command-tower-slz",
             "image_url": "https://cards.scryfall.io/normal/front/0/4/04be6554-e613-48ac-b5bc-07991be12b6f.jpg?1787832254",
+            "art_crop_url": "https://cards.scryfall.io/art_crop/front/0/4/04be6554-e613-48ac-b5bc-07991be12b6f.jpg?1787832254",
+            "artist": "MSCHF",
+            "set_name": "The Zeta Set",
             "set_code": "slz"
         },
         "summary": "The secret to winning more Commander games is not bigger bombs—it is casting your spells on curve. Here is the mathematical framework for constructing foolproof mana bases.",
@@ -185,6 +194,9 @@ GUIDES = {
             "name": "Atraxa, Praetors' Voice",
             "slug": "atraxa-praetors-voice-prm",
             "image_url": "https://cards.scryfall.io/normal/front/1/2/124c4959-4298-4d6e-83e9-7c35a620d660.jpg?1783929748",
+            "art_crop_url": "https://cards.scryfall.io/art_crop/front/1/2/124c4959-4298-4d6e-83e9-7c35a620d660.jpg?1783929748",
+            "artist": "Kev Walker",
+            "set_name": "Magic Online Promos",
             "set_code": "prm"
         },
         "summary": "Text search engines only find cards that share exact word substrings. Learn how AvaScry's high-parameter neural vector space understands gameplay texture, tempo, and cross-archetype synergy.",
@@ -236,6 +248,9 @@ GUIDES = {
             "name": "Swords to Plowshares",
             "slug": "swords-to-plowshares-ptc",
             "image_url": "https://cards.scryfall.io/normal/front/0/4/04e0738b-b856-401e-8b41-096e2c48cf96.jpg?1783947252",
+            "art_crop_url": "https://cards.scryfall.io/art_crop/front/0/4/04e0738b-b856-401e-8b41-096e2c48cf96.jpg?1783947252",
+            "artist": "Jeff A. Menges",
+            "set_name": "Pro Tour Collector Set",
             "set_code": "ptc"
         },
         "summary": "Every healthy Commander pod requires meaningful interaction to prevent combo turn-out. Explore the best-in-slot removal and disruption options across all five colors.",
@@ -305,6 +320,9 @@ GUIDES = {
             "name": "Gorion, Wise Mentor",
             "slug": "gorion-wise-mentor-clb",
             "image_url": "https://cards.scryfall.io/normal/front/0/0/001c648a-db66-47f3-8fee-3658b9e76ac2.jpg?1783922694",
+            "art_crop_url": "https://cards.scryfall.io/art_crop/front/0/0/001c648a-db66-47f3-8fee-3658b9e76ac2.jpg?1783922694",
+            "artist": "Jason Kang",
+            "set_name": "Commander Legends: Battle for Baldur's Gate",
             "set_code": "clb"
         },
         "summary": "Popular deck aggregators funnel players into the same homogenous Commander staples. By querying AvaScry's 4,096-dimensional transformer embedding space, we uncovered six unique, underplayed commanders alongside the high-affinity synergy cards that make them tick.",

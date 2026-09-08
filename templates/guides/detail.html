@@ -140,6 +140,58 @@
     {% endfor %}
   </div>
 
+  <!-- Featured Card Art Showcase & Gallery Spotlight -->
+  {% if guide.hero_card %}
+  <section style="margin: 4.5rem 0 2rem; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 16px 36px rgba(0,0,0,0.35);">
+    <div style="position: relative; width: 100%; aspect-ratio: 16/9; max-height: 420px; overflow: hidden; background: #000;">
+      <img src="{{ guide.hero_card.art_crop_url or guide.hero_card.image_url }}" 
+           alt="{{ guide.hero_card.name }} featured artwork by {{ guide.hero_card.artist }}" 
+           loading="lazy" 
+           style="width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block; filter: contrast(1.05) brightness(0.95); transition: transform 0.35s ease;"
+           onmouseover="this.style.transform='scale(1.02)';"
+           onmouseout="this.style.transform='scale(1.0)';"
+           onerror="this.onerror=null; this.src='{{ guide.hero_card.image_url }}';">
+      <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.2) 60%, transparent 100%); pointer-events: none;"></div>
+      <div style="position: absolute; bottom: 1.5rem; left: 1.75rem; right: 1.75rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <span style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.2rem 0.6rem; border-radius: var(--radius-pill); display: inline-block; margin-bottom: 0.4rem;">
+            Featured Artwork
+          </span>
+          <h3 style="font-size: 1.6rem; font-weight: 800; color: #fff; margin: 0; line-height: 1.2; text-shadow: 0 2px 8px rgba(0,0,0,0.8);">
+            {{ guide.hero_card.name }}
+          </h3>
+          {% if guide.hero_card.artist %}
+          <div style="font-size: 0.88rem; color: #cbd5e1; margin-top: 0.25rem;">
+            Illustrated by <a href="/artist/{{ guide.hero_card.artist|urlencode }}" style="color: #fff; font-weight: 700; text-decoration: underline;" onmouseover="this.style.color='var(--accent)';" onmouseout="this.style.color='#fff';">{{ guide.hero_card.artist }}</a>
+            {% if guide.hero_card.set_name %}
+            &bull; <span style="color: #94a3b8;">{{ guide.hero_card.set_name }}</span>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <a href="/card/{{ guide.hero_card.slug }}" class="btn-hero-primary" style="text-decoration: none; padding: 0.6rem 1.25rem; font-size: 0.85rem; font-weight: 700; border-radius: 6px;">
+            View High-Res Card &rarr;
+          </a>
+          {% if guide.hero_card.artist %}
+          <a href="/artist/{{ guide.hero_card.artist|urlencode }}" class="btn-hero-secondary" style="text-decoration: none; padding: 0.6rem 1.25rem; font-size: 0.85rem; font-weight: 700; border-radius: 6px;">
+            More by {{ guide.hero_card.artist }}
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div style="padding: 1.25rem 1.75rem; background: rgba(15, 23, 42, 0.5); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; font-size: 0.84rem; color: var(--muted);">
+      <span>
+        Discover visually similar paintings, composition styles, and variant printings in AvaScry's gallery.
+      </span>
+      <a href="/card/{{ guide.hero_card.slug }}#visually-similar-art" style="color: var(--accent); font-weight: 700; text-decoration: none;" onmouseover="this.style.textDecoration='underline';" onmouseout="this.style.textDecoration='none';">
+        Explore Art Gallery &amp; Neural Vision Match &rarr;
+      </a>
+    </div>
+  </section>
+  {% endif %}
+
   <!-- Related Tools Callout -->
   <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; margin-top: 3.5rem; text-align: center;">
     <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text); margin: 0 0 0.5rem 0;">Ready to put theory into practice?</h3>
