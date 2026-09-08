@@ -3,6 +3,123 @@
 {% block title %}Magic: The Gathering Guides & Strategy Hub | AvaScry{% endblock %}
 {% block meta_description %}Explore authoritative Magic: The Gathering deckbuilding guides, Commander theory, set primers, and deep dives into neural card discovery on AvaScry.{% endblock %}
 
+{% block head_extra %}
+<style>
+  .guide-row {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.25rem;
+    margin-bottom: 2.25rem;
+    display: flex;
+    gap: 2.5rem;
+    align-items: center;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+  }
+  [data-theme="dark"] .guide-row {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.55) 0%, rgba(15, 23, 42, 0.9) 100%);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+  }
+  .guide-row:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 16px 36px rgba(0,0,0,0.12);
+  }
+  [data-theme="dark"] .guide-row:hover {
+    box-shadow: 0 16px 40px rgba(0,0,0,0.45);
+  }
+
+  /* Alternating direction: even rows put card on right */
+  .guide-row.row-card-left {
+    flex-direction: row;
+  }
+  .guide-row.row-card-right {
+    flex-direction: row-reverse;
+  }
+
+  .guide-row-image {
+    flex: 0 0 210px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .guide-row-image img {
+    width: 210px;
+    border-radius: 10px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: transform 0.2s ease;
+  }
+  .guide-row:hover .guide-row-image img {
+    transform: scale(1.03);
+  }
+
+  .guide-row-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  @media (max-width: 768px) {
+    .guide-row,
+    .guide-row.row-card-left,
+    .guide-row.row-card-right {
+      flex-direction: column !important;
+      padding: 1.5rem;
+      gap: 1.5rem;
+      text-align: left;
+    }
+    .guide-row-image {
+      flex: none;
+      width: 100%;
+    }
+    .guide-row-image img {
+      width: 190px;
+    }
+  }
+
+  .guide-cta-banner {
+    background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.75rem 2rem;
+    margin-top: 4rem;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+  }
+  [data-theme="dark"] .guide-cta-banner {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.98) 100%);
+    box-shadow: 0 16px 36px rgba(0,0,0,0.35);
+  }
+
+  .btn-hero-primary {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+    box-shadow: 0 4px 14px var(--accent-glow);
+  }
+  .btn-hero-primary:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+    color: #ffffff;
+    transform: translateY(-1px);
+  }
+  [data-theme="dark"] .btn-hero-primary {
+    background: var(--accent);
+    color: #0b1422;
+    border-color: var(--accent);
+  }
+  [data-theme="dark"] .btn-hero-primary:hover {
+    background: #ffffff;
+    color: #0b1422;
+    border-color: #ffffff;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div style="max-width: 1100px; margin: 2rem auto 5rem; padding: 0 1.25rem;">
 
@@ -19,75 +136,59 @@
     </p>
   </header>
 
-  <!-- Featured / Hero Article Spotlight -->
-  {% if guides %}
-  {% set hero_guide = guides[0] %}
-  <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; margin-bottom: 3rem; display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 2rem; align-items: center; box-shadow: 0 16px 36px rgba(0,0,0,0.25);" class="hero-guide-grid">
-    <div>
-      <div style="display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 0.2rem 0.65rem; border-radius: var(--radius-pill); margin-bottom: 0.85rem;">
-        ★ Featured Guide
-      </div>
-      <h2 style="font-size: 1.75rem; font-weight: 800; color: var(--text); margin: 0 0 0.75rem 0; line-height: 1.3;">
-        <a href="/guides/{{ hero_guide.slug }}" style="color: inherit; text-decoration: none;" onmouseover="this.style.color='var(--accent)';" onmouseout="this.style.color='var(--text)';">
-          {{ hero_guide.title }}
-        </a>
-      </h2>
-      <p style="font-size: 0.95rem; color: var(--muted); line-height: 1.6; margin: 0 0 1.25rem 0;">
-        {{ hero_guide.summary }}
-      </p>
-      <div style="display: flex; align-items: center; gap: 1rem; font-size: 0.8rem; color: var(--muted); margin-bottom: 1.5rem; flex-wrap: wrap;">
-        <span><strong>By:</strong> {{ hero_guide.author }}</span>
-        <span>&bull;</span>
-        <span>⏱️ {{ hero_guide.read_time }}</span>
-        <span>&bull;</span>
-        <span>🏷️ {{ hero_guide.category }}</span>
-      </div>
-      <a href="/guides/{{ hero_guide.slug }}" class="btn-hero-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.65rem 1.4rem; font-size: 0.9rem; font-weight: 700;">
-        Read Full Guide &rarr;
-      </a>
-    </div>
-
-    {% if hero_guide.hero_card %}
-    <div style="display: flex; justify-content: center;">
-      <a href="/guides/{{ hero_guide.slug }}" style="display: block; text-decoration: none; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.03)';" onmouseout="this.style.transform='none';">
-        <img src="{{ hero_guide.hero_card.image_url }}" alt="{{ hero_guide.hero_card.name }}" style="width: 220px; border-radius: 10px; box-shadow: 0 16px 36px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.1);" onerror="this.onerror=null; this.src='https://cards.scryfall.io/normal/front/0/4/04002706-2236-4b79-bdea-4f263e43cb9c.jpg?1783911518';">
-      </a>
-    </div>
-    {% endif %}
-  </div>
-  {% endif %}
-
-  <!-- Article Cards Grid -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.75rem;">
+  <!-- Full Column-Width Alternating Guide Rows -->
+  <div class="guides-stream">
     {% for g in guides %}
-    <article style="background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;"
-             onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='var(--accent)'; this.style.boxShadow='0 12px 28px rgba(0,0,0,0.2)';"
-             onmouseout="this.style.transform='none'; this.style.borderColor='var(--border)'; this.style.boxShadow='none';">
+    {% set is_even = (loop.index % 2 == 0) %}
+    <article class="guide-row {% if is_even %}row-card-right{% else %}row-card-left{% endif %}">
       
-      <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; font-size: 0.76rem;">
-          <span style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); color: var(--accent); font-weight: 700; padding: 0.2rem 0.55rem; border-radius: var(--radius-pill);">
+      {% if g.hero_card %}
+      <div class="guide-row-image">
+        <a href="/guides/{{ g.slug }}" title="{{ g.hero_card.name }} mtg card" style="display: block; text-decoration: none;">
+          <img src="{{ g.hero_card.image_url }}" alt="{{ g.hero_card.name }}" loading="lazy" onerror="this.onerror=null; this.src='https://cards.scryfall.io/normal/front/0/4/04002706-2236-4b79-bdea-4f263e43cb9c.jpg?1783911518';">
+        </a>
+      </div>
+      {% endif %}
+
+      <div class="guide-row-content">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem; flex-wrap: wrap;">
+          <span style="background: rgba(56, 189, 248, 0.09); border: 1px solid rgba(56, 189, 248, 0.25); color: var(--accent); font-weight: 700; font-size: 0.76rem; padding: 0.2rem 0.65rem; border-radius: var(--radius-pill);">
             {{ g.category }}
           </span>
-          <span style="color: var(--muted); font-weight: 600;">{{ g.read_time }}</span>
+          <span style="color: var(--muted); font-size: 0.78rem; font-weight: 600;">⏱️ {{ g.read_time }}</span>
+          {% if loop.first %}
+          <span style="background: rgba(168, 85, 247, 0.12); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc; font-weight: 700; font-size: 0.72rem; padding: 0.15rem 0.55rem; border-radius: var(--radius-pill); text-transform: uppercase; letter-spacing: 0.05em;">
+            ★ Spotlight
+          </span>
+          {% endif %}
         </div>
 
-        <h2 style="font-size: 1.25rem; font-weight: 800; margin: 0 0 0.65rem 0; line-height: 1.35;">
+        <h2 style="font-size: 1.6rem; font-weight: 800; margin: 0 0 0.75rem 0; line-height: 1.3;">
           <a href="/guides/{{ g.slug }}" style="color: var(--text); text-decoration: none;" onmouseover="this.style.color='var(--accent)';" onmouseout="this.style.color='var(--text)';">
             {{ g.title }}
           </a>
         </h2>
 
-        <p style="font-size: 0.88rem; color: var(--muted); line-height: 1.6; margin: 0 0 1.25rem 0;">
+        {% if g.subtitle %}
+        <p style="font-size: 0.94rem; color: var(--accent); font-weight: 600; margin: 0 0 0.85rem 0; line-height: 1.5;">
+          {{ g.subtitle }}
+        </p>
+        {% endif %}
+
+        <p style="font-size: 0.92rem; color: var(--muted); line-height: 1.65; margin: 0 0 1.5rem 0;">
           {{ g.summary }}
         </p>
-      </div>
 
-      <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 0.78rem; color: var(--muted); font-weight: 600;">{{ g.published_date }}</span>
-        <a href="/guides/{{ g.slug }}" style="font-size: 0.85rem; font-weight: 700; color: var(--accent); text-decoration: none;">
-          Read Guide &rarr;
-        </a>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: auto;">
+          <div style="font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <span><strong>By:</strong> {{ g.author }}</span>
+            <span>&bull;</span>
+            <span>{{ g.published_date }}</span>
+          </div>
+          <a href="/guides/{{ g.slug }}" class="btn-hero-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.55rem 1.25rem; font-size: 0.86rem; font-weight: 700; border-radius: 6px;">
+            Read Full Guide &rarr;
+          </a>
+        </div>
       </div>
 
     </article>
@@ -95,7 +196,7 @@
   </div>
 
   <!-- Bottom Commander Deck Builder CTA Banner -->
-  <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 2.75rem 2rem; margin-top: 4rem; text-align: center; box-shadow: 0 16px 36px rgba(0,0,0,0.35);">
+  <div class="guide-cta-banner">
     <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.35); padding: 0.3rem 0.85rem; border-radius: 9999px; font-size: 0.78rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1.25rem;">
       <span>✨ Neural Deck Crafting</span>
     </div>
