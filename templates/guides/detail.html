@@ -55,6 +55,43 @@
     color: #fff;
     text-decoration-color: var(--accent);
   }
+
+  .guide-cta-banner {
+    background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.25rem 2rem;
+    margin-top: 3.5rem;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+  }
+  [data-theme="dark"] .guide-cta-banner {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.98) 100%);
+    box-shadow: 0 16px 36px rgba(0,0,0,0.35);
+  }
+
+  .guide-cta-banner .btn-hero-primary {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+    box-shadow: 0 4px 14px var(--accent-glow);
+  }
+  .guide-cta-banner .btn-hero-primary:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+    color: #ffffff;
+    transform: translateY(-1px);
+  }
+  [data-theme="dark"] .guide-cta-banner .btn-hero-primary {
+    background: var(--accent);
+    color: #0b1422;
+    border-color: var(--accent);
+  }
+  [data-theme="dark"] .guide-cta-banner .btn-hero-primary:hover {
+    background: #ffffff;
+    color: #0b1422;
+    border-color: #ffffff;
+  }
 </style>
 {% endblock %}
 
@@ -200,14 +237,14 @@
         Discover visually similar paintings, composition styles, and variant printings in AvaScry's gallery.
       </span>
       <a href="/card/{{ guide.hero_card.slug }}#visually-similar-art" style="color: var(--accent); font-weight: 700; text-decoration: none;" onmouseover="this.style.textDecoration='underline';" onmouseout="this.style.textDecoration='none';">
-        Explore Art Gallery &amp; Neural Vision Match &rarr;
+        Cards with Similar Art &rarr;
       </a>
     </div>
   </section>
   {% endif %}
 
   <!-- Related Tools Callout -->
-  <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; margin-top: 3.5rem; text-align: center;">
+  <div class="guide-cta-banner">
     <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text); margin: 0 0 0.5rem 0;">Ready to put theory into practice?</h3>
     <p style="font-size: 0.92rem; color: var(--muted); max-width: 600px; margin: 0 auto 1.5rem auto;">
       Use AvaScry's SmartDeck builder to synthesize complete 100-card Commander lists balanced across ramp, draw, and synergy packages.
