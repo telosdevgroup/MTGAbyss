@@ -567,22 +567,22 @@ class DominionSiteBlaster:
     # =========================================================================
     def test_unified_account_branding(self):
         print("\n--- [12/12] Running Unified Account & SSO Branding Suite ---")
-        # 1. Unauthenticated Nav Branding
+        # 1. Unauthenticated Nav Branding (Discord SSO)
         try:
             resp_home = self.get("/")
             if resp_home.status_code == 200:
                 html_text = resp_home.text
-                # Check for "AvaScry ID" sub-badge and title attribute
-                if "AvaScry ID" in html_text and "/auth/login" in html_text:
-                    self.log_pass("unauth SSO badge", "Header displays 'Sign In' with 'AvaScry ID' branding")
+                # Check for explicit Discord Sign In button and direct /auth/discord/login link
+                if "Sign In with Discord" in html_text and "/auth/discord/login" in html_text:
+                    self.log_pass("unauth SSO badge", "Header displays explicit 'Sign In with Discord' button")
                 else:
-                    self.log_fail("unauth SSO badge", "/", "Missing 'AvaScry ID' branding in unauthenticated header")
+                    self.log_fail("unauth SSO badge", "/", "Missing 'Sign In with Discord' in unauthenticated header")
 
                 # Check for Network Footer unified account callout
-                if "Unified Account" in html_text and "MTG, SWU, Dominion" in html_text:
-                    self.log_pass("footer SSO note", "Network footer displays unified account callout")
+                if "Unified Discord Account" in html_text and "MTG, SWU, Dominion" in html_text:
+                    self.log_pass("footer SSO note", "Network footer displays unified Discord account callout")
                 else:
-                    self.log_fail("footer SSO note", "/", "Missing Unified Account note in network games footer")
+                    self.log_fail("footer SSO note", "/", "Missing Unified Discord Account note in network games footer")
             else:
                 self.log_fail("unauth SSO badge", "/", f"Status {resp_home.status_code}")
         except Exception as e:
@@ -592,10 +592,10 @@ class DominionSiteBlaster:
         try:
             resp_kg = self.get("/kingdom-generator")
             if resp_kg.status_code == 200:
-                if "Sign in with AvaScry ID" in resp_kg.text or "AvaScry ID" in resp_kg.text:
-                    self.log_pass("kg account prompt", "Kingdom Generator prompts unauthenticated users with AvaScry ID")
+                if "Sign in with Discord" in resp_kg.text and "/auth/discord/login" in resp_kg.text:
+                    self.log_pass("kg account prompt", "Kingdom Generator prompts unauthenticated users with Discord login")
                 else:
-                    self.log_fail("kg account prompt", "/kingdom-generator", "Missing AvaScry ID prompt near save button")
+                    self.log_fail("kg account prompt", "/kingdom-generator", "Missing Discord login prompt near save button")
             else:
                 self.log_fail("kg account prompt", "/kingdom-generator", f"Status {resp_kg.status_code}")
         except Exception as e:
