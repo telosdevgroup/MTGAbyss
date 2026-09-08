@@ -66,7 +66,7 @@ GUIDES = {
                 "heading": "The Power of Modal & Multi-Role Cards",
                 "paragraphs": [
                     "The greatest deckbuilders break the 8x8 ceiling by playing modal cards that occupy two or more categories simultaneously. A card like Wood Elves serves as both Mana Ramp and a creature body for Sacrifice Outlets. A card like Beast Within serves as spot removal that can also destroy your own permanent in emergencies.",
-                    "AvaScry's Neural Similarity engine is specifically designed to uncover these multi-role gems by analyzing functional vector profiles across 34,800+ cards."
+                    "AvaScry's card engine is specifically designed to uncover these multi-role gems by analyzing functional mechanical profiles across 34,800+ cards."
                 ]
             }
         ]
@@ -202,8 +202,8 @@ GUIDES = {
         "summary": "Text search engines only find cards that share exact word substrings. Learn how AvaScry's high-parameter neural vector space understands gameplay texture, tempo, and cross-archetype synergy.",
         "takeaways": [
             "String search fails when functionally identical cards use different templating across eras.",
-            "AvaScry embeds card rules, power/toughness, speed, and role into a continuous 4,096-dimensional hypersphere.",
-            "Cosine similarity measures functional alignment rather than lexical overlap.",
+            "AvaScry maps card rules, power/toughness, speed, and gameplay role across all sets.",
+            "Mechanical synergy measures functional alignment in actual play rather than lexical word overlap.",
             "Enables players to find budget alternatives and obscure hidden gems in seconds."
         ],
         "sections": [
@@ -327,16 +327,16 @@ GUIDES = {
         },
         "summary": "Popular deck aggregators funnel players into the same homogenous Commander staples. By querying AvaScry's 4,096-dimensional transformer embedding space, we uncovered six unique, underplayed commanders alongside the high-affinity synergy cards that make them tick.",
         "takeaways": [
-            "Neural vector similarity measures shared game-state influence rather than exact keyword overlap.",
+            "Card engines are evaluated by their shared game-state influence rather than exact keyword overlap.",
             "Off-meta commanders often suffer from low popularity simply because traditional keyword search cannot find their complementary engines.",
-            "Analyzing high cosine-similarity clusters surfaces forgotten cards that generate asymmetric value in niche strategies.",
+            "Surfacing forgotten cards generates asymmetric value and explosive lines in niche strategies.",
             "Discovering and brewing with lesser-played commanders lowers pod fatigue and rewards deep format knowledge."
         ],
         "sections": [
             {
                 "heading": "1. Gorion, Wise Mentor: The Infinite Adventure Duplicator",
                 "paragraphs": [
-                    "Gorion, Wise Mentor (Bant, CLB) copies any Adventure spell you cast. While players naturally stuff the deck with standard Eldraine adventures, our vector model surfaced deep functional alignment with spell-replication creatures like Dualcaster Mage (0.742 similarity) and Artisan of Forms (0.756 similarity).",
+                    "Gorion, Wise Mentor (Bant, CLB) copies any Adventure spell you cast. While players naturally stuff the deck with standard Eldraine adventures, our analysis surfaced deep functional synergy with spell-replication creatures like Dualcaster Mage and Artisan of Forms.",
                     "Because adventure spells go on an adventure exile zone upon resolution, pairing Gorion with heroic targeting engines lets you trigger continuous creature mutation while doubling interactive spells like Petty Theft and Monster Manual."
                 ],
                 "cards": [
@@ -347,7 +347,7 @@ GUIDES = {
             {
                 "heading": "2. Fain, the Broker: Modular Resource Arbitrage",
                 "paragraphs": [
-                    "Fain, the Broker (Mono-Black, C21) is a 3-mana engine that converts +1/+1 counters, Treasure tokens, and creature sacrifices into versatile game actions. Rather than building Fain as standard Aristocrats, vector clustering surfaced high mathematical similarity with Reckoner's Bargain (0.741 similarity) and sacrifice-looping horrors.",
+                    "Fain, the Broker (Mono-Black, C21) is a 3-mana engine that converts +1/+1 counters, Treasure tokens, and creature sacrifices into versatile game actions. Rather than building Fain as standard Aristocrats, synergy mapping highlights cards like Reckoner's Bargain and sacrifice-looping horrors.",
                     "Fain acts as a complete self-contained arbitrage desk: sacrificing incidental treasures to put counters on evasive threats, or turning fading death-triggers into fresh treasure to fuel big-mana black finishers."
                 ],
                 "cards": [
@@ -359,7 +359,7 @@ GUIDES = {
                 "heading": "3. Gor Muldrak, Amphinologist: Salamander Politics & Combat Denial",
                 "paragraphs": [
                     "Gor Muldrak, Amphinologist (Simic, CMR) gives each player with the fewest creatures a 4/3 Salamander Warrior at end of turn, while granting you and your permanents protection from Salamanders.",
-                    "Our embedding engine clustered Gor Muldrak near Xolatoyac, the Smiling Flood (0.708 similarity) and Garruk, Primal Hunter (0.713 similarity). By flooding opponents with Salamanders that cannot damage you, you orchestrate multiplayer attacks against other players while untapping your board with flood-counters to maintain impenetrable defenses."
+                    "AvaScry pairs Gor Muldrak with powerhouse untap and draw engines like Xolatoyac, the Smiling Flood and Garruk, Primal Hunter. By flooding opponents with Salamanders that cannot damage you, you orchestrate multiplayer attacks against other players while untapping your board with flood-counters to maintain impenetrable defenses."
                 ],
                 "cards": [
                     {"name": "Gor Muldrak, Amphinologist", "slug": "gor-muldrak-amphinologist-cmr", "image_url": "https://cards.scryfall.io/normal/front/2/2/22ff4985-981c-4748-b6f4-5d0dab6c787b.jpg?1783928640", "role": "Commander"},
@@ -370,7 +370,7 @@ GUIDES = {
                 "heading": "4. Jasmine Boreal of the Seven: The Unblockable Vanilla Swarm",
                 "paragraphs": [
                     "Jasmine Boreal of the Seven (Selesnya, DMC) taps for two mana for vanilla creatures and makes all creatures you control with no abilities unblockable by creatures with abilities. Because virtually all modern Commander staples possess abilities, Jasmine effectively grants unblockable to your entire team.",
-                    "Our embedding engine identified synergy with Paradise Druid (0.778 similarity) and mana ramp fixers that allow you to deploy massively over-statted vanilla giants (like Leatherback Baloth and Watchwolf) turns ahead of schedule."
+                    "Our synergy finder highlights natural accelerants like Paradise Druid and mana ramp fixers that allow you to deploy massively over-statted vanilla giants (like Leatherback Baloth and Watchwolf) turns ahead of schedule."
                 ],
                 "cards": [
                     {"name": "Jasmine Boreal of the Seven", "slug": "jasmine-boreal-of-the-seven-dmc", "image_url": "https://cards.scryfall.io/normal/front/2/d/2d5c9c50-9056-4d18-94fb-b9970969dcc8.jpg?1783921456", "role": "Commander"}
@@ -380,7 +380,7 @@ GUIDES = {
                 "heading": "5. Gluntch, the Bestower: The Master of Diplomatic Alliances",
                 "paragraphs": [
                     "Gluntch, the Bestower (Selesnya, CLB) rewards three different players with +1/+1 counters, Treasure, and card draw during your end step. Unlike mindless group-hug commanders that hand opponents win conditions, Gluntch lets you selectively empower the weakest player while advancing your own resources.",
-                    "Vector proximity highlights Bounty of the Hunt (0.715 similarity) and Zameck Guildmage (0.713 similarity), allowing you to convert the +1/+1 counters Gluntch gifts you into explosive card velocity and permanent board superiority."
+                    "Key companion tech includes Bounty of the Hunt and Zameck Guildmage, allowing you to convert the +1/+1 counters Gluntch gifts you into explosive card velocity and permanent board superiority."
                 ],
                 "cards": [
                     {"name": "Gluntch, the Bestower", "slug": "gluntch-the-bestower-clb", "image_url": "https://cards.scryfall.io/normal/front/3/8/3836d7e5-98cd-4f1e-9a66-150b80cd0325.jpg?1783922582", "role": "Commander"}
@@ -390,7 +390,7 @@ GUIDES = {
                 "heading": "6. Ulasht, the Hate Seed: Ping Loops & Counter Modulation",
                 "paragraphs": [
                     "Ulasht, the Hate Seed (Gruul, 2X2) enters the battlefield with +1/+1 counters equal to your other red and green creatures, and can pay 1 to remove a counter to either deal 1 damage to any creature or spawn a 1/1 Saproling token.",
-                    "Our vector search revealed exceptional mathematical alignment with Walking Ballista (0.731 similarity) and Whiptongue Hydra (0.736 similarity). Ulasht functions as an instant-speed board police that continually converts incoming mana into board wipe suppression or token swarms tailored precisely to the current turn."
+                    "Looking at complementary counter modulators reveals exceptional synergy with Walking Ballista and Whiptongue Hydra. Ulasht functions as an instant-speed board police that continually converts incoming mana into board wipe suppression or token swarms tailored precisely to the current turn."
                 ],
                 "cards": [
                     {"name": "Ulasht, the Hate Seed", "slug": "ulasht-the-hate-seed-2x2", "image_url": "https://cards.scryfall.io/normal/front/0/0/002fe870-eae5-42cc-a44c-32906f60719e.jpg?1783921798", "role": "Commander"},
