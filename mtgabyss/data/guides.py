@@ -400,3 +400,110 @@ GUIDES = {
         ]
     }
 }
+
+
+import re
+import html
+
+# Canonical card references to autolink in editorial content
+AUTOLINK_CARD_MAP = {
+    "Sol Ring": "sol-ring",
+    "Rhystic Study": "rhystic-study",
+    "Swords to Plowshares": "swords-to-plowshares",
+    "Toxic Deluge": "toxic-deluge",
+    "Blasphemous Act": "blasphemous-act",
+    "Cyclonic Rift": "cyclonic-rift",
+    "Ulalek, Fused Atrocity": "ulalek-fused-atrocity",
+    "Necrodominance": "necrodominance",
+    "Omo, Queen of Vesuva": "omo-queen-of-vesuva",
+    "Guide of Souls": "guide-of-souls",
+    "Amped Raptor": "amped-raptor",
+    "Echoes of Eternity": "echoes-of-eternity",
+    "Glaring Fleshraker": "glaring-fleshraker",
+    "Witch Enchanter": "witch-enchanter",
+    "Fell the Profane": "fell-the-profane",
+    "Command Tower": "command-tower",
+    "Mana Confluence": "mana-confluence",
+    "Arcane Signet": "arcane-signet",
+    "Prismatic Vista": "prismatic-vista",
+    "Polluted Delta": "polluted-delta",
+    "Wooded Foothills": "wooded-foothills",
+    "Sea of Clouds": "sea-of-clouds",
+    "Atraxa, Praetors' Voice": "atraxa-praetors-voice",
+    "Deadly Rollick": "deadly-rollick",
+    "Snuff Out": "snuff-out",
+    "Demonic Tutor": "demonic-tutor",
+    "Path to Exile": "path-to-exile",
+    "Generous Gift": "generous-gift",
+    "Stroke of Midnight": "stroke-of-midnight",
+    "Grasp of Fate": "grasp-of-fate",
+    "Counterspell": "counterspell",
+    "Swan Song": "swan-song",
+    "An Offer You Can't Refuse": "an-offer-you-cant-refuse",
+    "Fierce Guardianship": "fierce-guardianship",
+    "Infernal Grasp": "infernal-grasp",
+    "Chaos Warp": "chaos-warp",
+    "Wild Magic Surge": "wild-magic-surge",
+    "Abrade": "abrade",
+    "Nature's Claim": "natures-claim",
+    "Force of Vigor": "force-of-vigor",
+    "Beast Within": "beast-within",
+    "Smothering Tithe": "smothering-tithe",
+    "Gorion, Wise Mentor": "gorion-wise-mentor",
+    "Dualcaster Mage": "dualcaster-mage",
+    "Artisan of Forms": "artisan-of-forms",
+    "Monster Manual": "monster-manual",
+    "Fain, the Broker": "fain-the-broker",
+    "Reckoner's Bargain": "reckoners-bargain",
+    "Gor Muldrak, Amphinologist": "gor-muldrak-amphinologist",
+    "Xolatoyac, the Smiling Flood": "xolatoyac-the-smiling-flood",
+    "Garruk, Primal Hunter": "garruk-primal-hunter",
+    "Jasmine Boreal of the Seven": "jasmine-boreal-of-the-seven",
+    "Paradise Druid": "paradise-druid",
+    "Leatherback Baloth": "leatherback-baloth",
+    "Watchwolf": "watchwolf",
+    "Gluntch, the Bestower": "gluntch-the-bestower",
+    "Bounty of the Hunt": "bounty-of-the-hunt",
+    "Zameck Guildmage": "zameck-guildmage",
+    "Ulasht, the Hate Seed": "ulasht-the-hate-seed",
+    "Walking Ballista": "walking-ballista",
+    "Whiptongue Hydra": "whiptongue-hydra",
+    "Ashnod's Altar": "ashnods-altar",
+    "Viscera Seer": "viscera-seer",
+    "Bitterblossom": "bitterblossom",
+    "Reassembling Skeleton": "reassembling-skeleton",
+    "Blood Artist": "blood-artist",
+    "Zulaport Cutthroat": "zulaport-cutthroat",
+    "Living Death": "living-death",
+    "Victimize": "victimize",
+    "Wood Elves": "wood-elves",
+    "Sylvan Library": "sylvan-library",
+    "Night's Whisper": "nights-whisper"
+}
+
+# Sort longest names first to prevent partial substring matches
+_SORTED_NAMES = sorted(AUTOLINK_CARD_MAP.keys(), key=len, reverse=True)
+_PATTERN = re.compile(
+    r'\b(' + '|'.join(re.escape(name) for name in _SORTED_NAMES) + r')\b',
+    flags=re.IGNORECASE
+)
+
+def autolink_cards(text: str) -> str:
+    """
+    Detects Magic card names in editorial copy and wraps them in accessible,
+    high-relevance SEO anchor tags pointing to /card/<slug>.
+    """
+    if not text:
+        return ""
+
+    def _replace(match):
+        matched_text = match.group(0)
+        # Find canonical name by case-insensitive comparison
+        for canon_name, slug in AUTOLINK_CARD_MAP.items():
+            if canon_name.lower() == matched_text.lower():
+                escaped_canon = html.escape(canon_name)
+                return f'<a href="/card/{slug}" class="guide-card-link" title="{escaped_canon} mtg card">{matched_text}</a>'
+        return matched_text
+
+    return _PATTERN.sub(_replace, text)
+

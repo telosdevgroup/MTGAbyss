@@ -42,6 +42,20 @@
   }
 }
 </script>
+<style>
+  .guide-card-link {
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: rgba(56, 189, 248, 0.4);
+    text-underline-offset: 3px;
+    transition: color 0.15s ease, text-decoration-color 0.15s ease;
+  }
+  .guide-card-link:hover {
+    color: #fff;
+    text-decoration-color: var(--accent);
+  }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -90,7 +104,7 @@
     </h2>
     <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.92rem; color: var(--text); display: flex; flex-direction: column; gap: 0.5rem; line-height: 1.6;">
       {% for t in guide.takeaways %}
-      <li>{{ t }}</li>
+      <li>{{ t | autolink_cards | safe }}</li>
       {% endfor %}
     </ul>
   </div>
@@ -106,7 +120,7 @@
 
       {% for p in s.paragraphs %}
       <p style="color: var(--muted); margin: 0 0 1.2rem 0; line-height: 1.8;">
-        {{ p }}
+        {{ p | autolink_cards | safe }}
       </p>
       {% endfor %}
 
@@ -119,11 +133,11 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1.25rem;">
           {% for c in s.cards %}
           <div style="display: flex; gap: 0.85rem; align-items: center;">
-            <a href="/card/{{ c.slug }}" style="display: block; flex-shrink: 0;" title="{{ c.name }} card view">
+            <a href="/card/{{ c.slug }}" style="display: block; flex-shrink: 0;" title="{{ c.name }} mtg card">
               <img src="{{ c.image_url }}" alt="{{ c.name }}" loading="lazy" style="width: 58px; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.35);" onerror="this.onerror=null; this.src='https://cards.scryfall.io/normal/front/0/4/04002706-2236-4b79-bdea-4f263e43cb9c.jpg?1783911518';">
             </a>
             <div style="min-width: 0;">
-              <a href="/card/{{ c.slug }}" style="font-size: 0.88rem; font-weight: 700; color: var(--text); text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" onmouseover="this.style.color='var(--accent)';" onmouseout="this.style.color='var(--text)';">
+              <a href="/card/{{ c.slug }}" title="{{ c.name }} mtg card" style="font-size: 0.88rem; font-weight: 700; color: var(--text); text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" onmouseover="this.style.color='var(--accent)';" onmouseout="this.style.color='var(--text)';">
                 {{ c.name }}
               </a>
               <span style="display: inline-block; font-size: 0.72rem; font-weight: 600; color: var(--muted); background: rgba(255,255,255,0.05); padding: 0.15rem 0.45rem; border-radius: 3px; margin-top: 0.2rem;">

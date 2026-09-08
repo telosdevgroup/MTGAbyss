@@ -35,6 +35,9 @@ templates.env.globals["t"] = i18n.t
 templates.env.globals["LANGUAGES"] = i18n.LANGUAGES
 templates.env.globals["get_locale"] = i18n.get_locale
 
+from mtgabyss.data.guides import autolink_cards
+templates.env.filters["autolink_cards"] = autolink_cards
+
 
 def render_template(request: Request, name: str, context: dict):
     """Render template with user session and language context auto-injected."""
