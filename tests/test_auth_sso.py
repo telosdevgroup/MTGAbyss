@@ -78,6 +78,12 @@ def test_primary_auth_logout_redirects_to_commander():
     res = client.get("/auth/logout", headers={"host": "avascry.com"}, follow_redirects=False)
     assert res.status_code == 303
     assert res.headers["location"] == "/commander"
+    # Verify cookie clearance headers
+    raw_cookies = res.headers.get_list("set-cookie")
+    assert len(raw_cookies) > 0
+    cookies_str = " ".join(raw_cookies)
+    assert "avascry_session" in cookies_str
+    assert "domain=.avascry.com" in cookies_str.lower()
 
 def test_subsite_oauth_login_flow(monkeypatch):
     monkeypatch.setenv("DISCORD_CLIENT_ID", "dummy_discord_client")

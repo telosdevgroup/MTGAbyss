@@ -229,6 +229,14 @@
     background: #312e81;
     color: #fde68a;
   }
+  .sm-badge-vector {
+    background: #2e1065;
+    color: #c084fc;
+  }
+  .sm-badge-vector:hover {
+    background: #3b0764;
+    color: #e9d5ff;
+  }
 
   .sm-tabs-row {
     display: flex;
@@ -330,6 +338,7 @@
             <div class="sm-tri-badges">
               <a href="{{ base_path }}/card/{{ card.slug }}.md" class="sm-badge sm-badge-md" title="Markdown representation">MD</a>
               <a href="{{ base_path }}/card/{{ card.slug }}.json" class="sm-badge sm-badge-json" title="JSON representation">JSON</a>
+              <a href="{{ base_path }}/vector/{{ card.slug }}.json" class="sm-badge sm-badge-vector" title="4096-Dim Neural Vector">Vector</a>
             </div>
           </div>
           {% endfor %}
@@ -361,6 +370,7 @@
           <div class="sm-tri-badges">
             <a href="{{ base_path }}/card/{{ card.slug }}.md" class="sm-badge sm-badge-md" title="Markdown">MD</a>
             <a href="{{ base_path }}/card/{{ card.slug }}.json" class="sm-badge sm-badge-json" title="JSON">JSON</a>
+            <a href="{{ base_path }}/vector/{{ card.slug }}.json" class="sm-badge sm-badge-vector" title="4096-Dim Neural Vector">Vector</a>
           </div>
         </div>
         {% endfor %}
@@ -393,6 +403,7 @@
             </span>
             <a href="{{ base_path }}/card/{{ card.slug }}.md" class="sm-badge sm-badge-md" title="Markdown">MD</a>
             <a href="{{ base_path }}/card/{{ card.slug }}.json" class="sm-badge sm-badge-json" title="JSON">JSON</a>
+            <a href="{{ base_path }}/vector/{{ card.slug }}.json" class="sm-badge sm-badge-vector" title="4096-Dim Neural Vector">Vector</a>
           </div>
         </div>
         {% endfor %}

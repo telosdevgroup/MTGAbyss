@@ -246,16 +246,31 @@ class DominionSiteBlaster:
                         self.log_fail("card JSON REST", f"/card/{slug}.json", "REST symmetry mismatch with Mongo entity",
                                       {"expected_name": name, "json_name": c_name, "expected_slug": slug, "json_slug": c_slug})
 
-                    # Verify 7-10 related cards in JSON
-                    related = c_data.get("related_cards", [])
+                    # Verify 7-11 related cards in JSON
+                    related = c_data.get("related_cards", []) or data.get("related_cards", [])
                     if len(related) >= 7:
                         self.log_pass("card related JSON", f"{name} has {len(related)} related cards in JSON")
                     else:
-                        self.log_warn("card related JSON", f"{name}", f"Only {len(related)} related cards in JSON (expected 7-10)")
+                        self.log_warn("card related JSON", f"{name}", f"Only {len(related)} related cards in JSON (expected 7-11)")
                 else:
                     self.log_fail("card JSON REST", f"/card/{slug}.json", f"Status {resp_json.status_code}")
             except Exception as e:
                 self.log_fail("card JSON REST", f"/card/{slug}.json", str(e))
+
+            # 4. Vector Representation (4096-Dim)
+            try:
+                resp_vec = self.get(f"/vector/{slug}.json")
+                if resp_vec.status_code == 200:
+                    vec_data = resp_vec.json()
+                    emb = vec_data.get("embedding", [])
+                    if len(emb) == 4096:
+                        self.log_pass("card vector 4096-dim", f"{name} (/vector/{slug}.json) -> 4096 dimensions")
+                    else:
+                        self.log_fail("card vector 4096-dim", f"/vector/{slug}.json", f"Expected 4096 dims, got {len(emb)}")
+                else:
+                    self.log_fail("card vector", f"/vector/{slug}.json", f"Status {resp_vec.status_code}")
+            except Exception as e:
+                self.log_fail("card vector", f"/vector/{slug}.json", str(e))
 
     # =========================================================================
     # 3. 1ST VS 2ND EDITION DIFF INVARIANTS
@@ -459,6 +474,7 @@ class DominionSiteBlaster:
             ("/card/definitely-not-a-real-dominion-card-12345", 404),
             ("/card/definitely-not-a-real-dominion-card-12345.json", 404),
             ("/card/definitely-not-a-real-dominion-card-12345.md", 404),
+            ("/vector/definitely-not-a-real-dominion-card-12345.json", 404),
             ("/card/", 404),
             ("/dominion/images/definitely-not-a-real-dominion-card-12345.jpg", 404),
         ]

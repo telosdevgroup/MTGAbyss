@@ -315,4 +315,8 @@ async def auth_discord_callback(request: Request, code: Optional[str] = None, st
 async def auth_logout(request: Request, next: Optional[str] = None):
     request.session.clear()
     target = resolve_redirect_url(request, next, fallback_path="/commander")
-    return RedirectResponse(url=target, status_code=303)
+    response = RedirectResponse(url=target, status_code=303)
+    for name in ("avascry_session", "session"):
+        response.delete_cookie(name, path="/", domain=".avascry.com")
+        response.delete_cookie(name, path="/")
+    return response

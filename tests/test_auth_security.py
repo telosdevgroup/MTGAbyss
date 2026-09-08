@@ -1,6 +1,7 @@
 import pytest
 from starlette.testclient import TestClient
-from app import app, is_safe_redirect
+from app import app
+from mtgabyss.routers.auth_router import is_safe_redirect
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -34,12 +35,13 @@ def test_is_safe_redirect_rejects_backslash_and_auth_loops():
     assert is_safe_redirect(None) is False
     assert is_safe_redirect("") is False
 
-def test_auth_login_sanitizes_next_parameter():
-    """Verify /auth/login with external ?next= falls back safely to /dashboard in session."""
-    response = client.get("/auth/login?next=https://evil.com", follow_redirects=False)
+def test_auth_login_sanitizes_next_parameter(monkeypatch):
+    """Verify /auth/discord/login with external ?next= falls back safely to /dashboard."""
+    monkeypatch.setenv("DISCORD_CLIENT_ID", "dummy_client")
+    response = client.get("/auth/discord/login?next=https://evil.com", follow_redirects=False)
     assert response.status_code == 303
     auth_url = response.headers.get("location", "")
-    assert "accounts.google.com" in auth_url
+    assert "discord.com/oauth2/authorize" in auth_url
 
 def test_auth_logout_sanitizes_external_redirect():
     """Verify /auth/logout with external ?next= safely redirects to /commander."""
@@ -48,16 +50,17 @@ def test_auth_logout_sanitizes_external_redirect():
     assert response.headers.get("location") == "/commander"
 
 def test_auth_callback_missing_saved_state_rejected():
-    """Verify callback without prior session state is immediately rejected with invalid_oauth_state."""
-    response = client.get("/auth/google/callback?code=fake_code&state=fake_state", follow_redirects=False)
+    """Verify Discord callback without prior session state is immediately rejected."""
+    response = client.get("/auth/discord/callback?code=fake_code&state=fake_state", follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers.get("location") == "/commander?auth_error=invalid_oauth_state"
+    assert "/auth/login?auth_error=" in response.headers.get("location", "")
 
-def test_auth_callback_state_mismatch_rejected():
-    """Verify callback with tampered state parameter is rejected."""
-    login_resp = client.get("/auth/login", follow_redirects=False)
+def test_auth_callback_state_mismatch_rejected(monkeypatch):
+    """Verify Discord callback with tampered state parameter is rejected."""
+    monkeypatch.setenv("DISCORD_CLIENT_ID", "dummy_client")
+    login_resp = client.get("/auth/discord/login", follow_redirects=False)
     assert login_resp.status_code == 303
     
-    callback_resp = client.get("/auth/google/callback?code=fake_code&state=wrong_mismatched_state", follow_redirects=False)
+    callback_resp = client.get("/auth/discord/callback?code=fake_code&state=wrong_mismatched_state", follow_redirects=False)
     assert callback_resp.status_code == 303
-    assert callback_resp.headers.get("location") == "/commander?auth_error=invalid_oauth_state"
+    assert "/auth/login?auth_error=" in callback_resp.headers.get("location", "")

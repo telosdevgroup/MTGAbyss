@@ -800,7 +800,7 @@
             </p>
           </div>
           <div style="font-size: 0.82rem; color: var(--muted);">
-            Showing top 6 • <a href="{{ base_path }}/card/{{ card.slug }}.json" style="color: var(--accent); text-decoration: none; font-weight: 600;">View all 10 in JSON</a> or <a href="{{ base_path }}/card/{{ card.slug }}.md" style="color: var(--accent); text-decoration: none; font-weight: 600;">Markdown</a>
+            Showing top 6 • <a href="{{ base_path }}/card/{{ card.slug }}.json" style="color: var(--accent); text-decoration: none; font-weight: 600;">View all 11 in JSON</a>, <a href="{{ base_path }}/card/{{ card.slug }}.md" style="color: var(--accent); text-decoration: none; font-weight: 600;">Markdown</a>, or <a href="{{ base_path }}/vector/{{ card.slug }}.json" style="color: #a855f7; text-decoration: none; font-weight: 600;">4096-Dim Vector</a>
           </div>
         </div>
 
@@ -813,7 +813,7 @@
                 alt="{{ rel.name }} card scan" 
                 class="related-card-img" 
                 loading="lazy"
-                onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'320\' viewBox=\'0 0 200 320\'><rect width=\'200\' height=\'320\' fill=\'%231e293b\'/><text x=\'50%\' y=\\'50%\' fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' text-anchor=\'middle\'>{{ rel.name | urlencode }}</text></svg>';"
+                onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'320\' viewBox=\'0 0 200 320\'><rect width=\'200\' height=\'320\' fill=\'%231e293b\'/><text x=\'50%\' y=\'50%\' fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' text-anchor=\'middle\'>{{ rel.name | urlencode }}</text></svg>';"
               >
             </div>
             <div class="related-card-body">
@@ -836,6 +836,7 @@
         <span>Machine formats:</span>
         <a href="{{ base_path }}/card/{{ card.slug }}.md">Plain Text (.md)</a>
         <a href="{{ base_path }}/card/{{ card.slug }}.json">Structured JSON (.json)</a>
+        <a href="{{ base_path }}/vector/{{ card.slug }}.json" style="color: #a855f7; border-color: rgba(168,85,247,0.3);">Vector (.json)</a>
         <button type="button" class="btn-copy-citation" id="btn-copy-citation" title="Copy markdown citation">
           📋 Copy Citation
         </button>

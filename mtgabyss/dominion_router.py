@@ -201,7 +201,10 @@ async def dominion_llms_txt(request: Request):
             "## Endpoints\n"
             "- HTML: https://dominion.avascry.com/card/{slug}\n"
             "- Markdown: https://dominion.avascry.com/card/{slug}.md\n"
-            "- JSON: https://dominion.avascry.com/card/{slug}.json\n\n"
+            "- JSON: https://dominion.avascry.com/card/{slug}.json\n"
+            "- Vector Embedding (4096-dim): https://dominion.avascry.com/vector/{slug}.json\n"
+            "- Master HTML Sitemap: https://dominion.avascry.com/sitemap.html\n"
+            "- Master Markdown Sitemap: https://dominion.avascry.com/sitemap.md\n\n"
             "## Unified Discord Identity & Network SSO\n"
             "- Part of the unified AvaScry Card Network (MTG, SWU, Dominion, Necromunda).\n"
             "- Single Discord OAuth sign-in shared network-wide across dominion.avascry.com and all sister domains.\n"
@@ -403,12 +406,18 @@ format-negotiation:
         media_type="text/plain; charset=utf-8",
         headers={"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
     )
+
+@dominion_router.get("/robots.txt", response_class=PlainTextResponse)
+@dominion_router.head("/robots.txt")
 async def dominion_robots_txt():
     """Standard crawl directives for Dominion subdomain."""
-    return (
+    return PlainTextResponse(
         "User-agent: *\n"
         "Allow: /\n\n"
         "Sitemap: https://dominion.avascry.com/sitemap.xml\n"
+        "Sitemap: https://dominion.avascry.com/sitemap.html\n",
+        media_type="text/plain; charset=utf-8",
+        headers={"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
     )
 
 @dominion_router.get("/sitemap.xml", response_class=Response)
@@ -544,8 +553,8 @@ async def dominion_sitemap_markdown():
         "- Expansions Manifest: https://dominion.avascry.com/sets.md",
         "- Kingdom Generator: https://dominion.avascry.com/kingdom-generator\n",
         f"## Complete Card Catalog ({len(all_cards)} Cards)",
-        "| Card | Types | Kingdom | HTML | Markdown | JSON |",
-        "|---|---|:---:|:---:|:---:|:---:|"
+        "| Card | Types | Kingdom | HTML | Markdown | JSON | Vector |",
+        "|---|---|:---:|:---:|:---:|:---:|:---:|"
     ]
 
     for c in all_cards:
@@ -553,7 +562,7 @@ async def dominion_sitemap_markdown():
         name = c.get("name")
         kinds = ", ".join(c.get("card_kinds", []))
         is_kg = "Yes" if c.get("is_kingdom_card") else "No"
-        md.append(f"| [{name}](https://dominion.avascry.com/card/{slug}) | {kinds} | {is_kg} | [HTML](https://dominion.avascry.com/card/{slug}) | [MD](https://dominion.avascry.com/card/{slug}.md) | [JSON](https://dominion.avascry.com/card/{slug}.json) |")
+        md.append(f"| [{name}](https://dominion.avascry.com/card/{slug}) | {kinds} | {is_kg} | [HTML](https://dominion.avascry.com/card/{slug}) | [MD](https://dominion.avascry.com/card/{slug}.md) | [JSON](https://dominion.avascry.com/card/{slug}.json) | [Vector](https://dominion.avascry.com/vector/{slug}.json) |")
 
     content = "\n".join(md)
     set_cached("dominion_sitemap_md", content)
@@ -577,6 +586,57 @@ async def dominion_random_card(request: Request):
     base_path = get_base_prefix(request)
     return RedirectResponse(url=f"{base_path}/card/{slug}", status_code=307, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
+@dominion_router.get("/vector/{identifier}", include_in_schema=False)
+@dominion_router.get("/vector/{identifier}.json", include_in_schema=False)
+@dominion_router.head("/vector/{identifier}", include_in_schema=False)
+@dominion_router.head("/vector/{identifier}.json", include_in_schema=False)
+async def dominion_vector_embedding(identifier: str):
+    """Expose raw 4096-dimensional Qwen 8B vector embedding for a Dominion card."""
+    clean_id = identifier.lower().replace(".json", "").strip()
+    if not clean_id or clean_id in ("", ".", "..", ".md", ".json"):
+        raise HTTPException(status_code=404, detail="Vector embedding not found")
+
+    db = get_dominion_db()
+    doc = db.embeddings_dominion.find_one({"slug": clean_id})
+    if not doc:
+        doc = db.embeddings_dominion.find_one({"name": {"$regex": f"^{re.escape(clean_id.replace('-', ' '))}$", "$options": "i"}})
+    if not doc:
+        card_doc = db.cards.find_one({"slug": clean_id})
+        if card_doc:
+            doc = db.embeddings_dominion.find_one({"slug": card_doc.get("slug")})
+
+    if not doc:
+        raise HTTPException(status_code=404, detail="Vector embedding not found")
+
+    slug = doc.get("slug") or clean_id
+    name = doc.get("name") or clean_id.replace('-', ' ').title()
+    embedding = doc.get("embedding", [])
+
+    return JSONResponse(
+        content={
+            "name": name,
+            "slug": slug,
+            "model": doc.get("model") or "qwen3-embedding:8b",
+            "dimensions": len(embedding) or 4096,
+            "version": "1.0",
+            "card_kinds": doc.get("card_kinds", []),
+            "context_text": doc.get("context_text", ""),
+            "links": {
+                "vector": f"https://dominion.avascry.com/vector/{slug}.json",
+                "html": f"https://dominion.avascry.com/card/{slug}",
+                "markdown": f"https://dominion.avascry.com/card/{slug}.md",
+                "json": f"https://dominion.avascry.com/card/{slug}.json"
+            },
+            "embedding": embedding
+        },
+        headers={
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+            "Access-Control-Allow-Origin": "*",
+            "Link": f'</card/{slug}.json>; rel="alternate"; type="application/json", </card/{slug}>; rel="up"',
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
+
 @dominion_router.get("/card/{slug}.json")
 async def dominion_card_json(slug: str):
     clean_slug = slug.lower().strip()
@@ -599,6 +659,7 @@ async def dominion_card_json(slug: str):
             v["image_url"] = base_img
 
     rulings = list(db.rulings.find({"card_id": f"card:{clean_slug}"}, {"_id": 0}))
+    related_cards = card.get("related_cards", [])
     
     return JSONResponse(
         content={
@@ -606,10 +667,17 @@ async def dominion_card_json(slug: str):
             "image_url": base_img,
             "image_1e_url": f"https://dominion.avascry.com/images/{clean_slug}-1e.jpg",
             "versions": versions,
-            "rulings": rulings
+            "rulings": rulings,
+            "related_cards": related_cards,
+            "links": {
+                "vector": f"https://dominion.avascry.com/vector/{clean_slug}.json",
+                "markdown": f"https://dominion.avascry.com/card/{clean_slug}.md",
+                "html": f"https://dominion.avascry.com/card/{clean_slug}"
+            }
         },
         headers={
             "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Link": f'</vector/{clean_slug}.json>; rel="alternate"; type="application/json", </card/{clean_slug}.md>; rel="alternate"; type="text/markdown"',
             "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
         }
     )
@@ -682,12 +750,14 @@ async def dominion_card_markdown(slug: str):
             
     related_cards = card.get("related_cards", [])
     if related_cards:
-        md.append("## Synergistic & Related Cards")
-        md.append("Bots, LLMs, and deckbuilders also frequently pair or compare with:")
+        md.append("## Synergistic & Related Cards (Top 11)")
+        md.append("Calculated via 4096-dimensional neural vector embeddings (`qwen3-embedding:8b`). Pairings & comparisons:")
         for idx, r in enumerate(related_cards, 1):
-            cost_info = f"${r.get('cost', {}).get('coins', 0)}" if r.get('cost') else ""
+            cost_coins = r.get('cost', {}).get('coins', 0) if isinstance(r.get('cost'), dict) else 0
+            cost_info = f"${cost_coins}" if cost_coins else "$0"
             types_str = ", ".join(r.get("card_kinds", []))
-            md.append(f"{idx}. [{r['name']}](https://dominion.avascry.com/card/{r['slug']}) ({cost_info} {types_str}) — Similarity: {r.get('similarity', 0):.2f}")
+            sim_score = r.get('score', r.get('similarity', 0))
+            md.append(f"{idx}. [{r['name']}](https://dominion.avascry.com/card/{r['slug']}) ({cost_info} {types_str}) — Score: {sim_score:.4f} • [Vector](https://dominion.avascry.com/vector/{r['slug']}.json)")
         md.append("")
             
     return PlainTextResponse(

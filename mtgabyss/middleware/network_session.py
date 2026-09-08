@@ -78,11 +78,16 @@ class NetworkSessionMiddleware:
                     )
                     headers.append("Set-Cookie", header_value)
                 elif not initial_session_was_empty:
-                    header_value = "{session_cookie}=null; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; {security_flags}".format(
-                        session_cookie=self.session_cookie,
-                        security_flags=security_flags,
-                    )
-                    headers.append("Set-Cookie", header_value)
+                    base_flags = f"httponly; samesite={self.same_site}"
+                    if self.https_only:
+                        base_flags += "; secure"
+                    if cookie_domain:
+                        headers.append("Set-Cookie", f"{self.session_cookie}=null; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; {base_flags}; domain={cookie_domain}")
+                    headers.append("Set-Cookie", f"{self.session_cookie}=null; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; {base_flags}")
+                    if self.session_cookie != "session":
+                        if cookie_domain:
+                            headers.append("Set-Cookie", f"session=null; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; {base_flags}; domain={cookie_domain}")
+                        headers.append("Set-Cookie", f"session=null; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; {base_flags}")
             await send(message)
 
         await self.app(scope, receive, send_wrapper)

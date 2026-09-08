@@ -14,7 +14,7 @@ if (typeof openDiscordLogin !== 'function') {
     var sep = url.indexOf('?') === -1 ? '?' : '&';
     var popupUrl = url + sep + 'popup=1';
     var popup = window.open(popupUrl, 'DiscordAuth', 'width=' + w + ',height=' + h + ',top=' + top + ',left=' + left + ',scrollbars=yes,status=no');
-    if (!popup || popup.closed || typeof popup.closed == 'undefined') {
+    if (!popup || popup.closed || popup.closed === void 0) {
       window.location.href = url;
     }
   }
