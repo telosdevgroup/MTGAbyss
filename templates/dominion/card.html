@@ -459,6 +459,112 @@
   .format-links a:hover {
     text-decoration: underline;
   }
+  /* 2x3 Related Cards Section */
+  .related-cards-section {
+    margin-top: 2.25rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--border);
+  }
+  .related-cards-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .related-cards-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .related-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+  @media (max-width: 680px) {
+    .related-cards-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.85rem;
+    }
+  }
+  .related-card-card {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  .related-card-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px -3px rgba(0,0,0,0.12);
+    border-color: var(--accent);
+  }
+  .related-card-img-wrap {
+    width: 100%;
+    aspect-ratio: 5 / 8;
+    background: #1e293b;
+    overflow: hidden;
+  }
+  .related-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.2s ease;
+  }
+  .related-card-card:hover .related-card-img {
+    transform: scale(1.03);
+  }
+  .related-card-body {
+    padding: 0.75rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+    justify-content: space-between;
+  }
+  .related-card-name-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .related-card-name {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text);
+    line-height: 1.25;
+  }
+  .related-card-cost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #f59e0b;
+    color: #78350f;
+    font-weight: 800;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+  }
+  .related-card-meta {
+    font-size: 0.72rem;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-transform: capitalize;
+  }
 </style>
 {% endblock %}
 
@@ -679,6 +785,53 @@
           <span class="authority-badge">&bull; Authority: {{ r.authority.name }} ({{ r.authority.authority_type }})</span>
         </article>
         {% endfor %}
+      </section>
+      {% endif %}
+
+      {% if related_cards %}
+      <section class="related-cards-section" aria-labelledby="related-cards-heading">
+        <div class="related-cards-header">
+          <div>
+            <h2 id="related-cards-heading" class="related-cards-title">
+              Synergistic &amp; Related Cards
+            </h2>
+            <p style="font-size: 0.84rem; color: var(--muted); margin-top: 0.2rem;">
+              Calculated via semantic game mechanic embeddings.
+            </p>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--muted);">
+            Showing top 6 • <a href="{{ base_path }}/card/{{ card.slug }}.json" style="color: var(--accent); text-decoration: none; font-weight: 600;">View all 10 in JSON</a> or <a href="{{ base_path }}/card/{{ card.slug }}.md" style="color: var(--accent); text-decoration: none; font-weight: 600;">Markdown</a>
+          </div>
+        </div>
+
+        <div class="related-cards-grid">
+          {% for rel in related_cards[:6] %}
+          <a href="{{ base_path }}/card/{{ rel.slug }}" class="related-card-card" title="View {{ rel.name }} Dominion card">
+            <div class="related-card-img-wrap">
+              <img 
+                src="{{ base_path }}/images/{{ rel.slug }}.jpg" 
+                alt="{{ rel.name }} card scan" 
+                class="related-card-img" 
+                loading="lazy"
+                onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'320\' viewBox=\'0 0 200 320\'><rect width=\'200\' height=\'320\' fill=\'%231e293b\'/><text x=\'50%\' y=\\'50%\' fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' text-anchor=\'middle\'>{{ rel.name | urlencode }}</text></svg>';"
+              >
+            </div>
+            <div class="related-card-body">
+              <div class="related-card-name-row">
+                <span class="related-card-name">{{ rel.name }}</span>
+                {% set rel_cost = rel.cost.coins if rel.cost and rel.cost.coins is defined else (rel.cost.coin if rel.cost and rel.cost.coin is defined else 0) %}
+                <span class="related-card-cost" title="Cost: {{ rel_cost }} Coins">{{ rel_cost }}</span>
+              </div>
+              <div class="related-card-meta">
+                <span>{{ (rel.card_kinds or ['Action']) | join(', ') }}</span>
+                {% if rel.similarity %}
+                <span style="font-weight: 600; color: #0284c7;">{{ (rel.similarity * 100) | int }}% Match</span>
+                {% endif %}
+              </div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
       </section>
       {% endif %}
 

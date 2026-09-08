@@ -201,6 +201,12 @@ class DominionSiteBlaster:
                         self.log_pass("card HTML", f"{name} (/card/{slug})")
                     else:
                         self.log_warn("card HTML", f"{name} (/card/{slug})", "Card name missing from rendered HTML")
+
+                    # Check 2x3 related cards section
+                    if "related-cards-grid" in resp_html.text:
+                        self.log_pass("card related 2x3 HTML", f"{name} renders 2x3 related cards grid")
+                    else:
+                        self.log_warn("card related 2x3 HTML", f"{name}", "Missing related-cards-grid in HTML")
                 else:
                     self.log_fail("card HTML", f"/card/{slug}", f"Status {resp_html.status_code}")
             except Exception as e:
@@ -214,6 +220,11 @@ class DominionSiteBlaster:
                         self.log_pass("card Markdown", f"{name} (/card/{slug}.md)")
                     else:
                         self.log_warn("card Markdown", f"/card/{slug}.md", "Markdown missing card name header")
+
+                    if "## Synergistic & Related Cards" in resp_md.text:
+                        self.log_pass("card related Markdown", f"{name} includes related cards section in .md")
+                    else:
+                        self.log_warn("card related Markdown", f"{name}", "Missing related cards section in .md")
                 else:
                     self.log_fail("card Markdown", f"/card/{slug}.md", f"Status {resp_md.status_code}")
             except Exception as e:
@@ -232,6 +243,13 @@ class DominionSiteBlaster:
                     else:
                         self.log_fail("card JSON REST", f"/card/{slug}.json", "REST symmetry mismatch with Mongo entity",
                                       {"expected_name": name, "json_name": c_name, "expected_slug": slug, "json_slug": c_slug})
+
+                    # Verify 7-10 related cards in JSON
+                    related = c_data.get("related_cards", [])
+                    if len(related) >= 7:
+                        self.log_pass("card related JSON", f"{name} has {len(related)} related cards in JSON")
+                    else:
+                        self.log_warn("card related JSON", f"{name}", f"Only {len(related)} related cards in JSON (expected 7-10)")
                 else:
                     self.log_fail("card JSON REST", f"/card/{slug}.json", f"Status {resp_json.status_code}")
             except Exception as e:

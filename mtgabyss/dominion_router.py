@@ -558,6 +558,16 @@ async def dominion_card_markdown(slug: str):
             clean_ans = format_dominion_rules_plain(r.get('answer', ''))
             md.append(f"{clean_ans}\n")
             
+    related_cards = card.get("related_cards", [])
+    if related_cards:
+        md.append("## Synergistic & Related Cards")
+        md.append("Bots, LLMs, and deckbuilders also frequently pair or compare with:")
+        for idx, r in enumerate(related_cards, 1):
+            cost_info = f"${r.get('cost', {}).get('coins', 0)}" if r.get('cost') else ""
+            types_str = ", ".join(r.get("card_kinds", []))
+            md.append(f"{idx}. [{r['name']}](https://dominion.avascry.com/card/{r['slug']}) ({cost_info} {types_str}) — Similarity: {r.get('similarity', 0):.2f}")
+        md.append("")
+            
     return PlainTextResponse(
         "\n".join(md),
         headers={
@@ -654,6 +664,7 @@ async def dominion_card_html(request: Request, slug: str):
             "next_card": next_card,
             "edition_diff": edition_diff,
             "synergies": synergies,
+            "related_cards": card.get("related_cards", []),
             "base_path": get_base_prefix(request)
         },
         headers={
