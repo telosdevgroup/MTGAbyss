@@ -498,26 +498,24 @@
           </a>
         </div>
 
+        {% if user %}
         <span class="nav-divider" aria-hidden="true"></span>
 
         <!-- Group 2: User Profile or Discord Sign In -->
         <div class="nav-user-group">
-          {% if user %}
-            <a href="/dashboard" class="user-profile-menu {% if active_nav == 'dashboard' %}active{% endif %}" title="View Your Profile & Decks" style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.2rem 0.65rem 0.2rem 0.25rem; text-decoration: none; color: var(--text);">
-              {% if user.picture %}
-                <img src="{{ user.picture }}" alt="{{ user.name }}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
-              {% else %}
-                <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; font-weight: 700;">{{ user.name[0] }}</div>
-              {% endif %}
-              <span style="font-size: 0.8rem; font-weight: 700; max-width: 110px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                {% if user.discord_username %}@{{ user.discord_username }}{% else %}{{ user.name }}{% endif %}
-              </span>
-            </a>
-            <a href="/auth/logout" title="Sign out" aria-label="Sign out" style="color: var(--muted); font-size: 0.75rem; text-decoration: none; padding: 0.2rem 0.4rem; border-radius: 50%;">✕</a>
-          {% else %}
-            {% include "partials/discord_login_button.html" %}
-          {% endif %}
+          <a href="/dashboard" class="user-profile-menu {% if active_nav == 'dashboard' %}active{% endif %}" title="View Your Profile & Decks" style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.2rem 0.65rem 0.2rem 0.25rem; text-decoration: none; color: var(--text);">
+            {% if user.picture %}
+              <img src="{{ user.picture }}" alt="{{ user.name }}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
+            {% else %}
+              <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; font-weight: 700;">{{ user.name[0] }}</div>
+            {% endif %}
+            <span style="font-size: 0.8rem; font-weight: 700; max-width: 110px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              {% if user.discord_username %}@{{ user.discord_username }}{% else %}{{ user.name }}{% endif %}
+            </span>
+          </a>
+          <a href="/auth/logout" title="Sign out" aria-label="Sign out" style="color: var(--muted); font-size: 0.75rem; text-decoration: none; padding: 0.2rem 0.4rem; border-radius: 50%;">✕</a>
         </div>
+        {% endif %}
 
         <span class="nav-divider" aria-hidden="true"></span>
 
