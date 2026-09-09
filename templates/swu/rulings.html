@@ -131,9 +131,15 @@
             </a>
           </div>
 
-          <div style="background: #09090b; border: 1px solid #27272a; border-left: 3px solid #38bdf8; border-radius: 6px; padding: 1rem; font-size: 0.94rem; line-height: 1.6; color: #d4d4d8; white-space: pre-line;">
-            {{ item.ruling_text }}
-          </div>
+          {% if loop.index % 2 == 1 %}
+            <div style="background: #09090b; border: 1px solid #27272a; border-left: 3px solid #38bdf8; border-radius: 6px; padding: 1rem; font-size: 0.94rem; line-height: 1.6; color: #d4d4d8; white-space: pre-line;">
+              {{ item.ruling_text }}
+            </div>
+          {% else %}
+            <div style="background: #09090b; border: 1px solid #27272a; border-right: 3px solid #ef4444; border-radius: 6px; padding: 1rem; font-size: 0.94rem; line-height: 1.6; color: #d4d4d8; white-space: pre-line;">
+              {{ item.ruling_text }}
+            </div>
+          {% endif %}
         </div>
       {% endfor %}
     </div>
