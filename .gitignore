@@ -32,7 +32,7 @@ venv.bak/
 *.json
 *.csv
 *.tsv
-data/
+/data/
 db_dumps/
 all-cards-all-printings-all-languages.jsonl
 *.zip

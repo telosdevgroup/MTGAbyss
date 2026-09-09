@@ -1,0 +1,64 @@
+﻿{% extends "minecraft/base.html" %}
+
+{% block title %}Minecraft Guides & Strategy Primers | AvaScry Minecraft{% endblock %}
+{% block meta_description %}Authoritative Minecraft Java Edition guides: optimal mining Y-levels, villager trading halls, architectural palette theory, and redstone mechanics.{% endblock %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 2rem auto 5rem; padding: 0 1.25rem;">
+
+  <!-- Hero Banner -->
+  <header style="margin-bottom: 3.5rem; text-align: center; max-width: 760px; margin-left: auto; margin-right: auto;">
+    <div style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); background: rgba(13, 148, 136, 0.1); border: 1px solid rgba(13, 148, 136, 0.25); padding: 0.25rem 0.85rem; border-radius: 9999px; margin-bottom: 1rem;">
+      <span>📖</span> Reference Primers &amp; Handbooks
+    </div>
+    <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -0.025em; margin: 0 0 0.85rem 0; color: var(--text-heading); line-height: 1.2;">
+      Minecraft Guides &amp; Strategy
+    </h1>
+    <p style="font-size: 1.05rem; color: var(--muted); margin: 0 0 1rem 0; line-height: 1.6;">
+      Deterministic vanilla mechanics, technical redstone architecture, villager economy guides, and aesthetic building palettes.
+    </p>
+  </header>
+
+  <!-- Guides Grid -->
+  <div style="display: flex; flex-direction: column; gap: 2rem;">
+    {% for g in guides %}
+    <article style="background: var(--card-bg, #ffffff); border: 1.5px solid var(--border); border-radius: 12px; padding: 2rem; box-shadow: 0 4px 16px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.15s ease, border-color 0.15s ease;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem; flex-wrap: wrap;">
+          <span style="background: rgba(13, 148, 136, 0.09); border: 1px solid rgba(13, 148, 136, 0.25); color: var(--accent); font-weight: 700; font-size: 0.76rem; padding: 0.2rem 0.65rem; border-radius: 9999px;">
+            {{ g.category }}
+          </span>
+          <span style="color: var(--muted); font-size: 0.78rem; font-weight: 600;">⏱️ {{ g.read_time }}</span>
+        </div>
+
+        <h2 style="font-size: 1.55rem; font-weight: 800; margin: 0 0 0.65rem 0; line-height: 1.3;">
+          <a href="{{ base_prefix }}/guides/{{ g.slug }}" style="color: var(--text-heading, #0f172a); text-decoration: none;">
+            {{ g.title }}
+          </a>
+        </h2>
+
+        {% if g.subtitle %}
+        <p style="font-size: 0.94rem; color: var(--accent); font-weight: 600; margin: 0 0 0.85rem 0; line-height: 1.5;">
+          {{ g.subtitle }}
+        </p>
+        {% endif %}
+
+        <p style="font-size: 0.92rem; color: var(--muted); line-height: 1.65; margin: 0 0 1.5rem 0;">
+          {{ g.summary }}
+        </p>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: auto;">
+        <div style="font-size: 0.82rem; color: var(--muted); font-weight: 600;">
+          By {{ g.author }}
+        </div>
+        <a href="{{ base_prefix }}/guides/{{ g.slug }}" style="background: var(--accent); color: #fff; padding: 0.55rem 1.25rem; font-size: 0.86rem; font-weight: 700; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+          Read Guide &rarr;
+        </a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

@@ -35,6 +35,11 @@ def get_base_prefix(request: Request) -> str:
     return "/necromunda"
 
 
+def get_current_user(request: Request):
+    return request.session.get("user") if "session" in request.scope else None
+
+
+
 @necromunda_router.get("", response_class=HTMLResponse)
 @necromunda_router.get("/", response_class=HTMLResponse)
 async def necromunda_home(request: Request):
@@ -933,5 +938,40 @@ async def necromunda_contact_post(request: Request):
             "values": result.get("values", {})
         }
     )
+
+
+@necromunda_router.get("/guides", response_class=HTMLResponse)
+async def necromunda_guides_index(request: Request):
+    """Guides & Tactica index for Necromunda."""
+    from mtgabyss.data.necromunda_guides import NECROMUNDA_GUIDES
+    guides = list(NECROMUNDA_GUIDES.values())
+    return templates.TemplateResponse(
+        request=request,
+        name="necromunda/guides/index.html",
+        context={
+            "base_path": get_base_prefix(request),
+            "user": get_current_user(request),
+            "guides": guides
+        }
+    )
+
+
+@necromunda_router.get("/guides/{slug}", response_class=HTMLResponse)
+async def necromunda_guide_detail(request: Request, slug: str):
+    """Guide detail view for Necromunda."""
+    from mtgabyss.data.necromunda_guides import NECROMUNDA_GUIDES
+    guide = NECROMUNDA_GUIDES.get(slug)
+    if not guide:
+        raise HTTPException(status_code=404, detail="Guide not found")
+    return templates.TemplateResponse(
+        request=request,
+        name="necromunda/guides/detail.html",
+        context={
+            "base_path": get_base_prefix(request),
+            "user": get_current_user(request),
+            "guide": guide
+        }
+    )
+
 
 

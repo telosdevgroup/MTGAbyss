@@ -2391,3 +2391,38 @@ async def minecraft_palette_view(request: Request, slug: str = "deepslate-tiles"
             "curated_blocks": curated_blocks
         }
     )
+
+
+@minecraft_router.get("/guides", response_class=HTMLResponse)
+async def minecraft_guides_index(request: Request):
+    """Guides & Strategy index for Minecraft."""
+    from mtgabyss.data.minecraft_guides import MINECRAFT_GUIDES
+    guides = list(MINECRAFT_GUIDES.values())
+    return templates.TemplateResponse(
+        request=request,
+        name="minecraft/guides/index.html",
+        context={
+            "base_prefix": get_base_prefix(request),
+            "user": get_current_user(request),
+            "guides": guides
+        }
+    )
+
+
+@minecraft_router.get("/guides/{slug}", response_class=HTMLResponse)
+async def minecraft_guide_detail(request: Request, slug: str):
+    """Guide detail view for Minecraft."""
+    from mtgabyss.data.minecraft_guides import MINECRAFT_GUIDES
+    guide = MINECRAFT_GUIDES.get(slug)
+    if not guide:
+        raise HTTPException(status_code=404, detail="Guide not found")
+    return templates.TemplateResponse(
+        request=request,
+        name="minecraft/guides/detail.html",
+        context={
+            "base_prefix": get_base_prefix(request),
+            "user": get_current_user(request),
+            "guide": guide
+        }
+    )
+
