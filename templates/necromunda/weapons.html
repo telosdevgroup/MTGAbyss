@@ -223,12 +223,56 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin: 2rem 0 1.5rem 0;
+    margin: 1.5rem 0 1rem 0;
     padding-bottom: 0.75rem;
     border-bottom: 1px solid var(--border);
     font-size: 0.85rem;
     font-family: 'JetBrains Mono', monospace;
     color: var(--muted);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  /* Faceted Filtering Toolbar */
+  .armory-facet-bar {
+    background: #10141d;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    margin: 1.5rem auto 1.25rem auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    align-items: end;
+  }
+  .facet-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .facet-label {
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .facet-select {
+    width: 100%;
+    background: #141923;
+    border: 1px solid var(--border);
+    color: #cbd5e1;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: 5px;
+    outline: none;
+    transition: border-color 0.15s;
+    cursor: pointer;
+  }
+  .facet-select:focus {
+    border-color: var(--accent);
+    color: #fff;
   }
   .no-matches-panel {
     display: none;
@@ -315,6 +359,56 @@
   <span style="font-size: 0.75rem; opacity: 0.75;">Press <kbd style="background: #1e2430; padding: 2px 5px; border-radius: 3px; border: 1px solid var(--border);">Esc</kbd> to reset &bull; <kbd style="background: #1e2430; padding: 2px 5px; border-radius: 3px; border: 1px solid var(--border);">/</kbd> to search</span>
 </div>
 
+<!-- Faceted Filtering Bar -->
+<div class="armory-facet-bar" id="armoryFacetBar">
+  <div class="facet-group">
+    <label class="facet-label" for="facetCategory">Category</label>
+    <select id="facetCategory" class="facet-select">
+      <option value="all">All Categories</option>
+      <option value="basic weapon">Basic Weapon</option>
+      <option value="pistol">Pistol</option>
+      <option value="special weapon">Special Weapon</option>
+      <option value="heavy weapon">Heavy Weapon</option>
+      <option value="close combat">Close Combat</option>
+      <option value="grenades">Grenades</option>
+      <option value="booby traps">Booby Traps</option>
+    </select>
+  </div>
+  <div class="facet-group">
+    <label class="facet-label" for="facetCost">Credits / Cost</label>
+    <select id="facetCost" class="facet-select">
+      <option value="all">All Costs</option>
+      <option value="budget">Budget (≤ 30 cr)</option>
+      <option value="mid">Mid-Tier (31–80 cr)</option>
+      <option value="high">High-End (> 80 cr)</option>
+    </select>
+  </div>
+  <div class="facet-group">
+    <label class="facet-label" for="facetTrait">Combat Trait</label>
+    <select id="facetTrait" class="facet-select">
+      <option value="all">All Traits</option>
+      <option value="rapid fire">Rapid Fire</option>
+      <option value="blast">Blast</option>
+      <option value="melee">Melee</option>
+      <option value="knockback">Knockback</option>
+      <option value="unwieldy">Unwieldy</option>
+      <option value="scarce">Scarce</option>
+      <option value="blaze">Blaze</option>
+      <option value="shock">Shock</option>
+      <option value="rending">Rending</option>
+      <option value="versatile">Versatile</option>
+    </select>
+  </div>
+  <div class="facet-group">
+    <label class="facet-label" for="facetSort">Sort By</label>
+    <select id="facetSort" class="facet-select">
+      <option value="name-asc">Name (A → Z)</option>
+      <option value="cost-asc">Cost: Low to High</option>
+      <option value="cost-desc">Cost: High to Low</option>
+    </select>
+  </div>
+</div>
+
 <div class="no-matches-panel" id="noWeaponMatchesPanel">
   <div style="font-family: 'Chakra Petch', sans-serif; font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 0.4rem;">
     No Matching Weapons Found
@@ -334,7 +428,8 @@
        data-category="{{ w.category|lower }}" 
        data-rarity="{{ w.rarity|lower }}" 
        data-traits="{{ w.traits|join(' ')|lower }}" 
-       data-desc="{{ w.description|lower }}">
+       data-desc="{{ w.description|lower }}"
+       data-cost="{{ w.cost_credits|default(0) }}">
     <div>
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
         <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.25rem; font-weight: 700;">
@@ -400,64 +495,122 @@
   const clearBtn = document.getElementById('weaponFilterClear');
   const status = document.getElementById('weaponFilterStatus');
   const noMatches = document.getElementById('noWeaponMatchesPanel');
+  const grid = document.getElementById('weaponsGrid');
   const cards = Array.from(document.querySelectorAll('.weapon-card'));
   const catButtons = Array.from(document.querySelectorAll('.cat-btn'));
+  const facetCategory = document.getElementById('facetCategory');
+  const facetCost = document.getElementById('facetCost');
+  const facetTrait = document.getElementById('facetTrait');
+  const facetSort = document.getElementById('facetSort');
   const total = cards.length;
   let activeCategory = 'all';
+
+  function sortCards() {
+    const sortVal = facetSort ? facetSort.value : 'name-asc';
+    const sorted = [...cards].sort((a, b) => {
+      if (sortVal === 'cost-asc') {
+        const costA = parseFloat(a.dataset.cost) || 0;
+        const costB = parseFloat(b.dataset.cost) || 0;
+        return costA - costB || (a.dataset.name || '').localeCompare(b.dataset.name || '');
+      } else if (sortVal === 'cost-desc') {
+        const costA = parseFloat(a.dataset.cost) || 0;
+        const costB = parseFloat(b.dataset.cost) || 0;
+        return costB - costA || (a.dataset.name || '').localeCompare(b.dataset.name || '');
+      } else {
+        return (a.dataset.name || '').localeCompare(b.dataset.name || '');
+      }
+    });
+
+    sorted.forEach(card => grid.appendChild(card));
+  }
 
   function filterWeapons() {
     const rawVal = input.value.trim().toLowerCase();
     clearBtn.style.display = rawVal.length > 0 ? 'block' : 'none';
 
+    const selectedFacetCat = facetCategory ? facetCategory.value.toLowerCase() : 'all';
+    const selectedFacetCost = facetCost ? facetCost.value : 'all';
+    const selectedFacetTrait = facetTrait ? facetTrait.value.toLowerCase() : 'all';
+
     let matchCount = 0;
     cards.forEach(card => {
       const cat = (card.dataset.category || '').toLowerCase();
-      let catMatch = false;
+      const traits = (card.dataset.traits || '').toLowerCase();
+      const cost = parseFloat(card.dataset.cost) || 0;
+
+      // 1. Hero Category Pill Match
+      let heroCatMatch = false;
       if (activeCategory === 'all') {
-        catMatch = true;
+        heroCatMatch = true;
       } else if (activeCategory === 'ranged') {
-        catMatch = cat.includes('pistol') || cat.includes('basic') || cat.includes('special') || cat.includes('heavy');
+        heroCatMatch = cat.includes('pistol') || cat.includes('basic') || cat.includes('special') || cat.includes('heavy');
       } else if (activeCategory === 'melee') {
-        catMatch = cat.includes('close combat') || cat.includes('melee') || cat.includes('grenade') || cat.includes('booby');
+        heroCatMatch = cat.includes('close combat') || cat.includes('melee') || cat.includes('grenade') || cat.includes('booby');
       } else {
-        catMatch = (cat === activeCategory);
+        heroCatMatch = (cat === activeCategory);
       }
 
-      if (!catMatch) {
+      if (!heroCatMatch) {
         card.style.display = 'none';
         return;
       }
 
-      if (!rawVal) {
-        card.style.display = '';
-        matchCount++;
+      // 2. Facet Category Match
+      if (selectedFacetCat !== 'all' && !cat.includes(selectedFacetCat)) {
+        card.style.display = 'none';
         return;
       }
 
-      const name = card.dataset.name || '';
-      const rarity = card.dataset.rarity || '';
-      const traits = card.dataset.traits || '';
-      const desc = card.dataset.desc || '';
-
-      const textMatch = name.includes(rawVal) || 
-                        rarity.includes(rawVal) || 
-                        traits.includes(rawVal) || 
-                        desc.includes(rawVal) || 
-                        cat.includes(rawVal);
-
-      if (textMatch) {
-        card.style.display = '';
-        matchCount++;
-      } else {
+      // 3. Facet Cost Bracket Match
+      if (selectedFacetCost === 'budget' && cost > 30) {
         card.style.display = 'none';
+        return;
       }
+      if (selectedFacetCost === 'mid' && (cost <= 30 || cost > 80)) {
+        card.style.display = 'none';
+        return;
+      }
+      if (selectedFacetCost === 'high' && cost <= 80) {
+        card.style.display = 'none';
+        return;
+      }
+
+      // 4. Facet Combat Trait Match
+      if (selectedFacetTrait !== 'all' && !traits.includes(selectedFacetTrait)) {
+        card.style.display = 'none';
+        return;
+      }
+
+      // 5. Search Text Match
+      if (rawVal) {
+        const name = card.dataset.name || '';
+        const rarity = card.dataset.rarity || '';
+        const desc = card.dataset.desc || '';
+        const textMatch = name.includes(rawVal) || 
+                          rarity.includes(rawVal) || 
+                          traits.includes(rawVal) || 
+                          desc.includes(rawVal) || 
+                          cat.includes(rawVal);
+        if (!textMatch) {
+          card.style.display = 'none';
+          return;
+        }
+      }
+
+      card.style.display = '';
+      matchCount++;
     });
 
-    let catLabel = activeCategory === 'all' ? '' : ` in ${activeCategory}`;
-    if (rawVal) {
-      status.textContent = `Showing ${matchCount} of ${total} weapons${catLabel} for "${rawVal}"`;
-    } else if (activeCategory !== 'all') {
-      status.textContent = `Showing ${matchCount} of ${total} weapons${catLabel}`;
+    // Update summary text
+    const activeFilters = [];
+    if (activeCategory !== 'all') activeFilters.push(`class: ${activeCategory}`);
+    if (selectedFacetCat !== 'all') activeFilters.push(`type: ${selectedFacetCat}`);
+    if (selectedFacetCost !== 'all') activeFilters.push(`cost: ${selectedFacetCost}`);
+    if (selectedFacetTrait !== 'all') activeFilters.push(`trait: ${selectedFacetTrait}`);
+    if (rawVal) activeFilters.push(`"${rawVal}"`);
+
+    if (activeFilters.length > 0) {
+      status.textContent = `Showing ${matchCount} of ${total} weapons (${activeFilters.join(', ')})`;
     } else {
       status.textContent = `Showing ${total} of ${total} weapons`;
     }
@@ -479,6 +632,15 @@
     });
   });
 
+  // Facet dropdown handlers
+  if (facetCategory) facetCategory.addEventListener('change', filterWeapons);
+  if (facetCost) facetCost.addEventListener('change', filterWeapons);
+  if (facetTrait) facetTrait.addEventListener('change', filterWeapons);
+  if (facetSort) facetSort.addEventListener('change', () => {
+    sortCards();
+    filterWeapons();
+  });
+
   input.addEventListener('input', filterWeapons);
 
   clearBtn.addEventListener('click', function() {
@@ -496,6 +658,11 @@
         if (b.dataset.cat === 'all') b.classList.add('active');
         else b.classList.remove('active');
       });
+      if (facetCategory) facetCategory.value = 'all';
+      if (facetCost) facetCost.value = 'all';
+      if (facetTrait) facetTrait.value = 'all';
+      if (facetSort) facetSort.value = 'name-asc';
+      sortCards();
       filterWeapons();
       input.focus();
     });
