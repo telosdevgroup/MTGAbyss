@@ -41,8 +41,11 @@
       <a href="#vectors" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--surface, rgba(255,255,255,0.03)); color: var(--text); transition: all 0.15s ease;">
         <span>🧠 Vectors</span>
       </a>
+      <a href="#ai-markdown" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--surface, rgba(255,255,255,0.03)); color: var(--text); transition: all 0.15s ease;">
+        <span>🤖 LLM Markdown</span>
+      </a>
       <a href="/bot" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--surface, rgba(255,255,255,0.03)); color: var(--text); transition: all 0.15s ease;">
-        <span>🤖 Discord Bot</span>
+        <span>💬 Discord Bot</span>
       </a>
       <a href="/developers" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--surface, rgba(255,255,255,0.03)); color: var(--text); transition: all 0.15s ease;">
         <span>📊 Complete Schema Spec</span>
@@ -240,6 +243,31 @@ curl -s https://avascry.com/vector/combat-research.json
   "dimensions": 4096,
   "embedding": [0.0142, -0.0481, 0.0812, 0.0093, ...]
 }</code></pre>
+      </div>
+    </div>
+
+    <!-- 7. AI & LLM Ingestion (Markdown Surface) -->
+    <div id="ai-markdown" style="background: var(--card-bg, #1e293b); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+        <h2 style="font-size: 1.35rem; font-weight: 700; color: var(--text); margin: 0;">
+          7. AI &amp; LLM Ingestion (Markdown Surface)
+        </h2>
+        <span style="font-size: 0.75rem; font-weight: 700; background: #6366f1; color: #ffffff; padding: 2px 8px; border-radius: 4px;">text/markdown</span>
+      </div>
+      <p style="color: var(--muted); font-size: 0.95rem; margin-top: 0; margin-bottom: 1.25rem; line-height: 1.55;">
+        AvaScry provides first-class, zero-cruft Markdown surfaces for AI agents, RAG indexing pipelines, and local LLM ingest. Request any card, printing, or set as clean Markdown with structured YAML frontmatter, or append <code>.md</code> directly.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <pre style="background: var(--bg, #0f172a); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; color: #a5b4fc; font-family: monospace; font-size: 0.85rem; overflow-x: auto; margin: 0;"><code># Content negotiation with Accept header
+curl -H "Accept: text/markdown" https://avascry.com/card/black-lotus
+
+# Or append .md directly
+curl https://avascry.com/card/black-lotus.md
+curl https://avascry.com/set/lea.md
+
+# AI Site Map &amp; Discovery
+curl https://avascry.com/llms.txt</code></pre>
       </div>
     </div>
 
