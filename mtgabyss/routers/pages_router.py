@@ -163,6 +163,18 @@ async def contact_page_post(request: Request):
         }
     )
 
+@pages_router.post("/api/contact", response_class=JSONResponse)
+async def api_contact_post(request: Request):
+    from mtgabyss.shared.contact import process_contact_submission
+    result = await process_contact_submission(
+        request=request,
+        subsite_name="AvaScry MTG",
+        subsite_color=0x3b82f6,
+        extra_field_name="page_url",
+        extra_field_label="Source Page"
+    )
+    return JSONResponse(result)
+
 
 @pages_router.get("/privacy", response_class=HTMLResponse)
 async def privacy_policy(request: Request):
