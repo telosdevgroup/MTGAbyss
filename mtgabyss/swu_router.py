@@ -13,6 +13,51 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse, Fil
 from db_mongo import get_mongo_db
 from mtgabyss.shared.helpers import templates
 
+def trait_slug_filter(val: str) -> str:
+    if not val:
+        return ""
+    return re.sub(r'[^a-z0-9]+', '-', str(val).lower()).strip('-')
+
+templates.env.filters["trait_slug"] = trait_slug_filter
+
+def determine_swu_synergy_reason(source_card: dict, target_card: dict) -> str:
+    """Derives a human-friendly gameplay relationship badge without exposing raw embedding math."""
+    s_traits = set(source_card.get("traits") or [])
+    t_traits = set(target_card.get("traits") or [])
+    shared_traits = s_traits.intersection(t_traits)
+    if shared_traits:
+        primary_trait = sorted(list(shared_traits))[0]
+        return f"{primary_trait} Synergy"
+
+    s_type = source_card.get("type", "")
+    t_type = target_card.get("type", "")
+    if s_type == "Leader" and t_type == "Leader":
+        s_aspects = set(source_card.get("aspects") or [])
+        t_aspects = set(target_card.get("aspects") or [])
+        shared_asp = s_aspects.intersection(t_aspects)
+        if shared_asp:
+            return f"Alternative {'/'.join(sorted(list(shared_asp)))} Leader"
+        return "Alternative Commander"
+
+    # Check shared keywords / mechanics
+    s_text = (source_card.get("text") or source_card.get("rules") or "").lower()
+    t_text = (target_card.get("text") or target_card.get("rules") or "").lower()
+    for kw in ("sentinel", "shield", "experience", "saboteur", "bounty", "smuggle", "ambush", "restore", "grit", "coordinate", "exploit", "indirect damage"):
+        if kw in s_text and kw in t_text:
+            return f"{kw.title()} Synergy"
+
+    s_aspects = set(source_card.get("aspects") or [])
+    t_aspects = set(target_card.get("aspects") or [])
+    shared_aspects = s_aspects.intersection(t_aspects)
+    if shared_aspects:
+        return f"{'/'.join(sorted(list(shared_aspects)))} Ally"
+
+    if source_card.get("cost") is not None and target_card.get("cost") is not None:
+        if abs(int(source_card.get("cost")) - int(target_card.get("cost"))) <= 1:
+            return "Curve Option"
+
+    return "Archetype Pair"
+
 swu_router = APIRouter(prefix="", tags=["Star Wars Unlimited"])
 
 @swu_router.get("/images/{rest_of_path:path}", include_in_schema=False)
@@ -525,11 +570,46 @@ async def swu_card_detail(slug: str, request: Request):
     if next_card and not next_card.get("card_number"):
         next_card["card_number"] = next_card.get("number")
 
+    # Hydrate official rulings and clarifications from db.clarifications
+    rulings_query = {"$or": []}
+    if card_slug:
+        rulings_query["$or"].append({"card_slug": card_slug})
+    if slug and slug != card_slug:
+        rulings_query["$or"].append({"card_slug": slug})
+    if current_num and current_exp:
+        rulings_query["$or"].append({"card_number": current_num, "card_set": current_exp})
+        if str(current_num).isdigit():
+            rulings_query["$or"].append({"card_number": int(current_num), "card_set": current_exp})
+
+    official_rulings = []
+    if rulings_query["$or"]:
+        raw_rulings = list(db.clarifications.find(
+            rulings_query, 
+            {"_id": 0, "question": 1, "answer": 1, "ruling_text": 1, "source": 1, "authority": 1, "slug": 1, "status": 1}
+        ))
+        seen_texts = set()
+        for r in raw_rulings:
+            txt = (r.get("ruling_text") or r.get("answer") or "").strip()
+            if txt and txt not in seen_texts:
+                seen_texts.add(txt)
+                official_rulings.append({
+                    "question": r.get("question") or f"How does {card.get('title')} interact with other cards?",
+                    "answer": txt,
+                    "source": r.get("source") or "Official Fantasy Flight Games Rulings & Errata Document",
+                    "authority": r.get("authority") or "official",
+                    "slug": r.get("slug")
+                })
+    card["official_rulings"] = official_rulings
+
     # Similar/synergy cards: query precomputed neural similarity graph, with fallback to trait/aspect query
     synergy_cards = []
+    alternate_leaders = []
+    current_type = card.get("type", "")
+    current_title = (card.get("title") or card.get("name") or "").strip().lower()
+
     sim_doc = db.similar_cards.find_one({"$or": [{"slug": card_slug}, {"slug": slug}]})
     if sim_doc and sim_doc.get("similar"):
-        for sc in sim_doc["similar"][:6]:
+        for sc in sim_doc["similar"]:
             sc_copy = dict(sc)
             sc_slug = sc_copy.get("slug") or ""
             base_sc_slug = sc_slug[:-1] if sc_slug.endswith(("F", "f")) else sc_slug
@@ -539,11 +619,26 @@ async def swu_card_detail(slug: str, request: Request):
                 sc_copy["art_front"] = f"/images/swu/{base_sc_slug}_front.png"
             else:
                 sc_copy["art_front"] = sc_copy.get("art_front")
-            synergy_cards.append(sc_copy)
-    else:
+
+            sc_type = sc_copy.get("type", "")
+            sc_title = (sc_copy.get("title") or sc_copy.get("name") or "").strip().lower()
+
+            # For Leaders: segment into playable deck cards vs alternate leaders
+            if current_type == "Leader":
+                if sc_type == "Leader":
+                    if sc_title != current_title and len(alternate_leaders) < 6:
+                        alternate_leaders.append(sc_copy)
+                else:
+                    if len(synergy_cards) < 6:
+                        synergy_cards.append(sc_copy)
+            else:
+                if len(synergy_cards) < 6:
+                    synergy_cards.append(sc_copy)
+
+    # Fallback if synergy cards insufficient
+    if len(synergy_cards) < 6:
         traits = card.get("traits", [])
         aspects = card.get("aspects", [])
-        current_title = card.get("title") or card.get("name")
         synergy_query = {
             "slug": {"$ne": card.get("slug")},
             "variant_type": {"$nin": ["Foil", "Hyperspace Foil", "Prestige Foil", "Prestige Serialized"]},
@@ -552,22 +647,25 @@ async def swu_card_detail(slug: str, request: Request):
                 {"aspects": {"$in": aspects}} if aspects else {}
             ]
         }
+        if current_type == "Leader":
+            synergy_query["type"] = {"$ne": "Leader"}
         synergy_query["$or"] = [cond for cond in synergy_query["$or"] if cond]
         if synergy_query["$or"]:
             raw_synergy = list(db.cards.find(synergy_query, {
-                "_id": 0, "slug": 1, "title": 1, "name": 1, "subtitle": 1, "art_front": 1, "front_image": 1, "type": 1, "cost": 1, "variant_type": 1
+                "_id": 0, "slug": 1, "title": 1, "name": 1, "subtitle": 1, "art_front": 1, "front_image": 1, "type": 1, "cost": 1, "aspects": 1, "variant_type": 1
             }).limit(30))
-            seen_titles = {current_title} if current_title else set()
+            seen_slugs = {sc["slug"] for sc in synergy_cards}
+            seen_slugs.add(card.get("slug"))
             for sc in raw_synergy:
-                t = sc.get("title") or sc.get("name")
-                if not t or t in seen_titles:
+                s_slug = sc.get("slug") or ""
+                if s_slug in seen_slugs:
                     continue
-                seen_titles.add(t)
+                seen_slugs.add(s_slug)
+                t = sc.get("title") or sc.get("name")
                 sc["title"] = t
-                sc_slug = sc.get("slug") or ""
-                base_sc_slug = sc_slug[:-1] if sc_slug.endswith(("F", "f")) else sc_slug
-                if os.path.isfile(f"public/images/swu/{sc_slug}_front.png"):
-                    sc["art_front"] = f"/images/swu/{sc_slug}_front.png"
+                base_sc_slug = s_slug[:-1] if s_slug.endswith(("F", "f")) else s_slug
+                if os.path.isfile(f"public/images/swu/{s_slug}_front.png"):
+                    sc["art_front"] = f"/images/swu/{s_slug}_front.png"
                 elif os.path.isfile(f"public/images/swu/{base_sc_slug}_front.png"):
                     sc["art_front"] = f"/images/swu/{base_sc_slug}_front.png"
                 else:
@@ -575,6 +673,12 @@ async def swu_card_detail(slug: str, request: Request):
                 synergy_cards.append(sc)
                 if len(synergy_cards) >= 6:
                     break
+
+    # Tag each card with its human-friendly gameplay synergy relationship badge
+    for sc in synergy_cards:
+        sc["synergy_reason"] = determine_swu_synergy_reason(card, sc)
+    for al in alternate_leaders:
+        al["synergy_reason"] = determine_swu_synergy_reason(card, al)
 
     return templates.TemplateResponse(
         request=request,
@@ -584,7 +688,8 @@ async def swu_card_detail(slug: str, request: Request):
             "base_path": get_base_prefix(request),
             "prev_card": prev_card,
             "next_card": next_card,
-            "synergy_cards": synergy_cards
+            "synergy_cards": synergy_cards,
+            "alternate_leaders": alternate_leaders
         },
         headers={
             "Vary": "Accept",
@@ -918,6 +1023,199 @@ async def swu_keyword_detail(request: Request, slug: str):
     )
 
 # ---------------------------------------------------------
+# Feature 1B: Traits & Tribal Lexicon Directory
+# ---------------------------------------------------------
+@swu_router.get("/traits", response_class=HTMLResponse)
+async def swu_traits_list(request: Request):
+    db = get_swu_db()
+    # Distinct traits across all cards
+    traits_raw = [t for t in db.cards.distinct("traits") if t]
+    
+    # Aggregate counts and canonical naming
+    pipeline = [
+        {"$match": {"traits": {"$exists": True, "$ne": []}}},
+        {"$unwind": "$traits"},
+        {"$group": {"_id": "$traits", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1, "_id": 1}}
+    ]
+    aggr = list(db.cards.aggregate(pipeline))
+    
+    # Merge case variants like "Twi'Lek" vs "Twi'lek"
+    slug_map = {}
+    for item in aggr:
+        raw_name = item["_id"]
+        if not raw_name:
+            continue
+        slug = re.sub(r'[^a-z0-9]+', '-', raw_name.lower()).strip('-')
+        count = item.get("count", 0)
+        if slug not in slug_map:
+            slug_map[slug] = {"name": raw_name, "slug": slug, "count": count}
+        else:
+            slug_map[slug]["count"] += count
+            if raw_name == "Twi'lek":
+                slug_map[slug]["name"] = raw_name
+
+    traits = sorted(slug_map.values(), key=lambda x: x["name"].lower())
+
+    return templates.TemplateResponse(
+        request=request,
+        name="swu/traits.html",
+        context={
+            "base_path": get_base_prefix(request),
+            "traits": traits,
+            "current_trait": None,
+            "cards": []
+        },
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
+
+@swu_router.get("/trait/{slug}.json", response_class=JSONResponse)
+async def swu_trait_json(slug: str):
+    db = get_swu_db()
+    clean_slug = slug.removesuffix(".json")
+    
+    # Find matching trait name
+    traits_raw = [t for t in db.cards.distinct("traits") if t]
+    matched_names = [t for t in traits_raw if re.sub(r'[^a-z0-9]+', '-', t.lower()).strip('-') == clean_slug]
+    if not matched_names:
+        raise HTTPException(status_code=404, detail="Trait not found")
+    
+    canonical_name = "Twi'lek" if "Twi'lek" in matched_names else matched_names[0]
+    
+    cards = list(db.cards.find(
+        {"traits": {"$in": matched_names}},
+        {"_id": 0, "slug": 1, "title": 1, "name": 1, "subtitle": 1, "card_number": 1, "number": 1,
+         "expansion": 1, "set_code": 1, "type": 1, "cost": 1, "aspects": 1, "traits": 1, "arenas": 1}
+    ).sort([("card_number", 1)]))
+
+    return JSONResponse(
+        content={
+            "name": canonical_name,
+            "slug": clean_slug,
+            "card_count": len(cards),
+            "cards": cards,
+            "links": {
+                "self": f"https://swu.avascry.com/trait/{clean_slug}.json",
+                "html": f"https://swu.avascry.com/trait/{clean_slug}",
+                "markdown": f"https://swu.avascry.com/trait/{clean_slug}.md"
+            }
+        },
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
+
+@swu_router.get("/trait/{slug}.md", response_class=PlainTextResponse)
+async def swu_trait_markdown(slug: str):
+    db = get_swu_db()
+    clean_slug = slug.removesuffix(".md")
+    
+    traits_raw = [t for t in db.cards.distinct("traits") if t]
+    matched_names = [t for t in traits_raw if re.sub(r'[^a-z0-9]+', '-', t.lower()).strip('-') == clean_slug]
+    if not matched_names:
+        raise HTTPException(status_code=404, detail="Trait not found")
+    
+    canonical_name = "Twi'lek" if "Twi'lek" in matched_names else matched_names[0]
+    
+    cards = list(db.cards.find(
+        {"traits": {"$in": matched_names}},
+        {"_id": 0, "slug": 1, "title": 1, "name": 1, "subtitle": 1, "card_number": 1, "number": 1,
+         "expansion": 1, "set_code": 1, "type": 1, "cost": 1, "aspects": 1}
+    ).sort([("card_number", 1)]))
+
+    lines = [
+        f"# {canonical_name} — Star Wars: Unlimited Trait Cards",
+        f"> Complete directory of canonical Star Wars: Unlimited cards possessing the {canonical_name} trait.",
+        f"\n- **Trait Name:** {canonical_name}",
+        f"- **Slug:** {clean_slug}",
+        f"- **Total Cards:** {len(cards)}",
+        f"- **Canonical HTML:** https://swu.avascry.com/trait/{clean_slug}",
+        f"- **JSON Endpoint:** https://swu.avascry.com/trait/{clean_slug}.json",
+        f"\n## Cards ({len(cards)})\n"
+    ]
+
+    for c in cards:
+        t = c.get("title") or c.get("name") or c.get("slug")
+        sub = f": {c['subtitle']}" if c.get("subtitle") else ""
+        num = c.get("card_number") or c.get("number") or ""
+        set_code = (c.get("expansion") or {}).get("code") or c.get("set_code") or ""
+        c_type = c.get("type", "")
+        cost = f"Cost: {c['cost']}" if c.get("cost") is not None else ""
+        aspects = ", ".join(c.get("aspects", [])) if c.get("aspects") else "Neutral"
+        meta_parts = [p for p in [f"{set_code} #{num}", c_type, cost, aspects] if p]
+        meta = f" ({' | '.join(meta_parts)})" if meta_parts else ""
+        lines.append(f"- [{t}{sub}](https://swu.avascry.com/card/{c['slug']}){meta}")
+
+    lines.append(f"\n*Source: AvaScry Star Wars Unlimited (https://swu.avascry.com/trait/{clean_slug})*")
+
+    return PlainTextResponse(
+        content="\n".join(lines),
+        media_type="text/markdown; charset=utf-8",
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
+
+@swu_router.get("/trait/{slug}", response_class=HTMLResponse)
+async def swu_trait_detail(request: Request, slug: str):
+    db = get_swu_db()
+    clean_slug = slug.removesuffix(".json").removesuffix(".md")
+    
+    traits_raw = [t for t in db.cards.distinct("traits") if t]
+    matched_names = [t for t in traits_raw if re.sub(r'[^a-z0-9]+', '-', t.lower()).strip('-') == clean_slug]
+    if not matched_names:
+        raise HTTPException(status_code=404, detail="Trait not found")
+    
+    canonical_name = "Twi'lek" if "Twi'lek" in matched_names else matched_names[0]
+
+    # Find canonical cards belonging to this trait
+    cards = list(db.cards.find(
+        {"traits": {"$in": matched_names}},
+        {
+            "_id": 0, "slug": 1, "title": 1, "name": 1, "subtitle": 1, "card_number": 1, "number": 1,
+            "expansion": 1, "set_code": 1, "art_front": 1, "front_image": 1, "type": 1,
+            "cost": 1, "power": 1, "hp": 1, "aspects": 1, "variant_type": 1
+        }
+    ).sort([("card_number", 1)]))
+
+    # Resolve local images for thumbnails
+    for c in cards:
+        c_slug = c.get("slug") or ""
+        base_c_slug = c_slug[:-1] if c_slug.endswith(("F", "f")) else c_slug
+        if os.path.isfile(f"public/images/swu/{c_slug}_front.png"):
+            c["art_front"] = f"/images/swu/{c_slug}_front.png"
+        elif os.path.isfile(f"public/images/swu/{base_c_slug}_front.png"):
+            c["art_front"] = f"/images/swu/{base_c_slug}_front.png"
+
+    current_trait = {
+        "name": canonical_name,
+        "slug": clean_slug,
+        "count": len(cards)
+    }
+
+    return templates.TemplateResponse(
+        request=request,
+        name="swu/traits.html",
+        context={
+            "base_path": get_base_prefix(request),
+            "traits": [],
+            "current_trait": current_trait,
+            "cards": cards
+        },
+        headers={
+            "Vary": "Accept",
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "Link": f'</trait/{clean_slug}.md>; rel="alternate"; type="text/markdown", </trait/{clean_slug}.json>; rel="alternate"; type="application/json"',
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+        }
+    )
+
+# ---------------------------------------------------------
 # Feature 2: Comprehensive Rules Citation Engine
 # ---------------------------------------------------------
 @swu_router.get("/rules", response_class=HTMLResponse)
@@ -1056,6 +1354,9 @@ async def swu_llms_txt(request: Request):
 - Neural Vector Embedding (4096-dim): https://swu.avascry.com/vector/{slug}.json
 - Neural Similarity Recommendations: https://swu.avascry.com/similar/{slug}.md
 - Machine JSON format for any keyword: https://swu.avascry.com/keyword/{slug}.json
+- Machine JSON format for any trait: https://swu.avascry.com/trait/{slug}.json
+- Machine Markdown format for any trait: https://swu.avascry.com/trait/{slug}.md
+- Traits & Tribal Directory: https://swu.avascry.com/traits
 - Full XML Sitemap: https://swu.avascry.com/sitemap.xml
 
 ## Rules & Clarifications System
@@ -1063,6 +1364,7 @@ async def swu_llms_txt(request: Request):
 - Section permalinks: https://swu.avascry.com/rule/{slug} (e.g., /rule/1-general-concepts)
 - Official Card Clarifications & Errata: https://swu.avascry.com/rulings
 - Keyword Definitions & Reminders: https://swu.avascry.com/keywords
+- Traits & Tribal Lexicon: https://swu.avascry.com/traits
 
 ## Card Types & Anatomy
 - **Leader**: Two-sided card with passive/exhaust ability on front, deployed unit on reverse.
@@ -1303,6 +1605,29 @@ def get_swu_sitemap_data():
     # 2. Keywords
     keywords = list(db.keywords.find({}, {"_id": 0, "slug": 1, "name": 1}).sort("name", 1))
 
+    # 2B. Traits
+    traits_pipeline = [
+        {"$match": {"traits": {"$exists": True, "$ne": []}}},
+        {"$unwind": "$traits"},
+        {"$group": {"_id": "$traits", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1, "_id": 1}}
+    ]
+    traits_aggr = list(db.cards.aggregate(traits_pipeline))
+    traits_slug_map = {}
+    for item in traits_aggr:
+        raw_name = item["_id"]
+        if not raw_name:
+            continue
+        slug = re.sub(r'[^a-z0-9]+', '-', raw_name.lower()).strip('-')
+        count = item.get("count", 0)
+        if slug not in traits_slug_map:
+            traits_slug_map[slug] = {"name": raw_name, "slug": slug, "count": count}
+        else:
+            traits_slug_map[slug]["count"] += count
+            if raw_name == "Twi'lek":
+                traits_slug_map[slug]["name"] = raw_name
+    traits = sorted(traits_slug_map.values(), key=lambda x: x["name"].lower())
+
     # 3. Canonical cards grouped alphabetically
     cards_cursor = db.cards.find({}, {
         "_id": 0, "slug": 1, "title": 1, "name": 1, "subtitle": 1, "variant_type": 1, "card_number": 1
@@ -1343,6 +1668,7 @@ def get_swu_sitemap_data():
     cached_data = {
         "sets": sets,
         "keywords": keywords,
+        "traits": traits,
         "total_cards": len(unique_cards),
         "unique_cards": unique_cards,
         "cards_by_letter": cards_by_letter,
@@ -1364,6 +1690,7 @@ async def swu_sitemap_html(request: Request):
             "base_path": get_base_prefix(request),
             "sets": data["sets"],
             "keywords": data["keywords"],
+            "traits": data.get("traits", []),
             "total_cards": data["total_cards"],
             "cards_by_letter": data["cards_by_letter"],
             "alphabet": data["alphabet"]
@@ -1387,6 +1714,7 @@ async def swu_sitemap_markdown():
         f"- **Canonical Cards:** {data['total_cards']}",
         f"- **Expansions:** {len(data['sets'])}",
         f"- **Keywords:** {len(data['keywords'])}",
+        f"- **Traits & Tribal Lexicons:** {len(data.get('traits', []))}",
         f"- **HTML Master Directory:** https://swu.avascry.com/sitemap.html",
         f"- **XML Sitemap:** https://swu.avascry.com/sitemap.xml",
         f"- **LLMs Manifest:** https://swu.avascry.com/llms.txt",
@@ -1398,6 +1726,10 @@ async def swu_sitemap_markdown():
     lines.append("\n## Keywords & Game Mechanics")
     for kw in data["keywords"]:
         lines.append(f"- [{kw['name']}](https://swu.avascry.com/keyword/{kw['slug']}) • [MD](https://swu.avascry.com/keyword/{kw['slug']}.md) • [JSON](https://swu.avascry.com/keyword/{kw['slug']}.json)")
+
+    lines.append(f"\n## Traits & Tribal Lexicons ({len(data.get('traits', []))})")
+    for t in data.get("traits", []):
+        lines.append(f"- [{t['name']}](https://swu.avascry.com/trait/{t['slug']}) ({t['count']} cards) • [MD](https://swu.avascry.com/trait/{t['slug']}.md) • [JSON](https://swu.avascry.com/trait/{t['slug']}.json)")
 
     lines.append("\n## Comprehensive Rules & Rulings")
     lines.append("- [Comprehensive Rules Index](https://swu.avascry.com/rules) • [MD](https://swu.avascry.com/rules.md) • [JSON](https://swu.avascry.com/rules.json)")
@@ -1441,6 +1773,7 @@ async def swu_sitemap_xml():
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
         '  <url><loc>https://swu.avascry.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>',
         '  <url><loc>https://swu.avascry.com/keywords</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>',
+        '  <url><loc>https://swu.avascry.com/traits</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>',
         '  <url><loc>https://swu.avascry.com/rules</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>',
         '  <url><loc>https://swu.avascry.com/rulings</loc><changefreq>daily</changefreq><priority>0.9</priority></url>',
         '  <url><loc>https://swu.avascry.com/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>',
@@ -1453,6 +1786,14 @@ async def swu_sitemap_xml():
     for kw in keywords:
         if kw.get("slug"):
             xml_lines.append(f'  <url><loc>https://swu.avascry.com/keyword/{kw["slug"]}</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>')
+    # Include traits in sitemap
+    traits_raw = [t for t in db.cards.distinct("traits") if t]
+    seen_trait_slugs = set()
+    for t in traits_raw:
+        tslug = re.sub(r'[^a-z0-9]+', '-', t.lower()).strip('-')
+        if tslug and tslug not in seen_trait_slugs:
+            seen_trait_slugs.add(tslug)
+            xml_lines.append(f'  <url><loc>https://swu.avascry.com/trait/{tslug}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>')
     for c in cards:
         xml_lines.append(f'  <url><loc>https://swu.avascry.com/card/{c["slug"]}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>')
     xml_lines.append('</urlset>')

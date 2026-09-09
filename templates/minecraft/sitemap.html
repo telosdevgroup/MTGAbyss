@@ -1,0 +1,102 @@
+{% extends "minecraft/base.html" %}
+
+{% block title %}AvaScry Minecraft — Sitemap Directory{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://minecraft.avascry.com/sitemap.html">
+<link rel="alternate" type="text/markdown" href="https://minecraft.avascry.com/sitemap.md">
+<link rel="alternate" type="application/xml" href="https://minecraft.avascry.com/sitemap.xml">
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
+  <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--text); margin-bottom: 0.5rem;">
+    Minecraft Atlas Sitemap Directory
+  </h1>
+  <p style="color: var(--muted); font-size: 0.95rem; max-width: 800px;">
+    Complete navigable directory of Java Edition 1.21.4 vanilla items, blocks, recipes, and entities.
+  </p>
+  <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+    <a href="{{ base_prefix }}/sitemap.md" class="badge">Markdown Sitemap</a>
+    <a href="{{ base_prefix }}/sitemap.xml" class="badge">XML Sitemap</a>
+    <a href="{{ base_prefix }}/llms.txt" class="badge">llms.txt</a>
+    <a href="{{ base_prefix }}/llms-full.txt" class="badge">llms-full.txt</a>
+  </div>
+</div>
+
+<!-- Items Section -->
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-title">
+    <span>Items &amp; Tools</span>
+    <span class="badge badge-accent">{{ items | length }}</span>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.6rem; margin-top: 1rem;">
+    {% for itm in items %}
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0.6rem; background: var(--badge-bg); border-radius: 4px;">
+      <a href="{{ base_prefix }}/item/{{ itm.slug }}">{{ itm.facts.display_name }}</a>
+      <div style="display: flex; gap: 0.3rem;">
+        <a href="{{ base_prefix }}/item/{{ itm.slug }}.md" style="font-size: 0.75rem; color: var(--muted);">MD</a>
+        <a href="{{ base_prefix }}/item/{{ itm.slug }}.json" style="font-size: 0.75rem; color: var(--muted);">JSON</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Blocks Section -->
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-title">
+    <span>Blocks</span>
+    <span class="badge badge-gold">{{ blocks | length }}</span>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.6rem; margin-top: 1rem;">
+    {% for blk in blocks %}
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0.6rem; background: var(--badge-bg); border-radius: 4px;">
+      <a href="{{ base_prefix }}/block/{{ blk.slug }}">{{ blk.facts.display_name }}</a>
+      <div style="display: flex; gap: 0.3rem;">
+        <a href="{{ base_prefix }}/block/{{ blk.slug }}.md" style="font-size: 0.75rem; color: var(--muted);">MD</a>
+        <a href="{{ base_prefix }}/block/{{ blk.slug }}.json" style="font-size: 0.75rem; color: var(--muted);">JSON</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Recipes Section -->
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-title">
+    <span>Recipes</span>
+    <span class="badge">{{ recipes | length }}</span>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.6rem; margin-top: 1rem;">
+    {% for r in recipes %}
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0.6rem; background: var(--badge-bg); border-radius: 4px;">
+      <a href="{{ base_prefix }}/recipe/{{ r.slug }}">{{ r.slug }}</a>
+      <div style="display: flex; gap: 0.3rem;">
+        <a href="{{ base_prefix }}/recipe/{{ r.slug }}.md" style="font-size: 0.75rem; color: var(--muted);">MD</a>
+        <a href="{{ base_prefix }}/recipe/{{ r.slug }}.json" style="font-size: 0.75rem; color: var(--muted);">JSON</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Entities Section -->
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-title">
+    <span>Entities</span>
+    <span class="badge badge-emerald">{{ entities | length }}</span>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.6rem; margin-top: 1rem;">
+    {% for ent in entities %}
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0.6rem; background: var(--badge-bg); border-radius: 4px;">
+      <a href="{{ base_prefix }}/entity/{{ ent.slug }}">{{ ent.facts.display_name }}</a>
+      <div style="display: flex; gap: 0.3rem;">
+        <a href="{{ base_prefix }}/entity/{{ ent.slug }}.md" style="font-size: 0.75rem; color: var(--muted);">MD</a>
+        <a href="{{ base_prefix }}/entity/{{ ent.slug }}.json" style="font-size: 0.75rem; color: var(--muted);">JSON</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

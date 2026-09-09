@@ -50,13 +50,39 @@ def test_set_detail_contains_explorer_guide():
     assert '<link rel="canonical" href="https://avascry.com/set/mh3">' in res.text
 
 def test_sitemaps_contain_guides():
-    """Verify that sitemap.xml, sitemap.html, sitemap.md, and llms.txt all contain all guide URLs."""
-    for sitemap_url in ["/sitemap.xml", "/sitemap.html", "/sitemap.md", "/llms.txt"]:
+    """Verify that sitemap-guides.xml, sitemap.html, sitemap.md, and llms.txt all contain all guide URLs."""
+    for sitemap_url in ["/sitemap-guides.xml", "/sitemap.html", "/sitemap.md", "/llms.txt"]:
         res = client.get(sitemap_url, headers={"host": "avascry.com"})
         assert res.status_code == 200
         assert "avascry.com/guides" in res.text or "/guides" in res.text
         for slug in GUIDES.keys():
             assert slug in res.text
+
+    # Main sitemap.xml links to the catalog and the standalone guides sitemap
+    res_main = client.get("/sitemap.xml", headers={"host": "avascry.com"})
+    assert res_main.status_code == 200
+    assert "https://avascry.com/guides" in res_main.text
+    assert "https://avascry.com/sitemap-guides.xml" in res_main.text
+
+
+def test_dedicated_guides_sitemaps_exist_and_render_all_guides():
+    """Verify dedicated sitemap-guides.xml, sitemaps/guides.html, and sitemaps/guides.md."""
+    for sitemap_url in ["/sitemap-guides.xml", "/sitemaps/guides.html", "/sitemaps/guides.md"]:
+        res = client.get(sitemap_url, headers={"host": "avascry.com"})
+        assert res.status_code == 200
+        for slug in GUIDES.keys():
+            assert slug in res.text
+
+    # Verify XML content-type and tags
+    res_xml = client.get("/sitemap-guides.xml", headers={"host": "avascry.com"})
+    assert res_xml.status_code == 200
+    assert "application/xml" in res_xml.headers.get("content-type", "")
+    assert "<urlset" in res_xml.text
+
+    # Verify robots.txt declares sitemap-guides.xml
+    res_robots = client.get("/robots.txt", headers={"host": "avascry.com"})
+    assert res_robots.status_code == 200
+    assert "https://avascry.com/sitemap-guides.xml" in res_robots.text
 
 
 def test_card_name_shortcut_resolves_to_english_oracle_printing():

@@ -7,6 +7,7 @@ Serves HTML, Markdown (.md), JSON, sitemaps, and llms.txt endpoints for bots and
 from datetime import datetime, timezone
 import json
 import random
+import re
 import time
 from fastapi import APIRouter, Request, HTTPException, Response
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
@@ -45,22 +46,26 @@ async def necromunda_home(request: Request):
         traits = list(db.traits.find({}, {"_id": 0}))
         houses = list(db.houses.find({}, {"_id": 0}))
         skills = list(db.skills.find({}, {"_id": 0}))
+        equipment = list(db.equipment.find({}, {"_id": 0}))
 
-        total_w, total_t, total_h, total_s = len(weapons), len(traits), len(houses), len(skills)
+        total_w, total_t, total_h, total_s, total_e = len(weapons), len(traits), len(houses), len(skills), len(equipment)
         random.shuffle(weapons)
         random.shuffle(traits)
         random.shuffle(houses)
         random.shuffle(skills)
+        random.shuffle(equipment)
 
         cached = {
             "weapons": weapons,
             "traits": traits,
             "houses": houses,
             "skills": skills,
+            "equipment": equipment,
             "total_weapons": total_w,
             "total_traits": total_t,
             "total_houses": total_h,
             "total_skills": total_s,
+            "total_equipment": total_e,
         }
         set_ram_cache(cache_key, cached)
 
@@ -74,10 +79,12 @@ async def necromunda_home(request: Request):
             "traits": cached["traits"],
             "houses": cached["houses"],
             "skills": cached["skills"],
+            "equipment": cached.get("equipment", []),
             "total_weapons": cached["total_weapons"],
             "total_traits": cached["total_traits"],
             "total_houses": cached["total_houses"],
             "total_skills": cached["total_skills"],
+            "total_equipment": cached.get("total_equipment", len(cached.get("equipment", []))),
         }
     )
 
@@ -95,6 +102,7 @@ async def necromunda_llms_txt(request: Request):
         "## Start here\n"
         "- [Armory Hub](https://necromunda.avascry.com/)\n"
         "- [Weapons Armory](https://necromunda.avascry.com/weapons)\n"
+        "- [Trading Post Equipment](https://necromunda.avascry.com/equipment)\n"
         "- [Trait Lexicon](https://necromunda.avascry.com/traits)\n"
         "- [Clan Houses](https://necromunda.avascry.com/houses)\n"
         "- [Skills & Tactics](https://necromunda.avascry.com/skills)\n"
@@ -102,6 +110,7 @@ async def necromunda_llms_txt(request: Request):
         "- [XML Sitemap](https://necromunda.avascry.com/sitemap.xml)\n\n"
         "## Tri-Surface Endpoints\n"
         "- Weapon Detail: https://necromunda.avascry.com/weapon/{slug} (.md, .json)\n"
+        "- Equipment Detail: https://necromunda.avascry.com/equipment/{slug} (.md, .json)\n"
         "- Trait Detail: https://necromunda.avascry.com/trait/{slug} (.md, .json)\n"
         "- Clan House: https://necromunda.avascry.com/house/{slug} (.md, .json)\n"
         "- Skill Tree: https://necromunda.avascry.com/skill/{slug} (.md, .json)\n\n"
@@ -120,6 +129,7 @@ async def necromunda_llms_full_txt():
     traits = list(db.traits.find({}, {"_id": 0}).sort("name", 1))
     houses = list(db.houses.find({}, {"_id": 0}).sort("name", 1))
     skills = list(db.skills.find({}, {"_id": 0}).sort("name", 1))
+    equipment = list(db.equipment.find({}, {"_id": 0}).sort("name", 1))
 
     lines = [
         "# AvaScry Necromunda — Complete Underhive Database & Tactics Lexicon",
@@ -127,7 +137,8 @@ async def necromunda_llms_full_txt():
         f"Total Weapons: {len(weapons)}",
         f"Total Traits: {len(traits)}",
         f"Total Houses: {len(houses)}",
-        f"Total Skills: {len(skills)}\n",
+        f"Total Skills: {len(skills)}",
+        f"Total Equipment: {len(equipment)}\n",
         "## Authentication & Discord Integration Architecture",
         "- Network SSO: Single Discord authentication session operates network-wide across avascry.com, swu.avascry.com, dominion.avascry.com, and necromunda.avascry.com.",
         "- Zero-Password Tabletop Identity: User profile and gang loadouts synchronize via Discord without email or password management.",
@@ -165,6 +176,13 @@ async def necromunda_llms_full_txt():
         lines.append(f"Rules: {s.get('rules_text')}")
         lines.append(f"Tactics: {s.get('tactics')}\n")
 
+    lines.append("---\n## TRADING POST EQUIPMENT & WARGEAR\n")
+    for eq in equipment:
+        lines.append(f"### Equipment: {eq['name']} [{eq.get('category')}]")
+        lines.append(f"Cost: {eq.get('cost_credits')} credits | Rarity: {eq.get('rarity')}")
+        lines.append(f"Rules: {eq.get('rules_text')}")
+        lines.append(f"Description: {eq.get('description')}\n")
+
     return "\n".join(lines)
 
 
@@ -178,10 +196,12 @@ async def necromunda_sitemap(request: Request):
     traits = list(db.traits.find({}, {"slug": 1}).sort("name", 1).limit(7))
     houses = list(db.houses.find({}, {"slug": 1}).sort("name", 1).limit(7))
     skills = list(db.skills.find({}, {"slug": 1}).sort("name", 1).limit(7))
+    equipment = list(db.equipment.find({}, {"slug": 1}).sort("name", 1).limit(7))
 
     urls = [
         f'  <url><loc>https://necromunda.avascry.com/</loc><lastmod>{today}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>',
         f'  <url><loc>https://necromunda.avascry.com/weapons</loc><lastmod>{today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>',
+        f'  <url><loc>https://necromunda.avascry.com/equipment</loc><lastmod>{today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>',
         f'  <url><loc>https://necromunda.avascry.com/traits</loc><lastmod>{today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>',
         f'  <url><loc>https://necromunda.avascry.com/houses</loc><lastmod>{today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>',
         f'  <url><loc>https://necromunda.avascry.com/skills</loc><lastmod>{today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>',
@@ -194,6 +214,12 @@ async def necromunda_sitemap(request: Request):
         urls.append(f'  <url><loc>https://necromunda.avascry.com/weapon/{slug}</loc><lastmod>{today}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>')
         urls.append(f'  <url><loc>https://necromunda.avascry.com/weapon/{slug}.md</loc><lastmod>{today}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>')
         urls.append(f'  <url><loc>https://necromunda.avascry.com/weapon/{slug}.json</loc><lastmod>{today}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>')
+
+    for eq in equipment:
+        slug = eq["slug"]
+        urls.append(f'  <url><loc>https://necromunda.avascry.com/equipment/{slug}</loc><lastmod>{today}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>')
+        urls.append(f'  <url><loc>https://necromunda.avascry.com/equipment/{slug}.md</loc><lastmod>{today}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>')
+        urls.append(f'  <url><loc>https://necromunda.avascry.com/equipment/{slug}.json</loc><lastmod>{today}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>')
 
     for t in traits:
         slug = t["slug"]
@@ -220,6 +246,59 @@ async def necromunda_sitemap(request: Request):
     return Response(content=xml, media_type="application/xml")
 
 
+@necromunda_router.get("/robots.txt", response_class=PlainTextResponse)
+@necromunda_router.head("/robots.txt")
+async def necromunda_robots_txt():
+    """Standard crawl directives and sitemap declarations for Necromunda subdomain."""
+    return PlainTextResponse(
+        """# Allow standard search engines & AI Knowledge Engines
+User-agent: Googlebot
+User-agent: Bingbot
+User-agent: YandexBot
+User-agent: Slurp
+User-agent: DuckDuckBot
+User-agent: GPTBot
+User-agent: ChatGPT-User
+User-agent: OAI-SearchBot
+User-agent: Anthropic-AI
+User-agent: Claude-Web
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: CCBot
+User-agent: cohere-ai
+User-agent: Applebot
+User-agent: Applebot-Extended
+User-agent: Amazonbot
+User-agent: ByteSpider
+User-agent: Meta-ExternalAgent
+User-agent: FacebookBot
+Allow: /
+
+# Block aggressive SEO backlink scrapers
+User-agent: AhrefsBot
+User-agent: SemrushBot
+User-agent: DotBot
+User-agent: Rogerbot
+User-agent: MJ12bot
+Disallow: /
+
+# Allow all other visitors & polite bots
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://necromunda.avascry.com/sitemap.xml
+Sitemap: https://necromunda.avascry.com/sitemap.html
+Sitemap: https://necromunda.avascry.com/sitemap.md
+""",
+        media_type="text/plain; charset=utf-8",
+        headers={"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
+    )
+
+
 @necromunda_router.get("/sitemap.html", response_class=HTMLResponse)
 async def necromunda_sitemap_html(request: Request):
     """HTML master sitemap directory with discrete .md and .json format badges."""
@@ -231,6 +310,7 @@ async def necromunda_sitemap_html(request: Request):
         traits = list(db.traits.find({}, {"_id": 0}).sort("name", 1))
         houses = list(db.houses.find({}, {"_id": 0}).sort("name", 1))
         skills = list(db.skills.find({}, {"_id": 0}).sort("name", 1))
+        equipment = list(db.equipment.find({}, {"_id": 0}).sort("name", 1))
 
         # Group weapons by category
         weapon_groups = {}
@@ -244,13 +324,21 @@ async def necromunda_sitemap_html(request: Request):
             tree = s.get("tree", "General Skills")
             skill_groups.setdefault(tree, []).append(s)
 
+        # Group equipment by category
+        equipment_groups = {}
+        for eq in equipment:
+            cat = eq.get("category", "General Equipment")
+            equipment_groups.setdefault(cat, []).append(eq)
+
         cached = {
             "weapons": weapons,
             "traits": traits,
             "houses": houses,
             "skills": skills,
+            "equipment": equipment,
             "weapon_groups": weapon_groups,
             "skill_groups": skill_groups,
+            "equipment_groups": equipment_groups,
         }
         set_ram_cache(cache_key, cached)
 
@@ -264,8 +352,10 @@ async def necromunda_sitemap_html(request: Request):
             "traits": cached["traits"],
             "houses": cached["houses"],
             "skills": cached["skills"],
+            "equipment": cached.get("equipment", []),
             "weapon_groups": cached["weapon_groups"],
             "skill_groups": cached["skill_groups"],
+            "equipment_groups": cached.get("equipment_groups", {}),
         }
     )
 
@@ -278,6 +368,7 @@ async def necromunda_sitemap_md():
     traits = list(db.traits.find({}, {"name": 1, "slug": 1, "_id": 0}).sort("name", 1))
     houses = list(db.houses.find({}, {"name": 1, "slug": 1, "title": 1, "_id": 0}).sort("name", 1))
     skills = list(db.skills.find({}, {"name": 1, "slug": 1, "tree": 1, "_id": 0}).sort("name", 1))
+    equipment = list(db.equipment.find({}, {"name": 1, "slug": 1, "category": 1, "_id": 0}).sort("name", 1))
 
     lines = [
         "# AvaScry Necromunda — Master Sitemap & Knowledge Directory (Markdown)",
@@ -316,10 +407,15 @@ async def necromunda_sitemap_md():
     for s in skills:
         tree_map.setdefault(s.get("tree", "General"), []).append(s)
 
-    for tree, tree_sk in tree_map.items():
-        lines.append(f"\n### {tree} ({len(tree_sk)})")
-        for s in tree_sk:
-            lines.append(f"- [{s['name']}](https://necromunda.avascry.com/skill/{s['slug']}) • [MD](https://necromunda.avascry.com/skill/{s['slug']}.md) • [JSON](https://necromunda.avascry.com/skill/{s['slug']}.json)")
+    lines.append(f"\n## Trading Post Equipment & Wargear ({len(equipment)})")
+    eq_map = {}
+    for eq in equipment:
+        eq_map.setdefault(eq.get("category", "General"), []).append(eq)
+
+    for cat, cat_eqs in eq_map.items():
+        lines.append(f"\n### {cat} ({len(cat_eqs)})")
+        for eq in cat_eqs:
+            lines.append(f"- [{eq['name']}](https://necromunda.avascry.com/equipment/{eq['slug']}) • [MD](https://necromunda.avascry.com/equipment/{eq['slug']}.md) • [JSON](https://necromunda.avascry.com/equipment/{eq['slug']}.json)")
 
     return PlainTextResponse("\n".join(lines), media_type="text/markdown; charset=utf-8")
 
@@ -463,8 +559,9 @@ async def necromunda_trait_md(slug: str):
     if not trait:
         raise HTTPException(status_code=404, detail="Trait not found")
 
+    safe_pattern = re.escape(trait["name"])
     weapons_with_trait = list(db.weapons.find(
-        {"traits": {"$regex": trait["name"], "$options": "i"}},
+        {"traits": {"$regex": safe_pattern, "$options": "i"}},
         {"_id": 0, "name": 1, "slug": 1, "category": 1}
     ).sort("name", 1))
 
@@ -501,8 +598,9 @@ async def necromunda_trait_detail(request: Request, slug: str):
     if not trait:
         raise HTTPException(status_code=404, detail="Trait not found")
 
+    safe_pattern = re.escape(trait["name"])
     weapons = list(db.weapons.find(
-        {"traits": {"$regex": trait["name"], "$options": "i"}},
+        {"traits": {"$regex": safe_pattern, "$options": "i"}},
         {"_id": 0}
     ).sort("name", 1))
 
@@ -672,6 +770,83 @@ async def necromunda_skill_detail(request: Request, slug: str):
         context={
             "base_path": base_path,
             "skill": skill,
+        }
+    )
+
+
+# ==========================================
+# TRADING POST & EQUIPMENT (TRI-SURFACE)
+# ==========================================
+
+@necromunda_router.get("/equipment", response_class=HTMLResponse)
+async def necromunda_equipment_list(request: Request):
+    db = get_necromunda_db()
+    equipment = list(db.equipment.find({}, {"_id": 0}).sort("name", 1))
+    categories = sorted(list(set(eq.get("category", "General") for eq in equipment)))
+    base_path = get_base_prefix(request)
+    return templates.TemplateResponse(
+        request=request,
+        name="necromunda/equipment.html",
+        context={
+            "base_path": base_path,
+            "equipment": equipment,
+            "categories": categories,
+            "total_equipment": len(equipment),
+        }
+    )
+
+
+@necromunda_router.get("/equipment/{slug}.json")
+async def necromunda_equipment_json(slug: str):
+    db = get_necromunda_db()
+    item = db.equipment.find_one({"slug": slug}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="Equipment item not found")
+    return JSONResponse(item)
+
+
+@necromunda_router.get("/equipment/{slug}.md", response_class=PlainTextResponse)
+async def necromunda_equipment_md(slug: str):
+    db = get_necromunda_db()
+    item = db.equipment.find_one({"slug": slug}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="Equipment item not found")
+
+    md = f"""---
+title: "{item['name']} [{item.get('category')}] - Necromunda Wargear"
+slug: "{item['slug']}"
+category: "{item.get('category')}"
+cost_credits: {item.get('cost_credits')}
+rarity: "{item.get('rarity')}"
+canonical_url: "https://necromunda.avascry.com/equipment/{slug}"
+---
+
+# Equipment: {item['name']}
+**Category:** {item.get('category')} | **Cost:** {item.get('cost_credits')} credits | **Rarity:** {item.get('rarity')}
+
+## Rules & Tactical Effect
+{item.get('rules_text')}
+
+## Description
+{item.get('description')}
+"""
+    return PlainTextResponse(md, media_type="text/markdown; charset=utf-8")
+
+
+@necromunda_router.get("/equipment/{slug}", response_class=HTMLResponse)
+async def necromunda_equipment_detail(request: Request, slug: str):
+    db = get_necromunda_db()
+    item = db.equipment.find_one({"slug": slug}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="Equipment item not found")
+
+    base_path = get_base_prefix(request)
+    return templates.TemplateResponse(
+        request=request,
+        name="necromunda/equipment_detail.html",
+        context={
+            "base_path": base_path,
+            "item": item,
         }
     )
 

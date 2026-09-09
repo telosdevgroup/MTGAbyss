@@ -1,0 +1,614 @@
+{% extends "minecraft/base.html" %}
+
+{% block title %}{{ title }} — Minecraft Java 1.21.4 Data Atlas | AvaScry{% endblock %}
+
+{% block content %}
+<!-- Destination Category Hero Banner -->
+<div class="category-hero">
+  <div style="display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; margin-bottom: 0.5rem;">
+    <span class="badge badge-accent" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+      Java 1.21.4 Vanilla
+    </span>
+    <span style="font-size: 0.8rem; color: var(--muted); font-weight: 600;">
+      {{ total if total is defined else (total_matching if total_matching is defined else entries | length) }} Total Records
+    </span>
+  </div>
+
+  <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--text); margin: 0 0 0.5rem 0; letter-spacing: -0.025em;">
+    {{ title }}
+  </h1>
+  <p style="font-size: 0.98rem; color: var(--muted); max-width: 680px; margin: 0 auto 1.5rem auto; line-height: 1.55;">
+    {% if item_type == "item" %}
+    Explore tools, weapons, armor durability, mining tiers, and stack limits with full reciprocal recipe graph links.
+    {% elif item_type == "block" %}
+    Comprehensive block hardness values, explosion blast resistance, harvest tool tiers, and AST-parsed drop tables.
+    {% elif item_type == "recipe" %}
+    Authentic 3x3 workbench crafting layouts, shapeless combinations, furnace smelting durations, and XP rewards.
+    {% elif item_type == "entity" %}
+    Complete mob health statistics, hostile behavior classifications, fire and lava immunity, and compiled loot drop tables.
+    {% elif item_type == "enchantment" %}
+    Max enchantment tiers, compatible tool and armor targets, and mutual exclusion rules.
+    {% elif item_type == "effect" %}
+    Beneficial status buffs and harmful potion debuffs with exact registry color codes and beacon modifiers.
+    {% else %}
+    Deterministic, unmodded Minecraft Java Edition data atlas.
+    {% endif %}
+  </p>
+
+  <!-- Quick-Jump CTA Shortcuts -->
+  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; justify-content: center;">
+    <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-right: 0.2rem;">Quick Jump:</span>
+    {% if item_type == "item" %}
+    <a href="{{ base_prefix }}/items?category=tools" class="hero-cta-pill {% if category == 'tools' %}active{% endif %}">⛏️ Tools</a>
+    <a href="{{ base_prefix }}/items?category=weapons" class="hero-cta-pill {% if category == 'weapons' %}active{% endif %}">⚔️ Weapons</a>
+    <a href="{{ base_prefix }}/items?category=armor" class="hero-cta-pill {% if category == 'armor' %}active{% endif %}">🛡️ Armor</a>
+    <a href="{{ base_prefix }}/items?category=ores" class="hero-cta-pill {% if category == 'ores' %}active{% endif %}">💎 Ores &amp; Gems</a>
+    <a href="{{ base_prefix }}/items?category=food" class="hero-cta-pill {% if category == 'food' %}active{% endif %}">🍎 Food</a>
+    <a href="{{ base_prefix }}/items?has_durability=yes" class="hero-cta-pill {% if has_durability == 'yes' %}active{% endif %}">🔨 Damageable</a>
+    {% elif item_type == "block" %}
+    <a href="{{ base_prefix }}/blocks?material=pickaxe" class="hero-cta-pill {% if material == 'pickaxe' %}active{% endif %}">⛏️ Stone &amp; Ores</a>
+    <a href="{{ base_prefix }}/blocks?material=axe" class="hero-cta-pill {% if material == 'axe' %}active{% endif %}">🪵 Wood &amp; Trees</a>
+    <a href="{{ base_prefix }}/blocks?material=shovel" class="hero-cta-pill {% if material == 'shovel' %}active{% endif %}">🏖️ Dirt &amp; Sand</a>
+    <a href="{{ base_prefix }}/blocks?tool_required=yes" class="hero-cta-pill {% if tool_required == 'yes' %}active{% endif %}">⚒️ Tool Required</a>
+    <a href="{{ base_prefix }}/palette" class="hero-cta-pill" style="border-color: var(--accent); color: var(--accent);">🎨 Palette Generator &rarr;</a>
+    {% elif item_type == "recipe" %}
+    <a href="{{ base_prefix }}/recipes?recipe_type=crafting_shaped" class="hero-cta-pill {% if recipe_type == 'crafting_shaped' %}active{% endif %}">🔨 3x3 Shaped</a>
+    <a href="{{ base_prefix }}/recipes?recipe_type=crafting_shapeless" class="hero-cta-pill {% if recipe_type == 'crafting_shapeless' %}active{% endif %}">🥣 Shapeless</a>
+    <a href="{{ base_prefix }}/recipes?recipe_type=minecraft:smelting" class="hero-cta-pill {% if recipe_type == 'minecraft:smelting' %}active{% endif %}">🔥 Furnace Smelting</a>
+    {% elif item_type == "entity" %}
+    <a href="{{ base_prefix }}/entities?category=Hostile" class="hero-cta-pill {% if category == 'Hostile' %}active{% endif %}">💀 Hostile Mobs</a>
+    <a href="{{ base_prefix }}/entities?category=Passive" class="hero-cta-pill {% if category == 'Passive' %}active{% endif %}">🐷 Passive Animals</a>
+    <a href="{{ base_prefix }}/entities?immune_to_fire=yes" class="hero-cta-pill {% if immune_to_fire == 'yes' %}active{% endif %}">🔥 Fire Immune</a>
+    <a href="{{ base_prefix }}/entities?sort=health_desc" class="hero-cta-pill {% if sort == 'health_desc' %}active{% endif %}">❤️ Bosses &amp; High HP</a>
+    {% elif item_type == "enchantment" %}
+    <a href="{{ base_prefix }}/enchantments?q=sharpness" class="hero-cta-pill">⚔️ Sharpness</a>
+    <a href="{{ base_prefix }}/enchantments?q=fortune" class="hero-cta-pill">⛏️ Fortune</a>
+    <a href="{{ base_prefix }}/enchantments?q=protection" class="hero-cta-pill">🛡️ Protection</a>
+    <a href="{{ base_prefix }}/enchantments?q=mending" class="hero-cta-pill">✨ Mending</a>
+    {% elif item_type == "effect" %}
+    <a href="{{ base_prefix }}/effects?q=regeneration" class="hero-cta-pill">💖 Regeneration</a>
+    <a href="{{ base_prefix }}/effects?q=speed" class="hero-cta-pill">⚡ Speed</a>
+    <a href="{{ base_prefix }}/effects?q=strength" class="hero-cta-pill">💪 Strength</a>
+    <a href="{{ base_prefix }}/effects?q=poison" class="hero-cta-pill">☠️ Poison</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="catalog-layout">
+  <!-- Left Sidebar: Faceted Filter Panel (SWU-style) -->
+  <aside class="filter-sidebar">
+    <div class="filter-panel">
+      <div class="filter-header">
+        <span class="filter-title">Filter Catalog</span>
+        {% if is_filtered %}
+        <a href="{{ base_prefix }}/{{ item_type }}s" class="reset-link">Reset</a>
+        {% endif %}
+      </div>
+
+      <form method="get" action="{{ base_prefix }}/{{ item_type }}s" id="facet-filter-form">
+        <!-- Search Query -->
+        <div class="filter-group">
+          <label class="filter-label" for="filter-q">Search {{ title.split()[-1] }}</label>
+          <div style="position: relative;">
+            <input 
+              type="text" 
+              id="filter-q" 
+              name="q" 
+              value="{{ query or '' }}" 
+              placeholder="Name, id, or tag..." 
+              class="filter-input"
+            />
+            {% if query %}
+            <button type="button" onclick="document.getElementById('filter-q').value=''; document.getElementById('facet-filter-form').submit();" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); cursor: pointer;">✕</button>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if item_type == "item" %}
+        <!-- Item Category -->
+        <div class="filter-group">
+          <label class="filter-label" for="filter-cat">Category / Class</label>
+          <select id="filter-cat" name="category" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Categories</option>
+            <option value="tools" {% if category == "tools" %}selected{% endif %}>Tools &amp; Utility</option>
+            <option value="weapons" {% if category == "weapons" %}selected{% endif %}>Weapons (Swords/Bows)</option>
+            <option value="armor" {% if category == "armor" %}selected{% endif %}>Armor &amp; Defense</option>
+            <option value="ores" {% if category == "ores" %}selected{% endif %}>Ores &amp; Minerals</option>
+            <option value="food" {% if category == "food" %}selected{% endif %}>Food &amp; Consumables</option>
+            <option value="redstone" {% if category == "redstone" %}selected{% endif %}>Redstone &amp; Mechanisms</option>
+          </select>
+        </div>
+
+        <!-- Durability Filter -->
+        <div class="filter-group">
+          <label class="filter-label" for="filter-dur">Durability</label>
+          <select id="filter-dur" name="has_durability" class="filter-select" onchange="this.form.submit()">
+            <option value="">Any</option>
+            <option value="yes" {% if has_durability == "yes" %}selected{% endif %}>Has Durability (Damageable)</option>
+            <option value="no" {% if has_durability == "no" %}selected{% endif %}>No Durability</option>
+          </select>
+        </div>
+
+        <!-- Stack Size Filter -->
+        <div class="filter-group">
+          <label class="filter-label" for="filter-stack">Max Stack Size</label>
+          <select id="filter-stack" name="stack_size" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Stack Sizes</option>
+            <option value="64" {% if stack_size == "64" %}selected{% endif %}>Stack of 64</option>
+            <option value="16" {% if stack_size == "16" %}selected{% endif %}>Stack of 16 (Enderpearls, Signs)</option>
+            <option value="1" {% if stack_size == "1" %}selected{% endif %}>Non-Stackable (1)</option>
+          </select>
+        </div>
+
+        {% elif item_type == "block" %}
+        <!-- Block Material -->
+        <div class="filter-group">
+          <label class="filter-label" for="filter-mat">Block Material</label>
+          <select id="filter-mat" name="material" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Materials</option>
+            <option value="pickaxe" {% if material == "pickaxe" %}selected{% endif %}>Stone &amp; Minerals</option>
+            <option value="axe" {% if material == "axe" %}selected{% endif %}>Wood &amp; Plants</option>
+            <option value="shovel" {% if material == "shovel" %}selected{% endif %}>Dirt, Sand &amp; Gravel</option>
+            <option value="wool" {% if material == "wool" %}selected{% endif %}>Wool &amp; Cloth</option>
+          </select>
+        </div>
+
+        <!-- Tool Required -->
+        <div class="filter-group">
+          <label class="filter-label" for="filter-tool">Tool Harvest Required</label>
+          <select id="filter-tool" name="tool_required" class="filter-select" onchange="this.form.submit()">
+            <option value="">Any</option>
+            <option value="yes" {% if tool_required == "yes" %}selected{% endif %}>Tool Required to Drop</option>
+            <option value="no" {% if tool_required == "no" %}selected{% endif %}>Can Mine with Fist</option>
+          </select>
+        </div>
+
+        {% elif item_type == "recipe" %}
+        <!-- Recipe Type -->
+        <div class="filter-group">
+          <label class="filter-label" for="filter-rec">Crafting Matrix Type</label>
+          <select id="filter-rec" name="recipe_type" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Recipe Types</option>
+            <option value="crafting_shaped" {% if recipe_type == "crafting_shaped" %}selected{% endif %}>Shaped Crafting Grid</option>
+            <option value="crafting_shapeless" {% if recipe_type == "crafting_shapeless" %}selected{% endif %}>Shapeless Crafting</option>
+            <option value="minecraft:smelting" {% if recipe_type == "minecraft:smelting" %}selected{% endif %}>Furnace Smelting</option>
+          </select>
+        </div>
+
+        {% elif item_type == "entity" %}
+        <!-- Entity Category -->
+        <div class="filter-group">
+          <label class="filter-label" for="filter-entcat">Entity Category</label>
+          <select id="filter-entcat" name="category" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Categories</option>
+            <option value="Hostile" {% if category == "Hostile" %}selected{% endif %}>Hostile Mobs</option>
+            <option value="Passive" {% if category == "Passive" %}selected{% endif %}>Passive Mobs</option>
+            <option value="Vehicles" {% if category == "Vehicles" %}selected{% endif %}>Vehicles (Boats/Minecarts)</option>
+            <option value="Immobile" {% if category == "Immobile" %}selected{% endif %}>Immobile / Utility</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label" for="filter-fire">Fire Immune</label>
+          <select id="filter-fire" name="immune_to_fire" class="filter-select" onchange="this.form.submit()">
+            <option value="">Any</option>
+            <option value="yes" {% if immune_to_fire == "yes" %}selected{% endif %}>Immune to Fire/Lava</option>
+            <option value="no" {% if immune_to_fire == "no" %}selected{% endif %}>Vulnerable to Fire</option>
+          </select>
+        </div>
+        {% endif %}
+
+        <!-- Sort Criteria -->
+        <div class="filter-group">
+          <label class="filter-label" for="filter-sort">Sort By</label>
+          <select id="filter-sort" name="sort" class="filter-select" onchange="this.form.submit()">
+            <option value="name_asc" {% if sort == "name_asc" %}selected{% endif %}>Name (A &rarr; Z)</option>
+            <option value="name_desc" {% if sort == "name_desc" %}selected{% endif %}>Name (Z &rarr; A)</option>
+            {% if item_type == "item" %}
+            <option value="durability_desc" {% if sort == "durability_desc" %}selected{% endif %}>Highest Durability</option>
+            <option value="durability_asc" {% if sort == "durability_asc" %}selected{% endif %}>Lowest Durability</option>
+            <option value="stack_desc" {% if sort == "stack_desc" %}selected{% endif %}>Largest Stack Size</option>
+            {% elif item_type == "block" %}
+            <option value="hardness_desc" {% if sort == "hardness_desc" %}selected{% endif %}>Hardest to Mine</option>
+            <option value="hardness_asc" {% if sort == "hardness_asc" %}selected{% endif %}>Easiest to Mine</option>
+            {% elif item_type == "entity" %}
+            <option value="health_desc" {% if sort == "health_desc" %}selected{% endif %}>Highest Health</option>
+            {% endif %}
+          </select>
+        </div>
+
+        <!-- Filter Action Buttons -->
+        <button type="submit" class="apply-btn">Apply Filters</button>
+        {% if is_filtered %}
+        <a href="{{ base_prefix }}/{{ item_type }}s" class="clear-btn">Reset All Filters</a>
+        {% endif %}
+      </form>
+    </div>
+  </aside>
+
+  <!-- Right: Catalog Content Area -->
+  <main class="catalog-main">
+    <!-- Header Summary Bar -->
+    <div class="catalog-header-bar">
+      <div>
+        <h1 style="font-size: 1.75rem; font-weight: 800; color: var(--text); margin: 0 0 0.25rem 0;">{{ title }}</h1>
+        <p style="color: var(--muted); font-size: 0.88rem; margin: 0;">{{ description }}</p>
+      </div>
+      <div class="catalog-status-badge">
+        Showing <strong>{{ entries | length }}</strong> of <strong>{{ total_matching if total_matching is defined else entries | length }}</strong>
+        {% if is_filtered %}<span style="color: var(--accent); font-weight: 700;">(Filtered)</span>{% endif %}
+      </div>
+    </div>
+
+    <!-- Active Filter Tags Bar -->
+    {% if is_filtered %}
+    <div class="active-chips-bar">
+      <span style="font-size: 0.8rem; color: var(--muted); font-weight: 600;">Active:</span>
+      {% if query %}
+      <span class="active-chip">Query: &ldquo;{{ query }}&rdquo;</span>
+      {% endif %}
+      {% if category %}
+      <span class="active-chip">Category: {{ category | capitalize }}</span>
+      {% endif %}
+      {% if material %}
+      <span class="active-chip">Material: {{ material | capitalize }}</span>
+      {% endif %}
+      {% if has_durability %}
+      <span class="active-chip">Durability: {{ "Yes" if has_durability == "yes" else "No" }}</span>
+      {% endif %}
+      {% if tool_required %}
+      <span class="active-chip">Tool Required: {{ "Yes" if tool_required == "yes" else "No" }}</span>
+      {% endif %}
+      {% if sort and sort != "name_asc" %}
+      <span class="active-chip">Sorted: {{ sort | replace('_', ' ') | title }}</span>
+      {% endif %}
+      <a href="{{ base_prefix }}/{{ item_type }}s" style="font-size: 0.8rem; color: var(--accent); font-weight: 600; text-decoration: underline; margin-left: 0.25rem;">Clear all</a>
+    </div>
+    {% endif %}
+
+    {% if entries %}
+    <!-- Cards Grid (Clean, Clickable, No Clutter) -->
+    <div class="grid-3" id="cards-grid">
+      {% for entry in entries %}
+      {% set display_title = (entry.facts.display_name if entry.facts and entry.facts.display_name else (entry.slug | human_name)) %}
+      <a 
+        href="{{ base_prefix }}/{{ item_type }}/{{ entry.slug }}" 
+        class="card filterable-card"
+        style="text-decoration: none; color: inherit; display: flex; flex-direction: column; justify-content: space-between;"
+      >
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.85rem; margin-bottom: 0.65rem;">
+            {% if entry.facts and entry.facts.image_url %}
+            <div style="width: 42px; height: 42px; background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <img 
+                src="{{ entry.facts.image_url }}" 
+                alt="{{ display_title }} - Minecraft Java 1.21.4 sprite" 
+                title="{{ display_title }}"
+                width="32" 
+                height="32" 
+                loading="lazy" 
+                decoding="async"
+                style="image-rendering: pixelated; image-rendering: -moz-crisp-edges; object-fit: contain; display: block;"
+              >
+            </div>
+            {% elif entry.facts and entry.facts.color_hex %}
+            <div style="width: 38px; height: 38px; border-radius: 6px; background-color: {{ entry.facts.color_hex }}; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 8px {{ entry.facts.color_hex }}40;">
+              <span style="font-size: 1.1rem;">✨</span>
+            </div>
+            {% endif %}
+            <div style="min-width: 0; flex: 1;">
+              <h2 style="font-size: 1.05rem; font-weight: 700; color: var(--text); margin: 0; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {{ display_title }}
+              </h2>
+              <span style="font-size: 0.78rem; color: var(--accent); font-weight: 600; display: inline-flex; align-items: center; gap: 0.2rem; margin-top: 0.15rem;">
+                View details &rarr;
+              </span>
+            </div>
+          </div>
+
+          {% if entry.facts and entry.facts.durability %}
+          <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem;">
+            Durability: <strong style="color: var(--accent);">{{ entry.facts.durability }}</strong>
+          </div>
+          {% elif entry.facts and entry.facts.hardness is defined and entry.facts.hardness is not none %}
+          <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem;">
+            Hardness: <strong>{{ entry.facts.hardness }}</strong> &bull; Blast: <strong>{{ entry.facts.resistance }}</strong>
+          </div>
+          {% elif entry.facts and entry.facts.max_health %}
+          <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem;">
+            Health: <strong style="color: var(--redstone);">{{ entry.facts.max_health }} HP</strong> &bull; Category: <strong>{{ entry.facts.category | capitalize }}</strong>
+          </div>
+          {% elif entry.facts and entry.facts.max_level %}
+          <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem;">
+            Max Level: <strong style="color: var(--accent);">Tier {{ entry.facts.max_level }}</strong> &bull; {{ entry.facts.category | replace('_', ' ') | title }}
+          </div>
+          {% elif entry.facts and entry.facts.category and item_type == 'effect' %}
+          <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem;">
+            Type: <strong style="color: {{ 'var(--emerald)' if entry.facts.category == 'beneficial' else 'var(--redstone)' }};">{{ entry.facts.category | title }}</strong>
+          </div>
+          {% elif entry.type %}
+          <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem;">
+            Type: <strong>{{ entry.type | replace('_', ' ') | title }}</strong>
+          </div>
+          {% endif %}
+
+          {% if entry.facts and entry.facts.description %}
+          <div style="font-size: 0.82rem; color: var(--text-body); margin-top: 0.5rem; line-height: 1.45;">
+            {{ entry.facts.description }}
+          </div>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+
+    <!-- Numbered Pagination Component -->
+    {% if total_pages is defined and total_pages > 1 %}
+    <div class="pagination-bar">
+      <!-- Previous Page -->
+      {% if current_page > 1 %}
+      <a href="{{ base_prefix }}/{{ item_type }}s?page={{ current_page - 1 }}{% if query %}&q={{ query }}{% endif %}{% if category %}&category={{ category }}{% endif %}{% if material %}&material={{ material }}{% endif %}{% if has_durability %}&has_durability={{ has_durability }}{% endif %}{% if tool_required %}&tool_required={{ tool_required }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="page-btn">&larr; Prev</a>
+      {% else %}
+      <span class="page-btn disabled">&larr; Prev</span>
+      {% endif %}
+
+      <!-- Page Numbers Window -->
+      {% set start_page = [1, current_page - 2] | max %}
+      {% set end_page = [total_pages, start_page + 4] | min %}
+      {% if end_page - start_page < 4 and total_pages >= 5 %}
+        {% set start_page = [1, end_page - 4] | max %}
+      {% endif %}
+
+      {% if start_page > 1 %}
+      <a href="{{ base_prefix }}/{{ item_type }}s?page=1{% if query %}&q={{ query }}{% endif %}{% if category %}&category={{ category }}{% endif %}{% if material %}&material={{ material }}{% endif %}{% if has_durability %}&has_durability={{ has_durability }}{% endif %}{% if tool_required %}&tool_required={{ tool_required }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="page-btn">1</a>
+      {% if start_page > 2 %}<span class="page-ellipsis">&hellip;</span>{% endif %}
+      {% endif %}
+
+      {% for p in range(start_page, end_page + 1) %}
+      <a href="{{ base_prefix }}/{{ item_type }}s?page={{ p }}{% if query %}&q={{ query }}{% endif %}{% if category %}&category={{ category }}{% endif %}{% if material %}&material={{ material }}{% endif %}{% if has_durability %}&has_durability={{ has_durability }}{% endif %}{% if tool_required %}&tool_required={{ tool_required }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="page-btn {% if p == current_page %}active{% endif %}">{{ p }}</a>
+      {% endfor %}
+
+      {% if end_page < total_pages %}
+      {% if end_page < total_pages - 1 %}<span class="page-ellipsis">&hellip;</span>{% endif %}
+      <a href="{{ base_prefix }}/{{ item_type }}s?page={{ total_pages }}{% if query %}&q={{ query }}{% endif %}{% if category %}&category={{ category }}{% endif %}{% if material %}&material={{ material }}{% endif %}{% if has_durability %}&has_durability={{ has_durability }}{% endif %}{% if tool_required %}&tool_required={{ tool_required }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="page-btn">{{ total_pages }}</a>
+      {% endif %}
+
+      <!-- Next Page -->
+      {% if current_page < total_pages %}
+      <a href="{{ base_prefix }}/{{ item_type }}s?page={{ current_page + 1 }}{% if query %}&q={{ query }}{% endif %}{% if category %}&category={{ category }}{% endif %}{% if material %}&material={{ material }}{% endif %}{% if has_durability %}&has_durability={{ has_durability }}{% endif %}{% if tool_required %}&tool_required={{ tool_required }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="page-btn">Next &rarr;</a>
+      {% else %}
+      <span class="page-btn disabled">Next &rarr;</span>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Minimal Bot Formats Link -->
+    <div style="margin-top: 3.5rem; padding-top: 0.85rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--muted); opacity: 0.55; display: flex; gap: 0.4rem; align-items: center;">
+      <a href="{{ base_prefix }}/{{ item_type }}s.json{% if query or category or material or has_durability or tool_required or sort %}?{% if query %}q={{ query }}&{% endif %}{% if category %}category={{ category }}&{% endif %}{% if material %}material={{ material }}&{% endif %}{% if has_durability %}has_durability={{ has_durability }}&{% endif %}{% if tool_required %}tool_required={{ tool_required }}&{% endif %}{% if sort %}sort={{ sort }}{% endif %}{% endif %}" style="color: inherit; text-decoration: none;">json</a>
+      <span>|</span>
+      <a href="{{ base_prefix }}/{{ item_type }}s.md{% if query or category or material or has_durability or tool_required or sort %}?{% if query %}q={{ query }}&{% endif %}{% if category %}category={{ category }}&{% endif %}{% if material %}material={{ material }}&{% endif %}{% if has_durability %}has_durability={{ has_durability }}&{% endif %}{% if tool_required %}tool_required={{ tool_required }}&{% endif %}{% if sort %}sort={{ sort }}{% endif %}{% endif %}" style="color: inherit; text-decoration: none;">md</a>
+    </div>
+  </main>
+</div>
+
+<style>
+  /* Destination Category Hero Banner (Narrow, Centered, Content-First) */
+  .category-hero {
+    max-width: 860px;
+    margin: 0 auto 2.5rem auto;
+    text-align: center;
+    padding: 1.25rem 1rem;
+  }
+  .hero-cta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s ease;
+  }
+  .hero-cta-pill:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(13, 148, 136, 0.05);
+    text-decoration: none;
+    transform: translateY(-1px);
+  }
+  .hero-cta-pill.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #ffffff;
+  }
+
+  /* 2-Column Faceted Catalog Layout */
+  .catalog-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .catalog-layout {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+  }
+
+  /* Sidebar Filter Styling */
+  .filter-sidebar {
+    width: 100%;
+  }
+  .filter-panel {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    position: sticky;
+    top: 5.5rem;
+  }
+  .filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.85rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .filter-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .reset-link {
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: underline;
+  }
+  .filter-group {
+    margin-bottom: 1.15rem;
+  }
+  .filter-label {
+    display: block;
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+  .filter-input, .filter-select {
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+    background: #f8fafc;
+    color: var(--text);
+    font-size: 0.88rem;
+    font-family: inherit;
+    box-sizing: border-box;
+    outline: none;
+    transition: all 0.15s ease;
+  }
+  .filter-input:focus, .filter-select:focus {
+    border-color: var(--accent);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+  }
+  .apply-btn {
+    width: 100%;
+    padding: 0.65rem;
+    background: var(--accent);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .apply-btn:hover {
+    background: var(--accent-hover);
+  }
+  .clear-btn {
+    display: block;
+    text-align: center;
+    margin-top: 0.65rem;
+    font-size: 0.82rem;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 0.4rem;
+    border-radius: 4px;
+  }
+  .clear-btn:hover {
+    color: var(--text);
+    background: #f1f5f9;
+  }
+
+  /* Catalog Main Header & Summary */
+  .catalog-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+  }
+  .catalog-status-badge {
+    font-size: 0.85rem;
+    color: var(--muted);
+    background: #ffffff;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .active-chips-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+  }
+  .active-chip {
+    font-size: 0.75rem;
+    background: rgba(13, 148, 136, 0.08);
+    color: var(--accent);
+    border: 1px solid rgba(13, 148, 136, 0.25);
+    padding: 0.2rem 0.55rem;
+    border-radius: 9999px;
+    font-weight: 600;
+  }
+
+  /* Pagination Controls */
+  .pagination-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 2.5rem;
+    flex-wrap: wrap;
+  }
+  .page-btn {
+    padding: 0.45rem 0.85rem;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: all 0.15s ease;
+  }
+  .page-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .page-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #ffffff;
+  }
+  .page-btn.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .page-ellipsis {
+    color: var(--muted);
+    padding: 0 0.25rem;
+    font-weight: 700;
+  }
+</style>
+{% endblock %}

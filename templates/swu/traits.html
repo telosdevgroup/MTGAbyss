@@ -1,0 +1,240 @@
+{% extends "swu/base.html" %}
+
+{% block title %}
+  {% if current_trait %}
+    {{ current_trait.name }} Cards &mdash; Star Wars: Unlimited Trait Lexicon
+  {% else %}
+    Star Wars: Unlimited Traits Directory &mdash; AvaScry SWU
+  {% endif %}
+{% endblock %}
+
+{% block canonical %}
+  {% if current_trait %}
+    <link rel="canonical" href="https://swu.avascry.com/trait/{{ current_trait.slug }}">
+  {% else %}
+    <link rel="canonical" href="https://swu.avascry.com/traits">
+  {% endif %}
+{% endblock %}
+
+{% block alternates %}
+  {% if current_trait %}
+    <link rel="alternate" type="application/json" title="{{ current_trait.name }} (JSON)" href="https://swu.avascry.com/trait/{{ current_trait.slug }}.json">
+    <link rel="alternate" type="text/markdown" title="{{ current_trait.name }} (Markdown)" href="https://swu.avascry.com/trait/{{ current_trait.slug }}.md">
+  {% endif %}
+  <link rel="alternate" type="application/xml" title="Star Wars: Unlimited Sitemap" href="https://swu.avascry.com/sitemap.xml">
+  <link rel="alternate" type="text/plain" title="Star Wars: Unlimited LLM Context" href="https://swu.avascry.com/llms.txt">
+{% endblock %}
+
+{% block og_tags %}
+  {% if current_trait %}
+    <meta property="og:title" content="{{ current_trait.name }} — Star Wars: Unlimited Trait Cards">
+    <meta property="og:description" content="Explore all {{ cards | length }} Star Wars: Unlimited cards with the {{ current_trait.name }} trait across all expansions.">
+  {% else %}
+    <meta property="og:title" content="Star Wars: Unlimited Traits Directory">
+    <meta property="og:description" content="Complete directory of all 60 Star Wars: Unlimited traits, factions, and tribal archetypes.">
+  {% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .trait-container {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+  .trait-header {
+    margin-bottom: 2rem;
+  }
+  .trait-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+  .trait-subtitle {
+    font-size: 1rem;
+    color: var(--muted);
+    max-width: 800px;
+    line-height: 1.5;
+  }
+  .trait-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  .trait-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    text-decoration: none;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .trait-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(239, 68, 68, 0.5);
+  }
+  .trait-card-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #fff;
+  }
+  .trait-card-count {
+    font-size: 0.78rem;
+    color: var(--muted);
+    background: #18181b;
+    border: 1px solid var(--border);
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+  .trait-detail-box {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+  .trait-pill {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+  }
+  .trait-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.25rem;
+  }
+  .trait-card-thumb {
+    background: #09090b;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    text-decoration: none;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .trait-card-thumb:hover {
+    transform: translateY(-3px);
+    border-color: rgba(239, 68, 68, 0.6);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="trait-container">
+  {% if current_trait %}
+    <!-- Breadcrumb -->
+    <nav style="margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--muted);" aria-label="Breadcrumb">
+      <a href="{{ base_path or '/' }}" style="color: var(--muted); text-decoration: none;">SWU Catalog</a>
+      <span style="margin: 0 0.5rem;">&rsaquo;</span>
+      <a href="{{ base_path }}/traits" style="color: var(--muted); text-decoration: none;">Traits</a>
+      <span style="margin: 0 0.5rem;">&rsaquo;</span>
+      <span style="color: #fff; font-weight: 600;">{{ current_trait.name }}</span>
+    </nav>
+
+    <!-- Header Box -->
+    <div class="trait-detail-box">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+        <div>
+          <span class="trait-pill">Card Trait / Tribal Category</span>
+          <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 700; color: #fff; margin: 0.5rem 0 0.25rem 0;">
+            {{ current_trait.name }}
+          </h1>
+          <p style="font-size: 0.95rem; color: var(--muted); margin: 0;">
+            Canonical Star Wars: Unlimited cards belonging to the <strong>{{ current_trait.name }}</strong> trait.
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <a href="{{ base_path }}/trait/{{ current_trait.slug }}.md" target="_blank"
+             style="font-size: 0.75rem; font-family: monospace; background: #0f172a; border: 1px solid #1e293b; padding: 0.35rem 0.65rem; border-radius: 6px; color: #38bdf8; text-decoration: none;" title="Markdown representation">
+            [MD]
+          </a>
+          <a href="{{ base_path }}/trait/{{ current_trait.slug }}.json" target="_blank"
+             style="font-size: 0.75rem; font-family: monospace; background: #1c1917; border: 1px solid #292524; padding: 0.35rem 0.65rem; border-radius: 6px; color: #f59e0b; text-decoration: none;" title="JSON representation">
+            [JSON]
+          </a>
+          <a href="{{ base_path }}/?q={{ current_trait.name }}"
+             style="font-size: 0.8rem; background: #18181b; border: 1px solid var(--border); padding: 0.35rem 0.75rem; border-radius: 6px; color: #60a5fa; text-decoration: none; font-weight: 600;">
+            Search in Catalog &rarr;
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cards Grid -->
+    <div style="margin-top: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.35rem; font-weight: 700; color: #fff; margin: 0;">
+          All {{ current_trait.name }} Cards
+          <span style="font-size: 0.9rem; color: var(--muted); font-weight: 400;">({{ cards | length }} cards)</span>
+        </h2>
+      </div>
+
+      {% if cards %}
+        <div class="trait-cards-grid">
+          {% for card in cards %}
+            <a href="{{ base_path }}/card/{{ card.slug }}" class="trait-card-thumb">
+              <div style="aspect-ratio: {% if card.type in ['Leader', 'Base'] %}1.393{% else %}0.714{% endif %}; background: #09090b; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                {% if card.art_front or card.front_image %}
+                  <img src="{{ card.art_front or card.front_image }}" alt="{{ card.title or card.name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: contain; display: block;">
+                {% else %}
+                  <div style="font-size: 0.8rem; color: var(--muted); text-align: center; padding: 1rem;">{{ card.title or card.name }}</div>
+                {% endif %}
+              </div>
+              <div style="padding: 0.6rem 0.75rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.25rem;">
+                <div style="font-weight: 600; font-size: 0.85rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  {{ card.title or card.name }}
+                </div>
+                {% if card.subtitle %}
+                  <div style="font-size: 0.72rem; color: #a1a1aa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    {{ card.subtitle }}
+                  </div>
+                {% endif %}
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: var(--muted); margin-top: 0.2rem;">
+                  <span>{{ card.type }}</span>
+                  <span>{{ card.expansion.code or card.set_code }} #{{ card.card_number or card.number }}</span>
+                </div>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem; text-align: center; color: var(--muted);">
+          No cards found for this trait.
+        </div>
+      {% endif %}
+    </div>
+
+  {% else %}
+    <!-- Traits Directory Overview -->
+    <div class="trait-header">
+      <h1 class="trait-title">Star Wars: Unlimited Traits Directory</h1>
+      <p class="trait-subtitle">
+        Explore all {{ traits | length }} tribal classifications, military units, Force traditions, and archetypal traits across the Star Wars: Unlimited card pool.
+      </p>
+    </div>
+
+    <div class="trait-grid">
+      {% for t in traits %}
+        <a href="{{ base_path }}/trait/{{ t.slug }}" class="trait-card">
+          <span class="trait-card-name">{{ t.name }}</span>
+          <span class="trait-card-count">{{ t.count }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

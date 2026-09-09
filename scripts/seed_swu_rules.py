@@ -137,6 +137,46 @@ SWU_KEYWORDS = [
         "reminder_text": "For each unit you defeat when playing this card, its cost is reduced by 2.",
         "summary": "Sacrifice mechanic enabling players to defeat friendly units to discount the resource cost of powerful boss units.",
         "comprehensive_text": "7.5.17 Exploit X: When playing a card with Exploit X, the player may defeat up to X units they control. For each unit defeated this way, reduce the card's cost by 2 resources."
+    },
+    {
+        "slug": "saboteur",
+        "name": "Saboteur",
+        "category": "Keyword Ability",
+        "rules_section": "7.5.8",
+        "introduced_in": "SOR",
+        "reminder_text": "When this unit attacks, ignore Sentinel and defeat all Shield tokens on the defender.",
+        "summary": "Infiltration ability that bypasses enemy Sentinel units and defeats all Shield tokens on the defending unit before damage is dealt.",
+        "comprehensive_text": "7.5.8 Saboteur: When an attacker with Saboteur attacks, it ignores the Sentinel ability of any enemy units in that arena. Additionally, when a unit with Saboteur attacks an enemy unit that has one or more Shield tokens attached, all Shield tokens on the defender are defeated before combat damage is dealt."
+    },
+    {
+        "slug": "capture",
+        "name": "Capture",
+        "category": "Keyword Action",
+        "rules_section": "7.6.2",
+        "introduced_in": "SHD",
+        "reminder_text": "Place an enemy non-leader unit face-down under this unit as a captured card.",
+        "summary": "Imprisonment action where a guarding unit holds an enemy unit face-down beneath it until the guarding unit leaves play.",
+        "comprehensive_text": "7.6.2 Capture: An instruction to take an enemy non-leader unit from play, exhaust it, and place it face-down under the guarding unit. The captured unit loses all upgrades and tokens. When the guarding unit leaves play, all captured cards under it are rescued: flipped face-up and returned to their owner's arena exhausted."
+    },
+    {
+        "slug": "experience",
+        "name": "Experience",
+        "category": "Token Upgrade",
+        "rules_section": "7.5.3",
+        "introduced_in": "SOR",
+        "reminder_text": "Give an Experience token to a unit (+1/+0 and +0/+1).",
+        "summary": "Stat-boosting token upgrade granting +1 Power and +1 HP to the attached friendly or enemy unit.",
+        "comprehensive_text": "7.5.3 Experience: An Experience token is a token upgrade that gives the attached unit +1/+1 (+1 Power and +1 HP). Any number of Experience tokens may be attached to a single unit."
+    },
+    {
+        "slug": "shield",
+        "name": "Shield",
+        "category": "Token Upgrade",
+        "rules_section": "7.5.12",
+        "introduced_in": "SOR",
+        "reminder_text": "If attached unit would take damage, defeat this Shield instead.",
+        "summary": "Protective token upgrade that completely absorbs the next instance of damage the host unit would receive.",
+        "comprehensive_text": "7.5.12 Shield: A Shield token is a token upgrade attached to a unit. While attached, if the host unit would be dealt damage from an attack or ability, defeat one Shield token on the unit instead of dealing that damage."
     }
 ]
 
@@ -217,6 +257,27 @@ SWU_RULES_SECTIONS = [
         "chapter": "8. Damage & Defeat",
         "title": "Indirect Damage",
         "text": "8.3.4 When an effect deals Indirect Damage to a player, that player chooses how to assign and distribute the full amount of damage among their own units and their base."
+    },
+    {
+        "section": "7.5.8",
+        "section_slug": "7-5-8",
+        "chapter": "7. Keywords and Named Abilities",
+        "title": "Saboteur",
+        "text": "7.5.8 When an attacker with Saboteur attacks, it ignores Sentinel and defeats all Shield tokens on the defender before combat damage is dealt."
+    },
+    {
+        "section": "7.6.2",
+        "section_slug": "7-6-2",
+        "chapter": "7. Keywords and Named Abilities",
+        "title": "Capture",
+        "text": "7.6.2 An instruction to exhaust an enemy non-leader unit and place it face-down under the guarding unit. Rescued when the guarding unit leaves play."
+    },
+    {
+        "section": "7.5.3",
+        "section_slug": "7-5-3",
+        "chapter": "7. Keywords and Named Abilities",
+        "title": "Experience",
+        "text": "7.5.3 An Experience token is a token upgrade that gives the attached unit +1/+1 (+1 Power and +1 HP)."
     }
 ]
 

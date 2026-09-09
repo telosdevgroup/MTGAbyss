@@ -74,15 +74,6 @@
       <p style="color: var(--muted); font-size: 0.9rem;">No weapons currently registered with this trait in the armory.</p>
       {% endif %}
     </div>
-
-    <!-- Subtle Developer / Data Export Footer -->
-    <div style="margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-      <span style="font-size: 0.75rem; color: var(--muted); font-family: 'JetBrains Mono', monospace;">RAW DATA:</span>
-      <div style="display: flex; gap: 0.5rem;">
-        <a href="{{ base_path }}/trait/{{ trait.slug }}.md" class="badge-mono" style="font-size: 0.75rem;">Markdown (.md)</a>
-        <a href="{{ base_path }}/trait/{{ trait.slug }}.json" class="badge-mono" style="font-size: 0.75rem;">REST (.json)</a>
-      </div>
-    </div>
   </div>
 </div>
 {% endblock %}

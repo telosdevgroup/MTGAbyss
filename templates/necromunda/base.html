@@ -272,6 +272,123 @@
       text-transform: none;
     }
 
+    /* Dropdown Menus */
+    .nav-dropdown {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .dropdown-toggle {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.25rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .dropdown-toggle:hover,
+    .nav-dropdown:hover .dropdown-toggle,
+    .nav-dropdown.is-open .dropdown-toggle {
+      color: #fff;
+    }
+    .dropdown-caret {
+      width: 9px;
+      height: 6px;
+      transition: transform 0.2s ease;
+      opacity: 0.7;
+    }
+    .nav-dropdown:hover .dropdown-caret,
+    .nav-dropdown.is-open .dropdown-caret {
+      transform: rotate(180deg);
+      stroke: var(--accent);
+      opacity: 1;
+    }
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 290px;
+      background: #141923;
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--accent);
+      border-radius: 6px;
+      box-shadow: 0 14px 32px rgba(0,0,0,0.65);
+      padding: 0.5rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.2rem;
+      z-index: 200;
+      margin-top: 0.5rem;
+    }
+    .nav-dropdown:hover .dropdown-menu,
+    .nav-dropdown.is-open .dropdown-menu {
+      display: flex;
+    }
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: background 0.15s, border-color 0.15s;
+      border: 1px solid transparent;
+    }
+    .dropdown-item:hover {
+      background: #1c2331;
+      border-color: rgba(255, 87, 34, 0.3);
+      text-decoration: none;
+    }
+    .dropdown-item-icon {
+      font-size: 1.15rem;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .dropdown-item-title {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      text-transform: none;
+      letter-spacing: 0.02em;
+    }
+    .dropdown-item:hover .dropdown-item-title {
+      color: #ff7043;
+    }
+    .dropdown-item-desc {
+      font-size: 0.74rem;
+      color: var(--muted);
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      line-height: 1.35;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .badge-mini {
+      font-size: 0.62rem;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-soon {
+      background: rgba(255, 87, 34, 0.15);
+      border: 1px solid rgba(255, 87, 34, 0.4);
+      color: #ff7043;
+    }
+
     @media (max-width: 768px) {
       .header-inner {
         flex-wrap: wrap;
@@ -302,11 +419,34 @@
         gap: 0.75rem !important;
         width: 100%;
       }
-      .nav-links-group a {
+      .nav-links-group > a.nav-link {
         font-size: 1.05rem !important;
         width: 100%;
         padding: 0.35rem 0.5rem;
         border-bottom: none !important;
+      }
+      .nav-dropdown {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .dropdown-toggle {
+        width: 100%;
+        justify-content: space-between;
+        padding: 0.45rem 0.5rem;
+        font-size: 1.05rem;
+      }
+      .dropdown-menu {
+        position: static;
+        width: 100%;
+        margin-top: 0.35rem;
+        box-shadow: none;
+        background: #0f131a;
+        border: 1px solid var(--border);
+        border-left: 2px solid var(--accent);
+      }
+      .nav-dropdown.is-open .dropdown-menu {
+        display: flex;
       }
       .nav-divider {
         display: block !important;
@@ -342,7 +482,6 @@
     <div class="header-inner">
       <a href="{{ base_path or '/' }}" class="brand" aria-label="AvaScry Necromunda">
         AvaScry <span class="accent">Necromunda</span>
-        <span class="brand-tag">UNDERHIVE</span>
       </a>
 
       <!-- Mobile Hamburger Button -->
@@ -351,13 +490,110 @@
       </button>
 
       <nav id="main-navigation" aria-label="Necromunda Navigation" style="display: flex; align-items: center; gap: 1.25rem;">
-        <!-- Group 1: Navigation Links -->
+        <!-- Group 1: Navigation Links with Dropdowns -->
         <div class="nav-links-group">
-          <a href="{{ base_path or '/' }}">Hub</a>
-          <a href="{{ base_path }}/weapons">Armory</a>
-          <a href="{{ base_path }}/traits">Traits</a>
-          <a href="{{ base_path }}/houses">Clan Houses</a>
-          <a href="{{ base_path }}/skills">Skills</a>
+          <a href="{{ base_path or '/' }}" class="nav-link">Hub</a>
+
+          <!-- Database Dropdown -->
+          <div class="nav-dropdown" id="databaseDropdown">
+            <button type="button" class="dropdown-toggle" aria-expanded="false" aria-haspopup="true">
+              <span>Database</span>
+              <svg class="dropdown-caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M1 1l4 4 4-4"/>
+              </svg>
+            </button>
+            <div class="dropdown-menu" role="menu">
+              <a href="{{ base_path }}/weapons" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">🔫</span>
+                <div>
+                  <div class="dropdown-item-title">Underhive Armory</div>
+                  <div class="dropdown-item-desc">Weapons, ballistic specs &amp; ammo profiles</div>
+                </div>
+              </a>
+              <a href="{{ base_path }}/equipment" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">🛡️</span>
+                <div>
+                  <div class="dropdown-item-title">Trading Post &amp; Wargear</div>
+                  <div class="dropdown-item-desc">Armor, bionics, chems &amp; field equipment</div>
+                </div>
+              </a>
+              <a href="{{ base_path }}/traits" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">⚡</span>
+                <div>
+                  <div class="dropdown-item-title">Weapon Traits</div>
+                  <div class="dropdown-item-desc">Rules lexicon, effects &amp; tactical notes</div>
+                </div>
+              </a>
+              <a href="{{ base_path }}/houses" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">🏰</span>
+                <div>
+                  <div class="dropdown-item-title">Clan Houses</div>
+                  <div class="dropdown-item-desc">Faction rosters, gang fighters &amp; statlines</div>
+                </div>
+              </a>
+              <a href="{{ base_path }}/skills" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">📜</span>
+                <div>
+                  <div class="dropdown-item-title">Skill Disciplines</div>
+                  <div class="dropdown-item-desc">Core trees, House skills &amp; Wyrd disciplines</div>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          <!-- Interactive Custom Python Tools Dropdown -->
+          <div class="nav-dropdown" id="toolsDropdown">
+            <button type="button" class="dropdown-toggle" aria-expanded="false" aria-haspopup="true">
+              <span>Tools</span>
+              <svg class="dropdown-caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M1 1l4 4 4-4"/>
+              </svg>
+            </button>
+            <div class="dropdown-menu" role="menu">
+              <a href="{{ base_path }}/tools/gang-builder" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">⚔️</span>
+                <div>
+                  <div class="dropdown-item-title">
+                    <span>Gang Builder</span>
+                    <span class="badge-mini badge-soon">In Dev</span>
+                  </div>
+                  <div class="dropdown-item-desc">Custom roster builder, credit ledger &amp; loadouts</div>
+                </div>
+              </a>
+              <a href="{{ base_path }}/tools/combat-sim" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">🎯</span>
+                <div>
+                  <div class="dropdown-item-title">
+                    <span>Combat &amp; Wound Sim</span>
+                    <span class="badge-mini badge-soon">In Dev</span>
+                  </div>
+                  <div class="dropdown-item-desc">Python ballistics, armor save &amp; injury odds</div>
+                </div>
+              </a>
+              <a href="{{ base_path }}/tools/trading-post-calc" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">💰</span>
+                <div>
+                  <div class="dropdown-item-title">
+                    <span>Trading Post Calculator</span>
+                    <span class="badge-mini badge-soon">In Dev</span>
+                  </div>
+                  <div class="dropdown-item-desc">Black market rarity dice &amp; credit optimization</div>
+                </div>
+              </a>
+              <a href="{{ base_path }}/tools/dice-engine" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">🎲</span>
+                <div>
+                  <div class="dropdown-item-title">
+                    <span>Tactical Dice Engine</span>
+                    <span class="badge-mini badge-soon">In Dev</span>
+                  </div>
+                  <div class="dropdown-item-desc">Ammo check, scatter &amp; injury die roller</div>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          <a href="{{ base_path }}/sitemap.html" class="nav-link">Sitemap</a>
         </div>
 
         <span class="nav-divider" aria-hidden="true"></span>
@@ -448,6 +684,38 @@
           }
         });
       }
+
+      // Dropdown toggle handling (click on mobile or touch)
+      var dropdowns = document.querySelectorAll('.nav-dropdown');
+      dropdowns.forEach(function(dd) {
+        var btn = dd.querySelector('.dropdown-toggle');
+        if (btn) {
+          btn.addEventListener('click', function(e) {
+            var isOpen = dd.classList.contains('is-open');
+            // Close other dropdowns
+            dropdowns.forEach(function(other) {
+              if (other !== dd) {
+                other.classList.remove('is-open');
+                var otherBtn = other.querySelector('.dropdown-toggle');
+                if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+              }
+            });
+            dd.classList.toggle('is-open', !isOpen);
+            btn.setAttribute('aria-expanded', !isOpen ? 'true' : 'false');
+          });
+        }
+      });
+
+      // Close dropdowns when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.nav-dropdown')) {
+          dropdowns.forEach(function(dd) {
+            dd.classList.remove('is-open');
+            var btn = dd.querySelector('.dropdown-toggle');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+          });
+        }
+      });
     })();
   </script>
 </body>

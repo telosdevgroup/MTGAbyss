@@ -1,0 +1,230 @@
+{% extends "minecraft/base.html" %}
+
+{% block content %}
+<!-- Hero Section with Search Bar -->
+<div style="margin-bottom: 2.5rem; text-align: center; padding: 3rem 1.5rem; background: #ffffff; border-radius: 14px; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.04);">
+  <h1 style="font-size: 2.4rem; font-weight: 800; color: var(--text); margin-bottom: 0.6rem; letter-spacing: -0.02em;">
+    Minecraft Vanilla Data Atlas
+  </h1>
+  <p style="font-size: 1.1rem; color: var(--muted); max-width: 650px; margin: 0 auto 1.75rem auto; line-height: 1.5;">
+    Deterministic, unmodded Java 1.21.4 object graph. Search crafting arrangements, mining hardness, mob loot drops, and builder color palettes.
+  </p>
+
+  <!-- Big Hero Search Bar -->
+  <form method="get" action="{{ base_prefix }}/items" style="max-width: 580px; margin: 0 auto 1.5rem auto; display: flex; gap: 0.5rem;">
+    <div style="position: relative; flex: 1;">
+      <input 
+        type="text" 
+        name="q" 
+        placeholder="Search any item, block, or recipe (e.g., Diamond Pickaxe, Obsidian)..." 
+        style="width: 100%; padding: 0.85rem 1.25rem; font-size: 1rem; border-radius: 8px; border: 1.5px solid var(--border-subtle); background: #f8fafc; color: var(--text); outline: none; transition: border-color 0.15s, box-shadow 0.15s;"
+        onfocus="this.style.borderColor='var(--accent)'; this.style.boxShadow='0 0 0 3px rgba(13,148,136,0.15)';"
+        onblur="this.style.borderColor='var(--border-subtle)'; this.style.boxShadow='none';"
+      />
+    </div>
+    <button type="submit" style="padding: 0.85rem 1.5rem; background: var(--accent); color: #fff; font-weight: 700; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; transition: background 0.15s; white-space: nowrap;">
+      Search Atlas
+    </button>
+  </form>
+
+  <!-- Version & Catalog Metric Badges -->
+  <div style="display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap;">
+    <span class="badge badge-accent" style="font-size: 0.8rem; font-weight: 700;">Java 1.21.4 Release</span>
+    <span class="badge badge-emerald" style="font-size: 0.8rem; font-weight: 700;">{{ total_items }} Items</span>
+    <span class="badge badge-gold" style="font-size: 0.8rem; font-weight: 700;">{{ total_blocks }} Blocks</span>
+    <span class="badge" style="font-size: 0.8rem; font-weight: 700;">{{ total_recipes }} Recipes</span>
+    <span class="badge" style="font-size: 0.8rem; font-weight: 700;">{{ total_entities }} Mobs &amp; Entities</span>
+  </div>
+</div>
+
+<!-- Primary Surface Feature Cards -->
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+  <div>
+    <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text); margin: 0;">Explore Catalogs</h2>
+    <span style="font-size: 0.82rem; color: var(--muted);">Click any card to browse with faceted filters</span>
+  </div>
+  <a href="{{ base_prefix }}/palette" class="badge badge-accent" style="font-size: 0.82rem; font-weight: 700; text-decoration: none; padding: 0.35rem 0.75rem;">
+    🎨 Open Palette Generator &rarr;
+  </a>
+</div>
+
+<div class="grid-3">
+  <!-- Items & Tools Card -->
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      <div class="card-title">
+        <a href="{{ base_prefix }}/items" style="font-size: 1.2rem; font-weight: 800;">Items &amp; Tools</a>
+        <span class="badge badge-accent">{{ total_items }}</span>
+      </div>
+      <p style="color: var(--muted); font-size: 0.88rem; margin-bottom: 1.25rem; line-height: 1.45;">
+        Durability stats, stack limits, weapon damage, and tools with reciprocal craft references.
+      </p>
+      
+      <!-- Visual Sprites Row -->
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+        {% for itm in sample_items %}
+        <a 
+          href="{{ base_prefix }}/item/{{ itm.slug }}" 
+          title="{{ itm.facts.display_name }}"
+          style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; text-decoration: none; color: var(--text); background: #f8fafc; font-size: 0.82rem; font-weight: 600; transition: border-color 0.15s;"
+          onmouseover="this.style.borderColor='var(--accent)';"
+          onmouseout="this.style.borderColor='var(--border)';"
+        >
+          {% if itm.facts.image_url %}
+          <img src="{{ itm.facts.image_url }}" alt="{{ itm.facts.display_name }}" width="22" height="22" style="image-rendering: pixelated; object-fit: contain;">
+          {% endif %}
+          <span>{{ itm.facts.display_name }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    <a href="{{ base_prefix }}/items" style="font-size: 0.85rem; font-weight: 700; color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
+      Browse All {{ total_items }} Items &rarr;
+    </a>
+  </div>
+
+  <!-- Blocks & Mining Card -->
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      <div class="card-title">
+        <a href="{{ base_prefix }}/blocks" style="font-size: 1.2rem; font-weight: 800;">Blocks &amp; Mining</a>
+        <span class="badge badge-gold">{{ total_blocks }}</span>
+      </div>
+      <p style="color: var(--muted); font-size: 0.88rem; margin-bottom: 1.25rem; line-height: 1.45;">
+        Hardness ratings, blast resistance, required harvest tools, and AST-parsed block drops.
+      </p>
+
+      <!-- Visual Sprites Row -->
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+        {% for blk in sample_blocks %}
+        <a 
+          href="{{ base_prefix }}/block/{{ blk.slug }}" 
+          title="{{ blk.facts.display_name }}"
+          style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; text-decoration: none; color: var(--text); background: #f8fafc; font-size: 0.82rem; font-weight: 600; transition: border-color 0.15s;"
+          onmouseover="this.style.borderColor='var(--gold)';"
+          onmouseout="this.style.borderColor='var(--border)';"
+        >
+          {% if blk.facts.image_url %}
+          <img src="{{ blk.facts.image_url }}" alt="{{ blk.facts.display_name }}" width="22" height="22" style="image-rendering: pixelated; object-fit: contain;">
+          {% endif %}
+          <span>{{ blk.facts.display_name }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    <a href="{{ base_prefix }}/blocks" style="font-size: 0.85rem; font-weight: 700; color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
+      Browse All {{ total_blocks }} Blocks &rarr;
+    </a>
+  </div>
+
+  <!-- Recipes Card -->
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      <div class="card-title">
+        <a href="{{ base_prefix }}/recipes" style="font-size: 1.2rem; font-weight: 800;">Recipes</a>
+        <span class="badge">{{ total_recipes }}</span>
+      </div>
+      <p style="color: var(--muted); font-size: 0.88rem; margin-bottom: 1.25rem; line-height: 1.45;">
+        Authentic 3x3 workbench matrices, shapeless recipes, smelting durations, and XP rewards.
+      </p>
+
+      <!-- Visual Sprites Row -->
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+        {% for r in sample_recipes %}
+        <a 
+          href="{{ base_prefix }}/recipe/{{ r.slug }}" 
+          title="{{ r.display_name or (r.slug | human_name) }}"
+          style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; text-decoration: none; color: var(--text); background: #f8fafc; font-size: 0.82rem; font-weight: 600; transition: border-color 0.15s;"
+          onmouseover="this.style.borderColor='var(--accent)';"
+          onmouseout="this.style.borderColor='var(--border)';"
+        >
+          {% if r.image_url %}
+          <img src="{{ r.image_url }}" alt="{{ r.display_name or (r.slug | human_name) }}" width="22" height="22" style="image-rendering: pixelated; object-fit: contain;">
+          {% endif %}
+          <span>{{ r.display_name or (r.slug | human_name) }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    <a href="{{ base_prefix }}/recipes" style="font-size: 0.85rem; font-weight: 700; color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
+      Browse All {{ total_recipes }} Recipes &rarr;
+    </a>
+  </div>
+
+  <!-- Entities & Mobs Card -->
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      <div class="card-title">
+        <a href="{{ base_prefix }}/entities" style="font-size: 1.2rem; font-weight: 800;">Entities &amp; Mobs</a>
+        <span class="badge">{{ total_entities }}</span>
+      </div>
+      <p style="color: var(--muted); font-size: 0.88rem; margin-bottom: 1.25rem; line-height: 1.45;">
+        Mob health statistics, hostile behavior classifications, fire immunity, and loot tables.
+      </p>
+
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+        {% for ent in sample_entities %}
+        <a 
+          href="{{ base_prefix }}/entity/{{ ent.slug }}" 
+          title="{{ ent.facts.display_name }}"
+          style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; text-decoration: none; color: var(--text); background: #f8fafc; font-size: 0.82rem; font-weight: 600; transition: border-color 0.15s;"
+          onmouseover="this.style.borderColor='var(--accent)';"
+          onmouseout="this.style.borderColor='var(--border)';"
+        >
+          <span>{{ ent.facts.display_name }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    <a href="{{ base_prefix }}/entities" style="font-size: 0.85rem; font-weight: 700; color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
+      Browse All {{ total_entities }} Mobs &rarr;
+    </a>
+  </div>
+
+  <!-- Enchantments Card -->
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      <div class="card-title">
+        <a href="{{ base_prefix }}/enchantments" style="font-size: 1.2rem; font-weight: 800;">Enchantments</a>
+        <span class="badge badge-accent">{{ total_enchantments }}</span>
+      </div>
+      <p style="color: var(--muted); font-size: 0.88rem; margin-bottom: 1.25rem; line-height: 1.45;">
+        Maximum level tiers, item applicability requirements, and mutual exclusion rules.
+      </p>
+      <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem;">
+        <span class="badge">Sharpness</span>
+        <span class="badge">Fortune</span>
+        <span class="badge">Mending</span>
+        <span class="badge">Unbreaking</span>
+        <span class="badge">Infinity</span>
+      </div>
+    </div>
+    <a href="{{ base_prefix }}/enchantments" style="font-size: 0.85rem; font-weight: 700; color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
+      Browse All {{ total_enchantments }} Enchantments &rarr;
+    </a>
+  </div>
+
+  <!-- Status Effects Card -->
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      <div class="card-title">
+        <a href="{{ base_prefix }}/effects" style="font-size: 1.2rem; font-weight: 800;">Status Effects</a>
+        <span class="badge">{{ total_effects }}</span>
+      </div>
+      <p style="color: var(--muted); font-size: 0.88rem; margin-bottom: 1.25rem; line-height: 1.45;">
+        Beneficial and harmful potion effects, beacon radius modifiers, and attribute boosts.
+      </p>
+      <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem;">
+        <span class="badge badge-emerald">Regeneration</span>
+        <span class="badge badge-accent">Speed</span>
+        <span class="badge badge-gold">Strength</span>
+        <span class="badge" style="color: #dc2626;">Poison</span>
+        <span class="badge" style="color: #7c3aed;">Wither</span>
+      </div>
+    </div>
+    <a href="{{ base_prefix }}/effects" style="font-size: 0.85rem; font-weight: 700; color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
+      Browse All {{ total_effects }} Status Effects &rarr;
+    </a>
+  </div>
+</div>
+{% endblock %}

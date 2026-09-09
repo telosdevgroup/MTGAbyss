@@ -1,0 +1,532 @@
+{% extends "necromunda/base.html" %}
+
+{% block title %}Underhive Trading Post &amp; Wargear ({{ total_equipment }} Items) — AvaScry Necromunda{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://necromunda.avascry.com/equipment">
+<link rel="alternate" type="text/plain" href="https://necromunda.avascry.com/llms.txt" title="AvaScry Necromunda LLM Manifest">
+<link rel="alternate" type="text/plain" href="https://necromunda.avascry.com/llms-full.txt" title="AvaScry Necromunda Full Corpus">
+<link rel="alternate" type="text/markdown" href="https://necromunda.avascry.com/sitemap.md">
+<link rel="alternate" type="application/xml" href="https://necromunda.avascry.com/sitemap.xml">
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ==========================================================================
+     DESTINATION HERO STYLING (Spacious, Centered, Rich Visuals)
+     ========================================================================== */
+  .trading-post-hero {
+    position: relative;
+    max-width: 960px;
+    margin: 1.5rem auto 3.5rem auto;
+    text-align: center;
+    padding: 3rem 1.5rem 2.5rem 1.5rem;
+    background: radial-gradient(circle at 50% 15%, rgba(255, 87, 34, 0.14) 0%, rgba(20, 25, 36, 0.4) 55%, transparent 75%);
+    border: 1px solid rgba(255, 87, 34, 0.22);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 87, 34, 0.15);
+    overflow: hidden;
+  }
+
+  /* Ambient Grid Pattern in Hero Background */
+  .trading-post-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  /* Central Hero Tactical Insignia */
+  .hero-insignia {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255, 87, 34, 0.2), rgba(20, 25, 36, 0.9));
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 24px rgba(255, 87, 34, 0.35), inset 0 0 12px rgba(255, 87, 34, 0.2);
+    margin-bottom: 1.25rem;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-insignia svg {
+    width: 34px;
+    height: 34px;
+    fill: none;
+    stroke: #ff7043;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  }
+
+  .hero-meta-row {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-title {
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: clamp(2rem, 5vw, 2.9rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #fff;
+    margin: 0 0 0.85rem 0;
+    line-height: 1.15;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    position: relative;
+    z-index: 1;
+  }
+  .hero-title span.accent {
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(255, 87, 34, 0.5);
+  }
+
+  .hero-subtitle {
+    font-size: 1.05rem;
+    color: var(--muted);
+    max-width: 680px;
+    margin: 0 auto 2.25rem auto;
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Wide Command Bar Filter Input */
+  .equipment-search-container {
+    position: relative;
+    max-width: 640px;
+    margin: 0 auto 1.5rem auto;
+    z-index: 1;
+  }
+  .equipment-search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .equipment-search-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+  }
+  .equipment-search-input {
+    width: 100%;
+    padding: 0.95rem 5rem 0.95rem 2.9rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.98rem;
+    color: #fff;
+    background: rgba(14, 18, 25, 0.92);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    outline: none;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(0, 0, 0, 0.5);
+    transition: all 0.2s ease;
+  }
+  .equipment-search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(255, 87, 34, 0.18), 0 4px 14px rgba(0,0,0,0.5);
+    background: #10141d;
+  }
+  .equipment-search-clear {
+    position: absolute;
+    right: 2.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 1.3rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+    display: none;
+  }
+  .equipment-search-clear:hover {
+    color: #fff;
+  }
+  .search-shortcut-hint {
+    position: absolute;
+    right: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    pointer-events: none;
+  }
+
+  /* Quick-Jump Category Pill Bar */
+  .category-pill-container {
+    position: relative;
+    z-index: 1;
+    margin-top: 1.25rem;
+  }
+  .category-pill-label {
+    display: block;
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+  }
+  .category-pill-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+  }
+  .cat-btn {
+    cursor: pointer;
+    user-select: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+    background: rgba(20, 25, 36, 0.75);
+    border: 1px solid var(--border);
+    color: #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.15s ease;
+  }
+  .cat-btn:hover {
+    border-color: var(--accent);
+    color: #fff;
+    background: rgba(255, 87, 34, 0.1);
+    transform: translateY(-1px);
+  }
+  .cat-btn.active {
+    background: rgba(255, 87, 34, 0.22) !important;
+    border-color: var(--accent) !important;
+    color: #ff7043 !important;
+    font-weight: 700;
+    box-shadow: 0 0 12px rgba(255, 87, 34, 0.25);
+  }
+
+  /* Status Bar */
+  .equipment-count-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 2rem 0 1.5rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+  }
+
+  /* Rich Card Enhancements */
+  .equipment-card {
+    position: relative;
+    border-left: 3px solid transparent;
+  }
+  .equipment-card:hover {
+    border-left-color: var(--accent);
+  }
+  .cat-badge-armor { color: #f87171; background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.3); }
+  .cat-badge-bionics { color: #38bdf8; background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.3); }
+  .cat-badge-chems { color: #4ade80; background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.3); }
+  .cat-badge-exotic { color: #fbbf24; background: rgba(251, 191, 36, 0.12); border-color: rgba(251, 191, 36, 0.3); }
+  .cat-badge-servo { color: #c084fc; background: rgba(192, 132, 252, 0.12); border-color: rgba(192, 132, 252, 0.3); }
+
+  .no-matches-panel {
+    display: none;
+    background: #141722;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 3.5rem 1.5rem;
+    text-align: center;
+    margin: 3rem 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Destination Category Hero Banner -->
+<div class="trading-post-hero">
+  <!-- Glowing Tactical Insignia SVG -->
+  <div class="hero-insignia" aria-hidden="true">
+    <svg viewBox="0 0 24 24">
+      <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+      <path d="M2 17l10 5 10-5"></path>
+      <path d="M2 12l10 5 10-5"></path>
+    </svg>
+  </div>
+
+  <div class="hero-meta-row">
+    <span class="brand-tag">SECTOR 13-SUB // BLACK MARKET BAZAAR</span>
+    <span class="badge-mono badge-accent">{{ total_equipment }} Wargear Profiles</span>
+    <span class="badge-mono">Necromunda 2023 Comprehensive</span>
+  </div>
+
+  <h1 class="hero-title">
+    Trading Post &amp; <span class="accent">Wargear</span>
+  </h1>
+
+  <p class="hero-subtitle">
+    Authentic Underhive equipment compendium. Browse certified armor suits, field gear, bionics, combat chems, weapon accessories, and exotic beasts from Hive Primus outposts.
+  </p>
+
+  <!-- Centered Search Console -->
+  <div class="equipment-search-container">
+    <div class="equipment-search-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </div>
+    <input 
+      type="search" 
+      id="equipmentFilterInput" 
+      class="equipment-search-input" 
+      placeholder="Filter by name, rules, or gear type (e.g. mesh, bionic, stimm, cat)..." 
+      autocomplete="off"
+      spellcheck="false"
+      aria-label="Filter underhive equipment"
+    />
+    <button type="button" id="equipmentFilterClear" class="equipment-search-clear" aria-label="Clear filter">&times;</button>
+    <kbd class="search-shortcut-hint" aria-hidden="true">/</kbd>
+  </div>
+
+  <!-- Quick-Jump Category Filter Bar -->
+  <div class="category-pill-container">
+    <span class="category-pill-label">Category Quick Jump</span>
+    <div class="category-pill-row" id="equipmentCatPillRow">
+      <button type="button" class="badge-mono cat-btn active" data-cat="all">
+        <span>🌐</span> All Categories ({{ total_equipment }})
+      </button>
+      {% for cat in categories %}
+      <button type="button" class="badge-mono cat-btn" data-cat="{{ cat|lower }}">
+        {% if 'armor' in cat|lower %}🛡️
+        {% elif 'bionic' in cat|lower or 'body' in cat|lower %}🦾
+        {% elif 'chem' in cat|lower %}🧪
+        {% elif 'beast' in cat|lower or 'mount' in cat|lower %}🐾
+        {% elif 'servo' in cat|lower %}👁️
+        {% elif 'weapon' in cat|lower %}⚙️
+        {% elif 'vehicle' in cat|lower or 'drive' in cat|lower or 'engine' in cat|lower or 'hardpoint' in cat|lower %}🚗
+        {% elif 'status' in cat|lower %}👑
+        {% else %}📦{% endif %}
+        {{ cat }}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Metrics & Real-time Status Bar -->
+<div class="equipment-count-row">
+  <span id="equipmentFilterStatus">Showing {{ total_equipment }} of {{ total_equipment }} equipment items</span>
+  <span style="font-size: 0.75rem; opacity: 0.75;">Press <kbd style="background: #1e2430; padding: 2px 5px; border-radius: 3px; border: 1px solid var(--border);">Esc</kbd> to reset &bull; <kbd style="background: #1e2430; padding: 2px 5px; border-radius: 3px; border: 1px solid var(--border);">/</kbd> to search</span>
+</div>
+
+<!-- Zero Matches Fallback -->
+<div class="no-matches-panel" id="noEquipmentMatchesPanel">
+  <div style="font-family: 'Chakra Petch', sans-serif; font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">
+    No Matching Equipment Found
+  </div>
+  <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1.25rem; max-width: 480px; margin-left: auto; margin-right: auto;">
+    No wargear profiles matched your current search query or category filter. Try clearing your search or resetting filters.
+  </p>
+  <button type="button" class="badge-mono badge-accent" id="resetEquipmentFilterBtn" style="cursor: pointer; border-radius: 4px; padding: 8px 18px; font-size: 0.85rem; font-weight: 600;">
+    Reset All Filters
+  </button>
+</div>
+
+<!-- Wargear Cards Grid -->
+<div class="grid-cards" id="equipmentGrid">
+  {% for eq in equipment %}
+  {% set cat_lower = eq.category|lower %}
+  <div class="hive-card equipment-card" 
+       data-name="{{ eq.name|lower }}" 
+       data-category="{{ eq.category|lower }}" 
+       data-rarity="{{ eq.rarity|lower }}" 
+       data-rules="{{ eq.rules_text|lower }}"
+       data-desc="{{ eq.description|lower }}">
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem; gap: 0.5rem;">
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; line-height: 1.25;">
+          <a href="{{ base_path }}/equipment/{{ eq.slug }}" style="color: #fff; transition: color 0.15s;">{{ eq.name }}</a>
+        </h2>
+        <span class="badge-mono badge-accent" style="white-space: nowrap; font-weight: 700;">{{ eq.cost_credits }} cr</span>
+      </div>
+
+      <div style="display: flex; gap: 0.45rem; margin-bottom: 0.95rem; flex-wrap: wrap; align-items: center;">
+        <span class="badge-mono {% if 'armor' in cat_lower %}cat-badge-armor{% elif 'bionic' in cat_lower %}cat-badge-bionics{% elif 'chem' in cat_lower %}cat-badge-chems{% elif 'beast' in cat_lower %}cat-badge-exotic{% elif 'servo' in cat_lower %}cat-badge-servo{% endif %}" style="font-weight: 600;">
+          {{ eq.category }}
+        </span>
+        {% if eq.rarity %}
+        <span class="badge-mono" style="font-size: 0.72rem;">{{ eq.rarity }}</span>
+        {% endif %}
+      </div>
+
+      <p style="color: #cbd5e1; font-size: 0.86rem; line-height: 1.55; margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+        {{ eq.rules_text }}
+      </p>
+    </div>
+
+    <div style="padding-top: 0.85rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <a href="{{ base_path }}/equipment/{{ eq.slug }}" style="font-size: 0.82rem; color: var(--accent); font-weight: 600; display: inline-flex; align-items: center; gap: 0.3rem;">
+        <span>Rules &amp; Specs</span>
+        <span aria-hidden="true">&rarr;</span>
+      </a>
+      <div style="display: flex; gap: 0.35rem;">
+        <a href="{{ base_path }}/equipment/{{ eq.slug }}.md" class="badge-mono" style="font-size: 0.7rem;" title="View Markdown representation">.md</a>
+        <a href="{{ base_path }}/equipment/{{ eq.slug }}.json" class="badge-mono" style="font-size: 0.7rem;" title="View RESTful JSON">.json</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Client Filter Controller -->
+<script>
+(function() {
+  const input = document.getElementById('equipmentFilterInput');
+  const clearBtn = document.getElementById('equipmentFilterClear');
+  const status = document.getElementById('equipmentFilterStatus');
+  const noMatches = document.getElementById('noEquipmentMatchesPanel');
+  const cards = Array.from(document.querySelectorAll('.equipment-card'));
+  const catButtons = Array.from(document.querySelectorAll('#equipmentCatPillRow .cat-btn'));
+  const total = cards.length;
+
+  let activeCategory = 'all';
+
+  function filterEquipment() {
+    const rawVal = input.value.trim();
+    const q = rawVal.toLowerCase();
+    if (clearBtn) {
+      clearBtn.style.display = q ? 'block' : 'none';
+    }
+
+    let matchCount = 0;
+
+    cards.forEach(card => {
+      const name = card.dataset.name || '';
+      const category = card.dataset.category || '';
+      const rarity = card.dataset.rarity || '';
+      const rules = card.dataset.rules || '';
+      const desc = card.dataset.desc || '';
+
+      const catMatch = (activeCategory === 'all') || (category === activeCategory);
+      if (!catMatch) {
+        card.style.display = 'none';
+        return;
+      }
+
+      const textMatch = !q || name.includes(q) || category.includes(q) || rarity.includes(q) || rules.includes(q) || desc.includes(q);
+
+      if (textMatch) {
+        card.style.display = '';
+        matchCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    let catLabel = activeCategory === 'all' ? '' : ` in ${activeCategory}`;
+    if (rawVal) {
+      status.textContent = `Showing ${matchCount} of ${total} items${catLabel} for "${rawVal}"`;
+    } else if (activeCategory !== 'all') {
+      status.textContent = `Showing ${matchCount} of ${total} items${catLabel}`;
+    } else {
+      status.textContent = `Showing ${total} of ${total} equipment items`;
+    }
+
+    if (matchCount === 0) {
+      noMatches.style.display = 'block';
+    } else {
+      noMatches.style.display = 'none';
+    }
+  }
+
+  catButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      catButtons.forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      activeCategory = this.dataset.cat;
+      filterEquipment();
+    });
+  });
+
+  input.addEventListener('input', filterEquipment);
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function() {
+      input.value = '';
+      filterEquipment();
+      input.focus();
+    });
+  }
+
+  const resetBtn = document.getElementById('resetEquipmentFilterBtn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function() {
+      input.value = '';
+      activeCategory = 'all';
+      catButtons.forEach(b => {
+        if (b.dataset.cat === 'all') b.classList.add('active');
+        else b.classList.remove('active');
+      });
+      filterEquipment();
+      input.focus();
+    });
+  }
+
+  window.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.activeElement === input) {
+      if (input.value) {
+        input.value = '';
+        filterEquipment();
+      } else {
+        input.blur();
+      }
+    } else if (e.key === 'Escape') {
+      if (input.value || activeCategory !== 'all') {
+        input.value = '';
+        activeCategory = 'all';
+        catButtons.forEach(b => {
+          if (b.dataset.cat === 'all') b.classList.add('active');
+          else b.classList.remove('active');
+        });
+        filterEquipment();
+      }
+    } else if (e.key === '/' && document.activeElement !== input) {
+      e.preventDefault();
+      input.focus();
+      input.select();
+    }
+  });
+})();
+</script>
+{% endblock %}

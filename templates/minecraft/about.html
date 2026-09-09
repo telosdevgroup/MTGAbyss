@@ -1,0 +1,66 @@
+{% extends "minecraft/base.html" %}
+
+{% block title %}About AvaScry Minecraft — Java Edition Vanilla Data Atlas{% endblock %}
+
+{% block canonical %}
+<link rel=canonical href=https://minecraft.avascry.com/about>
+{% endblock %}
+
+{% block content %}
+<div style=max-width: 860px; margin: 2rem auto 4rem; padding: 0 1.5rem;>
+  <article style=background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 2.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04);>
+    <header style=margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem;>
+      <div style=display: inline-block; font-size: 0.75rem; font-family: monospace; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 0.5rem; font-weight: 700;>
+        Minecraft Knowledge Base // System Overview
+      </div>
+      <h1 style=font-size: 2.2rem; font-weight: 800; color: var(--text); margin: 0 0 0.5rem 0;>
+        About AvaScry Minecraft
+      </h1>
+      <p style=color: var(--muted); font-size: 1rem; margin: 0; line-height: 1.6;>
+        Deterministic, version-pinned vanilla data atlas for Minecraft Java Edition. Structured item statistics, crafting recipes, harvest mechanics, and entities.
+      </p>
+    </header>
+
+    <div style=line-height: 1.7; color: var(--text-body); display: flex; flex-direction: column; gap: 2rem;>
+      <section>
+        <h2 style=font-size: 1.35rem; color: var(--text); margin-bottom: 0.75rem;>
+          Mission &amp; Purpose
+        </h2>
+        <p>
+          AvaScry Minecraft is an independent, high-speed reference database and data atlas built for technical Minecraft players, builders, datapack designers, and automation engineers.
+        </p>
+        <p style=margin-top: 0.75rem;>
+          Our goal is to provide instantly searchable, strictly deterministic vanilla game mechanics—including blast resistance, hardness, tool harvest requirements, stack sizes, crafting formulas, and status effects—without ad bloat, slow wiki loads, or intrusive trackers.
+        </p>
+      </section>
+
+      <section>
+        <h2 style=font-size: 1.35rem; color: var(--text); margin-bottom: 0.75rem;>
+          Data Integrity &amp; Automation
+        </h2>
+        <p>
+          All data within AvaScry Minecraft is extracted directly from decompiled vanilla Minecraft Java Edition game data jars and registries. We maintain structured JSON and Markdown endpoints for AI agents, automation pipelines, and developer tooling via <a href={{ base_prefix }}/llms.txt style=color: var(--accent); font-weight: 600;>llms.txt</a>.
+        </p>
+      </section>
+
+      <section style=font-size: 0.9rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 1.5rem;>
+        <h2 style=font-size: 1.1rem; color: var(--text); margin-bottom: 0.5rem;>
+          Legal &amp; Trademark Notice
+        </h2>
+        <p>
+          Minecraft and related assets, names, and trademarks are the property of Mojang AB and Microsoft Corporation. AvaScry Minecraft is an independent community reference and data atlas created under Fair Use (17 U.S.C. § 107) for player education, gameplay reference, and technical exploration. AvaScry is neither endorsed by nor affiliated with Mojang or Microsoft.
+        </p>
+      </section>
+
+      <section style=background: var(--content-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem;>
+        <h3 style=font-size: 1.1rem; color: var(--text); margin-bottom: 0.5rem;>
+          Get in Touch
+        </h3>
+        <p style=margin: 0; font-size: 0.95rem; color: var(--muted);>
+          Found a data discrepancy or have a feature suggestion? Reach out via our <a href={{ base_prefix }}/contact style=color: var(--accent); font-weight: 600;>Contact Form</a>.
+        </p>
+      </section>
+    </div>
+  </article>
+</div>
+{% endblock %}

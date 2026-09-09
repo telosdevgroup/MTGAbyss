@@ -1,0 +1,270 @@
+{% extends "minecraft/base.html" %}
+
+{% block title %}{{ item.facts.display_name }} — Minecraft Java 1.21.4 Data Atlas | AvaScry{% endblock %}
+
+{% block og_tags %}
+<meta property="og:site_name" content="AvaScry Minecraft">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{ item.facts.display_name }} — Minecraft Java 1.21.4 Data Atlas">
+<meta property="og:description" content="Vanilla statistics for {{ item.facts.display_name }} ({{ item.entity_id }}): stack size, durability, mining tiers, and crafting recipes in Java 1.21.4.">
+<meta property="og:url" content="https://minecraft.avascry.com/item/{{ item.slug }}">
+{% if item.facts.image_url %}
+<meta property="og:image" content="https://minecraft.avascry.com{{ item.facts.image_url }}">
+<meta property="og:image:alt" content="{{ item.facts.display_name }} Java 1.21.4 sprite">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{{ item.facts.display_name }} — Minecraft Data Atlas">
+<meta name="twitter:image" content="https://minecraft.avascry.com{{ item.facts.image_url }}">
+{% endif %}
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemPage",
+  "name": "{{ item.facts.display_name }}",
+  "description": "Vanilla Minecraft Java 1.21.4 item data for {{ item.facts.display_name }}",
+  "identifier": "{{ item.entity_id }}",
+  {% if item.facts.image_url %}
+  "image": {
+    "@type": "ImageObject",
+    "url": "https://minecraft.avascry.com{{ item.facts.image_url }}",
+    "caption": "{{ item.facts.display_name }} 1.21.4 sprite",
+    "width": "64",
+    "height": "64"
+  },
+  {% endif %}
+  "mainEntity": {
+    "@type": "Thing",
+    "name": "{{ item.facts.display_name }}",
+    "identifier": "{{ item.entity_id }}"
+  }
+}
+</script>
+{% endblock %}
+
+{% block alternates %}
+<link rel="alternate" type="application/json" href="https://minecraft.avascry.com/item/{{ item.slug }}.json">
+<link rel="alternate" type="text/markdown" href="https://minecraft.avascry.com/item/{{ item.slug }}.md">
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem; display: flex; align-items: center; gap: 1.25rem;">
+  {% if item.facts.image_url %}
+  <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem; box-shadow: 0 2px 6px rgba(0,0,0,0.04); flex-shrink: 0;">
+    <img 
+      src="{{ item.facts.image_url }}" 
+      alt="{{ item.facts.display_name }} sprite — Minecraft Java Edition 1.21.4 ({{ item.entity_id }})" 
+      title="{{ item.facts.display_name }}"
+      width="64" 
+      height="64" 
+      loading="eager" 
+      decoding="async"
+      style="image-rendering: pixelated; image-rendering: -moz-crisp-edges; object-fit: contain; display: block;"
+    >
+  </div>
+  {% endif %}
+  <div>
+    <div style="display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.35rem; flex-wrap: wrap;">
+      <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--text); margin: 0;">{{ item.facts.display_name }}</h1>
+      <span class="badge badge-accent">{{ item.entity_id }}</span>
+    </div>
+    <p style="color: var(--muted); font-family: monospace; font-size: 0.85rem; margin: 0;">
+      Edition: {{ item.edition }} &bull; Version: {{ item.version }} ({{ item.version_type }})
+    </p>
+  </div>
+</div>
+
+<div class="detail-layout">
+  <!-- Left: Facts Panel (Sticky) -->
+  <div class="detail-sticky-sidebar">
+    <div class="card" style="width: 100%; box-sizing: border-box;">
+      <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+      Item Properties
+    </h2>
+    <table style="width: 100%; font-size: 0.9rem; border-collapse: collapse;">
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 0.5rem 0; color: var(--muted);">Stack Size</td>
+        <td style="padding: 0.5rem 0; text-align: right; font-weight: 600;">{{ item.facts.stack_size }}</td>
+      </tr>
+      {% if item.facts.durability %}
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 0.5rem 0; color: var(--muted);">Durability</td>
+        <td style="padding: 0.5rem 0; text-align: right; font-weight: 600; color: var(--accent);">{{ item.facts.durability }}</td>
+      </tr>
+      {% endif %}
+      {% if item.facts.mining_tier %}
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 0.5rem 0; color: var(--muted);">Mining Tier</td>
+        <td style="padding: 0.5rem 0; text-align: right; font-weight: 600; text-transform: capitalize;">{{ item.facts.mining_tier }}</td>
+      </tr>
+      {% endif %}
+      {% if item.facts.enchantability %}
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 0.5rem 0; color: var(--muted);">Enchantability</td>
+        <td style="padding: 0.5rem 0; text-align: right;">{{ item.facts.enchantability }}</td>
+      </tr>
+      {% endif %}
+    </table>
+
+    {% if item.facts.tags %}
+    <div style="margin-top: 1rem;">
+      <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem;">Tags:</div>
+      <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
+        {% for tg in item.facts.tags %}
+        <span class="badge">{{ tg }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    </div>
+  </div>
+
+  <!-- Right: Inverted Graph Relations -->
+  <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+    <!-- Recipes Crafted From -->
+    {% if item.derived.crafted_from_recipes %}
+    <div class="card">
+      <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem;">Crafted From Recipes</h3>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        {% for r_id in item.derived.crafted_from_recipes %}
+        <a href="{{ base_prefix }}/recipe/{{ r_id | slugify }}" class="badge badge-accent">{{ r_id | human_name }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Used In Recipes -->
+    {% if item.derived.used_in_recipes %}
+    <div class="card">
+      <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem;">Used In Recipes</h3>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        {% for r_id in item.derived.used_in_recipes %}
+        <a href="{{ base_prefix }}/recipe/{{ r_id | slugify }}" class="badge">{{ r_id | human_name }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Can Mine Blocks -->
+    {% if item.derived.can_mine_blocks %}
+    <div class="card">
+      <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem;">Can Harvest Blocks</h3>
+      <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+        {% for b_id in item.derived.can_mine_blocks %}
+        <a href="{{ base_prefix }}/block/{{ b_id | slugify }}" class="badge badge-gold">{{ b_id }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Dropped By Blocks / Entities -->
+    {% if item.derived.dropped_by_blocks or item.derived.dropped_by_entities %}
+    <div class="card">
+      <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem;">Dropped By Sources</h3>
+      <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+        {% for b_id in item.derived.dropped_by_blocks %}
+        <a href="{{ base_prefix }}/block/{{ b_id | slugify }}" class="badge badge-gold">Block: {{ b_id }}</a>
+        {% endfor %}
+        {% for e_id in item.derived.dropped_by_entities %}
+        <a href="{{ base_prefix }}/entity/{{ e_id | slugify }}" class="badge badge-emerald">Entity: {{ e_id }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Block Mechanics (if item is also a placeable block) -->
+    {% if block_counterpart %}
+    <div class="card">
+      <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem;">Block Placement &amp; Hardness</h3>
+      <div style="display: flex; gap: 1.5rem; font-size: 0.88rem; color: var(--muted); flex-wrap: wrap;">
+        <div>Hardness: <strong style="color: var(--text);">{{ block_counterpart.facts.hardness }}</strong></div>
+        <div>Blast Resistance: <strong style="color: var(--text);">{{ block_counterpart.facts.resistance }}</strong></div>
+        <div>Tool Required: <strong style="color: var(--text);">{{ 'Yes' if block_counterpart.facts.tool_required else 'No (Hand)' }}</strong></div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Visual Building Palette Matches (from Palette Embeddings) -->
+    {% if palette_matches %}
+    <div class="card">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+        <div>
+          <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text);">Blocks That Build Well With This</h3>
+          <span style="font-size: 0.75rem; color: var(--muted);">Complementary colors and textures that look great together in builds</span>
+        </div>
+        <a href="{{ base_prefix }}/palette/{{ item.slug }}" class="badge badge-accent" style="font-size: 0.72rem; text-decoration: none;">Open Palette Generator &rarr;</a>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0.65rem;">
+        {% for match in palette_matches %}
+        <a href="{{ base_prefix }}/block/{{ match.slug }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; background: var(--badge-bg); border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: var(--text); transition: all 0.15s;" onmouseover="this.style.borderColor='var(--accent)';" onmouseout="this.style.borderColor='var(--border)';">
+          {% if match.image_url %}
+          <img src="{{ match.image_url }}" alt="{{ match.display_name }}" width="32" height="32" style="image-rendering: pixelated; object-fit: contain; flex-shrink: 0;">
+          {% else %}
+          <div style="width: 32px; height: 32px; background: #22323d; border-radius: 4px; flex-shrink: 0;"></div>
+          {% endif %}
+          <div style="flex: 1;">
+            <div style="font-size: 0.88rem; font-weight: 600; line-height: 1.25; word-break: break-word;">{{ match.display_name }}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Similar & Alternative Items (from Functional Embeddings) -->
+    {% if similar_items %}
+    <div class="card">
+      <div style="margin-bottom: 0.85rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text);">Similar Items &amp; Substitutes</h3>
+        <span style="font-size: 0.75rem; color: var(--muted);">Other items with similar mechanics and in-game utility</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0.65rem;">
+        {% for sim in similar_items %}
+        <a href="{{ base_prefix }}/{{ sim.type }}/{{ sim.slug }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; background: var(--badge-bg); border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: var(--text); transition: all 0.15s;" onmouseover="this.style.borderColor='var(--accent)';" onmouseout="this.style.borderColor='var(--border)';">
+          {% if sim.image_url %}
+          <img src="{{ sim.image_url }}" alt="{{ sim.display_name }}" width="32" height="32" style="image-rendering: pixelated; object-fit: contain; flex-shrink: 0;">
+          {% else %}
+          <div style="width: 32px; height: 32px; background: #22323d; border-radius: 4px; flex-shrink: 0;"></div>
+          {% endif %}
+          <div style="flex: 1;">
+            <div style="font-size: 0.88rem; font-weight: 600; line-height: 1.25; word-break: break-word;">{{ sim.display_name }}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Crafting Progression Milestones (from Graph Embeddings) -->
+    {% if progression_matches %}
+    <div class="card">
+      <div style="margin-bottom: 0.85rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text);">Related Crafting Chain Progression</h3>
+        <span style="font-size: 0.75rem; color: var(--muted);">Items nearby in the crafting chain</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0.65rem;">
+        {% for prog in progression_matches %}
+        <a href="{{ base_prefix }}/item/{{ prog.slug }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; background: var(--badge-bg); border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: var(--text); transition: all 0.15s;" onmouseover="this.style.borderColor='var(--accent)';" onmouseout="this.style.borderColor='var(--border)';">
+          {% if prog.image_url %}
+          <img src="{{ prog.image_url }}" alt="{{ prog.display_name }}" width="32" height="32" style="image-rendering: pixelated; object-fit: contain; flex-shrink: 0;">
+          {% else %}
+          <div style="width: 32px; height: 32px; background: #22323d; border-radius: 4px; flex-shrink: 0;"></div>
+          {% endif %}
+          <div style="flex: 1;">
+            <div style="font-size: 0.88rem; font-weight: 600; line-height: 1.25; word-break: break-word;">{{ prog.display_name }}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Alternative Formats Link -->
+<div style="margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; gap: 0.5rem;">
+  <span>alternative formats:</span>
+  <a href="{{ base_prefix }}/item/{{ item.slug }}.json" style="color: var(--muted); text-decoration: underline;">JSON</a>
+  <span>|</span>
+  <a href="{{ base_prefix }}/item/{{ item.slug }}.md" style="color: var(--muted); text-decoration: underline;">MD</a>
+</div>
+{% endblock %}

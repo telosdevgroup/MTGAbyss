@@ -1,0 +1,72 @@
+{% extends "minecraft/base.html" %}
+
+{% block title %}Contact &amp; Support — AvaScry Minecraft{% endblock %}
+
+{% block canonical %}
+<link rel=canonical href=https://minecraft.avascry.com/contact>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .contact-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .contact-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+  .contact-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style=max-width: 760px; margin: 2rem auto 4rem; padding: 0 1.5rem;>
+  <div style=background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 2.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04);>
+    <header style=margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem;>
+      <h1 style=font-size: 2.2rem; font-weight: 800; color: var(--text); margin: 0 0 0.5rem 0;>
+        Contact AvaScry Minecraft
+      </h1>
+      <p style=color: var(--muted); font-size: 0.95rem; margin: 0; line-height: 1.5;>
+        Submit recipe corrections, missing block data, technical inquiries, or feature suggestions directly to the maintainers.
+      </p>
+    </header>
+
+    {% include "shared/contact_form.html" %}
+
+    <div style=margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;>
+      <div>
+        <div style=font-size: 0.75rem; font-family: monospace; text-transform: uppercase; color: var(--accent); margin-bottom: 0.25rem; font-weight: 700;>
+          Operating Entity
+        </div>
+        <div style=font-size: 0.88rem; color: var(--text); font-weight: 600;>Telos Development Group LLC</div>
+        <div style=font-size: 0.82rem; color: var(--muted);>Direct: telosdevgroup@gmail.com</div>
+      </div>
+      <div>
+        <div style=font-size: 0.75rem; font-family: monospace; text-transform: uppercase; color: var(--accent); margin-bottom: 0.25rem; font-weight: 700;>
+          Support Pipeline
+        </div>
+        <div style=font-size: 0.88rem; color: var(--text); font-weight: 600;>Automated Dispatch</div>
+        <div style=font-size: 0.82rem; color: var(--muted);>Direct webhook notification to developer triage</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

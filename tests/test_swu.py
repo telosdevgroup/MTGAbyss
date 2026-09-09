@@ -51,6 +51,8 @@ def test_swu_keywords_list():
     assert "Keywords" in res.text
     assert "Ambush" in res.text
     assert "Shielded" in res.text
+    assert "Saboteur" in res.text
+    assert "Capture" in res.text
 
 def test_swu_single_keyword():
     res = client.get("/swu/keyword/sentinel")
@@ -189,4 +191,24 @@ def test_swu_rulings_feed_seo():
     assert "â€”" not in res.text
 
 
+def test_swu_card_official_rulings():
+    # Test card with hydrated official FFG rulings
+    res = client.get("/swu/card/darth-vader-dark-lord-of-the-sith-sor-10")
+    assert res.status_code == 200
+    assert "Official Rules &amp; Clarifications" in res.text
+    assert "Official Fantasy Flight Games Rulings &amp; Errata Document" in res.text
+    assert "Vader" in res.text
 
+    # Test unit with multiple official rulings
+    res_unit = client.get("/swu/card/darth-vader-commanding-the-first-legion-sor-87")
+    assert res_unit.status_code == 200
+    assert "Ambush is an ability that triggers" in res_unit.text
+    assert "Play for free" in res_unit.text
+
+
+def test_swu_leader_synergy_segmentation():
+    # Test that leaders show Synergistic Deck Inclusions and Alternative Leaders
+    res = client.get("/swu/card/darth-vader-dark-lord-of-the-sith-sor-10")
+    assert res.status_code == 200
+    assert "Synergistic Deck Inclusions" in res.text
+    assert "Alternative Leaders in Similar Archetypes" in res.text

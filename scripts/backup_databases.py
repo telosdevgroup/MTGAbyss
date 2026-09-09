@@ -40,6 +40,13 @@ except ImportError:
     pass
 
 SYSTEM_DATABASES = {"admin", "config", "local"}
+AVASCRY_DATABASES = [
+    "mtgabyss_next",
+    "avascry_dominion",
+    "avascry_minecraft",
+    "avascry_necromunda",
+    "avascry_swu",
+]
 
 
 def find_mongodump(custom_path: Optional[str] = None) -> Optional[str]:
@@ -57,6 +64,9 @@ def find_mongodump(custom_path: Optional[str] = None) -> Optional[str]:
 
     # Common Windows installation search paths
     search_patterns = [
+        r"C:\tools\mongodb-database-tools\*\bin\mongodump.exe",
+        r"C:\tools\mongodb-database-tools\bin\mongodump.exe",
+        str(Path(__file__).parent.parent / "bin" / "mongodb-tools" / "*" / "bin" / "mongodump.exe"),
         r"C:\Program Files\MongoDB\Tools\*\bin\mongodump.exe",
         r"C:\Program Files\MongoDB\Server\*\bin\mongodump.exe",
         os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\WinGet\Packages\MongoDB.DatabaseTools*\*\bin\mongodump.exe"),
@@ -66,6 +76,41 @@ def find_mongodump(custom_path: Optional[str] = None) -> Optional[str]:
         matches = glob.glob(pattern)
         if matches:
             return matches[0]
+
+    return None
+
+
+def ensure_mongodump(custom_path: Optional[str] = None) -> Optional[str]:
+    """Locate or automatically download portable mongodump executable."""
+    found = find_mongodump(custom_path)
+    if found:
+        return found
+
+    target_dir = Path("C:/tools/mongodb-database-tools")
+    try:
+        target_dir.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        target_dir = Path(__file__).parent.parent / "bin" / "mongodb-tools"
+        target_dir.mkdir(parents=True, exist_ok=True)
+
+    tools_zip_url = "https://fastdl.mongodb.org/tools/db/mongodb-database-tools-windows-x86_64-100.18.0.zip"
+    zip_path = target_dir / "tools.zip"
+
+    print("[Setup] Downloading official portable MongoDB Database Tools from fastdl.mongodb.org...")
+    try:
+        import zipfile
+        urllib.request.urlretrieve(tools_zip_url, zip_path)
+        print(f"[Setup] Extracting tools into {target_dir}...")
+        with zipfile.ZipFile(zip_path, "r") as z:
+            z.extractall(target_dir)
+        zip_path.unlink(missing_ok=True)
+
+        found = find_mongodump(None)
+        if found:
+            print(f"[Setup] Successfully initialized mongodump at: {found}")
+            return found
+    except Exception as e:
+        print(f"[Warning] Automatic download of MongoDB tools encountered: {e}", file=sys.stderr)
 
     return None
 
@@ -260,7 +305,7 @@ def run_backup_pipeline(
 
     # 2. Check mongodump binary
     if not dry_run:
-        resolved_mongodump = find_mongodump(mongodump_bin)
+        resolved_mongodump = ensure_mongodump(mongodump_bin)
         if not resolved_mongodump:
             err_msg = (
                 "mongodump executable not found in PATH or standard directories.\n"
@@ -444,12 +489,24 @@ def main():
         help="Send a test embed to Discord and exit",
     )
     parser.add_argument(
+        "--avascry",
+        action="store_true",
+        help="Target the 5 core Avascry gaming sites (mtgabyss_next, avascry_dominion, avascry_minecraft, avascry_necromunda, avascry_swu) to C:\\backups",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Simulate the backup process without executing mongodump or altering disk",
     )
 
     args = parser.parse_args()
+
+    # Preset logic for Avascry 5 sites
+    if args.avascry:
+        if not args.databases:
+            args.databases = list(AVASCRY_DATABASES)
+        if args.output_dir == str(Path.home() / "Syncthing" / "db_backups") and not os.environ.get("BACKUP_DIR"):
+            args.output_dir = "C:/backups"
 
     if args.test_discord:
         if not args.webhook_url:

@@ -1,0 +1,55 @@
+{% extends "necromunda/base.html" %}
+
+{% block title %}{{ item.name }} — Trading Post Wargear — Necromunda{% endblock %}
+{% block canonical %}
+<link rel="canonical" href="https://necromunda.avascry.com/equipment/{{ item.slug }}">
+<link rel="alternate" type="text/markdown" href="https://necromunda.avascry.com/equipment/{{ item.slug }}.md" title="{{ item.name }} (Markdown)">
+<link rel="alternate" type="application/json" href="https://necromunda.avascry.com/equipment/{{ item.slug }}.json" title="{{ item.name }} (JSON)">
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+  <div style="margin-bottom: 1.5rem;">
+    <a href="{{ base_path }}/equipment" style="font-size: 0.85rem; color: var(--accent); font-weight: 600;">&larr; Back to Trading Post &amp; Equipment</a>
+  </div>
+
+  <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+      <div>
+        <div class="brand-tag" style="display: inline-block; margin-bottom: 0.5rem;">{{ item.category|upper }}</div>
+        <h1 style="font-family: 'Chakra Petch', sans-serif; font-size: 2.4rem; font-weight: 700; text-transform: uppercase;">
+          {{ item.name }}
+        </h1>
+      </div>
+      <div style="text-align: right;">
+        <div class="badge-mono badge-accent" style="font-size: 1.15rem; padding: 4px 12px; margin-bottom: 0.35rem; display: inline-block;">
+          {{ item.cost_credits }} Credits
+        </div>
+        <div style="font-size: 0.82rem; color: var(--muted); font-family: 'JetBrains Mono', monospace;">
+          Rarity: {{ item.rarity }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Rules & Effects -->
+    <div style="margin-bottom: 1.75rem;">
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+        Rules &amp; Tactical Effect
+      </h2>
+      <p style="color: #f1f5f9; line-height: 1.6; font-size: 1.05rem; background: #141722; border: 1px solid var(--border); border-left: 4px solid var(--accent); padding: 1.25rem; border-radius: 4px;">
+        {{ item.rules_text }}
+      </p>
+    </div>
+
+    <!-- Description -->
+    <div>
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+        Underhive Lore &amp; Context
+      </h2>
+      <p style="color: #cbd5e1; line-height: 1.6; font-size: 0.95rem;">
+        {{ item.description }}
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

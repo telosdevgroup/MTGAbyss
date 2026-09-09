@@ -270,7 +270,9 @@ def classify_badge(badge: str, ip: str = "", path: str = "", ct: str = "") -> st
     anthropic_prefixes = ("216.73.216.", "216.73.217.", "216.73.218.", "216.73.219.")
     if "claude" in b or any(ip.startswith(p) for p in anthropic_prefixes):
         return "claude"
-    # 2. Googlebot (Split between Search and Images)
+    # 2. Googlebot (Split between Search, Images, and Spoofed)
+    if "spoofed" in b:
+        return "spoofed_bot"
     google_prefixes = ("66.249.", "64.233.", "72.14.", "66.102.", "209.85.", "142.250.", "172.217.", "172.253.", "108.177.", "74.125.")
     if "google" in b or any(ip.startswith(p) for p in google_prefixes):
         if "image" in b or ct == "[IMG]" or path.startswith(("/images/", "/image/")) or path.endswith((".jpg", ".png", ".webp", ".gif", ".ico")):
@@ -633,6 +635,7 @@ FILTER_NAMES = {
     "all": "All Traffic",
     "citations": "AI Citations (Real-Time Users)",
     "watchlist": "👁️ Watched Scrapers",
+    "spoofed_bot": "🚨 Spoofed Bots (Fake UA)",
     "claude_search": "🔍 Claude Search (Anthropic)",
     "oai_search": "🔍 OpenAI-Search",
     "claude": "🤖 ClaudeBot (Anthropic)",
@@ -1163,7 +1166,9 @@ def render_dashboard(tracker: TrafficTracker):
                 
                 # Caller / Bot badge
                 badge = hit.get("badge", "")
-                if any(k in badge.lower() for k in ("-user", "chatgpt-user", "claude-user", "perplexity-user")):
+                if "spoofed" in badge.lower():
+                    badge_str = f"{RED}{BOLD}🚨 {badge:<13}{RESET}"
+                elif any(k in badge.lower() for k in ("-user", "chatgpt-user", "claude-user", "perplexity-user")):
                     badge_str = f"{YELLOW}{BOLD}⭐ {badge:<13}{RESET}"
                 elif "meta" in badge.lower():
                     badge_str = f"{YELLOW}{badge:<15}{RESET}"

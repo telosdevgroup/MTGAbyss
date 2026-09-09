@@ -131,6 +131,7 @@ class SWUSiteBlaster:
             ("/rulings", 200, "text/html"),
             ("/errata", 200, "text/html"),
             ("/keywords", 200, "text/html"),
+            ("/traits", 200, "text/html"),
             ("/.well-known/ai-content", 200, "text/plain"),
             ("/sitemap.xml", 200, "application/xml"),
             ("/llms.txt", 200, "text/plain"),
@@ -493,6 +494,43 @@ class SWUSiteBlaster:
                 except Exception as e:
                     self.log_fail("CR rule section", f"/rule/{rslug}", str(e))
 
+        # Sample SWU Traits & Tribal Lexicons
+        traits_sample = ["force", "trooper", "bounty-hunter", "imperial", "rebel"]
+        for tslug in traits_sample:
+            # HTML trait detail
+            try:
+                resp_thtml = self.get(f"/trait/{tslug}")
+                if resp_thtml.status_code == 200:
+                    self.log_pass("trait HTML", f"Trait /trait/{tslug} -> 200 OK")
+                else:
+                    self.log_fail("trait HTML", f"/trait/{tslug}", f"Status {resp_thtml.status_code}")
+            except Exception as e:
+                self.log_fail("trait HTML", f"/trait/{tslug}", str(e))
+
+            # JSON trait detail
+            try:
+                resp_tjson = self.get(f"/trait/{tslug}.json")
+                if resp_tjson.status_code == 200:
+                    tdata = resp_tjson.json()
+                    if tdata.get("slug") == tslug and tdata.get("card_count", 0) > 0:
+                        self.log_pass("trait JSON", f"Trait /trait/{tslug}.json ({tdata['card_count']} cards) verified")
+                    else:
+                        self.log_fail("trait JSON", f"/trait/{tslug}.json", "Invalid trait JSON payload")
+                else:
+                    self.log_fail("trait JSON", f"/trait/{tslug}.json", f"Status {resp_tjson.status_code}")
+            except Exception as e:
+                self.log_fail("trait JSON", f"/trait/{tslug}.json", str(e))
+
+            # Markdown trait detail
+            try:
+                resp_tmd = self.get(f"/trait/{tslug}.md")
+                if resp_tmd.status_code == 200 and f"Slug:** {tslug}" in resp_tmd.text:
+                    self.log_pass("trait Markdown", f"Trait /trait/{tslug}.md verified")
+                else:
+                    self.log_fail("trait Markdown", f"/trait/{tslug}.md", f"Status {resp_tmd.status_code}")
+            except Exception as e:
+                self.log_fail("trait Markdown", f"/trait/{tslug}.md", str(e))
+
     # =========================================================================
     # 4. OFFICIAL CARD CLARIFICATIONS & RULINGS FEED
     # =========================================================================
@@ -682,6 +720,9 @@ class SWUSiteBlaster:
             ("/keyword/definitely-not-a-real-keyword-12345", 404),
             ("/keyword/definitely-not-a-real-keyword-12345.json", 404),
             ("/keyword/definitely-not-a-real-keyword-12345.md", 404),
+            ("/trait/definitely-not-a-real-trait-12345", 404),
+            ("/trait/definitely-not-a-real-trait-12345.json", 404),
+            ("/trait/definitely-not-a-real-trait-12345.md", 404),
             ("/rule/99-99-definitely-not-a-real-rule", 404),
             ("/vector/definitely-not-a-real-swu-card-12345.json", 404),
             ("/card/", 404),

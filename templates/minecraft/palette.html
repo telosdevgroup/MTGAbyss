@@ -1,0 +1,162 @@
+{% extends "minecraft/base.html" %}
+
+{% block title %}{{ base_block.facts.display_name }} Architectural Palette — Minecraft Java 1.21.4 | AvaScry{% endblock %}
+
+{% block og_tags %}
+<meta property="og:site_name" content="AvaScry Minecraft">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{ base_block.facts.display_name }} Architectural Palette — Builder Atlas">
+<meta property="og:description" content="5-block cohesive building palette and accent matches for {{ base_block.facts.display_name }} in Minecraft Java Edition.">
+<meta property="og:url" content="https://minecraft.avascry.com/palette/{{ base_block.slug }}">
+{% if base_block.facts.image_url %}
+<meta property="og:image" content="https://minecraft.avascry.com{{ base_block.facts.image_url }}">
+<meta property="og:image:alt" content="{{ base_block.facts.display_name }} Minecraft block texture">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{{ base_block.facts.display_name }} Building Palette">
+<meta name="twitter:image" content="https://minecraft.avascry.com{{ base_block.facts.image_url }}">
+{% endif %}
+{% endblock %}
+
+{% block alternates %}
+<link rel="alternate" type="application/json" href="https://minecraft.avascry.com/palette/{{ base_block.slug }}.json">
+<link rel="alternate" type="text/markdown" href="https://minecraft.avascry.com/palette/{{ base_block.slug }}.md">
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div style="margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+  <div style="display: flex; align-items: center; gap: 1.25rem;">
+    {% if base_block.facts.image_url %}
+    <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem; box-shadow: 0 2px 6px rgba(0,0,0,0.04); flex-shrink: 0;">
+      <img 
+        src="{{ base_block.facts.image_url }}" 
+        alt="{{ base_block.facts.display_name }}" 
+        width="56" 
+        height="56" 
+        style="image-rendering: pixelated; object-fit: contain; display: block;"
+      >
+    </div>
+    {% endif %}
+    <div>
+      <div style="display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;">
+        <h1 style="font-size: 2rem; font-weight: 800; color: var(--text); margin: 0;">{{ base_block.facts.display_name }}</h1>
+        <span class="badge badge-accent">Architectural Palette</span>
+      </div>
+      <p style="color: var(--muted); font-size: 0.88rem; margin: 0.2rem 0 0 0;">
+        Multi-dimensional texture, chroma, and material embeddings for builders.
+      </p>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem; align-items: center;">
+    <a href="{{ base_prefix }}/block/{{ base_block.slug }}" class="badge" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">View Block Mechanics &rarr;</a>
+    <a href="{{ base_prefix }}/palette/{{ base_block.slug }}.json" class="badge badge-gold" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">JSON</a>
+    <a href="{{ base_prefix }}/palette/{{ base_block.slug }}.md" class="badge badge-gold" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Markdown</a>
+  </div>
+</div>
+
+<!-- Curated Quick Switcher Bar -->
+<div style="margin-bottom: 2rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 1.25rem;">
+  <div style="font-size: 0.8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.6rem;">
+    Switch Base Building Material:
+  </div>
+  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+    {% for cb in curated_blocks %}
+    <a 
+      href="{{ base_prefix }}/palette/{{ cb.slug }}" 
+      class="badge {% if cb.slug == base_block.slug %}badge-accent{% endif %}" 
+      style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem; font-size: 0.82rem; text-decoration: none;"
+    >
+      {% if cb.facts.image_url %}
+      <img src="{{ cb.facts.image_url }}" alt="" width="18" height="18" style="image-rendering: pixelated; object-fit: contain;">
+      {% endif %}
+      <span>{{ cb.facts.display_name }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- 5-Block Structured Palette Cards -->
+<div style="margin-bottom: 2.5rem;">
+  <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+    <span>Recommended 5-Block Palette Structure</span>
+    <span class="badge" style="font-size: 0.72rem; font-weight: normal;">Algorithmic Harmony</span>
+  </h2>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem;">
+    {% for blk in palette_blocks %}
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; {% if blk.is_base %}border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent);{% endif %}">
+      {% if blk.is_base %}
+      <div style="position: absolute; top: 0; right: 0; background: var(--accent); color: #fff; font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.5rem; border-bottom-left-radius: 6px; text-transform: uppercase;">
+        Anchor Block
+      </div>
+      {% endif %}
+      <div>
+        <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: var(--accent); margin-bottom: 0.25rem;">
+          {{ blk.role }}
+        </div>
+        <p style="font-size: 0.78rem; color: var(--muted); margin-bottom: 1rem; min-height: 2.4em;">
+          {{ blk.description }}
+        </p>
+
+        <div style="display: flex; align-items: center; gap: 0.85rem; margin-bottom: 1rem; background: var(--badge-bg); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border);">
+          {% if blk.image_url %}
+          <img src="{{ blk.image_url }}" alt="{{ blk.display_name }}" width="42" height="42" style="image-rendering: pixelated; object-fit: contain; flex-shrink: 0;">
+          {% else %}
+          <div style="width: 42px; height: 42px; background: #22323d; border-radius: 6px; flex-shrink: 0;"></div>
+          {% endif %}
+          <div style="overflow: hidden;">
+            <a href="{{ base_prefix }}/block/{{ blk.slug }}" style="font-size: 0.95rem; font-weight: 700; color: var(--text); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              {{ blk.display_name }}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.5rem;">
+        <a href="{{ base_prefix }}/block/{{ blk.slug }}" class="badge" style="flex: 1; text-align: center; text-decoration: none; padding: 0.35rem 0;">Stats</a>
+        <a href="{{ base_prefix }}/palette/{{ blk.slug }}" class="badge badge-accent" style="flex: 1; text-align: center; text-decoration: none; padding: 0.35rem 0;">Branch &rarr;</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Extended Aesthetic Matches Grid -->
+{% if all_matches %}
+<div class="card" style="margin-bottom: 2rem;">
+  <div style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.6rem; display: flex; align-items: baseline; justify-content: space-between;">
+    <div>
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text);">Extended Harmonious Blocks</h3>
+      <span style="font-size: 0.8rem; color: var(--muted);">Alternative textures and sub-palettes sharing chroma and material vectors.</span>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem;">
+    {% for match in all_matches %}
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; background: var(--badge-bg); border: 1px solid var(--border); border-radius: 8px;">
+      <a href="{{ base_prefix }}/block/{{ match.slug }}" style="display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: var(--text); overflow: hidden; flex: 1;">
+        {% if match.image_url %}
+        <img src="{{ match.image_url }}" alt="{{ match.display_name }}" width="32" height="32" style="image-rendering: pixelated; object-fit: contain; flex-shrink: 0;">
+        {% else %}
+        <div style="width: 32px; height: 32px; background: #22323d; border-radius: 4px; flex-shrink: 0;"></div>
+        {% endif %}
+        <div style="overflow: hidden;">
+          <div style="font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ match.display_name }}</div>
+        </div>
+      </a>
+      <a href="{{ base_prefix }}/palette/{{ match.slug }}" title="Build palette around this block" style="font-size: 0.85rem; color: var(--muted); padding: 0.2rem 0.4rem; text-decoration: none;">🎨</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Alternative Formats Link -->
+<div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; gap: 0.5rem;">
+  <span>machine formats:</span>
+  <a href="{{ base_prefix }}/palette/{{ base_block.slug }}.json" style="color: var(--muted); text-decoration: underline;">JSON</a>
+  <span>|</span>
+  <a href="{{ base_prefix }}/palette/{{ base_block.slug }}.md" style="color: var(--muted); text-decoration: underline;">Markdown</a>
+</div>
+{% endblock %}

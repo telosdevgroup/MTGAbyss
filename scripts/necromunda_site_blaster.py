@@ -131,6 +131,7 @@ class NecromundaSiteBlaster:
             ("/privacy", 200, "text/html"),
             ("/terms", 200, "text/html"),
             ("/weapons", 200, "text/html"),
+            ("/equipment", 200, "text/html"),
             ("/traits", 200, "text/html"),
             ("/houses", 200, "text/html"),
             ("/skills", 200, "text/html"),
@@ -325,6 +326,71 @@ class NecromundaSiteBlaster:
                 self.log_fail("skill status", slug, f"HTML:{r_html.status_code} MD:{r_md.status_code} JSON:{r_json.status_code}")
 
     # =========================================================================
+    # 5B. TRADING POST & EQUIPMENT PROFILES
+    # =========================================================================
+    def test_equipment_suite(self):
+        print("\n--- [5B/10] Running Trading Post & Equipment Invariants ---")
+        all_equip = list(self.db.equipment.find({}, {"_id": 0}))
+        if not all_equip:
+            self.log_fail("equipment corpus", "db.equipment", "No equipment records found in avascry_necromunda")
+            return
+
+        sample_size = len(all_equip) if self.deep else min(15, len(all_equip))
+        sample = self.rng.sample(all_equip, sample_size)
+        self.log_pass("equipment sample", f"Sampling {len(sample)} of {len(all_equip)} equipment items (deep={self.deep})")
+
+        for eq in sample:
+            slug = eq.get("slug")
+            name = eq.get("name")
+            category = eq.get("category")
+            if not slug or not name:
+                continue
+
+            # 1. HTML Detail
+            html_path = f"/equipment/{slug}"
+            try:
+                r_html = self.get(html_path)
+                if r_html.status_code == 200:
+                    raw_html = html.unescape(r_html.text)
+                    if (name in raw_html or html.escape(name) in r_html.text) and (category in raw_html if category else True):
+                        self.log_pass("equipment html", f"{html_path} matched name and category")
+                    else:
+                        self.log_fail("equipment html content", html_path, "Item name or category missing from HTML body")
+                else:
+                    self.log_fail("equipment html status", html_path, f"Status {r_html.status_code}")
+            except Exception as e:
+                self.log_fail("equipment html exception", html_path, str(e))
+
+            # 2. Markdown Endpoint
+            md_path = f"/equipment/{slug}.md"
+            try:
+                r_md = self.get(md_path)
+                if r_md.status_code == 200:
+                    if f'slug: "{slug}"' in r_md.text and f"# Equipment: {name}" in r_md.text:
+                        self.log_pass("equipment md", f"{md_path} valid frontmatter & header")
+                    else:
+                        self.log_fail("equipment md format", md_path, "Missing YAML slug or h1 header")
+                else:
+                    self.log_fail("equipment md status", md_path, f"Status {r_md.status_code}")
+            except Exception as e:
+                self.log_fail("equipment md exception", md_path, str(e))
+
+            # 3. JSON Endpoint
+            json_path = f"/equipment/{slug}.json"
+            try:
+                r_json = self.get(json_path)
+                if r_json.status_code == 200:
+                    data = r_json.json()
+                    if data.get("slug") == slug and "cost_credits" in data:
+                        self.log_pass("equipment json", f"{json_path} matched slug and cost_credits")
+                    else:
+                        self.log_fail("equipment json data", json_path, "Invalid JSON structure or missing fields")
+                else:
+                    self.log_fail("equipment json status", json_path, f"Status {r_json.status_code}")
+            except Exception as e:
+                self.log_fail("equipment json exception", json_path, str(e))
+
+    # =========================================================================
     # 6. CONTACT WEBHOOK & HONEYPOT SUITE
     # =========================================================================
     def test_contact_suite(self):
@@ -365,7 +431,7 @@ class NecromundaSiteBlaster:
 
         # 4. Required fields validation failure
         r_empty = self.post("/contact", data={"name": "", "contact": "", "message": ""})
-        if r_empty.status_code == 200 and "Please fill out all required fields" in r_empty.text:
+        if r_empty.status_code == 200 and ("Please provide your contact info and a message" in r_empty.text or "Please fill out all required fields" in r_empty.text):
             self.log_pass("contact validation", "Empty submission blocked with user alert")
         else:
             self.log_fail("contact validation", "/contact", "Empty submission was not properly rejected")
@@ -377,6 +443,7 @@ class NecromundaSiteBlaster:
         print("\n--- [7/10] Running Search & Category UI Invariants ---")
         pages = [
             ("/weapons", "weaponFilterInput", "categoryPillRow", "weapon-card"),
+            ("/equipment", "equipmentFilterInput", "equipmentCatPillRow", "equipment-card"),
             ("/traits", "traitFilterInput", "traitCategoryPillRow", "trait-card"),
             ("/houses", "houseFilterInput", None, "house-card"),
             ("/skills", "skillFilterInput", "skillTreePillRow", "skill-card"),
@@ -439,6 +506,9 @@ class NecromundaSiteBlaster:
             ("/weapon/nonexistent-plasma-cannon", 404),
             ("/weapon/nonexistent-plasma-cannon.json", 404),
             ("/weapon/nonexistent-plasma-cannon.md", 404),
+            ("/equipment/nonexistent-stimm-slug-dispenser", 404),
+            ("/equipment/nonexistent-stimm-slug-dispenser.json", 404),
+            ("/equipment/nonexistent-stimm-slug-dispenser.md", 404),
             ("/trait/nonexistent-rule-trait", 404),
             ("/trait/nonexistent-rule-trait.json", 404),
             ("/house/nonexistent-clan-house", 404),
@@ -463,7 +533,7 @@ class NecromundaSiteBlaster:
     def test_subdomain_routing_symmetry(self):
         print("\n--- [10/10] Running Subdomain Routing Symmetry Suite ---")
         # Subdomain host routing vs prefix routing
-        test_paths = ["/", "/weapons", "/traits", "/houses", "/skills", "/about", "/privacy", "/terms", "/contact"]
+        test_paths = ["/", "/weapons", "/equipment", "/traits", "/houses", "/skills", "/about", "/privacy", "/terms", "/contact"]
 
         for p in test_paths:
             # 1. As host 'necromunda.avascry.com' at path 'p'
@@ -615,6 +685,7 @@ class NecromundaSiteBlaster:
         self.test_traits_suite()
         self.test_houses_suite()
         self.test_skills_suite()
+        self.test_equipment_suite()
         self.test_contact_suite()
         self.test_search_and_filters_suite()
         self.test_discovery_manifests()

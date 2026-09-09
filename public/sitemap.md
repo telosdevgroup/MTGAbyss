@@ -3,7 +3,7 @@
 > AvaScry is a semantic, visual, and neural knowledge corpus for Magic: The Gathering. Powered by 4096-dimensional embeddings across 38,000+ Oracle cards.
 
 ## Core Knowledge & Rules Hubs
-- [Strategy & Guides Catalog (`/guides`)](https://avascry.com/guides)
+- [Strategy & Guides Catalog (`/guides`)](https://avascry.com/guides) • [HTML Directory](https://avascry.com/sitemaps/guides.html) • [Markdown Sitemap](https://avascry.com/sitemaps/guides.md) • [XML](https://avascry.com/sitemap-guides.xml)
   - [The 8x8 Commander Framework](https://avascry.com/guides/commander-deckbuilding-8x8)
   - [Modern Horizons 3 Set Primer](https://avascry.com/guides/modern-horizons-3-primer)
   - [Commander Mana Base Optimization](https://avascry.com/guides/commander-mana-base-guide)

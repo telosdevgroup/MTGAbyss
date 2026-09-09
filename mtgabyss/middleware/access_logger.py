@@ -13,6 +13,7 @@ from fastapi.responses import Response
 
 import i18n
 from mtgabyss.network_router import get_request_host, get_site_badge
+from mtgabyss.shared.bot_verifier import check_googlebot
 
 # ---------------------------------------------------------------------------
 # IP extraction
@@ -77,10 +78,15 @@ def get_caller_badge(request: Request) -> str:
 
     # 3. Google IP subnets & User-Agents
     google_prefixes = ("66.249.", "64.233.", "72.14.", "66.102.", "209.85.", "142.250.", "172.217.", "172.253.", "108.177.", "74.125.")
-    if any(ip.startswith(p) for p in google_prefixes) or any(g in ua for g in ("googlebot", "google-inspectiontool", "feedfetcher-google", "google-read-aloud", "googleother")):
+    is_google_ua = any(g in ua for g in ("googlebot", "google-inspectiontool", "feedfetcher-google", "google-read-aloud", "googleother"))
+    is_google_ip = any(ip.startswith(p) for p in google_prefixes)
+
+    if is_google_ua or is_google_ip:
+        v_status = check_googlebot(ip)
+        suffix = ":Verified" if v_status == "VERIFIED" else (":SPOOFED" if v_status == "SPOOFED" else ":Claimed")
         if "googlebot-image" in ua or "image" in ua:
-            return "[Googlebot-Image]"
-        return "[Googlebot]"
+            return f"[Googlebot-Image{suffix}]"
+        return f"[Googlebot{suffix}]"
 
     # 4. Bing / Microsoft IP subnets & User-Agents
     bing_prefixes = ("40.77.", "157.55.", "20.171.", "13.66.", "52.167.", "20.36.", "20.247.")

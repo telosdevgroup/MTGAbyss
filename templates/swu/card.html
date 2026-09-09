@@ -78,19 +78,32 @@
       {% if card.art_front or card.front_image %}"image": "https://swu.avascry.com{{ card.art_front or card.front_image }}",{% endif %}
       "description": "Star Wars: Unlimited {{ card.type or 'Card' }} from {{ card.expansion.name or card.set_name or 'Star Wars Unlimited' }}. Aspects: {{ card.aspects | join(', ') if card.aspects else 'Neutral' }}.",
       "category": "Star Wars: Unlimited Trading Card Game"
-    }{% if card.rules %},
+    }{% if card.official_rulings or card.rules %},
     {
       "@type": "FAQPage",
       "@id": "https://swu.avascry.com/card/{{ card.slug }}#faq",
       "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "What are the official rules and clarifications for {{ card.title or card.name }}?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": {{ card.rules | tojson }}
+        {% if card.official_rulings %}
+          {% for r in card.official_rulings %}
+          {
+            "@type": "Question",
+            "name": "{{ r.question | replace('\"', '\\\"') }}",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": {{ r.answer | tojson }}
+            }
+          }{% if not loop.last %},{% endif %}
+          {% endfor %}
+        {% else %}
+          {
+            "@type": "Question",
+            "name": "What are the official rules and clarifications for {{ card.title or card.name }}?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": {{ card.rules | tojson }}
+            }
           }
-        }
+        {% endif %}
       ]
     }{% endif %}
   ]
@@ -258,9 +271,9 @@
         {% endfor %}
 
         {% for trait in card.traits %}
-          <span style="font-size: 0.75rem; background: #141417; border: 1px solid var(--border); color: #a1a1aa; padding: 0.2rem 0.55rem; border-radius: 6px;">
+          <a href="{{ base_path }}/trait/{{ trait | trait_slug }}" style="font-size: 0.75rem; background: #141417; border: 1px solid var(--border); color: #a1a1aa; padding: 0.2rem 0.55rem; border-radius: 6px; text-decoration: none; transition: border-color 0.15s, color 0.15s;" onmouseover="this.style.borderColor='rgba(239, 68, 68, 0.5)'; this.style.color='#fff';" onmouseout="this.style.borderColor='var(--border)'; this.style.color='#a1a1aa';">
             {{ trait }}
-          </span>
+          </a>
         {% endfor %}
 
         {% for ar in card.arenas %}
@@ -330,41 +343,61 @@
       {% endif %}
     </div>
 
-    <!-- Official Rulings & Clarifications if any -->
-    {% if card.rules or card.rules_styled %}
+    <!-- Official Rulings & Clarifications (Hydrated from FFG Errata & Rulings) -->
+    {% if card.official_rulings or card.rules or card.rules_styled %}
       <div style="background: #141417; border: 1px solid #27272a; border-radius: 12px; padding: 1.5rem;">
-        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
-          <h2 style="font-size: 1.05rem; font-weight: 700; color: #f4f4f5; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Space Grotesk', sans-serif;">
-            Official Rules &amp; Clarifications
-          </h2>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; border-bottom: 1px solid #27272a; padding-bottom: 0.75rem;">
+          <div>
+            <h2 style="font-size: 1.05rem; font-weight: 700; color: #f4f4f5; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Space Grotesk', sans-serif;">
+              Official Rules &amp; Clarifications
+            </h2>
+            <span style="font-size: 0.75rem; color: var(--muted);">Authoritative rulings from the official Fantasy Flight Games document</span>
+          </div>
           <a href="{{ base_path }}/rulings?q={{ card.title or card.name }}" style="font-size: 0.8rem; color: #60a5fa; text-decoration: none;">
             View in Rulings Directory &rarr;
           </a>
         </div>
-        <div style="font-size: 0.95rem; line-height: 1.6; color: #d4d4d8;">
-          {% if card.rules_styled %}
+
+        {% if card.official_rulings %}
+          <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+            {% for r in card.official_rulings %}
+              <div style="background: #09090b; border: 1px solid #27272a; border-left: 3px solid #ef4444; border-radius: 6px; padding: 0.85rem 1rem;">
+                <div style="font-size: 0.95rem; line-height: 1.55; color: #e4e4e7;">
+                  {{ r.answer }}
+                </div>
+                <div style="margin-top: 0.4rem; font-size: 0.72rem; color: #71717a; display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
+                  <span>{{ r.source }}</span>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% elif card.rules_styled %}
+          <div style="font-size: 0.95rem; line-height: 1.6; color: #d4d4d8;">
             {{ card.rules_styled | safe }}
-          {% else %}
+          </div>
+        {% else %}
+          <div style="font-size: 0.95rem; line-height: 1.6; color: #d4d4d8;">
             {{ card.rules }}
-          {% endif %}
-        </div>
+          </div>
+        {% endif %}
       </div>
     {% endif %}
 
-    <!-- Synergy / Related Cards in Set -->
+    <!-- Synergy / Related Playable Cards in Deck -->
     {% if synergy_cards %}
       <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-          <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.5rem;">
-            <span>⚡ Mechanically Similar &amp; Synergy Cards</span>
-          </h3>
-          <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
-            <a href="{{ base_path }}/similar/{{ card.slug }}.md" target="_blank" style="font-size: 0.72rem; font-weight: 700; color: #a1a1aa; background: #18181b; border: 1px solid var(--border); padding: 0.2rem 0.45rem; border-radius: 4px; text-decoration: none;" title="Markdown Representation for AI Bots">[MD]</a>
-            <a href="{{ base_path }}/similar/{{ card.slug }}.json" target="_blank" style="font-size: 0.72rem; font-weight: 700; color: #a1a1aa; background: #18181b; border: 1px solid var(--border); padding: 0.2rem 0.45rem; border-radius: 4px; text-decoration: none;" title="JSON API Representation">[JSON]</a>
-            <a href="{{ base_path }}/vector/{{ card.slug }}.json" target="_blank" style="font-size: 0.72rem; font-weight: 700; color: #a1a1aa; background: #18181b; border: 1px solid var(--border); padding: 0.2rem 0.45rem; border-radius: 4px; text-decoration: none;" title="4096-Dim Neural Vector">[Vector]</a>
-            <a href="{{ base_path }}/similar/{{ card.slug }}" style="font-size: 0.8rem; font-weight: 600; color: #ef4444; text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem; margin-left: 0.25rem;">
-              View Full Graph &rarr;
-            </a>
+          <div>
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.5rem;">
+              <span>⚡ {% if card.type == 'Leader' %}Synergistic Deck Inclusions{% else %}Mechanically Similar &amp; Synergy Cards{% endif %}</span>
+            </h3>
+            {% if card.type == 'Leader' %}
+              <span style="font-size: 0.75rem; color: var(--muted);">Top units, events, and upgrades that synergize with this leader's abilities</span>
+            {% endif %}
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <span style="font-size: 0.72rem; color: #a1a1aa; background: #18181b; border: 1px solid var(--border); padding: 0.2rem 0.5rem; border-radius: 4px;">Aspect &amp; Trait Synergies</span>
           </div>
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.25rem;">
@@ -386,6 +419,57 @@
                 {% if sc.subtitle %}
                   <div style="font-size: 0.7rem; color: #a1a1aa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">
                     {{ sc.subtitle }}
+                  </div>
+                {% endif %}
+                {% if sc.synergy_reason %}
+                  <div style="margin-top: 5px;">
+                    <span style="display: inline-block; font-size: 0.65rem; font-weight: 700; color: #facc15; background: rgba(250, 204, 21, 0.12); border: 1px solid rgba(250, 204, 21, 0.3); padding: 0.1rem 0.35rem; border-radius: 4px;">
+                      {{ sc.synergy_reason }}
+                    </span>
+                  </div>
+                {% endif %}
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Similar Alternative Leaders (for Leader Cards) -->
+    {% if alternate_leaders %}
+      <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+        <div style="margin-bottom: 1rem;">
+          <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">
+            👑 Alternative Leaders in Similar Archetypes
+          </h3>
+          <span style="font-size: 0.75rem; color: var(--muted);">Other commanders sharing gameplay playstyle or aspect alignments</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.25rem;">
+          {% for al in alternate_leaders %}
+            <a href="{{ base_path }}/card/{{ al.slug }}" style="background: #09090b; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; text-decoration: none; display: flex; flex-direction: column; transition: transform 0.15s, border-color 0.15s; position: relative;"
+               onmouseover="this.style.borderColor='rgba(239,68,68,0.6)'; this.style.transform='translateY(-2px)';"
+               onmouseout="this.style.borderColor='var(--border)'; this.style.transform='none';">
+              <div style="aspect-ratio: 1.393; background: #0c0c0f; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                {% if al.art_front or al.front_image %}
+                  <img src="{{ al.art_front or al.front_image }}" alt="{{ al.title or al.name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: contain; display: block;">
+                {% else %}
+                  <div style="font-size: 0.75rem; color: var(--muted); padding: 0.5rem; text-align: center;">{{ al.title or al.name }}</div>
+                {% endif %}
+              </div>
+              <div style="padding: 0.5rem 0.6rem; border-top: 1px solid var(--border);">
+                <div style="font-size: 0.78rem; font-weight: 600; color: #fff; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  {{ al.title or al.name }}
+                </div>
+                {% if al.subtitle %}
+                  <div style="font-size: 0.7rem; color: #a1a1aa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">
+                    {{ al.subtitle }}
+                  </div>
+                {% endif %}
+                {% if al.synergy_reason %}
+                  <div style="margin-top: 5px;">
+                    <span style="display: inline-block; font-size: 0.65rem; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.1rem 0.35rem; border-radius: 4px;">
+                      {{ al.synergy_reason }}
+                    </span>
                   </div>
                 {% endif %}
               </div>

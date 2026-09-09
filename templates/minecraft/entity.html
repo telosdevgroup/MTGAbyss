@@ -1,0 +1,68 @@
+{% extends "minecraft/base.html" %}
+
+{% block title %}{{ entity.facts.display_name }} — Minecraft Java 1.21.4 | AvaScry{% endblock %}
+
+{% block alternates %}
+<link rel="alternate" type="application/json" href="https://minecraft.avascry.com/entity/{{ entity.slug }}.json">
+<link rel="alternate" type="text/markdown" href="https://minecraft.avascry.com/entity/{{ entity.slug }}.md">
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <div style="display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.5rem;">
+    <h1 style="font-size: 2rem; font-weight: 800; color: var(--text);">{{ entity.facts.display_name }}</h1>
+    <span class="badge badge-accent">{{ entity.entity_id }}</span>
+  </div>
+  <p style="color: var(--muted); font-family: monospace; font-size: 0.85rem;">
+    Edition: {{ entity.edition }} &bull; Version: {{ entity.version }} &bull; Category: {{ entity.facts.category }}
+  </p>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem;">
+  <div class="card" style="align-self: start;">
+    <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+      Attributes
+    </h2>
+    <table style="width: 100%; font-size: 0.9rem; border-collapse: collapse;">
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 0.5rem 0; color: var(--muted);">Max Health</td>
+        <td style="padding: 0.5rem 0; text-align: right; font-weight: 600; color: var(--redstone);">{{ entity.facts.max_health }} HP</td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 0.5rem 0; color: var(--muted);">Hitbox (W x H)</td>
+        <td style="padding: 0.5rem 0; text-align: right; font-weight: 600;">{{ entity.facts.width }} x {{ entity.facts.height }}</td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 0.5rem 0; color: var(--muted);">Fire Immune?</td>
+        <td style="padding: 0.5rem 0; text-align: right; font-weight: 600;">{{ "Yes" if entity.facts.immune_to_fire else "No" }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+      Drops &amp; Loot
+    </h2>
+    {% if entity.derived.drops_summary %}
+    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+      {% for drop in entity.derived.drops_summary %}
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; background: var(--badge-bg); border-radius: 6px; border: 1px solid var(--border);">
+        <a href="{{ base_prefix }}/item/{{ drop.target_id | slugify }}" style="font-weight: 600;">{{ drop.target_id }}</a>
+        <span class="badge">{{ drop.min }} - {{ drop.max }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: var(--muted); font-size: 0.9rem;">No drops recorded.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Alternative Formats Link -->
+<div style="margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; gap: 0.5rem;">
+  <span>alternative formats:</span>
+  <a href="{{ base_prefix }}/entity/{{ entity.slug }}.json" style="color: var(--muted); text-decoration: underline;">JSON</a>
+  <span>|</span>
+  <a href="{{ base_prefix }}/entity/{{ entity.slug }}.md" style="color: var(--muted); text-decoration: underline;">MD</a>
+</div>
+{% endblock %}

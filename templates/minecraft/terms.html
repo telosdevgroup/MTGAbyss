@@ -1,0 +1,66 @@
+{% extends "minecraft/base.html" %}
+
+{% block title %}Terms of Service — AvaScry Minecraft{% endblock %}
+
+{% block canonical %}
+<link rel=canonical href=https://minecraft.avascry.com/terms>
+{% endblock %}
+
+{% block content %}
+<div style=max-width: 860px; margin: 2rem auto 4rem; padding: 0 1.5rem;>
+  <article style=background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 2.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04);>
+    <header style=margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem;>
+      <div style=display: inline-block; font-size: 0.75rem; font-family: monospace; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 0.5rem; font-weight: 700;>
+        Legal Agreement // Usage Terms
+      </div>
+      <h1 style=font-size: 2.2rem; font-weight: 800; color: var(--text); margin: 0 0 0.5rem 0;>
+        Terms of Service
+      </h1>
+      <p style=color: var(--muted); font-size: 0.95rem; margin: 0;>
+        Effective Date: September 2026 &bull; Published by Telos Development Group LLC
+      </p>
+    </header>
+
+    <div style=line-height: 1.7; color: var(--text-body); display: flex; flex-direction: column; gap: 2rem;>
+      <section>
+        <h2 style=font-size: 1.3rem; color: var(--text); margin-bottom: 0.75rem;>
+          1. Agreement to Terms
+        </h2>
+        <p>
+          By visiting, browsing, or accessing data on AvaScry Minecraft (<code>minecraft.avascry.com</code>), you acknowledge and agree to abide by these Terms of Service. If you do not agree to these terms, please discontinue use of this site.
+        </p>
+      </section>
+
+      <section>
+        <h2 style=font-size: 1.3rem; color: var(--text); margin-bottom: 0.75rem;>
+          2. Intellectual Property &amp; Fair Use Disclaimer
+        </h2>
+        <p>
+          Minecraft, Minecraft: Java Edition, and related assets, logos, and item textures are trademarks or registered trademarks of Mojang AB and Microsoft Corporation. AvaScry Minecraft is an independent community reference and data atlas.
+        </p>
+        <p style=margin-top: 0.75rem;>
+          All item sprites, recipes, and game mechanic statistics are displayed for non-commercial reference, computational research, and educational purposes under the Fair Use doctrine (17 U.S.C. &sect; 107). AvaScry is neither endorsed by nor affiliated with Mojang or Microsoft.
+        </p>
+      </section>
+
+      <section>
+        <h2 style=font-size: 1.3rem; color: var(--text); margin-bottom: 0.75rem;>
+          3. Automated Access &amp; API Usage
+        </h2>
+        <p>
+          We provide structured machine-readable endpoints (<a href={{ base_prefix }}/llms.txt style=color: var(--accent); font-weight: 600;>llms.txt</a>, <code>.md</code>, and <code>.json</code> views) for LLMs and developer tooling. Please practice reasonable rate-limiting and cache responses locally to maintain site reliability for other users.
+        </p>
+      </section>
+
+      <section>
+        <h2 style=font-size: 1.3rem; color: var(--text); margin-bottom: 0.75rem;>
+          4. Disclaimer of Warranties
+        </h2>
+        <p>
+          The materials on AvaScry Minecraft are provided &ldquo;as is&rdquo; without warranties of any kind, express or implied. While we strive for rigorous precision with version-pinned vanilla game data, Telos Development Group LLC assumes no liability for discrepancies or gameplay consequences.
+        </p>
+      </section>
+    </div>
+  </article>
+</div>
+{% endblock %}

@@ -255,4 +255,40 @@
     </ul>
   {% endfor %}
 </section>
+
+<!-- Trading Post & Equipment -->
+<section class="sitemap-section">
+  <div class="section-title">
+    <span>Trading Post &amp; Equipment</span>
+    <span class="section-count">{{ equipment|length if equipment else 0 }} items</span>
+  </div>
+  {% if equipment_groups %}
+    {% for cat, cat_equipment in equipment_groups.items() %}
+      <div class="category-subtitle">{{ cat }} ({{ cat_equipment|length }})</div>
+      <ul class="sitemap-grid" style="margin-bottom: 1.25rem;">
+        {% for eq in cat_equipment %}
+        <li class="sitemap-item">
+          <a href="{{ base_path }}/equipment/{{ eq.slug }}" class="sitemap-link" title="{{ eq.name }}">{{ eq.name }}</a>
+          <div class="badge-group">
+            <a href="{{ base_path }}/equipment/{{ eq.slug }}.md" class="badge-md">MD</a>
+            <a href="{{ base_path }}/equipment/{{ eq.slug }}.json" class="badge-json">JSON</a>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+  {% else %}
+    <ul class="sitemap-grid">
+      {% for eq in equipment %}
+      <li class="sitemap-item">
+        <a href="{{ base_path }}/equipment/{{ eq.slug }}" class="sitemap-link" title="{{ eq.name }}">{{ eq.name }}</a>
+        <div class="badge-group">
+          <a href="{{ base_path }}/equipment/{{ eq.slug }}.md" class="badge-md">MD</a>
+          <a href="{{ base_path }}/equipment/{{ eq.slug }}.json" class="badge-json">JSON</a>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
 {% endblock %}

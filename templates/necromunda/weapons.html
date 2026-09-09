@@ -4,42 +4,149 @@
 
 {% block canonical %}
 <link rel="canonical" href="https://necromunda.avascry.com/weapons">
+<link rel="alternate" type="text/plain" href="https://necromunda.avascry.com/llms.txt" title="AvaScry Necromunda LLM Manifest">
+<link rel="alternate" type="text/plain" href="https://necromunda.avascry.com/llms-full.txt" title="AvaScry Necromunda Full Corpus">
 <link rel="alternate" type="text/markdown" href="https://necromunda.avascry.com/sitemap.md">
 <link rel="alternate" type="application/xml" href="https://necromunda.avascry.com/sitemap.xml">
 {% endblock %}
 
 {% block extra_head %}
 <style>
+  /* Destination Hero Styling */
+  .weapons-hero {
+    position: relative;
+    max-width: 960px;
+    margin: 1.5rem auto 3.5rem auto;
+    text-align: center;
+    padding: 3rem 1.5rem 2.5rem 1.5rem;
+    background: radial-gradient(circle at 50% 15%, rgba(255, 87, 34, 0.14) 0%, rgba(20, 25, 36, 0.4) 55%, transparent 75%);
+    border: 1px solid rgba(255, 87, 34, 0.22);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 87, 34, 0.15);
+    overflow: hidden;
+  }
+  .weapons-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    opacity: 0.6;
+  }
+  .hero-insignia {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255, 87, 34, 0.2), rgba(20, 25, 36, 0.9));
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 24px rgba(255, 87, 34, 0.35), inset 0 0 12px rgba(255, 87, 34, 0.2);
+    margin-bottom: 1.25rem;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-insignia svg {
+    width: 34px;
+    height: 34px;
+    fill: none;
+    stroke: #ff7043;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  }
+  .hero-meta-row {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-title {
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: clamp(2rem, 5vw, 2.9rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #fff;
+    margin: 0 0 0.85rem 0;
+    line-height: 1.15;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    position: relative;
+    z-index: 1;
+  }
+  .hero-title span.accent {
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(255, 87, 34, 0.5);
+  }
+  .hero-subtitle {
+    font-size: 1.05rem;
+    color: var(--muted);
+    max-width: 680px;
+    margin: 0 auto 2.25rem auto;
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+  }
   .weapon-search-container {
     position: relative;
-    max-width: 540px;
-    margin-top: 1.25rem;
+    max-width: 640px;
+    margin: 0 auto 1.5rem auto;
+    z-index: 1;
+  }
+  .weapon-search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .weapon-search-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
   }
   .weapon-search-input {
     width: 100%;
-    padding: 0.75rem 2.75rem 0.75rem 1rem;
+    padding: 0.95rem 5rem 0.95rem 2.9rem;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.95rem;
+    font-size: 0.98rem;
     color: #fff;
-    background: #141722;
-    border: 1px solid var(--border);
-    border-radius: 6px;
+    background: rgba(14, 18, 25, 0.92);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
     outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(0, 0, 0, 0.5);
+    transition: all 0.2s ease;
   }
   .weapon-search-input:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.15);
+    box-shadow: 0 0 0 4px rgba(255, 87, 34, 0.18), 0 4px 14px rgba(0,0,0,0.5);
+    background: #10141d;
   }
   .weapon-search-clear {
     position: absolute;
-    right: 0.75rem;
+    right: 2.8rem;
     top: 50%;
     transform: translateY(-50%);
     background: transparent;
     border: none;
     color: var(--muted);
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     cursor: pointer;
     line-height: 1;
     padding: 4px;
@@ -48,72 +155,171 @@
   .weapon-search-clear:hover {
     color: #fff;
   }
-  .weapon-count-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 0.75rem;
-    font-size: 0.82rem;
+  .search-shortcut-hint {
+    position: absolute;
+    right: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
     font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    background: rgba(255, 255, 255, 0.07);
     color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    pointer-events: none;
+  }
+  .category-pill-container {
+    position: relative;
+    z-index: 1;
+    margin-top: 1.25rem;
+  }
+  .category-pill-label {
+    display: block;
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+  }
+  .category-pill-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
   }
   .cat-btn {
     cursor: pointer;
     user-select: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+    background: rgba(20, 25, 36, 0.75);
+    border: 1px solid var(--border);
+    color: #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
     transition: all 0.15s ease;
   }
+  .cat-btn:hover {
+    border-color: var(--accent);
+    color: #fff;
+    background: rgba(255, 87, 34, 0.1);
+    transform: translateY(-1px);
+  }
   .cat-btn.active {
-    background: rgba(255,87,34,0.25) !important;
+    background: rgba(255, 87, 34, 0.22) !important;
     border-color: var(--accent) !important;
     color: #ff7043 !important;
     font-weight: 700;
+    box-shadow: 0 0 12px rgba(255, 87, 34, 0.25);
+  }
+  .weapon-count-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 2rem 0 1.5rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
   }
   .no-matches-panel {
     display: none;
-    background: var(--card-bg);
+    background: #141722;
     border: 1px dashed var(--border);
     border-radius: 8px;
-    padding: 2.5rem 1.5rem;
+    padding: 3.5rem 1.5rem;
     text-align: center;
-    margin-top: 1.5rem;
+    margin: 3rem 0;
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="margin-bottom: 2rem;">
-  <div class="brand-tag" style="display: inline-block; margin-bottom: 0.5rem;">MUNITIONS &amp; FIREARMS</div>
-  <h1 style="font-family: 'Chakra Petch', sans-serif; font-size: 2.2rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">
-    Underhive Armory
+<!-- Destination Category Hero Banner -->
+<div class="weapons-hero">
+  <!-- Crosshairs Insignia SVG -->
+  <div class="hero-insignia" aria-hidden="true">
+    <svg viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"></circle>
+      <line x1="12" y1="1" x2="12" y2="5"></line>
+      <line x1="12" y1="19" x2="12" y2="23"></line>
+      <line x1="1" y1="12" x2="5" y2="12"></line>
+      <line x1="19" y1="12" x2="23" y2="12"></line>
+      <circle cx="12" cy="12" r="3"></circle>
+    </svg>
+  </div>
+
+  <div class="hero-meta-row">
+    <span class="brand-tag">SECTOR 13-SUB // FORGE MUNITIONS</span>
+    <span class="badge-mono badge-accent">{{ total_weapons }} Armory Profiles</span>
+    <span class="badge-mono">Necromunda 2023 Comprehensive</span>
+  </div>
+
+  <h1 class="hero-title">
+    Underhive Armory &amp; <span class="accent">Munitions</span>
   </h1>
-  <p style="color: var(--muted); font-size: 0.95rem;">
-    Tactical profiles, credit costs, trading post rarity, and weapon trait interactions across Hive Primus.
+
+  <p class="hero-subtitle">
+    Sub-second tactical firearm and melee compendium. Explore complete ballistic statlines, credit recruit costs, Trading Post rarity, and weapon trait interactions across Hive Primus.
   </p>
 
+  <!-- Centered Search Console -->
   <div class="weapon-search-container">
+    <div class="weapon-search-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </div>
     <input 
       type="search" 
       id="weaponFilterInput" 
       class="weapon-search-input" 
-      placeholder="Filter by name, trait, or rules (e.g. bolter, melta, rapid fire)..." 
+      placeholder="Filter by name, trait, or rules (e.g. bolter, melta, rapid fire, blast)..." 
       autocomplete="off"
       spellcheck="false"
       aria-label="Filter underhive weapons"
     />
     <button type="button" id="weaponFilterClear" class="weapon-search-clear" aria-label="Clear filter">&times;</button>
+    <kbd class="search-shortcut-hint" aria-hidden="true">/</kbd>
   </div>
 
-  <div style="display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;" id="categoryPillRow">
-    <button type="button" class="badge-mono cat-btn active" data-cat="all">All Categories</button>
-    {% for cat in categories %}
-    <button type="button" class="badge-mono cat-btn" data-cat="{{ cat|lower }}">{{ cat }}</button>
-    {% endfor %}
+  <!-- Quick-Jump Category Pill Bar -->
+  <div class="category-pill-container">
+    <span class="category-pill-label">Weapon Class Quick Jump</span>
+    <div class="category-pill-row" id="categoryPillRow">
+      <button type="button" class="badge-mono cat-btn active" data-cat="all">
+        <span>🌐</span> All Munitions ({{ total_weapons }})
+      </button>
+      {% for cat in categories %}
+      <button type="button" class="badge-mono cat-btn" data-cat="{{ cat|lower }}">
+        {% if 'pistol' in cat|lower %}🔫
+        {% elif 'basic' in cat|lower %}🎯
+        {% elif 'special' in cat|lower %}⚡
+        {% elif 'heavy' in cat|lower %}💥
+        {% elif 'close combat' in cat|lower or 'melee' in cat|lower %}⚔️
+        {% elif 'grenade' in cat|lower or 'booby' in cat|lower %}💣
+        {% elif 'exotic' in cat|lower %}✨
+        {% else %}📦{% endif %}
+        {{ cat }}
+      </button>
+      {% endfor %}
+    </div>
   </div>
+</div>
 
-  <div class="weapon-count-row">
-    <span id="weaponFilterStatus">Showing {{ total_weapons }} of {{ total_weapons }} weapons</span>
-    <span style="font-size: 0.75rem; opacity: 0.7;">Press <kbd style="background: #1e2430; padding: 2px 5px; border-radius: 3px; border: 1px solid var(--border);">Esc</kbd> to clear</span>
-  </div>
+<!-- Metrics & Real-time Status Bar -->
+<div class="weapon-count-row">
+  <span id="weaponFilterStatus">Showing {{ total_weapons }} of {{ total_weapons }} weapons</span>
+  <span style="font-size: 0.75rem; opacity: 0.75;">Press <kbd style="background: #1e2430; padding: 2px 5px; border-radius: 3px; border: 1px solid var(--border);">Esc</kbd> to reset &bull; <kbd style="background: #1e2430; padding: 2px 5px; border-radius: 3px; border: 1px solid var(--border);">/</kbd> to search</span>
 </div>
 
 <div class="no-matches-panel" id="noWeaponMatchesPanel">

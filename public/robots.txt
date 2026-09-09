@@ -46,4 +46,5 @@ Disallow: /dashboard
 Disallow: /vector/
 
 Sitemap: https://avascry.com/sitemap.xml
+Sitemap: https://avascry.com/sitemap-guides.xml
 Sitemap: https://avascry.com/sitemap.html

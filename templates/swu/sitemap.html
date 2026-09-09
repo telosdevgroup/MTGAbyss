@@ -49,6 +49,7 @@
     <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; font-size: 0.82rem;">
       <span style="color: var(--muted); font-weight: 700; margin-right: 0.3rem;">Jump to:</span>
       <a href="#sets" style="color: #ef4444; text-decoration: none; font-weight: 600; padding: 0.15rem 0.45rem; background: rgba(239,68,68,0.1); border-radius: 4px;">Sets</a>
+      <a href="#traits" style="color: #f87171; text-decoration: none; font-weight: 600; padding: 0.15rem 0.45rem; background: rgba(239,68,68,0.1); border-radius: 4px;">Traits</a>
       <a href="#keywords" style="color: #60a5fa; text-decoration: none; font-weight: 600; padding: 0.15rem 0.45rem; background: rgba(96,165,250,0.1); border-radius: 4px;">Keywords</a>
       <a href="#rules" style="color: #a78bfa; text-decoration: none; font-weight: 600; padding: 0.15rem 0.45rem; background: rgba(167,139,250,0.1); border-radius: 4px;">Rules</a>
       <span style="color: rgba(255,255,255,0.2); margin: 0 0.2rem;">|</span>
@@ -103,6 +104,31 @@
           <div style="display: flex; gap: 0.3rem;">
             <a href="{{ base_path }}/keyword/{{ kw.slug }}.md" style="font-size: 0.7rem; color: #38bdf8; background: #0f172a; border: 1px solid #1e293b; padding: 1px 5px; border-radius: 3px; text-decoration: none;">[MD]</a>
             <a href="{{ base_path }}/keyword/{{ kw.slug }}.json" style="font-size: 0.7rem; color: #f59e0b; background: #1c1917; border: 1px solid #292524; padding: 1px 5px; border-radius: 3px; text-decoration: none;">[JSON]</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Section 2B: Traits & Tribal Lexicon -->
+  <div id="traits" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
+      <div>
+        <h2 style="font-size: 1.2rem; font-weight: 700; color: #fff; margin: 0;">Traits &amp; Tribal Lexicon</h2>
+        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem;">Card tribal affiliations, Force traditions, and archetypal traits</div>
+      </div>
+      <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <span style="font-size: 0.8rem; color: var(--muted); font-weight: 600;">{{ traits|length }} Traits</span>
+        <a href="{{ base_path }}/traits" style="font-size: 0.75rem; color: #ef4444; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); padding: 0.2rem 0.6rem; border-radius: 4px; text-decoration: none; font-weight: 600;">Browse All &rarr;</a>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.6rem;">
+      {% for t in traits %}
+        <div style="background: #09090b; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+          <a href="{{ base_path }}/trait/{{ t.slug }}" style="color: #f87171; text-decoration: none; font-size: 0.86rem; font-weight: 600;">{{ t.name }} <span style="font-size: 0.75rem; color: var(--muted); font-weight: 400;">({{ t.count }})</span></a>
+          <div style="display: flex; gap: 0.3rem;">
+            <a href="{{ base_path }}/trait/{{ t.slug }}.md" style="font-size: 0.7rem; color: #38bdf8; background: #0f1f2a; border: 1px solid #1e293b; padding: 1px 5px; border-radius: 3px; text-decoration: none;">[MD]</a>
+            <a href="{{ base_path }}/trait/{{ t.slug }}.json" style="font-size: 0.7rem; color: #f59e0b; background: #1c1917; border: 1px solid #292524; padding: 1px 5px; border-radius: 3px; text-decoration: none;">[JSON]</a>
           </div>
         </div>
       {% endfor %}

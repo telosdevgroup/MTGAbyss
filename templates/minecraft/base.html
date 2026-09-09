@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AvaScry Minecraft — Java Edition Vanilla Atlas{% endblock %}</title>
+
+  {% block canonical %}
+  <link rel="canonical" href="https://minecraft.avascry.com{{ request.url.path }}">
+  {% endblock %}
+
+  {% block alternates %}{% endblock %}
+
+  <meta name="theme-color" content="#0e171b">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+
+  {% block og_tags %}
+  <meta property="og:site_name" content="AvaScry Minecraft">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="AvaScry Minecraft — Vanilla Data Atlas">
+  <meta property="og:description" content="Deterministic, machine-readable Java Edition vanilla object graph: recipes, loot tables, mechanics, and version history.">
+  <meta property="og:url" content="https://minecraft.avascry.com{{ request.url.path }}">
+  {% endblock %}
+
+  <style>
+    :root {
+      --bg: #0d1317;
+      --card-bg: #ffffff;
+      --card-hover: #f8fafc;
+      --border: #e2e8f0;
+      --border-subtle: #cbd5e1;
+      --text: #0f172a;
+      --text-body: #334155;
+      --muted: #64748b;
+      --accent: #0d9488;       /* Teal/Cyan */
+      --accent-hover: #0f766e;
+      --accent-glow: rgba(13, 148, 136, 0.15);
+      --emerald: #059669;
+      --gold: #d97706;
+      --redstone: #dc2626;
+      --badge-bg: #f1f5f9;
+      --content-bg: #f8fafc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text-body);
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+    }
+    a { color: var(--accent); text-decoration: none; transition: color 0.15s ease; }
+    a:hover { color: var(--accent-hover); text-decoration: underline; }
+
+    /* Top Nav (Dark) - Clean Single Line */
+    .nav-bar {
+      background-color: rgba(13, 19, 23, 0.98);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid #22323d;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 0 1.5rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+    }
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: #f0f6fc;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .brand:hover { color: #f0f6fc; text-decoration: none; }
+    .brand .cube {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      background: linear-gradient(135deg, #10b981 0%, #2dd4bf 100%);
+      border-radius: 4px;
+      box-shadow: 0 0 8px rgba(45, 212, 191, 0.3);
+    }
+    .brand-sub {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      background: #1f2b34;
+      color: #2dd4bf;
+      padding: 0.1rem 0.45rem;
+      border-radius: 4px;
+      border: 1px solid #2d4251;
+      margin-left: 0.4rem;
+    }
+    .nav-links {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      font-size: 0.9rem;
+      list-style: none;
+    }
+    .nav-links a {
+      color: #8b9eb0;
+      padding: 0.35rem 0.6rem;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+    .nav-links a:hover, .nav-links a.active {
+      color: #f0f6fc;
+      background: #1f2b34;
+      text-decoration: none;
+    }
+
+    /* Main Content Wrapper */
+    .content-wrapper {
+      background-color: var(--content-bg);
+      color: var(--text-body);
+      flex: 1;
+      width: 100%;
+      border-top: 1px solid #1e293b;
+      border-bottom: 1px solid #cbd5e1;
+      display: flex;
+      flex-direction: column;
+    }
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+      flex: 1;
+    }
+
+    /* Cards & Grids */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1.5rem;
+    }
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .card:hover {
+      border-color: var(--border-subtle);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    }
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-title a {
+      color: var(--text);
+    }
+    .card-title a:hover {
+      color: var(--accent);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      background: var(--badge-bg);
+      color: var(--text-body);
+      border: 1px solid var(--border);
+      font-family: monospace;
+    }
+    .badge-accent {
+      color: var(--accent);
+      border-color: rgba(13, 148, 136, 0.3);
+      background: rgba(13, 148, 136, 0.08);
+      font-weight: 600;
+    }
+    .badge-gold {
+      color: #b45309;
+      border-color: rgba(217, 119, 6, 0.3);
+      background: rgba(217, 119, 6, 0.08);
+      font-weight: 600;
+    }
+    .badge-emerald {
+      color: var(--emerald);
+      border-color: rgba(5, 150, 105, 0.3);
+      background: rgba(5, 150, 105, 0.08);
+      font-weight: 600;
+    }
+
+    /* Format Switcher */
+    .format-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .format-pill {
+      font-family: monospace;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+    .format-pill:hover, .format-pill.active {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: rgba(13, 148, 136, 0.06);
+      text-decoration: none;
+    }
+
+    /* Detail Page 2-Column Responsive Layout */
+    .detail-layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 1.75rem;
+      align-items: start;
+    }
+    .detail-sticky-sidebar {
+      position: sticky;
+      top: 80px;
+      align-self: start;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    @media (max-width: 900px) {
+      .detail-layout {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+      .detail-sticky-sidebar {
+        position: static;
+      }
+    }
+
+    /* Crafting Bench & Recipe Slot Grid */
+    .crafting-panel {
+      background: #1e252b;
+      border: 2px solid #2d3842;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+    .crafting-grid-3x3 {
+      display: grid;
+      grid-template-columns: repeat(3, 56px);
+      grid-template-rows: repeat(3, 56px);
+      gap: 4px;
+      background: #141a1e;
+      padding: 6px;
+      border: 2px solid #2d3842;
+      border-radius: 8px;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+    }
+    .crafting-slot {
+      width: 56px;
+      height: 56px;
+      background: #253038;
+      border-top: 2px solid #192025;
+      border-left: 2px solid #192025;
+      border-bottom: 2px solid #3b4b57;
+      border-right: 2px solid #3b4b57;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: all 0.1s ease;
+    }
+    .crafting-slot:hover {
+      background: #2f3e48;
+    }
+    .crafting-slot.empty {
+      opacity: 0.6;
+    }
+    .crafting-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      font-size: 2.2rem;
+      font-weight: 800;
+      opacity: 0.9;
+    }
+    .crafting-output-frame {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .crafting-output-slot {
+      width: 80px;
+      height: 80px;
+      background: #253038;
+      border-top: 3px solid #192025;
+      border-left: 3px solid #192025;
+      border-bottom: 3px solid #3b4b57;
+      border-right: 3px solid #3b4b57;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 0 12px rgba(13, 148, 136, 0.2);
+    }
+
+    /* Touching Swatches Palette */
+    .swatch-touching-strip {
+      display: flex;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .swatch-touching-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: var(--text);
+      background: #ffffff;
+      transition: transform 0.15s, z-index 0.15s;
+      position: relative;
+      border-right: 1px solid var(--border);
+    }
+    .swatch-touching-item:last-child {
+      border-right: none;
+    }
+    .swatch-touching-item:hover {
+      transform: translateY(-2px);
+      z-index: 2;
+      text-decoration: none;
+    }
+    .swatch-texture {
+      width: 100%;
+      height: 64px;
+      background-size: cover;
+      background-position: center;
+      image-rendering: pixelated;
+    }
+
+    /* Pressure Plate & Slab Silhouette */
+    .silhouette-pressure-plate {
+      position: relative;
+      width: 48px;
+      height: 18px;
+      margin: 0 auto;
+      border-radius: 3px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.35);
+      border: 1px solid rgba(0,0,0,0.4);
+    }
+    .silhouette-pressure-plate img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    /* Technical Details Dropdown */
+    details.tech-details {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      background: #ffffff;
+      margin-top: 1rem;
+    }
+    details.tech-details summary {
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--muted);
+      user-select: none;
+    }
+    details.tech-details summary:hover {
+      color: var(--text);
+    }
+    details.tech-details[open] summary {
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.4rem;
+      color: var(--text);
+    }
+
+    /* Footer (Dark) */
+    footer {
+      border-top: 1px solid #22323d;
+      padding: 2.5rem 1.5rem;
+      font-size: 0.85rem;
+      color: #8b9eb0;
+      background: #090e11;
+    }
+    footer a { color: #8b9eb0; }
+    /* Mobile Navigation & Divided Groups */
+    .mobile-nav-toggle {
+      display: none;
+      background: #1f2b34;
+      border: 1px solid #2d4251;
+      color: #f0f6fc;
+      font-size: 1.25rem;
+      line-height: 1;
+      padding: 0.45rem 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .nav-links-group {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      font-size: 0.9rem;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .nav-links-group a {
+      color: #8b9eb0;
+      padding: 0.4rem 0.65rem;
+      border-radius: 6px;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .nav-links-group a:hover, .nav-links-group a.active {
+      color: #f0f6fc;
+      background: #1f2b34;
+      text-decoration: none;
+    }
+
+    /* Global Nav Search Input */
+    .nav-search-form {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .nav-search-input {
+      background: #141d24;
+      border: 1px solid #253644;
+      border-radius: 6px;
+      padding: 0.35rem 0.75rem 0.35rem 2rem;
+      font-size: 0.85rem;
+      color: #f0f6fc;
+      width: 175px;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+    .nav-search-input:focus {
+      width: 240px;
+      border-color: var(--accent);
+      background: #19242d;
+      box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.25);
+    }
+    .nav-search-input::placeholder {
+      color: #627787;
+    }
+    .nav-search-icon {
+      position: absolute;
+      left: 0.65rem;
+      color: #627787;
+      font-size: 0.8rem;
+      pointer-events: none;
+    }
+
+    /* Database Dropdown Menu */
+    .nav-dropdown {
+      position: relative;
+    }
+    .nav-dropdown-btn {
+      background: none;
+      border: none;
+      color: #8b9eb0;
+      padding: 0.4rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .nav-dropdown:hover .nav-dropdown-btn,
+    .nav-dropdown-btn:hover {
+      color: #f0f6fc;
+      background: #1f2b34;
+    }
+    .nav-dropdown-content {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 220px;
+      background: #0d1317;
+      border: 1px solid #22323d;
+      border-radius: 8px;
+      padding: 0.4rem;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.6);
+      z-index: 100;
+      margin-top: 0.25rem;
+    }
+    .nav-dropdown:hover .nav-dropdown-content,
+    .nav-dropdown-content.show {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .nav-dropdown-item {
+      display: flex !important;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.5rem 0.75rem !important;
+      border-radius: 6px;
+      color: #8b9eb0 !important;
+      font-size: 0.85rem !important;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+    .nav-dropdown-item:hover {
+      background: #1a252e !important;
+      color: #f0f6fc !important;
+    }
+    .nav-dropdown-item span.icon {
+      font-size: 1.05rem;
+      width: 20px;
+      display: inline-flex;
+      justify-content: center;
+    }
+
+    /* Featured Builder Palette Action Button */
+    .nav-palette-pill {
+      background: linear-gradient(135deg, rgba(13, 148, 136, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
+      border: 1px solid rgba(45, 212, 191, 0.35) !important;
+      color: #2dd4bf !important;
+      font-weight: 700 !important;
+      padding: 0.35rem 0.75rem !important;
+      border-radius: 20px !important;
+      box-shadow: 0 0 10px rgba(45, 212, 191, 0.15);
+      transition: all 0.15s ease !important;
+    }
+    .nav-palette-pill:hover {
+      background: linear-gradient(135deg, rgba(13, 148, 136, 0.3) 0%, rgba(16, 185, 129, 0.3) 100%) !important;
+      border-color: #2dd4bf !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 14px rgba(45, 212, 191, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .nav-divider {
+      display: inline-block;
+      width: 1px;
+      height: 18px;
+      background: #22323d;
+      margin: 0 0.15rem;
+    }
+    .nav-user-group {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .nav-bar {
+        flex-wrap: wrap;
+        padding: 0.75rem 1.25rem;
+      }
+      #nav-search-container {
+        order: 3;
+        flex: 1 1 100% !important;
+        margin: 0.5rem 0 0 0 !important;
+      }
+      .mobile-nav-toggle {
+        display: block;
+      }
+      nav#main-navigation {
+        display: none !important;
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 1.15rem !important;
+        background: #0d1317;
+        border: 1px solid #22323d;
+        border-radius: 6px;
+        padding: 1.25rem 1rem;
+        margin-top: 0.75rem;
+        box-shadow: 0 16px 36px rgba(0,0,0,0.6);
+      }
+      nav#main-navigation.nav-open {
+        display: flex !important;
+      }
+      .nav-links-group {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.75rem !important;
+        width: 100%;
+      }
+      .nav-links-group a {
+        font-size: 1rem !important;
+        width: 100%;
+        padding: 0.35rem 0.5rem;
+      }
+      .nav-divider {
+        display: block !important;
+        width: 100% !important;
+        height: 1px !important;
+        background: #22323d !important;
+        margin: 0.2rem 0 !important;
+      }
+      .nav-user-group {
+        width: 100%;
+        display: flex !important;
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+      }
+      .nav-user-group .discord-sign-in-btn {
+        justify-content: center !important;
+        width: 100% !important;
+        padding: 0.65rem 1rem !important;
+        font-size: 0.95rem !important;
+      }
+      .nav-user-group .user-profile-menu,
+      .nav-user-group > div {
+        width: 100% !important;
+        justify-content: space-between !important;
+      }
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <div class="nav-bar">
+    <div class="nav-inner">
+      <a href="{{ base_prefix }}/" class="brand">
+        <span class="cube"></span>
+        <span>AvaScry Minecraft</span>
+        <span class="brand-sub">Java 1.21.4</span>
+      </a>
+
+      <!-- Mobile Hamburger Button -->
+      <button class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="main-navigation">
+        <span id="mobile-nav-icon" aria-hidden="true">&#9776;</span>
+      </button>
+
+      <nav id="main-navigation" aria-label="Minecraft Navigation" style="display: flex; align-items: center; gap: 1rem;">
+        <!-- Global Nav Search -->
+        <form action="{{ base_prefix }}/items" method="get" class="nav-search-form" id="nav-search-form">
+          <span class="nav-search-icon" aria-hidden="true">🔍</span>
+          <input 
+            type="text" 
+            name="q" 
+            placeholder="Search atlas..." 
+            class="nav-search-input"
+            aria-label="Search all items, blocks, and recipes"
+          />
+        </form>
+
+        <!-- Group 1: Navigation Links -->
+        <ul class="nav-links-group">
+          <!-- Database Dropdown -->
+          <li class="nav-dropdown" id="nav-db-dropdown">
+            <button class="nav-dropdown-btn" type="button" aria-expanded="false" aria-haspopup="true" onclick="document.getElementById('nav-db-content').classList.toggle('show'); this.setAttribute('aria-expanded', document.getElementById('nav-db-content').classList.contains('show'));">
+              <span>Database</span>
+              <span style="font-size: 0.7rem; opacity: 0.7;" aria-hidden="true">▾</span>
+            </button>
+            <div class="nav-dropdown-content" id="nav-db-content">
+              <a href="{{ base_prefix }}/items" class="nav-dropdown-item">
+                <span class="icon">📦</span>
+                <span>Items &amp; Tools</span>
+              </a>
+              <a href="{{ base_prefix }}/blocks" class="nav-dropdown-item">
+                <span class="icon">🧱</span>
+                <span>Blocks &amp; Mining</span>
+              </a>
+              <a href="{{ base_prefix }}/recipes" class="nav-dropdown-item">
+                <span class="icon">🔨</span>
+                <span>Crafting Recipes</span>
+              </a>
+              <a href="{{ base_prefix }}/entities" class="nav-dropdown-item">
+                <span class="icon">💀</span>
+                <span>Entities &amp; Mobs</span>
+              </a>
+              <a href="{{ base_prefix }}/enchantments" class="nav-dropdown-item">
+                <span class="icon">📖</span>
+                <span>Enchantments</span>
+              </a>
+              <a href="{{ base_prefix }}/effects" class="nav-dropdown-item">
+                <span class="icon">🧪</span>
+                <span>Status Effects</span>
+              </a>
+            </div>
+          </li>
+
+          <!-- Featured Interactive Builder Palette -->
+          <li>
+            <a href="{{ base_prefix }}/palette" class="nav-palette-pill" title="Interactive architectural block palette generator">
+              <span>🎨 Builder Palette</span>
+            </a>
+          </li>
+        </ul>
+
+        <span class="nav-divider" aria-hidden="true"></span>
+
+        <!-- Group 2: User Profile or Discord Sign In -->
+        <div class="nav-user-group">
+        {% if user %}
+          <div style="display: inline-flex; align-items: center; gap: 0.35rem; width: 100%;">
+            <a href="https://avascry.com/dashboard" title="View Your Account Dashboard" style="display: inline-flex; align-items: center; gap: 0.45rem; background: #1a232a; border: 1px solid #2d4251; border-radius: 4px; padding: 0.3rem 0.65rem; text-decoration: none; color: #f0f6fc; flex: 1;">
+              {% if user.picture %}
+                <img src="{{ user.picture }}" alt="{{ user.name }}" style="width: 22px; height: 22px; border-radius: 2px; object-fit: cover;">
+              {% else %}
+                <div style="width: 22px; height: 22px; border-radius: 2px; background: var(--accent); color: #fff; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; font-weight: 700;">{{ user.name[0] if user.name else 'U' }}</div>
+              {% endif %}
+              <span style="font-size: 0.82rem; font-weight: 700; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: monospace; color: #f0f6fc;">
+                {% if user.discord_username %}@{{ user.discord_username }}{% else %}{{ user.name }}{% endif %}
+              </span>
+            </a>
+            <a href="/auth/logout" title="Sign out" aria-label="Sign out" style="color: #8b9eb0; font-size: 0.85rem; text-decoration: none; padding: 0.3rem 0.5rem; border-radius: 2px; border: 1px solid #2d4251; background: #1a232a;">✕</a>
+          </div>
+        {% else %}
+          {% include "partials/discord_login_button.html" %}
+        {% endif %}
+        </div>
+      </nav>
+    </div>
+  </div>
+
+  <div class="content-wrapper">
+    <main class="container">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <footer>
+    <div style="max-width: 1140px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem;">
+      <div style="display: flex; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 2rem;">
+        <div style="max-width: 380px;">
+          <div style="font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span class="cube" style="width: 16px; height: 16px;"></span>
+            <span>AvaScry <span style="color: var(--accent);">Minecraft</span></span>
+          </div>
+          <p style="margin: 0; line-height: 1.5; font-size: 0.84rem; color: var(--muted);">
+            Fast, deterministic vanilla data atlas for Minecraft Java Edition. Structured item stats, crafting recipes, harvest requirements, and loot mechanics.
+          </p>
+        </div>
+
+        {% include "partials/network_games.html" %}
+
+        <div>
+          <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #a1a1aa; margin-bottom: 0.6rem;">Legal &amp; Support</div>
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
+            <li><a href="{{ base_prefix }}/about">About AvaScry Minecraft</a></li>
+            <li><a href="{{ base_prefix }}/contact">Contact</a></li>
+            <li><a href="{{ base_prefix }}/privacy">Privacy Policy</a></li>
+            <li><a href="{{ base_prefix }}/terms">Terms of Service</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #a1a1aa; margin-bottom: 0.6rem;">Index</div>
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
+            <li><a href="{{ base_prefix }}/sitemap.html">Sitemap Directory</a></li>
+            <li><a href="{{ base_prefix }}/sitemap.md">Markdown Index</a></li>
+            <li><a href="{{ base_prefix }}/sitemap.xml">XML Sitemap</a></li>
+            <li><a href="{{ base_prefix }}/llms.txt">llms.txt</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--border); padding-top: 1.25rem; width: 100%; font-size: 0.76rem; line-height: 1.6; color: #71717a;">
+        <p style="margin: 0 0 0.4rem 0;">
+          <strong>Disclaimer &amp; Trademark Notice:</strong> Minecraft and related names and assets are trademarks of Mojang AB and Microsoft Corporation. AvaScry Minecraft is an independent, non-commercial fan reference and data atlas created for player reference, automation, and computational exploration. Not approved by or associated with Mojang or Microsoft.
+        </p>
+        <p style="margin: 0;">
+          &copy; 2026 AvaScry Network. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </footer>
+  <script>
+    (function(){
+      var navToggle = document.getElementById('mobile-nav-toggle');
+      var mainNav = document.getElementById('main-navigation');
+      var navIcon = document.getElementById('mobile-nav-icon');
+      if (navToggle && mainNav) {
+        navToggle.addEventListener('click', function(){
+          var isOpen = mainNav.classList.toggle('nav-open');
+          navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+          if (navIcon) {
+            navIcon.innerHTML = isOpen ? '&#10005;' : '&#9776;';
+          }
+        });
+      }
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(e) {
+        var dropdown = document.getElementById('nav-db-dropdown');
+        var content = document.getElementById('nav-db-content');
+        if (dropdown && content && !dropdown.contains(e.target)) {
+          content.classList.remove('show');
+          var btn = dropdown.querySelector('.nav-dropdown-btn');
+          if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

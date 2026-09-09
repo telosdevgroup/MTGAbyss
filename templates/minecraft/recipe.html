@@ -1,0 +1,520 @@
+{% extends "minecraft/base.html" %}
+
+{% block title %}
+{% if recipe.derived.output_item %}
+  {{ recipe.derived.output_item | human_name }} Recipe — Minecraft Java 1.21.4 | AvaScry
+{% else %}
+  {{ recipe.slug | human_name }} Recipe — Minecraft Java 1.21.4 | AvaScry
+{% endif %}
+{% endblock %}
+
+{% block alternates %}
+<link rel="alternate" type="application/json" href="https://minecraft.avascry.com/recipe/{{ recipe.slug }}.json">
+<link rel="alternate" type="text/markdown" href="https://minecraft.avascry.com/recipe/{{ recipe.slug }}.md">
+{% endblock %}
+
+{% block content %}
+<!-- Recipe Header with Hero Sprite -->
+<div style="margin-bottom: 2rem; display: flex; align-items: center; gap: 1.25rem;">
+  {% if output_item_doc and output_item_doc.facts and output_item_doc.facts.image_url %}
+  <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem; box-shadow: 0 2px 6px rgba(0,0,0,0.04); flex-shrink: 0;">
+    {% if 'pressure_plate' in recipe.slug %}
+    <div class="silhouette-pressure-plate" title="{{ output_item_doc.facts.display_name }}">
+      <img 
+        src="{{ output_item_doc.facts.image_url }}" 
+        alt="{{ output_item_doc.facts.display_name }} sprite" 
+        loading="eager"
+      >
+    </div>
+    {% else %}
+    <img 
+      src="{{ output_item_doc.facts.image_url }}" 
+      alt="{{ output_item_doc.facts.display_name }} sprite" 
+      title="{{ output_item_doc.facts.display_name }}"
+      width="64" 
+      height="64" 
+      loading="eager" 
+      style="image-rendering: pixelated; object-fit: contain; display: block;"
+    >
+    {% endif %}
+  </div>
+  {% endif %}
+  <div>
+    <div style="display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.35rem; flex-wrap: wrap;">
+      <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--text); margin: 0;">
+        {% if output_item_doc and output_item_doc.facts and output_item_doc.facts.display_name %}
+          {{ output_item_doc.facts.display_name }} Recipe
+        {% elif recipe.derived.output_item %}
+          {{ recipe.derived.output_item | human_name }} Recipe
+        {% else %}
+          {{ recipe.slug | human_name }} Recipe
+        {% endif %}
+      </h1>
+      <span class="badge badge-accent">{{ recipe.type | human_name }}</span>
+    </div>
+    <p style="color: var(--muted); font-size: 0.9rem; margin: 0;">
+      Minecraft Java Edition {{ recipe.version }} &bull; Vanilla Crafting Recipe
+    </p>
+  </div>
+</div>
+
+<!-- Main 2-Column Content Area -->
+<div class="detail-layout">
+  <!-- Left Column: Recipe Properties & Mechanics (Sticky) -->
+  <div class="detail-sticky-sidebar">
+    <div class="card" style="width: 100%; box-sizing: border-box;">
+      <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+        Recipe Details
+      </h2>
+      <table style="width: 100%; font-size: 0.9rem; border-collapse: collapse;">
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 0.5rem 0; color: var(--muted);">Method</td>
+          <td style="padding: 0.5rem 0; text-align: right; font-weight: 600;">
+            {{ recipe.type | human_name }}
+          </td>
+        </tr>
+        {% if recipe.facts and recipe.facts.category %}
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 0.5rem 0; color: var(--muted);">Category</td>
+          <td style="padding: 0.5rem 0; text-align: right; font-weight: 600;">{{ recipe.facts.category | title }}</td>
+        </tr>
+        {% endif %}
+        {% if recipe.facts and recipe.facts.cooking_time %}
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 0.5rem 0; color: var(--muted);">Smelt Time</td>
+          <td style="padding: 0.5rem 0; text-align: right; font-weight: 600;">{{ (recipe.facts.cooking_time / 20) | round(1) }}s ({{ recipe.facts.cooking_time }} ticks)</td>
+        </tr>
+        {% endif %}
+        {% if recipe.facts and recipe.facts.experience %}
+        <tr>
+          <td style="padding: 0.5rem 0; color: var(--muted);">XP Reward</td>
+          <td style="padding: 0.5rem 0; text-align: right; font-weight: 600; color: #b45309;">{{ recipe.facts.experience }} XP</td>
+        </tr>
+        {% endif %}
+      </table>
+    </div>
+
+    <!-- Upstream: How To Craft Ingredients -->
+    {% if upstream_recipes %}
+    <div class="card" style="box-sizing: border-box;">
+      <div style="margin-bottom: 0.85rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text);">
+          Craft Ingredients
+        </h3>
+        <span style="font-size: 0.75rem; color: var(--muted); display: block; margin-top: 0.15rem;">
+          How to make required inputs from raw materials
+        </span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+        {% for up in upstream_recipes %}
+        <a 
+          href="{{ base_prefix }}/recipe/{{ up.slug }}" 
+          style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: var(--text); background: rgba(255, 255, 255, 0.02); transition: all 0.15s;" 
+          onmouseover="this.style.borderColor='var(--accent)';" 
+          onmouseout="this.style.borderColor='var(--border)';"
+        >
+          <div style="display: flex; align-items: center; gap: 0.75rem; overflow: hidden;">
+            {% if up.image_url %}
+            <div style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: rgba(0,0,0,0.15); border-radius: 6px;">
+              <img src="{{ up.image_url }}" alt="{{ up.display_name }}" width="32" height="32" style="image-rendering: pixelated; object-fit: contain; display: block;">
+            </div>
+            {% else %}
+            <div style="width: 40px; height: 40px; background: #22323d; border-radius: 6px; flex-shrink: 0;"></div>
+            {% endif %}
+            <div style="overflow: hidden; flex: 1;">
+              <div style="font-size: 0.9rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ up.display_name }}</div>
+              {% if up.entity_id %}
+              <div style="font-size: 0.7rem; color: var(--muted); font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ up.entity_id }}</div>
+              {% endif %}
+            </div>
+          </div>
+          <div style="flex-shrink: 0; display: flex; align-items: center; gap: 0.35rem;">
+            {% if up.yield_count and up.yield_count > 1 %}
+            <span class="badge badge-accent" style="font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.4rem;">
+              x{{ up.yield_count }}
+            </span>
+            {% endif %}
+            <span style="color: var(--muted); font-size: 0.85rem;">&rarr;</span>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right Column: Dominant Visual Crafting Bench & Relations -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <!-- Dominant Crafting Bench Grid Panel -->
+    <div class="card" style="box-sizing: border-box; overflow: hidden;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+        <div>
+          <h2 style="font-size: 1.2rem; font-weight: 800; margin: 0; color: var(--text);">
+            Crafting Recipe
+          </h2>
+          <span style="font-size: 0.8rem; color: var(--muted);">
+            {% if recipe.type == 'crafting_shaped' %}
+            Arrange materials in the crafting grid exactly as shown
+            {% else %}
+            Combine ingredients in any slot
+            {% endif %}
+          </span>
+        </div>
+        <span class="badge badge-accent">{{ recipe.type | human_name }}</span>
+      </div>
+
+      <div class="crafting-panel">
+        <!-- 3x3 Slot Grid -->
+        <div class="crafting-grid-3x3">
+          {% if crafting_matrix and crafting_matrix | length > 0 %}
+            {% for row in crafting_matrix %}
+              {% for slot in row %}
+                {% if slot %}
+                <a 
+                  href="{{ base_prefix }}/item/{{ slot.slug }}" 
+                  class="crafting-slot" 
+                  title="{{ slot.display_name }} ({{ slot.entity_id }})"
+                >
+                  {% if slot.image_url %}
+                  <img src="{{ slot.image_url }}" alt="{{ slot.display_name }}" width="38" height="38" style="image-rendering: pixelated; object-fit: contain; display: block;">
+                  {% else %}
+                  <div style="width: 32px; height: 32px; background: #1a232a; border-radius: 3px;"></div>
+                  {% endif %}
+                </a>
+                {% else %}
+                <div class="crafting-slot empty"></div>
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+          {% else %}
+            {# Fallback if crafting_matrix was not passed by cached server worker #}
+            {% set slot_count = [0] %}
+            {% for ing in ingredients %}
+              {% for i in range(ing.count) %}
+                {% if slot_count[0] < 9 %}
+                <a 
+                  href="{{ base_prefix }}/item/{{ ing.slug }}" 
+                  class="crafting-slot" 
+                  title="{{ ing.display_name }} ({{ ing.entity_id }})"
+                >
+                  {% if ing.image_url %}
+                  <img src="{{ ing.image_url }}" alt="{{ ing.display_name }}" width="38" height="38" style="image-rendering: pixelated; object-fit: contain; display: block;">
+                  {% else %}
+                  <div style="width: 32px; height: 32px; background: #1a232a; border-radius: 3px;"></div>
+                  {% endif %}
+                </a>
+                {% if slot_count.append(slot_count.pop() + 1) %}{% endif %}
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+            {% for _ in range(9 - slot_count[0]) %}
+              <div class="crafting-slot empty"></div>
+            {% endfor %}
+          {% endif %}
+        </div>
+
+        <!-- Crafting Arrow -->
+        <div class="crafting-arrow" aria-hidden="true">&rarr;</div>
+
+        <!-- Finished Product Output Slot -->
+        <div class="crafting-output-frame">
+          <div class="crafting-output-slot">
+            <a 
+              href="{{ base_prefix }}/item/{{ (output_item_doc.slug if output_item_doc and output_item_doc.slug else (recipe.derived.output_item | slugify)) }}"
+              style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; text-decoration: none;"
+              title="{{ output_item_doc.facts.display_name if output_item_doc and output_item_doc.facts and output_item_doc.facts.display_name else (recipe.derived.output_item | human_name) }}"
+            >
+              {% if output_item_doc and output_item_doc.facts and output_item_doc.facts.image_url %}
+                {% if 'pressure_plate' in recipe.slug %}
+                <div class="silhouette-pressure-plate">
+                  <img src="{{ output_item_doc.facts.image_url }}" alt="{{ recipe.derived.output_item | human_name }}">
+                </div>
+                {% else %}
+                <img 
+                  src="{{ output_item_doc.facts.image_url }}" 
+                  alt="{{ recipe.derived.output_item | human_name }}" 
+                  width="52" 
+                  height="52" 
+                  style="image-rendering: pixelated; object-fit: contain; display: block;"
+                >
+                {% endif %}
+              {% else %}
+              <div style="width: 48px; height: 48px; background: #16222b; border-radius: 6px;"></div>
+              {% endif %}
+            </a>
+            <!-- Yield Badge Pill positioned at bottom-right of slot -->
+            <span class="badge badge-emerald" style="position: absolute; bottom: -8px; right: -8px; font-size: 0.95rem; font-weight: 800; padding: 0.2rem 0.55rem; box-shadow: 0 2px 6px rgba(0,0,0,0.4);">
+              x{{ recipe.facts.result.count if recipe.facts and recipe.facts.result else 1 }}
+            </span>
+          </div>
+          <div style="text-align: center; margin-top: 0.5rem;">
+            <a href="{{ base_prefix }}/item/{{ (output_item_doc.slug if output_item_doc and output_item_doc.slug else (recipe.derived.output_item | slugify)) }}" style="font-size: 1.05rem; font-weight: 800; color: #f0f6fc; text-decoration: none; display: block;">
+              {{ output_item_doc.facts.display_name if output_item_doc and output_item_doc.facts and output_item_doc.facts.display_name else (recipe.derived.output_item | human_name) }}
+            </a>
+            <span style="font-size: 0.75rem; color: #8b9eb0;">{{ recipe.type | human_name }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Required Ingredients Summary Bar -->
+    <div class="card" style="padding: 1rem 1.25rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+        <span style="font-size: 0.88rem; font-weight: 700; color: var(--text);">Total Materials Needed</span>
+        <span style="font-size: 0.78rem; color: var(--muted);">for 1 crafting cycle</span>
+      </div>
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        {% for ing in ingredients %}
+        <a 
+          href="{{ base_prefix }}/item/{{ ing.slug }}" 
+          style="display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: var(--text); background: rgba(255, 255, 255, 0.03);"
+        >
+          {% if ing.image_url %}
+          <img src="{{ ing.image_url }}" alt="{{ ing.display_name }}" width="24" height="24" style="image-rendering: pixelated; object-fit: contain;">
+          {% endif %}
+          <span style="font-size: 0.88rem; font-weight: 600;">{{ ing.display_name }}</span>
+          <span class="badge badge-accent" style="font-size: 0.8rem; font-weight: 700; padding: 0.1rem 0.4rem;">x{{ ing.count }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Block Placement & Harvest Mechanics (if output is a block) -->
+    {% if block_counterpart %}
+    <div class="card">
+      <div style="margin-bottom: 0.85rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text);">Block Mechanics &amp; Hardness</h3>
+        <span style="font-size: 0.75rem; color: var(--muted);">Mining hardness, explosion resistance, and tool requirements</span>
+      </div>
+      <div style="display: flex; gap: 1.5rem; font-size: 0.88rem; color: var(--muted); flex-wrap: wrap;">
+        <div>Hardness: <strong style="color: var(--text);">{{ block_counterpart.facts.hardness }}</strong></div>
+        <div>Blast Resistance: <strong style="color: var(--text);">{{ block_counterpart.facts.resistance }}</strong></div>
+        <div>Tool Required: <strong style="color: var(--text);">{{ 'Yes' if block_counterpart.facts.tool_required else 'No (Hand-breakable)' }}</strong></div>
+        {% if block_counterpart.facts.harvest_tool_tag %}
+        <div>Tool Category: <strong style="color: var(--accent);">{{ block_counterpart.facts.harvest_tool_tag }}</strong></div>
+        {% elif block_counterpart.facts.material and 'mineable/' in block_counterpart.facts.material %}
+        <div>Tool Category: <strong style="color: var(--accent);">Mineable with {{ block_counterpart.facts.material.split('mineable/')[-1] | title }}</strong></div>
+        {% elif block_counterpart.facts.material %}
+        <div>Material: <strong style="color: var(--accent);">{{ block_counterpart.facts.material }}</strong></div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Building Palette Matches (Contiguous Touching Texture Swatches) -->
+    {% if palette_matches %}
+    <div class="card">
+      <div style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text);">Blocks That Build Well With This</h3>
+          <span style="font-size: 0.75rem; color: var(--muted);">Contiguous palette harmony swatches for builders</span>
+        </div>
+        {% if output_item_doc and output_item_doc.slug %}
+        <a href="{{ base_prefix }}/palette/{{ output_item_doc.slug }}" class="badge badge-accent" style="font-size: 0.72rem; text-decoration: none;">Open Palette Generator &rarr;</a>
+        {% endif %}
+      </div>
+      
+      <!-- Touching Swatches Strip -->
+      <div class="swatch-touching-strip">
+        {% for match in palette_matches %}
+        <a href="{{ base_prefix }}/block/{{ match.slug }}" class="swatch-touching-item" title="{{ match.display_name }}">
+          {% if match.image_url %}
+          <div class="swatch-texture" style="background-image: url('{{ match.image_url }}');"></div>
+          {% else %}
+          <div class="swatch-texture" style="background: #1e293b;"></div>
+          {% endif %}
+          <div style="padding: 0.5rem 0.4rem; text-align: center;">
+            <div style="font-size: 0.75rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text);">{{ match.display_name }}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Functional Alternatives & Substitutes (from Functional Vector Embeddings) -->
+    {% if similar_items %}
+    <div class="card">
+      <div style="margin-bottom: 0.85rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text);">Similar Items &amp; Substitutes</h3>
+        <span style="font-size: 0.75rem; color: var(--muted);">Alternative blocks and items with similar in-game mechanics</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0.65rem;">
+        {% for sim in similar_items %}
+        <a href="{{ base_prefix }}/{{ sim.type }}/{{ sim.slug }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: var(--text); transition: all 0.15s;" onmouseover="this.style.borderColor='var(--accent)';" onmouseout="this.style.borderColor='var(--border)';">
+          {% if sim.image_url %}
+          <img src="{{ sim.image_url }}" alt="{{ sim.display_name }}" width="32" height="32" style="image-rendering: pixelated; object-fit: contain; flex-shrink: 0;">
+          {% else %}
+          <div style="width: 32px; height: 32px; background: #16222b; border-radius: 4px; flex-shrink: 0;"></div>
+          {% endif %}
+          <div style="flex: 1;">
+            <div style="font-size: 0.88rem; font-weight: 600; line-height: 1.25; word-break: break-word;">{{ sim.display_name }}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Progression & Tech Tree Neighbors (from Graph Vector Embeddings) -->
+    {% if progression_matches %}
+    <div class="card">
+      <div style="margin-bottom: 0.85rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text);">Related Crafting Chain Progression</h3>
+        <span style="font-size: 0.75rem; color: var(--muted);">Items nearby in the crafting chain</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0.65rem;">
+        {% for prog in progression_matches %}
+        <a href="{{ base_prefix }}/item/{{ prog.slug }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: var(--text); transition: all 0.15s;" onmouseover="this.style.borderColor='var(--accent)';" onmouseout="this.style.borderColor='var(--border)';">
+          {% if prog.image_url %}
+          <img src="{{ prog.image_url }}" alt="{{ prog.display_name }}" width="32" height="32" style="image-rendering: pixelated; object-fit: contain; flex-shrink: 0;">
+          {% else %}
+          <div style="width: 32px; height: 32px; background: #16222b; border-radius: 4px; flex-shrink: 0;"></div>
+          {% endif %}
+          <div style="flex: 1;">
+            <div style="font-size: 0.88rem; font-weight: 600; line-height: 1.25; word-break: break-word;">{{ prog.display_name }}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Downstream: Used In Next Crafting Recipes -->
+    {% if downstream_recipes %}
+    <div class="card">
+      <div style="margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--text);">Used In Further Crafting</h3>
+          <span style="font-size: 0.78rem; color: var(--muted);">Items and blocks crafted using this output</span>
+        </div>
+        <span style="font-size: 0.8rem; color: var(--muted); font-weight: 600;">{{ downstream_recipes | length }} recipes</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.85rem;">
+        {% for ds in downstream_recipes %}
+        <a 
+          href="{{ base_prefix }}/recipe/{{ ds.slug }}" 
+          style="display: flex; align-items: center; justify-content: space-between; gap: 0.85rem; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 10px; text-decoration: none; color: var(--text); background: rgba(255, 255, 255, 0.02); transition: all 0.15s;" 
+          onmouseover="this.style.borderColor='var(--accent)';" 
+          onmouseout="this.style.borderColor='var(--border)';"
+        >
+          <div style="display: flex; align-items: center; gap: 0.85rem; overflow: hidden;">
+            {% if ds.image_url %}
+            <div style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: rgba(0,0,0,0.15); border-radius: 8px;">
+              <img src="{{ ds.image_url }}" alt="{{ ds.display_name }}" width="40" height="40" style="image-rendering: pixelated; object-fit: contain; display: block;">
+            </div>
+            {% else %}
+            <div style="width: 48px; height: 48px; background: #22323d; border-radius: 8px; flex-shrink: 0;"></div>
+            {% endif %}
+            <div style="overflow: hidden; flex: 1;">
+              <div style="font-size: 0.95rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ ds.display_name }}</div>
+              {% if ds.entity_id %}
+              <div style="font-size: 0.72rem; color: var(--muted); font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ ds.entity_id }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% if ds.yield_count and ds.yield_count > 1 %}
+          <div style="flex-shrink: 0;">
+            <span class="badge badge-accent" style="font-size: 0.85rem; font-weight: 700; padding: 0.2rem 0.5rem;">
+              x{{ ds.yield_count }}
+            </span>
+          </div>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Sibling Recipes: Related Crafting With Same Materials -->
+    {% if sibling_recipes %}
+    <div class="card">
+      <div style="margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--text);">
+            {% if primary_material_name %}
+            More Things You Can Craft With {{ primary_material_name }}
+            {% else %}
+            Related Material Recipes
+            {% endif %}
+          </h3>
+          <span style="font-size: 0.78rem; color: var(--muted);">
+            {% if primary_material_name %}
+            Got extra {{ primary_material_name }}? Here are other essential recipes that use it.
+            {% else %}
+            Other recipes crafted from this core ingredient
+            {% endif %}
+          </span>
+        </div>
+        <span style="font-size: 0.8rem; color: var(--muted); font-weight: 600;">{{ sibling_recipes | length }} recipes</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.85rem;">
+        {% for sib in sibling_recipes %}
+        <a 
+          href="{{ base_prefix }}/recipe/{{ sib.slug }}" 
+          style="display: flex; align-items: center; justify-content: space-between; gap: 0.85rem; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 10px; text-decoration: none; color: var(--text); background: rgba(255, 255, 255, 0.02); transition: all 0.15s;" 
+          onmouseover="this.style.borderColor='var(--accent)';" 
+          onmouseout="this.style.borderColor='var(--border)';"
+        >
+          <div style="display: flex; align-items: center; gap: 0.85rem; overflow: hidden;">
+            {% if sib.image_url %}
+            <div style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: rgba(0,0,0,0.15); border-radius: 8px;">
+              <img src="{{ sib.image_url }}" alt="{{ sib.display_name }}" width="40" height="40" style="image-rendering: pixelated; object-fit: contain; display: block;">
+            </div>
+            {% else %}
+            <div style="width: 48px; height: 48px; background: #22323d; border-radius: 8px; flex-shrink: 0;"></div>
+            {% endif %}
+            <div style="overflow: hidden; flex: 1;">
+              <div style="font-size: 0.95rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ sib.display_name }}</div>
+              {% if sib.entity_id %}
+              <div style="font-size: 0.72rem; color: var(--muted); font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ sib.entity_id }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% if sib.yield_count and sib.yield_count > 1 %}
+          <div style="flex-shrink: 0;">
+            <span class="badge badge-accent" style="font-size: 0.85rem; font-weight: 700; padding: 0.2rem 0.5rem;">
+              x{{ sib.yield_count }}
+            </span>
+          </div>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Technical Details & Alternate Formats -->
+<div style="margin-top: 2.5rem;">
+  <details class="tech-details">
+    <summary>Technical & Data Identifiers</summary>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; font-size: 0.85rem; padding-top: 0.25rem;">
+      <div>
+        <span style="color: var(--muted); font-size: 0.78rem; display: block;">Recipe Identifier</span>
+        <code style="background: rgba(0,0,0,0.05); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace;">{{ recipe.id }}</code>
+      </div>
+      <div>
+        <span style="color: var(--muted); font-size: 0.78rem; display: block;">Recipe Type</span>
+        <code style="background: rgba(0,0,0,0.05); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace;">{{ recipe.type }}</code>
+      </div>
+      {% if output_item_doc and output_item_doc.facts and output_item_doc.facts.id %}
+      <div>
+        <span style="color: var(--muted); font-size: 0.78rem; display: block;">Output Item ID</span>
+        <code style="background: rgba(0,0,0,0.05); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace;">minecraft:{{ output_item_doc.slug.replace('-', '_') }} (#{{ output_item_doc.facts.id }})</code>
+      </div>
+      {% endif %}
+      <div>
+        <span style="color: var(--muted); font-size: 0.78rem; display: block;">Alternate Machine Formats</span>
+        <div style="margin-top: 0.2rem; display: flex; gap: 0.5rem; align-items: center;">
+          <a href="{{ base_prefix }}/recipe/{{ recipe.slug }}.json" style="color: var(--accent); font-weight: 600; text-decoration: underline;">JSON API</a>
+          <span style="color: var(--muted);">|</span>
+          <a href="{{ base_prefix }}/recipe/{{ recipe.slug }}.md" style="color: var(--accent); font-weight: 600; text-decoration: underline;">Markdown Spec</a>
+        </div>
+      </div>
+    </div>
+  </details>
+</div>
+{% endblock %}
+
