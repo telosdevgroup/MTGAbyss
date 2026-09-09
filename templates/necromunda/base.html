@@ -108,10 +108,25 @@
     nav a {
       color: var(--muted);
       transition: color 0.15s, border-bottom-color 0.15s;
-      padding-bottom: 2px;
-      border-bottom: 2px solid transparent;
     }
     nav a:hover {
+      color: #fff;
+    }
+    .nav-links-group > a.nav-link {
+      color: var(--muted);
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.25rem;
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-bottom-color 0.15s;
+    }
+    .nav-links-group > a.nav-link:hover {
       color: #fff;
       border-bottom-color: var(--accent);
     }
@@ -660,11 +675,11 @@
             </div>
           </div>
 
-          <a href="{{ base_path }}/guides" class="nav-link" style="color: #cbd5e1; font-size: 0.95rem; display: inline-flex; align-items: center;">
+          <a href="{{ base_path }}/guides" class="nav-link">
             <span>Guides</span>
           </a>
 
-          <a href="{{ base_path }}/developers" class="nav-link" style="color: #cbd5e1; font-size: 0.95rem; display: inline-flex; align-items: center;">
+          <a href="{{ base_path }}/developers" class="nav-link">
             <span>Developers</span>
           </a>
         </div>
