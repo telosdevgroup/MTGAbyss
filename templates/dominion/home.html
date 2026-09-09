@@ -692,6 +692,19 @@
     let currentExpansion = 'all';
     let activeKingdom = [];
 
+    // Pagination State
+    let currentPage = 1;
+    let pageSize = 36; // default 36 cards per page
+    let matchedCards = [];
+
+    const paginationContainer = document.getElementById('pagination-container');
+    const paginationFirstBtn = document.getElementById('pagination-first-btn');
+    const paginationPrevBtn = document.getElementById('pagination-prev-btn');
+    const paginationNextBtn = document.getElementById('pagination-next-btn');
+    const paginationLastBtn = document.getElementById('pagination-last-btn');
+    const paginationInfo = document.getElementById('pagination-info');
+    const paginationSizeSelect = document.getElementById('pagination-size-select');
+
     // View mode persistence - defaults to 'scan'
     const savedView = localStorage.getItem('dominion_view_mode') || 'scan';
     if (savedView === 'grid') {
@@ -709,6 +722,7 @@
       btnViewGrid.classList.add('active');
       btnViewScan.classList.remove('active');
       localStorage.setItem('dominion_view_mode', 'grid');
+      renderPage();
     });
 
     btnViewScan.addEventListener('click', () => {
@@ -716,11 +730,65 @@
       btnViewScan.classList.add('active');
       btnViewGrid.classList.remove('active');
       localStorage.setItem('dominion_view_mode', 'scan');
+      renderPage();
     });
 
-    function applyFilter() {
+    function renderPage(scrollToTop = false) {
+      const totalMatched = matchedCards.length;
+      const isAll = pageSize === 'all' || totalMatched <= pageSize;
+      const totalPages = isAll ? 1 : Math.max(1, Math.ceil(totalMatched / pageSize));
+
+      if (currentPage > totalPages) {
+        currentPage = totalPages;
+      }
+      if (currentPage < 1) {
+        currentPage = 1;
+      }
+
+      const startIndex = isAll ? 0 : (currentPage - 1) * pageSize;
+      const endIndex = isAll ? totalMatched : Math.min(startIndex + pageSize, totalMatched);
+
+      // Hide all cards first
+      cards.forEach(card => {
+        card.style.display = 'none';
+      });
+
+      // Reveal only cards within the current page window
+      const displayStyle = grid.classList.contains('scan-mode') ? 'block' : 'flex';
+      for (let i = startIndex; i < endIndex; i++) {
+        matchedCards[i].style.display = displayStyle;
+      }
+
+      // Update pagination bar visibility & controls
+      if (totalMatched <= 36 && pageSize === 36) {
+        paginationContainer.style.display = 'none';
+      } else {
+        paginationContainer.style.display = 'flex';
+      }
+
+      if (isAll) {
+        paginationInfo.textContent = `Showing all ${totalMatched} cards`;
+        paginationFirstBtn.disabled = true;
+        paginationPrevBtn.disabled = true;
+        paginationNextBtn.disabled = true;
+        paginationLastBtn.disabled = true;
+      } else {
+        paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (${startIndex + 1}–${endIndex} of ${totalMatched})`;
+        paginationFirstBtn.disabled = (currentPage <= 1);
+        paginationPrevBtn.disabled = (currentPage <= 1);
+        paginationNextBtn.disabled = (currentPage >= totalPages);
+        paginationLastBtn.disabled = (currentPage >= totalPages);
+      }
+
+      if (scrollToTop) {
+        const gridTop = grid.getBoundingClientRect().top + window.pageYOffset - 120;
+        window.scrollTo({ top: gridTop, behavior: 'smooth' });
+      }
+    }
+
+    function applyFilter(resetPage = true) {
       const q = input.value.trim().toLowerCase();
-      let visibleCount = 0;
+      matchedCards = [];
 
       clearBtn.style.display = q.length > 0 ? 'flex' : 'none';
 
@@ -773,16 +841,55 @@
         }
 
         if (matchesType && matchesCost && matchesExpansion && matchesQuery) {
-          card.style.display = grid.classList.contains('scan-mode') ? 'block' : 'flex';
-          visibleCount++;
-        } else {
-          card.style.display = 'none';
+          matchedCards.push(card);
         }
       });
 
-      countDisplay.textContent = visibleCount;
-      noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+      countDisplay.textContent = matchedCards.length;
+      noResults.style.display = matchedCards.length === 0 ? 'block' : 'none';
+
+      if (resetPage) {
+        currentPage = 1;
+      }
+      renderPage(false);
     }
+
+    paginationFirstBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage = 1;
+        renderPage(true);
+      }
+    });
+
+    paginationPrevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderPage(true);
+      }
+    });
+
+    paginationNextBtn.addEventListener('click', () => {
+      const totalPages = Math.ceil(matchedCards.length / pageSize);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderPage(true);
+      }
+    });
+
+    paginationLastBtn.addEventListener('click', () => {
+      const totalPages = Math.ceil(matchedCards.length / pageSize);
+      if (currentPage < totalPages) {
+        currentPage = totalPages;
+        renderPage(true);
+      }
+    });
+
+    paginationSizeSelect.addEventListener('change', () => {
+      const val = paginationSizeSelect.value;
+      pageSize = val === 'all' ? 'all' : parseInt(val, 10);
+      currentPage = 1;
+      renderPage(true);
+    });
 
     input.addEventListener('input', applyFilter);
 
@@ -845,9 +952,8 @@
       expansionSelect.value = paramSet.toLowerCase();
       currentExpansion = paramSet.toLowerCase();
     }
-    if (paramQuery || paramType || paramCost || paramSet) {
-      applyFilter();
-    }
+    // Always apply filter on load so initial page displays 36 cards
+    applyFilter();
 
     // Keyboard shortcut '/' focuses search
     window.addEventListener('keydown', e => {
