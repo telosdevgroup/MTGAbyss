@@ -131,6 +131,64 @@
         {% endfor %}
       </div>
     </div>
+
+    <!-- Tactical Alternatives (Balanced 2x3 Grid) -->
+    {% if tactical_alternatives %}
+    <div style="margin: 2.25rem 0 1rem 0; padding-top: 1.5rem; border-top: 1px dashed var(--border);">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div>
+          <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.25rem; font-weight: 700; text-transform: uppercase; color: #fff; margin: 0;">
+            Tactical Ballistic Alternatives
+          </h2>
+          <span style="font-size: 0.8rem; color: var(--muted);">Alternative weapons matching ballistic profile, mechanics, and armory roles</span>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
+        {% for alt in tactical_alternatives %}
+        <a href="{{ base_path }}/weapon/{{ alt.slug }}" style="background: #141722; border: 1px solid var(--border); border-radius: 6px; padding: 1rem; text-decoration: none; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.15s, border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.borderColor='var(--border)'; this.style.transform='none';">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.4rem;">
+              <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 1.05rem; color: #fff; line-height: 1.2;">
+                {{ alt.name }}
+              </span>
+              <span style="font-size: 0.78rem; font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 700; white-space: nowrap;">
+                {{ alt.cost_credits }} cr
+              </span>
+            </div>
+
+            <div style="display: flex; gap: 0.35rem; align-items: center; margin-bottom: 0.6rem;">
+              <span style="font-size: 0.68rem; font-family: 'JetBrains Mono', monospace; color: var(--muted); background: #0e1117; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--border);">
+                {{ alt.category }}
+              </span>
+              {% if alt.rarity and alt.rarity != '-' %}
+              <span style="font-size: 0.68rem; font-family: 'JetBrains Mono', monospace; color: #a1a1aa; background: #0e1117; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--border);">
+                {{ alt.rarity }}
+              </span>
+              {% endif %}
+            </div>
+
+            <!-- Mini stat bar -->
+            <div style="display: flex; gap: 0.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #cbd5e1; background: #0d0f14; padding: 0.35rem 0.6rem; border-radius: 4px; border: 1px solid var(--border); margin-bottom: 0.6rem;">
+              <span>S: <strong style="color: #ff7043;">{{ alt.strength }}</strong></span>
+              <span>D: <strong style="color: #ff7043;">{{ alt.damage }}</strong></span>
+              <span>AP: <strong>{{ alt.armor_piercing }}</strong></span>
+              <span>Am: <strong>{{ alt.ammo }}</strong></span>
+            </div>
+          </div>
+
+          {% if alt.tactical_reason %}
+          <div style="margin-top: 0.4rem;">
+            <span style="display: inline-block; font-size: 0.68rem; font-weight: 700; color: #eab308; background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); padding: 0.15rem 0.45rem; border-radius: 4px;">
+              {{ alt.tactical_reason }}
+            </span>
+          </div>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

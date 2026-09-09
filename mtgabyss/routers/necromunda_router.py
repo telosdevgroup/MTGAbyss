@@ -509,6 +509,10 @@ async def necromunda_weapon_detail(request: Request, slug: str):
         ]
     }, {"_id": 0}))
 
+    # Fetch top 6 precomputed tactical alternatives (2x3 grid)
+    sim_doc = db.similar_weapons.find_one({"slug": slug}, {"_id": 0, "similar": 1})
+    tactical_alternatives = (sim_doc.get("similar") or [])[:6] if sim_doc else []
+
     base_path = get_base_prefix(request)
     return templates.TemplateResponse(
         request=request,
@@ -517,6 +521,7 @@ async def necromunda_weapon_detail(request: Request, slug: str):
             "base_path": base_path,
             "weapon": weapon,
             "traits_data": traits_data,
+            "tactical_alternatives": tactical_alternatives,
         }
     )
 
@@ -852,6 +857,7 @@ async def necromunda_equipment_detail(request: Request, slug: str):
 
 
 @necromunda_router.get("/developers", response_class=HTMLResponse)
+@necromunda_router.get("/api", response_class=HTMLResponse)
 async def necromunda_developers(request: Request):
     return templates.TemplateResponse(
         request=request,
