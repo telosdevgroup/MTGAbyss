@@ -345,28 +345,28 @@
 
     <!-- Official Rulings & Clarifications (Hydrated from FFG Errata & Rulings) -->
     {% if card.official_rulings or card.rules or card.rules_styled %}
-      <div style="background: #141417; border: 1px solid #27272a; border-radius: 12px; padding: 1.5rem;">
-        <div style="margin-bottom: 1.25rem; border-bottom: 1px solid #27272a; padding-bottom: 0.75rem;">
-          <h2 style="font-size: 1.05rem; font-weight: 700; color: #f4f4f5; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Space Grotesk', sans-serif;">
+      <div style="background: #121216; border: 1px solid #272730; border-radius: 14px; padding: 2rem;">
+        <div style="margin-bottom: 1.5rem; border-bottom: 1px solid #272730; padding-bottom: 1rem;">
+          <h2 style="font-size: 1.15rem; font-weight: 700; color: #f4f4f5; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Space Grotesk', sans-serif;">
             Official Rules &amp; Clarifications
           </h2>
-          <span style="font-size: 0.78rem; color: #a1a1aa; margin-top: 0.25rem; display: inline-block;">
+          <span style="font-size: 0.82rem; color: #a1a1aa; margin-top: 0.35rem; display: inline-block;">
             Authoritative card-specific rulings and timing clarifications from Fantasy Flight Games
           </span>
         </div>
 
         {% if card.official_rulings %}
-          <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+          <div style="display: flex; flex-direction: column; gap: 1.35rem;">
             {% for r in card.official_rulings %}
               {% if loop.index % 2 == 1 %}
-                <div style="background: #18181b; border: 1px solid #27272a; border-left: 3px solid #38bdf8; border-radius: 6px; padding: 1rem 1.25rem;">
-                  <div style="font-size: 0.98rem; line-height: 1.65; color: #f4f4f5; font-weight: 400;">
+                <div style="background: #18181f; border: 1px solid #2a2a35; border-left: 4px solid #38bdf8; border-radius: 8px; padding: 1.35rem 1.65rem; box-shadow: 0 4px 16px rgba(0,0,0,0.25);">
+                  <div style="font-size: 1.06rem; line-height: 1.8; color: #f4f4f5; font-weight: 500; letter-spacing: 0.01em;">
                     {{ r.answer }}
                   </div>
                 </div>
               {% else %}
-                <div style="background: #18181b; border: 1px solid #27272a; border-right: 3px solid #ef4444; border-radius: 6px; padding: 1rem 1.25rem;">
-                  <div style="font-size: 0.98rem; line-height: 1.65; color: #f4f4f5; font-weight: 400;">
+                <div style="background: #18181f; border: 1px solid #2a2a35; border-right: 4px solid #ef4444; border-radius: 8px; padding: 1.35rem 1.65rem; box-shadow: 0 4px 16px rgba(0,0,0,0.25);">
+                  <div style="font-size: 1.06rem; line-height: 1.8; color: #f4f4f5; font-weight: 500; letter-spacing: 0.01em;">
                     {{ r.answer }}
                   </div>
                 </div>
