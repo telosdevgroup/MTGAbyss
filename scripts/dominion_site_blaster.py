@@ -625,11 +625,11 @@ class DominionSiteBlaster:
                 else:
                     self.log_fail("unauth SSO badge", "/", "Missing 'Sign In with Discord' in unauthenticated header")
 
-                # Check for Network Footer unified account callout
-                if "Unified Discord Account" in html_text and "MTG, SWU, Dominion" in html_text:
-                    self.log_pass("footer SSO note", "Network footer displays unified Discord account callout")
+                # Check for Network Footer network games callout
+                if "AvaScry Network" in html_text and "Magic: The Gathering" in html_text:
+                    self.log_pass("footer SSO note", "Network footer displays clean AvaScry Network links")
                 else:
-                    self.log_fail("footer SSO note", "/", "Missing Unified Discord Account note in network games footer")
+                    self.log_fail("footer SSO note", "/", "Missing AvaScry Network section in network games footer")
             else:
                 self.log_fail("unauth SSO badge", "/", f"Status {resp_home.status_code}")
         except Exception as e:
