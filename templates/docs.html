@@ -38,6 +38,9 @@
       <a href="#cockatrice-xml" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--surface, rgba(255,255,255,0.03)); color: var(--text); transition: all 0.15s ease;">
         <span>🎴 Cockatrice XML</span>
       </a>
+      <a href="#vectors" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--surface, rgba(255,255,255,0.03)); color: var(--text); transition: all 0.15s ease;">
+        <span>🧠 Vectors</span>
+      </a>
       <a href="/bot" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--surface, rgba(255,255,255,0.03)); color: var(--text); transition: all 0.15s ease;">
         <span>🤖 Discord Bot</span>
       </a>
@@ -209,6 +212,34 @@ https://avascry.com/feed/sets.xml
 
 # Official MTG Card Rulings &amp; Errata Updates
 https://avascry.com/feed/rulings.xml</code></pre>
+      </div>
+    </div>
+
+    <!-- 6. 4096-Dimensional Neural Vectors -->
+    <div id="vectors" style="background: var(--card-bg, #1e293b); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+        <h2 style="font-size: 1.35rem; font-weight: 700; color: var(--text); margin: 0;">
+          6. 4096-Dimensional Neural Vector Embeddings
+        </h2>
+        <span style="font-size: 0.75rem; font-weight: 700; background: #059669; color: #ffffff; padding: 2px 8px; border-radius: 4px;">4096-dim Float Array</span>
+      </div>
+      <p style="color: var(--muted); font-size: 0.95rem; margin-top: 0; margin-bottom: 1.25rem; line-height: 1.55;">
+        Extract raw 4096-dimensional dense embedding vectors for any Oracle card. Computed via our fine-tuned semantic model, these float arrays power semantic similarity search, mechanical clustering, and recommendation pipelines.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <pre style="background: var(--bg, #0f172a); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; color: #34d399; font-family: monospace; font-size: 0.85rem; overflow-x: auto; margin: 0;"><code># Fetch raw 4096-dim float array for any Oracle card
+curl -s https://avascry.com/vector/combat-research.json
+
+# Response Schema:
+{
+  "oracle_id": "c6ff5bc4-e1d1-432d-8805-4c0ef8540c77",
+  "card_name": "Combat Research",
+  "slug": "combat-research",
+  "embedding_model": "Qwen-8B-Custom-4096d",
+  "dimensions": 4096,
+  "embedding": [0.0142, -0.0481, 0.0812, 0.0093, ...]
+}</code></pre>
       </div>
     </div>
 

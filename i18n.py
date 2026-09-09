@@ -841,17 +841,17 @@ TRANSLATIONS = {
         'zht': '開發者與人工智能集成中心'
     },
     'dev_hero_subtitle': {
-        'en': 'High-performance APIs, AI Markdown endpoints, 4096-dimensional vector embeddings, Cockatrice desktop databases, and live Discord RSS feeds.',
-        'es': 'APIs de alto rendimiento, endpoints Markdown para IA, embeddings vectoriales de 4096 dimensiones, bases de datos Cockatrice y feeds RSS para Discord.',
-        'ja': '高性能API、AI用Markdownエンドポイント、4096次元ベクトル埋め込み、Cockatrice用データベース、Discord用RSSフィード。',
-        'fr': 'APIs haute performance, endpoints Markdown pour l\'IA, embeddings vectoriels 4096D, bases de données Cockatrice et flux RSS Discord.',
-        'de': 'Hochleistungs-APIs, KI-Markdown-Endpunkte, 4096-dimensionale Vektoreinbettungen, Cockatrice-Datenbanken und Live-Discord-RSS-Feeds.',
-        'it': 'API ad alte prestazioni, endpoint Markdown per l\'IA, incorporamenti vettoriali 4096D, database Cockatrice e feed RSS Discord.',
-        'pt': 'APIs de alto desempenho, endpoints Markdown para IA, embeddings vetoriais de 4096 dimensões, bases de dados Cockatrice e feeds RSS para Discord.',
-        'ru': 'Высокопроизводительные API, Markdown для ИИ, 4096-мерные векторные эмбеддинги, базы Cockatrice и RSS-ленты для Discord.',
-        'ko': '고성능 API, AI 마크다운 엔드포인트, 4096차원 벡터 임베딩, Cockatrice 데스크톱 데이터베이스, 라이브 Discord RSS 피드.',
-        'zhs': '高性能 API、AI 原生 Markdown 端点、4096 维向量嵌入、Cockatrice 桌面数据库以及 Discord 实时 RSS 订阅源。',
-        'zht': '高性能 API、AI 原生 Markdown 端點、4096 維向量嵌入、Cockatrice 桌面數據庫以及 Discord 實時 RSS 訂閱源。'
+        'en': 'High-performance REST JSON endpoints, card schemas, Cockatrice desktop databases, and live Discord RSS feeds.',
+        'es': 'Endpoints REST JSON de alto rendimiento, esquemas de cartas, bases de datos Cockatrice y feeds RSS para Discord.',
+        'ja': '高性能REST JSONエンドポイント、カードスキーマ、Cockatrice用データベース、Discord用RSSフィード。',
+        'fr': 'Endpoints REST JSON haute performance, schémas de cartes, bases de données Cockatrice et flux RSS Discord.',
+        'de': 'Hochleistungs-REST-JSON-Endpunkte, Kartenschemata, Cockatrice-Datenbanken und Live-Discord-RSS-Feeds.',
+        'it': 'Endpoint REST JSON ad alte prestazioni, schemi di carte, database Cockatrice e feed RSS Discord.',
+        'pt': 'Endpoints REST JSON de alto desempenho, esquemas de cartas, bases de dados Cockatrice e feeds RSS para Discord.',
+        'ru': 'Высокопроизводительные REST JSON API, схемы карт, базы Cockatrice и RSS-ленты для Discord.',
+        'ko': '고성능 REST JSON 엔드포인트, 카드 스키마, Cockatrice 데스크톱 데이터베이스, 라이브 Discord RSS 피드.',
+        'zhs': '高性能 REST JSON 端点、卡牌模式、Cockatrice 桌面数据库以及 Discord 实时 RSS 订阅源。',
+        'zht': '高性能 REST JSON 端點、卡牌模式、Cockatrice 桌面數據庫以及 Discord 實時 RSS 訂閱源。'
     },
     'dev_tab_ai': {
         'en': '🔮 AI & LLMs (Markdown)', 'es': '🔮 IA y LLMs (Markdown)', 'ja': '🔮 AI＆LLM (Markdown)',
