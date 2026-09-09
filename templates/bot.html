@@ -50,31 +50,93 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
-  .command-card {
+
+  /* Alternating Breathing Showcase Rows with Lateral Pull */
+  .bot-card-row {
     background: var(--surface);
     border: 1.5px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 2rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    padding: 2.5rem;
+    margin-bottom: 3rem;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.18);
     display: flex;
-    flex-direction: column;
+    align-items: center;
     justify-content: space-between;
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    gap: 3rem;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   }
-  .command-card:hover {
-    transform: translateY(-3px);
+  .bot-card-row:hover {
+    transform: translateY(-2px);
     border-color: var(--accent);
+    box-shadow: 0 18px 45px rgba(0,0,0,0.25);
   }
-  .discord-mock-preview {
+
+  .bot-row-left {
+    flex-direction: row;
+    margin-right: auto;
+    max-width: 1040px;
+  }
+  .bot-row-right {
+    flex-direction: row-reverse;
+    margin-left: auto;
+    max-width: 1040px;
+  }
+
+  .bot-card-content {
+    flex: 1;
+    min-width: 320px;
+  }
+  .bot-card-preview {
+    flex: 1;
+    min-width: 300px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .discord-chat-frame {
+    width: 100%;
+    max-width: 440px;
     background: #2b2d31;
-    border-radius: 8px;
-    padding: 1rem;
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.45);
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-    color: #dbdee1;
     text-align: left;
-    margin-top: 1rem;
+    border: 1px solid #1e1f22;
+  }
+  .discord-user-header {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.8rem;
+    color: #949ba4;
+  }
+  .discord-command-pill {
+    background: rgba(88, 101, 242, 0.2);
+    color: #c9cdfb;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+  .discord-embed-box {
+    background: #1e1f22;
+    border-radius: 6px;
+    padding: 0.85rem 1rem;
     border-left: 4px solid var(--accent);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  }
+
+  @media (max-width: 820px) {
+    .bot-card-row,
+    .bot-row-left,
+    .bot-row-right {
+      flex-direction: column !important;
+      padding: 1.75rem 1.25rem;
+      gap: 1.75rem;
+      margin-left: auto !important;
+      margin-right: auto !important;
+    }
   }
 </style>
 {% endblock %}
@@ -100,7 +162,7 @@
 
   <!-- Subtitle -->
   <p style="font-size: 1.15rem; color: var(--muted); max-width: 720px; margin: 0 auto 2.25rem; line-height: 1.6;">
-    The all-in-one gaming companion for tabletop communities. Look up cards, rules, weapon profiles, and crafting specs across five games right inside your Discord channels.
+    The unified gaming companion for tabletop communities. Look up cards, rules, weapon profiles, and crafting specs across five games right inside your Discord channels.
   </p>
 
   <!-- CTA Buttons -->
@@ -115,135 +177,242 @@
       </svg>
       Add AvaScry to Discord &rarr;
     </a>
-    <a href="#commands" 
+    <a href="#showcase" 
        class="btn-hero-secondary"
        style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.9rem 1.8rem; font-size: 1.05rem; font-weight: 700; border-radius: var(--radius-pill); border: 1.5px solid var(--border); text-decoration: none; color: var(--text);">
-      Browse Slash Commands
+      Explore 5-Game Showcase
     </a>
   </div>
 
 </div>
 
-<!-- 5-Game Command Showcase Grid -->
-<div id="commands" style="max-width: 1100px; margin: 0 auto 5rem; padding: 0 1.5rem;">
+<!-- 5-Game Alternating Breathing Showcase Stream -->
+<div id="showcase" style="max-width: 1140px; margin: 0 auto 5rem; padding: 0 1.25rem;">
   
-  <div style="text-align: center; margin-bottom: 3rem;">
-    <h2 style="font-size: 2.2rem; font-weight: 800; color: var(--text); margin-bottom: 0.5rem;">
-      Supported Games &amp; Slash Commands
+  <div style="text-align: center; margin-bottom: 3.5rem;">
+    <div style="display: inline-flex; align-items: center; gap: 0.45rem; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); color: #38bdf8; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.8rem; border-radius: var(--radius-pill); margin-bottom: 0.85rem; text-transform: uppercase;">
+      Five Universes &bull; One Application
+    </div>
+    <h2 style="font-size: clamp(1.85rem, 3.5vw, 2.4rem); font-weight: 800; color: var(--text); margin-bottom: 0.5rem;">
+      Unified Command Roster
     </h2>
-    <p style="font-size: 1.05rem; color: var(--muted); max-width: 600px; margin: 0 auto;">
-      One bot handles your entire tabletop roster. No cluttered bot lists, zero configuration.
+    <p style="font-size: 1.05rem; color: var(--muted); max-width: 620px; margin: 0 auto;">
+      Give each game channel its own dedicated command without juggling multiple single-purpose bots.
     </p>
   </div>
 
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem;">
+  <!-- 1. Magic: The Gathering (PULLED LEFT: Copy Left, Preview Right) -->
+  <article class="bot-card-row bot-row-left" style="border-left: 3px solid #38bdf8;">
+    <div class="bot-card-content">
+      <div style="display: inline-flex; align-items: center; gap: 0.45rem; background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: var(--radius-pill); margin-bottom: 0.85rem; text-transform: uppercase;">
+        Card 1 &bull; Magic: The Gathering
+      </div>
+      <h3 style="font-size: 1.75rem; font-weight: 800; color: var(--text); margin: 0 0 0.6rem 0; line-height: 1.25;">
+        Magic Card Search &amp; Rulings
+      </h3>
+      <div style="background: #090d16; border: 1px solid #1e293b; border-radius: 6px; padding: 0.5rem 0.85rem; display: inline-block; font-family: monospace; font-size: 0.95rem; color: #38bdf8; font-weight: 700; margin-bottom: 1rem;">
+        /mtg name: &lt;card_name&gt;
+      </div>
+      <p style="font-size: 0.95rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.25rem;">
+        Instant Oracle rulings, legalities, mana costs, and full-resolution card scans from over 1,000 expansion sets. Links directly to AvaScry's 4,096-dimensional vision embeddings.
+      </p>
+      <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.88rem; color: var(--text);">
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: #38bdf8; font-weight: 800;">✓</span> Full-resolution card scans &amp; art crops</li>
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: #38bdf8; font-weight: 800;">✓</span> Up-to-date Oracle text and format legalities</li>
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: #38bdf8; font-weight: 800;">✓</span> Deep links to live vector similarity graphs</li>
+      </ul>
+    </div>
     
-    <!-- Game 1: MTG -->
-    <div class="command-card">
-      <div>
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-          <span style="font-size: 1.35rem; font-weight: 800; color: var(--text);">✨ Magic: The Gathering</span>
-          <span style="font-size: 0.75rem; font-weight: 700; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 0.2rem 0.6rem; border-radius: 4px;">MTG</span>
+    <div class="bot-card-preview">
+      <div class="discord-chat-frame">
+        <div class="discord-user-header">
+          <span style="width: 20px; height: 20px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
+          <span style="font-weight: 600; color: #f2f3f5;">devnull</span>
+          <span>used</span>
+          <span class="discord-command-pill">/mtg</span>
         </div>
-        <div style="font-family: monospace; font-size: 0.95rem; color: #38bdf8; font-weight: 700; margin-bottom: 0.75rem;">
-          /mtg name: &lt;card_name&gt;
-        </div>
-        <p style="font-size: 0.88rem; color: var(--muted); line-height: 1.5; margin-bottom: 1rem;">
-          Fetches full card scans, mana costs, legalities, official Oracle text, and links directly to AvaScry's vision-similarity clusters and rulings.
-        </p>
-        <div class="discord-mock-preview" style="border-left-color: #38bdf8;">
-          <div style="font-weight: 700; color: #38bdf8; font-size: 0.88rem;">✨ Sol Ring {1}</div>
-          <div style="font-size: 0.8rem; color: #94a3b8; margin: 0.25rem 0;">Artifact • Lorwyn Eclipsed Commander</div>
-          <div style="font-size: 0.82rem; color: #f1f5f9;">{T}: Add {C}{C}.</div>
+        <div class="discord-embed-box" style="border-left-color: #38bdf8;">
+          <div style="font-weight: 800; color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.25rem;">✨ Sol Ring {1}</div>
+          <div style="font-size: 0.78rem; color: #949ba4; margin-bottom: 0.65rem;">Artifact &bull; Lorwyn Eclipsed Commander (ECC)</div>
+          <div style="font-size: 0.85rem; color: #dbdee1; line-height: 1.45; margin-bottom: 0.75rem;">{T}: Add {C}{C}.</div>
+          <div style="border-radius: 6px; overflow: hidden; max-width: 200px; border: 1px solid #313338;">
+            <img src="https://cards.scryfall.io/normal/front/0/4/04002706-2236-4b79-bdea-4f263e43cb9c.jpg?1783911518" alt="Sol Ring" style="width: 100%; display: block;">
+          </div>
         </div>
       </div>
     </div>
+  </article>
 
-    <!-- Game 2: Dominion -->
-    <div class="command-card">
-      <div>
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-          <span style="font-size: 1.35rem; font-weight: 800; color: var(--text);">🏰 Dominion</span>
-          <span style="font-size: 0.75rem; font-weight: 700; background: rgba(37, 99, 235, 0.15); color: #60a5fa; padding: 0.2rem 0.6rem; border-radius: 4px;">Deckbuilder</span>
+  <!-- 2. Dominion (PULLED RIGHT: Copy Right, Preview Left) -->
+  <article class="bot-card-row bot-row-right" style="border-right: 3px solid #60a5fa;">
+    <div class="bot-card-content">
+      <div style="display: inline-flex; align-items: center; gap: 0.45rem; background: rgba(37, 99, 235, 0.12); color: #60a5fa; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: var(--radius-pill); margin-bottom: 0.85rem; text-transform: uppercase;">
+        Card 2 &bull; Dominion Deckbuilder
+      </div>
+      <h3 style="font-size: 1.75rem; font-weight: 800; color: var(--text); margin: 0 0 0.6rem 0; line-height: 1.25;">
+        Dominion Kingdom Codex
+      </h3>
+      <div style="background: #090d16; border: 1px solid #1e293b; border-radius: 6px; padding: 0.5rem 0.85rem; display: inline-block; font-family: monospace; font-size: 0.95rem; color: #60a5fa; font-weight: 700; margin-bottom: 1rem;">
+        /dom name: &lt;card_name&gt;
+      </div>
+      <p style="font-size: 0.95rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.25rem;">
+        Full Kingdom card details across every expansion from Base to Plunder. Color-coded embed borders based on card types (Action, Treasure, Victory, Attack, Reaction).
+      </p>
+      <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.88rem; color: var(--text);">
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: #60a5fa; font-weight: 800;">✓</span> Coin costs, potion requirements &amp; debt symbols</li>
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: #60a5fa; font-weight: 800;">✓</span> Official errata and first/second edition comparisons</li>
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: #60a5fa; font-weight: 800;">✓</span> Deep links directly to dominion.avascry.com</li>
+      </ul>
+    </div>
+    
+    <div class="bot-card-preview">
+      <div class="discord-chat-frame">
+        <div class="discord-user-header">
+          <span style="width: 20px; height: 20px; border-radius: 50%; background: #60a5fa; display: inline-block;"></span>
+          <span style="font-weight: 600; color: #f2f3f5;">devnull</span>
+          <span>used</span>
+          <span class="discord-command-pill">/dom</span>
         </div>
-        <div style="font-family: monospace; font-size: 0.95rem; color: #60a5fa; font-weight: 700; margin-bottom: 0.75rem;">
-          /dom name: &lt;card_name&gt;
-        </div>
-        <p style="font-size: 0.88rem; color: var(--muted); line-height: 1.5; margin-bottom: 1rem;">
-          Kingdom card stats, coin costs, official errata, expansions, and full-resolution scans from the AvaScry Dominion Codex.
-        </p>
-        <div class="discord-mock-preview" style="border-left-color: #2563eb;">
-          <div style="font-weight: 700; color: #93c5fd; font-size: 0.88rem;">🏰 Village ($3)</div>
-          <div style="font-size: 0.8rem; color: #94a3b8; margin: 0.25rem 0;">Base • Action</div>
-          <div style="font-size: 0.82rem; color: #f1f5f9;">+1 Card • +2 Actions</div>
+        <div class="discord-embed-box" style="border-left-color: #2563eb;">
+          <div style="font-weight: 800; color: #93c5fd; font-size: 0.95rem; margin-bottom: 0.25rem;">🏰 Village ($3)</div>
+          <div style="font-size: 0.78rem; color: #949ba4; margin-bottom: 0.65rem;">Expansion: Base &bull; Type: Action</div>
+          <div style="font-size: 0.85rem; color: #dbdee1; line-height: 1.45; margin-bottom: 0.75rem;">+1 Card &bull; +2 Actions</div>
+          <div style="border-radius: 6px; overflow: hidden; max-width: 200px; border: 1px solid #313338;">
+            <img src="https://raw.githubusercontent.com/tempfillernamegithq/dominion-cards/master/cornucopia/farming-village.jpg" alt="Village" style="width: 100%; display: block;">
+          </div>
         </div>
       </div>
     </div>
+  </article>
 
-    <!-- Game 3: Star Wars: Unlimited -->
-    <div class="command-card">
-      <div>
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-          <span style="font-size: 1.35rem; font-weight: 800; color: var(--text);">⚡ Star Wars: Unlimited</span>
-          <span style="font-size: 0.75rem; font-weight: 700; background: rgba(239, 68, 68, 0.15); color: #f87171; padding: 0.2rem 0.6rem; border-radius: 4px;">TCG</span>
+  <!-- 3. Star Wars: Unlimited (PULLED LEFT: Copy Left, Preview Right) -->
+  <article class="bot-card-row bot-row-left" style="border-left: 3px solid #f87171;">
+    <div class="bot-card-content">
+      <div style="display: inline-flex; align-items: center; gap: 0.45rem; background: rgba(239, 68, 68, 0.12); color: #f87171; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: var(--radius-pill); margin-bottom: 0.85rem; text-transform: uppercase;">
+        Card 3 &bull; Star Wars: Unlimited
+      </div>
+      <h3 style="font-size: 1.75rem; font-weight: 800; color: var(--text); margin: 0 0 0.6rem 0; line-height: 1.25;">
+        Galactic Card &amp; Leader Database
+      </h3>
+      <div style="background: #090d16; border: 1px solid #1e293b; border-radius: 6px; padding: 0.5rem 0.85rem; display: inline-block; font-family: monospace; font-size: 0.95rem; color: #f87171; font-weight: 700; margin-bottom: 1rem;">
+        /swu name: &lt;card_name&gt;
+      </div>
+      <p style="font-size: 0.95rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.25rem;">
+        Units, leaders, bases, and events. Dynamically styles borders based on Aspect affinities (Vigilance, Command, Aggression, Cunning, Heroism, Villainy).
+      </p>
+      <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.88rem; color: var(--text);">
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: #f87171; font-weight: 800;">✓</span> Resource costs, power, and HP values</li>
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: #f87171; font-weight: 800;">✓</span> Epic action, restore, and trigger abilities</li>
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: #f87171; font-weight: 800;">✓</span> Deep links directly to swu.avascry.com</li>
+      </ul>
+    </div>
+    
+    <div class="bot-card-preview">
+      <div class="discord-chat-frame">
+        <div class="discord-user-header">
+          <span style="width: 20px; height: 20px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+          <span style="font-weight: 600; color: #f2f3f5;">devnull</span>
+          <span>used</span>
+          <span class="discord-command-pill">/swu</span>
         </div>
-        <div style="font-family: monospace; font-size: 0.95rem; color: #f87171; font-weight: 700; margin-bottom: 0.75rem;">
-          /swu name: &lt;card_name&gt;
-        </div>
-        <p style="font-size: 0.88rem; color: var(--muted); line-height: 1.5; margin-bottom: 1rem;">
-          Unit stats, leader actions, epic actions, aspects, power/HP calculations, and official Fantasy Flight rules documentation.
-        </p>
-        <div class="discord-mock-preview" style="border-left-color: #ef4444;">
-          <div style="font-weight: 700; color: #fca5a5; font-size: 0.88rem;">⚡ Luke Skywalker: Faithful Friend</div>
-          <div style="font-size: 0.8rem; color: #94a3b8; margin: 0.25rem 0;">Cost: 7 • Heroism / Vigilance</div>
-          <div style="font-size: 0.82rem; color: #f1f5f9;">Restore 3 • When Played: Give an enemy unit -3/-3.</div>
+        <div class="discord-embed-box" style="border-left-color: #ef4444;">
+          <div style="font-weight: 800; color: #fca5a5; font-size: 0.95rem; margin-bottom: 0.25rem;">⚡ Luke Skywalker: Faithful Friend</div>
+          <div style="font-size: 0.78rem; color: #949ba4; margin-bottom: 0.65rem;">Type: Unit &bull; Aspects: Heroism, Vigilance</div>
+          <div style="display: flex; gap: 1rem; font-size: 0.8rem; color: #f1f5f9; margin-bottom: 0.5rem;">
+            <span><strong>Cost:</strong> 7 ⬡</span>
+            <span><strong>Stats:</strong> 6 / 7</span>
+          </div>
+          <div style="font-size: 0.82rem; color: #dbdee1; line-height: 1.45;">Restore 3 &bull; When Played: Give an enemy unit -3/-3.</div>
         </div>
       </div>
     </div>
+  </article>
 
-    <!-- Game 4: Necromunda -->
-    <div class="command-card">
-      <div>
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-          <span style="font-size: 1.35rem; font-weight: 800; color: var(--text);">🔫 Necromunda Underhive</span>
-          <span style="font-size: 0.75rem; font-weight: 700; background: rgba(255, 87, 34, 0.15); color: #ff7043; padding: 0.2rem 0.6rem; border-radius: 4px;">Tabletop Skirmish</span>
+  <!-- 4. Necromunda (PULLED RIGHT: Copy Right, Preview Left) -->
+  <article class="bot-card-row bot-row-right" style="border-right: 3px solid #ff7043;">
+    <div class="bot-card-content">
+      <div style="display: inline-flex; align-items: center; gap: 0.45rem; background: rgba(255, 87, 34, 0.12); color: #ff7043; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: var(--radius-pill); margin-bottom: 0.85rem; text-transform: uppercase;">
+        Card 4 &bull; Necromunda Underhive
+      </div>
+      <h3 style="font-size: 1.75rem; font-weight: 800; color: var(--text); margin: 0 0 0.6rem 0; line-height: 1.25;">
+        Underhive Gang Armory
+      </h3>
+      <div style="background: #090d16; border: 1px solid #1e293b; border-radius: 6px; padding: 0.5rem 0.85rem; display: inline-block; font-family: monospace; font-size: 0.95rem; color: #ff7043; font-weight: 700; margin-bottom: 1rem;">
+        /necro name: &lt;weapon_name&gt;
+      </div>
+      <p style="font-size: 0.95rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.25rem;">
+        Instant weapon profiles and combat tables for Underhive skirmish arbiters. Displays range bands, weapon strengths, AP modifiers, and ammo check thresholds.
+      </p>
+      <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.88rem; color: var(--text);">
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: #ff7043; font-weight: 800;">✓</span> Range (Short/Long) and Accuracy modifiers</li>
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: #ff7043; font-weight: 800;">✓</span> Weapon traits (Rapid Fire, Blast, Plentiful, etc.)</li>
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: #ff7043; font-weight: 800;">✓</span> Deep links directly to necromunda.avascry.com</li>
+      </ul>
+    </div>
+    
+    <div class="bot-card-preview">
+      <div class="discord-chat-frame">
+        <div class="discord-user-header">
+          <span style="width: 20px; height: 20px; border-radius: 50%; background: #ff5722; display: inline-block;"></span>
+          <span style="font-weight: 600; color: #f2f3f5;">devnull</span>
+          <span>used</span>
+          <span class="discord-command-pill">/necro</span>
         </div>
-        <div style="font-family: monospace; font-size: 0.95rem; color: #ff7043; font-weight: 700; margin-bottom: 0.75rem;">
-          /necro name: &lt;weapon_name&gt;
-        </div>
-        <p style="font-size: 0.88rem; color: var(--muted); line-height: 1.5; margin-bottom: 1rem;">
-          Underhive Armory profiles: Range (S/L), Accuracy, Strength, Damage, AP, Ammo checks, and weapon special rules.
-        </p>
-        <div class="discord-mock-preview" style="border-left-color: #ff5722;">
-          <div style="font-weight: 700; color: #ff8a65; font-size: 0.88rem;">🔫 Bolter (Basic Weapon)</div>
-          <div style="font-size: 0.8rem; color: #94a3b8; margin: 0.25rem 0;">55 credits • Rarity: Common</div>
-          <div style="font-size: 0.82rem; color: #f1f5f9;">Range: 12"/24" • Str: 4 • Dmg: 2 • Traits: Rapid Fire (1)</div>
+        <div class="discord-embed-box" style="border-left-color: #ff5722;">
+          <div style="font-weight: 800; color: #ff8a65; font-size: 0.95rem; margin-bottom: 0.25rem;">🔫 Bolter (Basic Weapon)</div>
+          <div style="font-size: 0.78rem; color: #949ba4; margin-bottom: 0.65rem;">55 credits &bull; Rarity: Common</div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; font-size: 0.75rem; color: #f1f5f9; margin-bottom: 0.5rem;">
+            <div><strong>Rng:</strong> 12"/24"</div>
+            <div><strong>Acc:</strong> +1/-</div>
+            <div><strong>Str:</strong> 4</div>
+            <div><strong>Dmg:</strong> 2</div>
+            <div><strong>AP:</strong> -1</div>
+            <div><strong>Ammo:</strong> 6+</div>
+          </div>
+          <div style="font-size: 0.78rem; color: #949ba4;">Traits: Rapid Fire (1)</div>
         </div>
       </div>
     </div>
+  </article>
 
-    <!-- Game 5: Minecraft -->
-    <div class="command-card">
-      <div>
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-          <span style="font-size: 1.35rem; font-weight: 800; color: var(--text);">⛏️ Minecraft Codex</span>
-          <span style="font-size: 0.75rem; font-weight: 700; background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 0.2rem 0.6rem; border-radius: 4px;">Sandbox</span>
+  <!-- 5. Minecraft (PULLED LEFT: Copy Left, Preview Right) -->
+  <article class="bot-card-row bot-row-left" style="border-left: 3px solid #34d399;">
+    <div class="bot-card-content">
+      <div style="display: inline-flex; align-items: center; gap: 0.45rem; background: rgba(16, 185, 129, 0.12); color: #34d399; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: var(--radius-pill); margin-bottom: 0.85rem; text-transform: uppercase;">
+        Card 5 &bull; Minecraft Codex
+      </div>
+      <h3 style="font-size: 1.75rem; font-weight: 800; color: var(--text); margin: 0 0 0.6rem 0; line-height: 1.25;">
+        Block &amp; Crafting Specifications
+      </h3>
+      <div style="background: #090d16; border: 1px solid #1e293b; border-radius: 6px; padding: 0.5rem 0.85rem; display: inline-block; font-family: monospace; font-size: 0.95rem; color: #34d399; font-weight: 700; margin-bottom: 1rem;">
+        /mc name: &lt;item_name&gt;
+      </div>
+      <p style="font-size: 0.95rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.25rem;">
+        Query block parameters, entity IDs, blast resistances, and max stack sizes. Perfect for Minecraft builders and technical redstone servers.
+      </p>
+      <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.88rem; color: var(--text);">
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: #34d399; font-weight: 800;">✓</span> Official Minecraft entity IDs &amp; block facts</li>
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: #34d399; font-weight: 800;">✓</span> Crafting chain and color palette matches</li>
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: #34d399; font-weight: 800;">✓</span> Deep links directly to minecraft.avascry.com</li>
+      </ul>
+    </div>
+    
+    <div class="bot-card-preview">
+      <div class="discord-chat-frame">
+        <div class="discord-user-header">
+          <span style="width: 20px; height: 20px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+          <span style="font-weight: 600; color: #f2f3f5;">devnull</span>
+          <span>used</span>
+          <span class="discord-command-pill">/mc</span>
         </div>
-        <div style="font-family: monospace; font-size: 0.95rem; color: #34d399; font-weight: 700; margin-bottom: 0.75rem;">
-          /mc name: &lt;item_name&gt;
-        </div>
-        <p style="font-size: 0.88rem; color: var(--muted); line-height: 1.5; margin-bottom: 1rem;">
-          Item specifications, entity IDs, maximum stack counts, crafting recipes, and color palette relationships.
-        </p>
-        <div class="discord-mock-preview" style="border-left-color: #10b981;">
-          <div style="font-weight: 700; color: #6ee7b7; font-size: 0.88rem;">⛏️ Redstone Dust</div>
-          <div style="font-size: 0.8rem; color: #94a3b8; margin: 0.25rem 0;">ID: minecraft:redstone • Max Stack: 64</div>
-          <div style="font-size: 0.82rem; color: #f1f5f9;">Redstone Wire &amp; Mechanism Power Component</div>
+        <div class="discord-embed-box" style="border-left-color: #10b981;">
+          <div style="font-weight: 800; color: #6ee7b7; font-size: 0.95rem; margin-bottom: 0.25rem;">⛏️ Redstone Dust</div>
+          <div style="font-size: 0.78rem; color: #949ba4; margin-bottom: 0.65rem;">Entity ID: minecraft:redstone &bull; Max Stack: 64</div>
+          <div style="font-size: 0.82rem; color: #dbdee1; line-height: 1.45;">Power transmission wire, logic gates, and mechanism component.</div>
         </div>
       </div>
     </div>
-
-  </div>
+  </article>
 
 </div>
 
