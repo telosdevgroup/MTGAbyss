@@ -1816,6 +1816,15 @@ Sitemap: https://swu.avascry.com/sitemap.html
         headers={"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
     )
 
+@swu_router.get("/developers", response_class=HTMLResponse)
+@swu_router.get("/api", response_class=HTMLResponse)
+async def swu_developers(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="swu/developers.html",
+        context={"base_path": get_base_prefix(request)}
+    )
+
 @swu_router.get("/about", response_class=HTMLResponse)
 async def swu_about(request: Request):
     return templates.TemplateResponse(

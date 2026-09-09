@@ -1,0 +1,129 @@
+{% extends "swu/base.html" %}
+
+{% block title %}Developer API &amp; Machine Corpus — AvaScry SWU{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://swu.avascry.com/developers">
+<link rel="alternate" type="text/plain" href="https://swu.avascry.com/llms.txt" title="LLM Navigational Manifest">
+<link rel="alternate" type="text/plain" href="https://swu.avascry.com/llms-full.txt" title="Full LLM Corpus">
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 2rem auto 4rem; padding: 0 1.5rem;">
+  <article style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.35);">
+    <header style="margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem;">
+      <div style="display: inline-block; font-size: 0.75rem; font-family: monospace; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 0.5rem;">
+        ⚡ STAR WARS: UNLIMITED // OPEN DEVELOPER API
+      </div>
+      <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 700; color: #fff; margin: 0 0 0.5rem 0;">
+        Star Wars: Unlimited <span style="color: var(--accent);">API</span>
+      </h1>
+      <p style="color: var(--muted); font-size: 1rem; margin: 0; line-height: 1.6;">
+        Build community deckbuilders, tournament overlays, Discord lookup bots, and AI assistants with our real-time, tri-surface JSON and Markdown card database.
+      </p>
+    </header>
+
+    <div style="line-height: 1.7; color: #cbd5e1; display: flex; flex-direction: column; gap: 2rem;">
+      <!-- Developer Access Notice / Discord Registration -->
+      <section style="background: rgba(250, 204, 21, 0.08); border: 1px solid rgba(250, 204, 21, 0.3); border-radius: 8px; padding: 1.5rem;">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+          <div style="max-width: 520px;">
+            <div style="font-family: 'Space Grotesk', sans-serif; font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 0.35rem;">
+              🔑 Developer Registration &amp; API Support
+            </div>
+            <p style="font-size: 0.9rem; color: #cbd5e1; margin: 0; line-height: 1.5;">
+              Read-only card endpoints are open to inspect. Sign in with your Discord account to register as a verified developer, request higher burst limits, or collaborate on community integrations.
+            </p>
+          </div>
+          {% if user %}
+          <div>
+            <span style="font-size: 0.85rem; padding: 6px 12px; background: rgba(250, 204, 21, 0.15); border: 1px solid var(--accent); color: #facc15; border-radius: 6px; font-weight: 700; display: inline-block;">
+              ✓ Verified Developer (@{{ user.discord_username or user.name }})
+            </span>
+          </div>
+          {% else %}
+          <div>
+            {% include "partials/discord_login_button.html" %}
+          </div>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- AvaScry Discord Bot Card -->
+      <section style="background: rgba(88, 101, 242, 0.08); border: 1px solid rgba(88, 101, 242, 0.3); border-radius: 8px; padding: 1.5rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+          <div style="max-width: 540px;">
+            <div style="font-family: 'Space Grotesk', sans-serif; font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span>🤖</span> AvaScry Unified Discord Bot
+            </div>
+            <p style="font-size: 0.9rem; color: #cbd5e1; margin: 0 0 0.4rem 0; line-height: 1.5;">
+              Install our official slash bot on any TCG or local store Discord server. Search SWU cards, stats, and official rulings directly in your channels:
+            </p>
+            <div style="font-family: monospace; font-size: 0.82rem; color: #a5b4fc; background: #0c0f17; padding: 0.35rem 0.65rem; border-radius: 4px; display: inline-block; border: 1px solid rgba(88, 101, 242, 0.25);">
+              /swu card luke skywalker
+            </div>
+          </div>
+          <div>
+            <a href="https://discord.com/oauth2/authorize?client_id=1543690979251462235&scope=applications.commands" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #5865F2; color: #fff; padding: 0.65rem 1.25rem; border-radius: 6px; font-weight: 700; font-size: 0.88rem; text-decoration: none; transition: background 0.15s;" onmouseover="this.style.background='#4752c4';" onmouseout="this.style.background='#5865F2';">
+              <span>+</span> Add Bot to Discord
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tri-Surface Architecture -->
+      <section>
+        <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.35rem; color: #fff; margin-bottom: 0.75rem;">
+          Tri-Surface Engine (.html / .json / .md)
+        </h2>
+        <p style="margin-bottom: 1rem; font-size: 0.95rem;">
+          Every card, trait, keyword mechanic, and comprehensive rules entry is available natively as structured JSON or LLM Markdown:
+        </p>
+        
+        <div style="background: #10141d; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-family: monospace; font-size: 0.86rem; display: flex; flex-direction: column; gap: 0.5rem;">
+          <div><span style="color: #4ade80;">GET</span> <span style="color: #fff;">/card/{slug}.json</span> <span style="color: var(--muted);">&bull; Card specs, aspect array, costs, stats</span></div>
+          <div><span style="color: #60a5fa;">GET</span> <span style="color: #fff;">/card/{slug}.md</span> <span style="color: var(--muted);">&bull; LLM context block with official rulings</span></div>
+          <div><span style="color: #facc15;">GET</span> <span style="color: #fff;">/keyword/{slug}.json</span> <span style="color: var(--muted);">&bull; Keyword ability rules &amp; reminder text</span></div>
+          <div><span style="color: #4ade80;">GET</span> <span style="color: #fff;">/trait/{slug}.json</span> <span style="color: var(--muted);">&bull; Trait classifications and associated cards</span></div>
+          <div><span style="color: #60a5fa;">GET</span> <span style="color: #fff;">/rule/{slug}.json</span> <span style="color: var(--muted);">&bull; Official FFG Comprehensive Rules section</span></div>
+        </div>
+      </section>
+
+      <!-- Quick Curl Examples -->
+      <section>
+        <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.35rem; color: #fff; margin-bottom: 0.75rem;">
+          Instant Terminal Access (cURL)
+        </h2>
+        <p style="margin-bottom: 0.75rem; font-size: 0.95rem;">
+          Query card details or full rules directly from your terminal:
+        </p>
+        <div style="background: #090a0f; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; font-family: monospace; font-size: 0.85rem; color: #f1f5f9; overflow-x: auto;">
+          <div style="color: var(--muted); margin-bottom: 0.25rem;"># 1. Fetch Luke Skywalker card data in JSON</div>
+          <div style="color: #facc15; margin-bottom: 1rem;">curl -s https://swu.avascry.com/card/luke-skywalker-faithful-friend-sor-5.json | jq .</div>
+
+          <div style="color: var(--muted); margin-bottom: 0.25rem;"># 2. Fetch official Sentinel keyword mechanics in Markdown</div>
+          <div style="color: #60a5fa; margin-bottom: 1rem;">curl -s https://swu.avascry.com/keyword/sentinel.md</div>
+
+          <div style="color: var(--muted); margin-bottom: 0.25rem;"># 3. Stream the full SWU AI training corpus</div>
+          <div style="color: #4ade80;">curl -s https://swu.avascry.com/llms-full.txt</div>
+        </div>
+      </section>
+
+      <!-- LLM Discovery Manifests -->
+      <section>
+        <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.35rem; color: #fff; margin-bottom: 0.75rem;">
+          AI Agent &amp; LLM Scraper Manifests
+        </h2>
+        <p style="font-size: 0.95rem; margin-bottom: 0.75rem;">
+          Machine endpoints for automated context generation and training:
+        </p>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <a href="{{ base_path }}/llms.txt" style="padding: 6px 14px; font-size: 0.85rem; background: rgba(250, 204, 21, 0.12); border: 1px solid var(--accent); color: #facc15; border-radius: 6px; text-decoration: none; font-weight: 600;">/llms.txt (Index)</a>
+          <a href="{{ base_path }}/llms-full.txt" style="padding: 6px 14px; font-size: 0.85rem; background: #141417; border: 1px solid var(--border); color: #e4e4e7; border-radius: 6px; text-decoration: none; font-weight: 600;">/llms-full.txt (Full Corpus)</a>
+          <a href="{{ base_path }}/sitemap.md" style="padding: 6px 14px; font-size: 0.85rem; background: #141417; border: 1px solid var(--border); color: #e4e4e7; border-radius: 6px; text-decoration: none; font-weight: 600;">/sitemap.md</a>
+        </div>
+      </section>
+    </div>
+  </article>
+</div>
+{% endblock %}

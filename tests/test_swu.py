@@ -41,9 +41,11 @@ def test_swu_llms_txt():
     assert "Star Wars: Unlimited" in response.text
 
 def test_swu_trust_pages():
-    for path in ("/swu/about", "/swu/privacy", "/swu/terms", "/swu/contact"):
+    for path in ("/swu/about", "/swu/privacy", "/swu/terms", "/swu/contact", "/swu/developers", "/swu/api"):
         res = client.get(path)
         assert res.status_code == 200
+        if "developers" in path or "api" in path:
+            assert "Discord" in res.text
 
 def test_swu_keywords_list():
     res = client.get("/swu/keywords")

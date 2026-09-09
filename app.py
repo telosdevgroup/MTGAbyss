@@ -55,6 +55,7 @@ from mtgabyss.routers.sets_router import sets_router
 from mtgabyss.routers.artist_router import artist_router
 from mtgabyss.routers.card_router import card_router
 from mtgabyss.routers.api_router import api_router
+from mtgabyss.routers.discord_bot_router import discord_bot_router
 
 app = FastAPI(title="AvaScry", description="Magic: The Gathering Visual Explorer & Strategy Engine")
 
@@ -97,6 +98,7 @@ app.include_router(sets_router)
 app.include_router(artist_router)
 app.include_router(card_router)
 app.include_router(api_router)
+app.include_router(discord_bot_router)
 
 
 # Middlewares (Registered in order: Request logging -> Localization -> Bot Shield -> Subdomain)
@@ -139,7 +141,7 @@ async def subdomain_routing_middleware(request: Request, call_next):
     path = request.scope.get("path", "")
 
     # Network-wide routes exempt from subdomain prefixing
-    if path.startswith(("/auth", "/static")):
+    if path.startswith(("/auth", "/static", "/api/discord")):
         return await call_next(request)
 
     if sub == "dominion":

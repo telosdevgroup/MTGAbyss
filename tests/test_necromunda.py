@@ -17,6 +17,7 @@ def test_necromunda_endpoints():
     r = client.get('/necromunda/weapon/heavy-bolter')
     assert r.status_code == 200
     assert 'heavy bolter' in r.text.lower()
+    assert 'Tactical Ballistic Alternatives' in r.text
 
     r = client.get('/necromunda/weapon/heavy-bolter.md')
     assert r.status_code == 200
@@ -121,6 +122,14 @@ def test_necromunda_endpoints():
     r = client.get('/necromunda/contact')
     assert r.status_code == 200
     assert 'Contact' in r.text
+
+    r = client.get('/necromunda/developers')
+    assert r.status_code == 200
+    assert 'AvaScry Unified Discord Bot' in r.text
+
+    r = client.get('/necromunda/api')
+    assert r.status_code == 200
+    assert 'AvaScry Unified Discord Bot' in r.text
 
     # Contact POST with valid data (mocked to avoid spamming the live webhook during tests)
     from unittest.mock import patch, AsyncMock
