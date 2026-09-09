@@ -89,7 +89,16 @@ def handle_swu_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
         return {"content": "⚠️ Please provide a card name. Example: `/swu card luke`"}
 
     regex = re.compile(re.escape(query), re.IGNORECASE)
-    card = db.cards.find_one({"title": regex}) or db.cards.find_one({"name": regex}) or db.cards.find_one({"slug": regex})
+    # Prefer canonical / standard printing (Normal variant, earliest set)
+    card = (
+        db.cards.find_one({"title": regex, "variant_type": "Normal"})
+        or db.cards.find_one({"name": regex, "variant_type": "Normal"})
+        or db.cards.find_one({"title": regex, "variant_type": {"$in": ["Normal", None, ""]}})
+        or db.cards.find_one({"name": regex, "variant_type": {"$in": ["Normal", None, ""]}})
+        or db.cards.find_one({"title": regex})
+        or db.cards.find_one({"name": regex})
+        or db.cards.find_one({"slug": regex})
+    )
 
     if not card:
         return {"content": f"🔍 No Star Wars: Unlimited card found matching `{query}`."}
@@ -133,13 +142,69 @@ def handle_swu_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
         embed["fields"].append({"name": "Ability", "value": short_text, "inline": False})
 
     embed["fields"].append({"name": "Official Entry", "value": f"[View Full Details & Rulings]({url})", "inline": False})
-    
-    art = card.get("art_front") or card.get("front_image")
-    if art and art.startswith("http"):
-        embed["thumbnail"] = {"url": art}
 
-    embed["footer"] = {"text": "AvaScry Star Wars Unlimited • swu.avascry.com"}
-    return {"embeds": [embed]}
+    # Primary ("Oracle" / canonical print) card image
+    front_img = card.get("art_front") or card.get("front_image")
+    back_img = card.get("art_back") or card.get("back_image")
+
+    if front_img and front_img.startswith("http"):
+        embed["image"] = {"url": front_img}
+        embed["thumbnail"] = {"url": front_img}
+
+    # Search for alternate art / premium variant (Showcase, Hyperspace, etc.)
+    alt_matches = list(db.cards.find({"title": title, "subtitle": subtitle}))
+    variants = [v for v in alt_matches if v.get("slug") != slug]
+
+    def alt_priority(v):
+        vt = str(v.get("variant_type") or "").lower()
+        if "showcase" in vt:
+            return 1
+        if "hyperspace" in vt:
+            return 2
+        if "foil" in vt:
+            return 3
+        return 4
+
+    variants.sort(key=alt_priority)
+    alt_card = None
+    for v in variants:
+        v_art = v.get("art_front") or v.get("front_image")
+        if v_art and v_art.startswith("http") and v_art != front_img:
+            alt_card = v
+            break
+
+    embeds = [embed]
+    paired_img = None
+    paired_label = None
+
+    set_code = (card.get("expansion") or {}).get("code") or card.get("set_code") or ""
+    card_num = card.get("card_number") or card.get("number") or ""
+    standard_label = f"{set_code} #{card_num} (Standard)" if set_code and card_num else "Standard"
+
+    if alt_card:
+        paired_img = alt_card.get("art_front") or alt_card.get("front_image")
+        alt_vt = alt_card.get("variant_type") or "Alt Art"
+        alt_set = (alt_card.get("expansion") or {}).get("code") or alt_card.get("set_code") or ""
+        alt_num = alt_card.get("card_number") or alt_card.get("number") or ""
+        paired_label = f"{alt_set} #{alt_num} ({alt_vt})" if alt_set and alt_num else f"{alt_vt} Art"
+    elif card_type == "Leader" and back_img and back_img.startswith("http"):
+        paired_img = back_img
+        paired_label = "Deployed Leader Unit"
+
+    if paired_img:
+        embed["footer"] = {
+            "text": f"AvaScry SWU • Left: {standard_label} | Right: {paired_label}"
+        }
+        # Discord groups multiple embeds with the exact same URL into a 2-column image collage
+        paired_embed = {
+            "url": url,
+            "image": {"url": paired_img}
+        }
+        embeds.append(paired_embed)
+    else:
+        embed["footer"] = {"text": "AvaScry Star Wars Unlimited • swu.avascry.com"}
+
+    return {"embeds": embeds}
 
 def handle_mtg_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, Any]:
     """Handles /mtg or /card command looking up Magic: The Gathering cards."""
@@ -206,21 +271,32 @@ def handle_mtg_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
 
     embed["fields"].append({"name": "Database", "value": f"[View Rulings, Prints & Visual Graph]({url})", "inline": False})
 
-    # Images - display full card image prominently plus avatar thumbnail
-    img_uris = card.get("image_uris")
-    if not img_uris and card.get("card_faces"):
-        img_uris = card["card_faces"][0].get("image_uris") or {}
-    img_uris = img_uris or {}
-    
-    full_card_url = img_uris.get("normal") or img_uris.get("large")
-    art_crop_url = img_uris.get("art_crop")
-    
-    if full_card_url:
-        embed["image"] = {"url": full_card_url}
-    if art_crop_url:
-        embed["thumbnail"] = {"url": art_crop_url}
+    # Resolve image URLs for primary card (prefer local AvaScry hosted image)
+    from mtgabyss.shared.helpers import slugify
+    def _get_avascry_card_image(card_doc: dict) -> str:
+        c_slug = slugify(card_doc.get("name") or "")
+        set_slug = slugify(card_doc.get("set_name") or "")
+        artist_slug = slugify(card_doc.get("artist") or "")
+        c_num = str(card_doc.get("collector_number") or "").strip()
+        specific = f"{c_slug}-{set_slug}-{artist_slug}-{c_num}.jpg"
+        if os.path.exists(os.path.join("public", "images", "normal", specific)):
+            return f"https://avascry.com/images/normal/{specific}"
+        generic = f"{c_slug}.jpg"
+        if os.path.exists(os.path.join("public", "images", "normal", generic)):
+            return f"https://avascry.com/images/normal/{generic}"
+        uris = card_doc.get("image_uris") or {}
+        if not uris and card_doc.get("card_faces"):
+            uris = card_doc["card_faces"][0].get("image_uris") or {}
+        raw_url = uris.get("normal") or uris.get("large") or ""
+        return raw_url.split("?")[0] if raw_url else ""
 
-    # Fetch oldest printing for visual comparison (Alpha/Beta/first printing vs modern)
+    primary_card_url = _get_avascry_card_image(card)
+    if primary_card_url:
+        embed["image"] = {"url": primary_card_url}
+
+    # Fetch oldest printing:
+    # 1. Embed Thumbnail: Art crop of the iconic original vintage printing
+    # 2. Embed 2 (Collage): Full original card scan side-by-side with modern scan
     embeds = [embed]
     oracle_id = card.get("oracle_id")
     if oracle_id:
@@ -236,10 +312,16 @@ def handle_mtg_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
                 if not old_img_uris and oldest_card.get("card_faces"):
                     old_img_uris = oldest_card["card_faces"][0].get("image_uris") or {}
                 old_img_uris = old_img_uris or {}
-                old_card_url = old_img_uris.get("normal") or old_img_uris.get("large")
 
-                # If oldest printing has a valid image and is a different printing from current
-                if old_card_url and (oldest_card.get("id") != card.get("id") or full_card_url != old_card_url):
+                # Use original vintage art crop for the top-right thumbnail
+                old_art_crop = old_img_uris.get("art_crop")
+                if old_art_crop:
+                    embed["thumbnail"] = {"url": old_art_crop.split("?")[0]}
+
+                old_card_url = _get_avascry_card_image(oldest_card)
+
+                # If oldest printing has a valid image and is distinct from primary
+                if old_card_url and (oldest_card.get("id") != card.get("id") or primary_card_url != old_card_url):
                     old_set_name = oldest_card.get("set_name") or (oldest_card.get("set") or "").upper()
                     old_year = (oldest_card.get("released_at") or "")[:4]
                     year_label = f" ({old_year})" if old_year else ""
@@ -256,6 +338,12 @@ def handle_mtg_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
                     embeds.append(old_embed)
         except Exception:
             pass
+
+    # Fallback art crop if thumbnail was not set from oldest
+    if "thumbnail" not in embed:
+        cur_art_crop = (card.get("image_uris") or {}).get("art_crop")
+        if cur_art_crop:
+            embed["thumbnail"] = {"url": cur_art_crop.split("?")[0]}
 
     if "footer" not in embed:
         embed["footer"] = {"text": "AvaScry Magic Engine • avascry.com"}
@@ -372,37 +460,106 @@ def handle_minecraft_command(subcommand: str, options: Dict[str, Any]) -> Dict[s
     db = get_mongo_db()
     query = options.get("name", "").strip()
     if not query:
-        return {"content": "⚠️ Please provide an item or block name. Example: `/mc item redstone`"}
+        return {"content": "⚠️ Please provide an item, block, or mob name. Example: `/mc item redstone`"}
 
     regex = re.compile(re.escape(query), re.IGNORECASE)
     mc_db = db.client["avascry_minecraft"] if hasattr(db, "client") else db
-    item = (
+
+    # Search items, blocks, and entities in order
+    record = (
         mc_db.items.find_one({"facts.display_name": regex})
+        or mc_db.blocks.find_one({"facts.display_name": regex})
+        or mc_db.entities.find_one({"facts.display_name": regex})
         or mc_db.items.find_one({"slug": regex})
+        or mc_db.blocks.find_one({"slug": regex})
+        or mc_db.entities.find_one({"slug": regex})
         or mc_db.items.find_one({"entity_id": regex})
+        or mc_db.blocks.find_one({"entity_id": regex})
+        or mc_db.entities.find_one({"entity_id": regex})
     )
 
-    if not item:
-        return {"content": f"🔍 No Minecraft item found matching `{query}`."}
+    if not record:
+        return {"content": f"🔍 No Minecraft record found matching `{query}`."}
 
-    facts = item.get("facts") or {}
-    name = facts.get("display_name") or item.get("slug", "").replace("-", " ").title()
-    slug = item.get("slug")
-    stack_size = facts.get("stack_size", 64)
-    url = f"https://minecraft.avascry.com/item/{slug}"
+    facts = record.get("facts") or {}
+    derived = record.get("derived") or {}
+    slug = record.get("slug")
+    entity_id = record.get("entity_id", slug)
+    name = facts.get("display_name") or slug.replace("-", " ").title()
+
+    # Determine type and URL path
+    is_block = "hardness" in facts or "material" in facts or mc_db.blocks.find_one({"slug": slug}) is not None
+    is_entity = "max_health" in facts or mc_db.entities.find_one({"slug": slug}) is not None
+
+    if is_entity:
+        rec_type = "Mob / Entity"
+        url = f"https://minecraft.avascry.com/entity/{slug}"
+        color = 0xef4444 if "hostile" in str(facts.get("category", "")).lower() else 0x10b981
+    elif is_block:
+        rec_type = "Block"
+        url = f"https://minecraft.avascry.com/block/{slug}"
+        color = 0x0ea5e9
+    else:
+        rec_type = "Item & Tool"
+        url = f"https://minecraft.avascry.com/item/{slug}"
+        color = 0x10b981
+
+    # Format header description
+    desc_lines = [f"### {name}"]
+    desc_lines.append(f"**Namespaced ID:** `{entity_id}`")
+
+    fields = []
+
+    # Stack size / Durability / Hardness / Health
+    if facts.get("durability"):
+        fields.append({"name": "Durability", "value": f"**{facts['durability']}** uses", "inline": True})
+    elif facts.get("stack_size"):
+        fields.append({"name": "Stack Size", "value": f"Up to **{facts['stack_size']}**", "inline": True})
+
+    if facts.get("hardness") is not None:
+        blast = facts.get("resistance", "N/A")
+        fields.append({"name": "Hardness / Blast", "value": f"**{facts['hardness']}** / **{blast}**", "inline": True})
+
+    if facts.get("max_health"):
+        cat = facts.get("category", "Entity").title()
+        fields.append({"name": "Health / Type", "value": f"**{facts['max_health']} HP** • {cat}", "inline": True})
+
+    # Crafting & Usage Quick Summary
+    used_in = derived.get("used_in_recipes", [])
+    crafted_from = derived.get("crafted_from_recipes", [])
+    if crafted_from:
+        fields.append({"name": "Craftable", "value": f"**{len(crafted_from)}** crafting recipe(s)", "inline": True})
+    if used_in:
+        fields.append({"name": "Ingredient In", "value": f"**{len(used_in)}** recipe(s)", "inline": True})
+
+    fields.append({
+        "name": "Atlas & Crafting Tree",
+        "value": f"🔗 **[Open Interactive Spec & Palette Generator]({url})**",
+        "inline": False
+    })
 
     embed = {
-        "title": f"⛏️ {name}",
+        "title": f"⛏️ {name} ({rec_type})",
         "url": url,
-        "color": 0x10b981,
-        "description": f"**Item ID:** `{item.get('entity_id', slug)}` | **Max Stack:** `{stack_size}`",
-        "fields": [
-            {"name": "Item Specs", "value": f"[View Crafting Chain & Palette Matches]({url})", "inline": False}
-        ],
+        "color": color,
+        "description": "\n".join(desc_lines),
+        "fields": fields,
         "footer": {
-            "text": "AvaScry Minecraft Database • minecraft.avascry.com"
+            "text": "AvaScry Minecraft Atlas • Java 1.21.4 • minecraft.avascry.com"
         }
     }
+
+    # Resolve High-Resolution Asset Image
+    raw_img = facts.get("image_url")
+    if raw_img:
+        if raw_img.startswith("/"):
+            full_img_url = f"https://minecraft.avascry.com{raw_img}"
+        else:
+            full_img_url = raw_img
+        # Set both big hero image and thumbnail
+        embed["image"] = {"url": full_img_url}
+        embed["thumbnail"] = {"url": full_img_url}
+
     return {"embeds": [embed]}
 
 @discord_bot_router.post("/interactions")
