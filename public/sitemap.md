@@ -13,6 +13,8 @@
   - [Cards with Similar Art: Dark Atmospheric Fantasy](https://avascry.com/guides/cards-with-similar-art-dark-atmospheric-fantasy)
   - [Anatomy of a Search: 30 Companions to Rhystic Study](https://avascry.com/guides/anatomy-of-a-search-rhystic-study-synergies)
   - [The Evolution of Countermagic](https://avascry.com/guides/evolution-of-countermagic-mtg-history)
+  - [Visual Intelligence: Scott M. Fischer's Giada](https://avascry.com/guides/art-analysis-giada-font-of-hope)
+  - [Biophilic Geometry: Billy Christian's Cultivate](https://avascry.com/guides/art-analysis-cultivate-nature-embeddings)
 - [Algorithmic Methodology & Vision Intelligence (`/methodology`)](https://avascry.com/methodology)
 - [Comprehensive Rules & Gameplay Mechanics (`/rules.md`)](https://avascry.com/rules.md) • [JSON API](https://avascry.com/rules.json)
 - [Format Legalities & Banlists (`/legalities.md`)](https://avascry.com/legalities.md) • [JSON API](https://avascry.com/legalities.json)

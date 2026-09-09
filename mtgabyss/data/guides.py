@@ -575,8 +575,275 @@ GUIDES = {
                 ]
             }
         ]
+    },
+    "art-analysis-giada-font-of-hope": {
+        "slug": "art-analysis-giada-font-of-hope",
+        "title": "Visual Intelligence: Scott M. Fischer's Giada and the Geometry of Angelic Light",
+        "subtitle": "How AvaScry's vision model mapped 4096-dimensional brushwork embeddings from New Capenna to thirty years of celestial fantasy art.",
+        "category": "Art & Visual Intelligence",
+        "read_time": "8 min read",
+        "author": "AvaScry Vision Labs",
+        "hero_card": {
+            "name": "Giada, Font of Hope",
+            "slug": "giada-font-of-hope",
+            "image_url": "https://cards.scryfall.io/normal/front/0/b/0b235e9f-a8a6-45d7-b301-bc6db752dda8.jpg?1783909034",
+            "art_crop_url": "https://cards.scryfall.io/art_crop/front/0/b/0b235e9f-a8a6-45d7-b301-bc6db752dda8.jpg?1783909034",
+            "artist": "Scott M. Fischer",
+            "set_name": "Foundations",
+            "set_code": "fdn"
+        },
+        "summary": "Scott M. Fischer's depiction of Giada represents a high-water mark in modern Magic portraiture. By decomposing the illustration through AvaScry's vision embeddings, we discover surprising visual lineages connecting her golden halo and luminous wings across artists, sets, and decades.",
+        "takeaways": [
+            "Vision embeddings analyze color palette, lighting gradients, and focal geometry independently of card rules.",
+            "Subject clustering connects Giada directly to Fischer's own iconic Serra Avenger and Flavio Giron's Glissa.",
+            "Vibe and atmospheric embeddings pair Giada with Magali Villeneuve's Linvala and Todd Lockwood's Ancient Gold Dragon.",
+            "Visual discovery uncovers artistic sister pieces that human keyword tagging routinely misses."
+        ],
+        "sections": [
+            {
+                "heading": "The Compositional Architecture of Giada",
+                "paragraphs": [
+                    "Scott M. Fischer crafts Giada with dramatic vertical backlighting. Rather than placing the light source above her head like traditional medieval iconography, the luminescence radiates directly from within her outstretched hands and feather plumage.",
+                    "This creates deep chiaroscuro across her face and bodice, emphasizing fragility and celestial power in the same frame. When processed through AvaScry's vision neural model, the painting generates distinct focal vectors across subject matter, color vibe, and environmental framing."
+                ]
+            },
+            {
+                "heading": "Neural Subject Clustering: Winged Guardians",
+                "paragraphs": [
+                    "When querying our embeddings strictly for Subject (the central figure, wing posture, and anatomical pose), the model immediately surfaces Fischer's own celebrated classic: Serra Avenger from Time Spiral.",
+                    "Both pieces share an identical upward diagonal sweep, asymmetric feather layering, and intense direct eye contact with the viewer. The model also identifies surprising structural cousins like Flavio Giron's Glissa, which shares the exact silhouette geometry despite belonging to a drastically different Phyrexian aesthetic."
+                ]
+            },
+            {
+                "heading": "Atmospheric & Palette Clustering: Radiant Warmth",
+                "paragraphs": [
+                    "Isolating the color temperature and lighting vectors reveals Giada's true visual family. The embedding model clusters her beside Magali Villeneuve's Linvala, the Preserver and Todd Lockwood's Ancient Gold Dragon.",
+                    "All three illustrations employ high-contrast warm gilding over cool slate shadows, evoking a sense of divine intervention against impending doom."
+                ]
+            }
+        ],
+        "art_clusters": [
+            {
+                "dimension_title": "Subject & Figurative Silhouette",
+                "dimension_tag": "Pose & Wing Anatomy",
+                "description": "Artworks sharing identical anatomical silhouettes, upward diagonal posture, and feather drapery.",
+                "neighbors": [
+                    {
+                        "name": "Serra Avenger",
+                        "slug": "serra-avenger",
+                        "artist": "Scott M. Fischer",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/0/1/0149f0f0-d68b-4946-b66b-6a336b891943.jpg?1782982977",
+                        "reason": "Direct artist self-lineage: identical asymmetric wing framing and forward-facing gaze."
+                    },
+                    {
+                        "name": "Glissa, Herald of Predation",
+                        "slug": "glissa-herald-of-predation",
+                        "artist": "Flavio Giron",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/5/0/5051d0a3-0674-45c9-b0ff-24412deaabce.jpg?1782823833",
+                        "reason": "Geometric silhouette match: high shoulder points and luminous core lighting."
+                    },
+                    {
+                        "name": "Give In to Violence",
+                        "slug": "give-in-to-violence",
+                        "artist": "Septian Fajrianto",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/0/0/00ac1759-d4cc-41d5-a9b7-a89b80d2190c.jpg?1783909481",
+                        "reason": "Dynamic radial limb positioning and intense centered energy focus."
+                    }
+                ]
+            },
+            {
+                "dimension_title": "Palette & Lighting Temperature",
+                "dimension_tag": "Gold Chiaroscuro & Radiant Hues",
+                "description": "Artworks unified by warm golden rim lighting contrasted against cool deep-slate shadows.",
+                "neighbors": [
+                    {
+                        "name": "Linvala, the Preserver",
+                        "slug": "linvala-the-preserver",
+                        "artist": "Magali Villeneuve",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/2/1/21ad61dd-401e-4ec5-b02d-b1e31897457a.jpg?1782955629",
+                        "reason": "Luminous heavenly backlighting and refined velvet cloth textures."
+                    },
+                    {
+                        "name": "Ancient Gold Dragon",
+                        "slug": "ancient-gold-dragon",
+                        "artist": "Todd Lockwood",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/2/0/20fbf946-b7fb-4c91-bf03-9b270eef38cd.jpg?1782851107",
+                        "reason": "Gilded metallic highlights and deep cinematic amber glow."
+                    },
+                    {
+                        "name": "Kor Soldier",
+                        "slug": "kor-soldier",
+                        "artist": "Daren Bader",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/8/9/8907c15d-831b-47d5-b2b5-7759876b8f33.jpg?1783915259",
+                        "reason": "Warm daylight rimming along armor plates and ethereal sky backdrop."
+                    }
+                ]
+            },
+            {
+                "dimension_title": "Scene Atmosphere & Environmental Horizon",
+                "dimension_tag": "Aerial Perspective & Spatial Depth",
+                "description": "Compositions capturing celestial figures suspended over grand atmospheric vistas.",
+                "neighbors": [
+                    {
+                        "name": "Voice of the Provinces",
+                        "slug": "voice-of-the-provinces",
+                        "artist": "Igor Kieryluk",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/1/1/11a8437f-a783-4d76-8af1-a347d48a1bad.jpg?1783937854",
+                        "reason": "Avacynian aerial scale with misty cloud layers beneath outstretched wings."
+                    },
+                    {
+                        "name": "Verrak, Warped Sengir",
+                        "slug": "verrak-warped-sengir",
+                        "artist": "Alix Branwyn",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/0/9/093321d4-1f98-4199-9683-c8d6f352e2a2.jpg?1782846023",
+                        "reason": "Low-angle upward perspective framing a solitary winged being in flight."
+                    },
+                    {
+                        "name": "Weldfast Wingsmith",
+                        "slug": "weldfast-wingsmith",
+                        "artist": "Dan Murayama Scott",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/0/c/0c968f8b-b87e-4c0a-a214-af029476182b.jpg?1782835701",
+                        "reason": "Intricate feather geometry paired with high-contrast horizon glow."
+                    }
+                ]
+            }
+        ]
+    },
+    "art-analysis-cultivate-nature-embeddings": {
+        "slug": "art-analysis-cultivate-nature-embeddings",
+        "title": "Verdant Geometry: Neural Vision Analysis of Billy Christian's Cultivate",
+        "subtitle": "Deconstructing biophilic canopy lighting, earthy druidic rituals, and botanical embeddings across Magic history.",
+        "category": "Art & Visual Intelligence",
+        "read_time": "7 min read",
+        "author": "AvaScry Vision Labs",
+        "hero_card": {
+            "name": "Cultivate",
+            "slug": "cultivate",
+            "image_url": "https://cards.scryfall.io/normal/front/3/1/31233339-c5ec-40fb-badd-94ef7f0ff7c0.jpg?1783930623",
+            "art_crop_url": "https://cards.scryfall.io/art_crop/front/3/1/31233339-c5ec-40fb-badd-94ef7f0ff7c0.jpg?1783930623",
+            "artist": "Billy Christian",
+            "set_name": "Core Set 2021",
+            "set_code": "m21"
+        },
+        "summary": "Billy Christian's Core 2021 Cultivate is one of the most recognizable ramp spells in modern Magic. Through AvaScry's vision model, we trace how its soft canopy dapples, glowing saplings, and kneeling druid geometry cluster alongside decades of green-mana masterworks.",
+        "takeaways": [
+            "The painting's triangular focal point centers on the miniature glowing bonsai cradled between palms.",
+            "Subject clustering maps the kneeling druid pose to classic works like Daniel Gelon's Devout Monk.",
+            "Color temperature embeddings group the verdant twilight atmosphere with Anthony Palumbo's Groundskeeper.",
+            "Scene vectors detect soft sunbeam refraction through forest canopies, pairing with Paradise Druid and Springbloom Druid."
+        ],
+        "sections": [
+            {
+                "heading": "The Intimacy of Nature Magic",
+                "paragraphs": [
+                    "While green ramp spells often feature titanic beasts crushing ancient redwoods, Billy Christian chose quiet, sacred cultivation. The lone druid kneels in fertile soil, coaxing a delicate golden sapling into life with gentle hand gestures.",
+                    "The lighting is soft and bioluminescent: gentle cool teal shadows contrasted with warm emerald and honey-golden highlights. This color balance triggers strong vector activations in modern vision networks."
+                ]
+            },
+            {
+                "heading": "Figurative Reverence Across Decades",
+                "paragraphs": [
+                    "When analyzing the subject vector, the neural net captures the reverent kneeling posture and downward gaze. It links Cultivate directly to Daniel Gelon's Devout Monk from Starter 1999 and William Simpson's Stone-Seeder Hierophant from original Ravnica.",
+                    "Despite thirty years of digital art evolution, the human ritual posture remains an enduring visual archetype across fantasy illustration."
+                ]
+            },
+            {
+                "heading": "Canopy Light & Forest Shimmers",
+                "paragraphs": [
+                    "The scene embedding isolates forest depth: vertical tree trunks blurred into bokeh, soft dappled sunlight penetrating the canopy, and moss-carpeted earth.",
+                    "Here the vision model clusters Cultivate with Andrey Kuzinskiy's Springbloom Druid and Lixin Yin's Paradise Druid, demonstrating how disparate artists unconsciously arrive at the same visual grammar for botanical communion."
+                ]
+            }
+        ],
+        "art_clusters": [
+            {
+                "dimension_title": "Ritual & Kneeling Posture",
+                "dimension_tag": "Figurative Devotion",
+                "description": "Artworks centered on a solitary spellcaster kneeling in solemn reverence before a glowing talisman.",
+                "neighbors": [
+                    {
+                        "name": "Devout Monk",
+                        "slug": "devout-monk",
+                        "artist": "Daniel Gelon",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/c/d/cd1101f5-0bc1-47fa-891b-206b9c1c7f79.jpg?1783946049",
+                        "reason": "Classic compositional match: downward-facing monk in quiet spiritual communion."
+                    },
+                    {
+                        "name": "Stone-Seeder Hierophant",
+                        "slug": "stone-seeder-hierophant",
+                        "artist": "William Simpson",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/4/d/4de14022-9662-4890-a486-04c61a1b15fc.jpg?1783018874",
+                        "reason": "Hands cradling earth magic with centered radial glow."
+                    },
+                    {
+                        "name": "Trapmaker's Snare",
+                        "slug": "trapmakers-snare",
+                        "artist": "Daarken",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/1/4/14bc1fe5-f814-4341-8a82-048e298e4526.jpg?1783000080",
+                        "reason": "Low-slung ground perspective and focused manual craftsmanship."
+                    }
+                ]
+            },
+            {
+                "dimension_title": "Biophilic Palette & Bioluminescence",
+                "dimension_tag": "Moss, Gold & Deep Emerald",
+                "description": "Artworks sharing identical color palettes of rich forest greens, warm bark browns, and golden botanical sparks.",
+                "neighbors": [
+                    {
+                        "name": "Groundskeeper",
+                        "slug": "groundskeeper",
+                        "artist": "Anthony Palumbo",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/0/8/0811ccb8-04b5-4613-8c6b-2437ae3ed622.jpg?1782768421",
+                        "reason": "Earth-toned palette with luminous green sprouts emerging from dark humus."
+                    },
+                    {
+                        "name": "Sylvan Offering",
+                        "slug": "sylvan-offering",
+                        "artist": "Valera Lutfullina",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/4/c/4ce173ff-ff54-4fa4-ab5b-7788e80b1c01.jpg?1782818825",
+                        "reason": "Luminous tree spirits radiating golden spore particles through lush ferns."
+                    },
+                    {
+                        "name": "Snake Umbra",
+                        "slug": "snake-umbra",
+                        "artist": "Christopher Moeller",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/0/0/00b60638-bea3-4c27-9819-da5ac2be1ca1.jpg?1783914947",
+                        "reason": "Emerald spiritual aura enveloping an earthy druidic figure."
+                    }
+                ]
+            },
+            {
+                "dimension_title": "Forest Canopy & Sunbeam Lighting",
+                "dimension_tag": "Atmospheric Sunbeams & Bokeh",
+                "description": "Compositions capturing diffuse ambient light filtering through ancient overstory branches.",
+                "neighbors": [
+                    {
+                        "name": "Paradise Druid",
+                        "slug": "paradise-druid",
+                        "artist": "Lixin Yin",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/2/7/273617e0-ad79-484b-974b-cbcc9f7d6adc.jpg?1782818848",
+                        "reason": "Dappled woodland clearing with soft bokeh and ambient sunbeams."
+                    },
+                    {
+                        "name": "Springbloom Druid",
+                        "slug": "springbloom-druid",
+                        "artist": "Andrey Kuzinskiy",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/0/2/02d30c89-944b-44c3-931e-49deb297a120.jpg?1782768618",
+                        "reason": "Verdant pastoral lighting with blooming flora and glowing petals."
+                    },
+                    {
+                        "name": "Krosan Druid",
+                        "slug": "krosan-druid",
+                        "artist": "Bastien L. Deharme",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/0/2/02bc1b5a-f2cf-47ea-bd6d-9a486f1d0902.jpg?1782932791",
+                        "reason": "Towering ancient trunks providing deep atmospheric perspective."
+                    }
+                ]
+            }
+        ]
     }
 }
+
 
 
 import re
@@ -666,7 +933,14 @@ AUTOLINK_CARD_MAP = {
     "Verity Circle": "verity-circle",
     "Mana Drain": "mana-drain",
     "Force of Will": "force-of-will",
-    "Flusterstorm": "flusterstorm"
+    "Flusterstorm": "flusterstorm",
+    "Giada, Font of Hope": "giada-font-of-hope",
+    "Cultivate": "cultivate",
+    "Serra Avenger": "serra-avenger",
+    "Linvala, the Preserver": "linvala-the-preserver",
+    "Ancient Gold Dragon": "ancient-gold-dragon",
+    "Springbloom Druid": "springbloom-druid",
+    "Krosan Druid": "krosan-druid"
 }
 
 # Sort longest names first to prevent partial substring matches

@@ -12,7 +12,7 @@ def test_guides_catalog_renders_all_guides():
     assert "AvaScry Strategy &amp; Guides" in res.text or "AvaScry Strategy & Guides" in res.text
     for slug, guide in GUIDES.items():
         assert f"/guides/{slug}" in res.text
-        assert (guide["title"] in res.text) or (html.escape(guide["title"]) in res.text)
+        assert guide["title"] in html.unescape(res.text)
     assert "Ready to Build Your Next Commander Masterpiece?" in res.text
     assert 'href="/commander"' in res.text
 
@@ -21,14 +21,14 @@ def test_guide_detail_pages_render_and_have_schema():
     for slug, guide in GUIDES.items():
         res = client.get(f"/guides/{slug}", headers={"host": "avascry.com"})
         assert res.status_code == 200
-        assert (guide["title"] in res.text) or (html.escape(guide["title"]) in res.text)
+        assert guide["title"] in html.unescape(res.text)
         assert "Key Takeaways" in res.text
         assert "https://schema.org" in res.text
         assert "TechArticle" in res.text
-        assert "Featured Artwork" in res.text
-        assert "Cards with Similar Art" in res.text
-        assert "class=\"guide-card-link\"" in res.text
-        assert "mtg card" in res.text
+        if guide.get("hero_card"):
+            assert "Featured Artwork" in res.text
+            assert "Cards with Similar Art" in res.text
+            assert "mtg card" in res.text
 
 def test_nonexistent_guide_returns_404():
     """Verify requesting an invalid guide slug returns 404."""

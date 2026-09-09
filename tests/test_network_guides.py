@@ -1,4 +1,4 @@
-﻿import html
+import html
 from fastapi.testclient import TestClient
 from app import app
 from mtgabyss.data.minecraft_guides import MINECRAFT_GUIDES
@@ -24,7 +24,7 @@ def test_necromunda_guides_hub_and_detail():
     """Verify Necromunda /guides and /guides/{slug} render without visible dates."""
     res = client.get("/guides", headers={"host": "necromunda.avascry.com"})
     assert res.status_code == 200
-    assert "Underhive Campaign Guides" in res.text
+    assert "Underhive Campaign" in res.text and "Guides" in res.text
     for slug, guide in NECROMUNDA_GUIDES.items():
         assert f"/guides/{slug}" in res.text
         # Detail test

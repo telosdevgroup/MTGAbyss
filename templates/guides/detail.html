@@ -20,8 +20,8 @@
   "@type": "TechArticle",
   "headline": {{ guide.title | tojson }},
   "description": {{ guide.summary | tojson }},
-  "datePublished": {{ guide.published_date | tojson }},
-  "dateModified": {{ guide.updated_date | tojson }},
+  "datePublished": {{ (guide.published_date or "2026-09-08") | tojson }},
+  "dateModified": {{ (guide.updated_date or "2026-09-08") | tojson }},
   "author": {
     "@type": "Organization",
     "name": "Telos Development Group LLC",
@@ -238,6 +238,63 @@
         Cards with Similar Art &rarr;
       </a>
     </div>
+  </section>
+  {% endif %}
+
+  <!-- Neural Visual Embedding Gallery (For Art Analyses) -->
+  {% if guide.art_clusters %}
+  <section style="margin: 4.5rem 0 2rem;">
+    <div style="text-align: center; max-width: 700px; margin: 0 auto 2.5rem auto;">
+      <div style="display: inline-block; font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.2rem 0.75rem; border-radius: var(--radius-pill); margin-bottom: 0.75rem;">
+        Vision Model Cluster Gallery
+      </div>
+      <h2 style="font-size: 1.85rem; font-weight: 800; color: var(--text); margin: 0 0 0.5rem 0; line-height: 1.25;">
+        Neural Vision Neighbors Across 3 Dimensions
+      </h2>
+      <p style="font-size: 0.95rem; color: var(--muted); margin: 0; line-height: 1.6;">
+        AvaScry's vision model analyzes brushwork, color temperature, and figurative framing. Here are the closest visual relatives discovered across Magic's 30-year history.
+      </p>
+    </div>
+
+    {% for cluster in guide.art_clusters %}
+    <div style="background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.75rem; margin-bottom: 2.25rem; box-shadow: 0 10px 28px rgba(0,0,0,0.2);">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text); margin: 0;">
+          {{ cluster.dimension_title }}
+        </h3>
+        <span style="font-size: 0.76rem; font-weight: 700; color: var(--accent); background: rgba(56, 189, 248, 0.1); padding: 0.15rem 0.5rem; border-radius: 4px;">
+          {{ cluster.dimension_tag }}
+        </span>
+      </div>
+      <p style="font-size: 0.9rem; color: var(--muted); margin: 0 0 1.5rem 0; line-height: 1.55;">
+        {{ cluster.description }}
+      </p>
+
+      <!-- Visual Neighbor Cards Grid -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem;">
+        {% for card in cluster.neighbors %}
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.15s ease, border-color 0.15s ease;">
+          <div style="position: relative; width: 100%; aspect-ratio: 16/10; overflow: hidden; background: #000;">
+            <img src="{{ card.art_url }}" alt="{{ card.name }} artwork by {{ card.artist }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.25s ease;" onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1.0)';" onerror="this.onerror=null; this.src='https://cards.scryfall.io/art_crop/front/0/4/04002706-2236-4b79-bdea-4f263e43cb9c.jpg?1783911518';">
+          </div>
+          <div style="padding: 0.85rem 1rem; display: flex; flex-direction: column; gap: 0.35rem; flex: 1;">
+            <a href="/card/{{ card.slug }}" style="font-size: 0.92rem; font-weight: 700; color: var(--text); text-decoration: none; display: block;" onmouseover="this.style.color='var(--accent)';" onmouseout="this.style.color='var(--text)';">
+              {{ card.name }}
+            </a>
+            <div style="font-size: 0.78rem; color: var(--muted);">
+              by <a href="/artist/{{ card.artist|urlencode }}" style="color: #cbd5e1; text-decoration: underline;" onmouseover="this.style.color='var(--accent)';" onmouseout="this.style.color='#cbd5e1';">{{ card.artist }}</a>
+            </div>
+            {% if card.reason %}
+            <div style="font-size: 0.76rem; color: var(--muted); line-height: 1.4; margin-top: 0.35rem; padding-top: 0.35rem; border-top: 1px solid rgba(255,255,255,0.06);">
+              {{ card.reason }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
   </section>
   {% endif %}
 
