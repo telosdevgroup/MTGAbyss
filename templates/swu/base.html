@@ -349,6 +349,10 @@
     {% block content %}{% endblock %}
   </main>
 
+  {% block bottom_cta %}
+    {% include "partials/bot_bottom_cta.html" %}
+  {% endblock %}
+
   <footer>
     <div class="footer-inner">
       <div style="display: flex; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 2rem;">

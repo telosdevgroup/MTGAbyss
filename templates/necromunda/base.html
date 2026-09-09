@@ -737,28 +737,7 @@
     {% block content %}{% endblock %}
 
     {% block bottom_cta %}
-    <!-- Global Open API & Machine Corpus CTA Banner -->
-    <section class="api-cta-section" aria-label="Developer API Engine">
-      <div class="api-cta-card">
-        <div class="brand-tag" style="display: inline-block; margin-bottom: 0.35rem;">⚡ OPEN UNDERHIVE DATA ENGINE</div>
-        <h2 class="api-cta-title">
-          Build Tools With The <span class="accent">JSON &amp; Markdown API</span>
-        </h2>
-        <p class="api-cta-desc">
-          Zero paywalls. Realtime Underhive database endpoints designed for community Discord bots, roster builders, injury calculators, and AI agents.
-        </p>
-
-        <div class="api-cta-curl" aria-label="Terminal cURL snippet">
-          <code>curl -s https://necromunda.avascry.com/weapon/heavy-bolter.json</code>
-        </div>
-
-        <div class="api-cta-buttons">
-          <a href="{{ base_path }}/developers" class="badge-mono badge-accent" style="padding: 6px 16px; font-size: 0.84rem;">
-            🔑 Developer Hub &amp; API Key Signup
-          </a>
-        </div>
-      </div>
-    </section>
+      {% include "partials/bot_bottom_cta.html" %}
     {% endblock %}
   </main>
 
