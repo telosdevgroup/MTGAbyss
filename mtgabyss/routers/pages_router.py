@@ -182,6 +182,21 @@ async def terms_of_service(request: Request):
         context={"current_lang": lang}
     )
 
+@pages_router.get("/bot", response_class=HTMLResponse)
+@pages_router.head("/bot")
+async def discord_bot_page(request: Request):
+    lang = i18n.get_locale(request)
+    invite_url = "https://discord.com/api/oauth2/authorize?client_id=1547376653129224282&scope=applications.commands"
+    return templates.TemplateResponse(
+        request=request,
+        name="bot.html",
+        context={
+            "current_lang": lang,
+            "active_nav": "bot",
+            "invite_url": invite_url
+        }
+    )
+
 @pages_router.get("/developers", response_class=HTMLResponse)
 @pages_router.head("/developers")
 async def developers_hub(request: Request):
