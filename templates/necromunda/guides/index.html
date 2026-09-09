@@ -128,7 +128,6 @@
           <span style="background: rgba(255, 87, 34, 0.15); border: 1px solid rgba(255, 87, 34, 0.4); color: var(--accent); font-weight: 700; font-size: 0.74rem; padding: 0.2rem 0.65rem; border-radius: 3px; font-family: 'Chakra Petch', sans-serif; text-transform: uppercase; letter-spacing: 0.04em;">
             {{ g.category }}
           </span>
-          <span style="color: var(--muted); font-size: 0.78rem; font-weight: 600; font-family: 'JetBrains Mono', monospace;">⏱️ {{ g.read_time }}</span>
         </div>
 
         <h2 style="font-size: 1.55rem; font-weight: 800; margin: 0 0 0.65rem 0; line-height: 1.3; font-family: 'Chakra Petch', sans-serif;">
@@ -148,10 +147,7 @@
         </p>
       </div>
 
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: auto;">
-        <div style="font-size: 0.82rem; color: var(--muted); font-weight: 600;">
-          By {{ g.author }}
-        </div>
+      <div style="display: flex; justify-content: flex-end; align-items: center; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: auto;">
         <a href="{{ base_path }}/guides/{{ g.slug }}" style="background: var(--accent); color: #fff; padding: 0.55rem 1.25rem; font-size: 0.86rem; font-weight: 700; border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; font-family: 'Chakra Petch', sans-serif; text-transform: uppercase; letter-spacing: 0.04em;">
           Read Playbook &rarr;
         </a>
