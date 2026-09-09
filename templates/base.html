@@ -122,6 +122,15 @@
       outline: 2px solid #fff;
     }
 
+    /* Header & Navigation Stacking */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000 !important;
+      overflow: visible !important;
+      max-height: none !important;
+    }
+
     /* Mobile Responsive Header Styles */
     .mobile-nav-toggle {
       display: none;
@@ -189,12 +198,12 @@
       border: 1px solid var(--border);
       border-top: 2px solid var(--accent);
       border-radius: var(--radius-sm);
-      box-shadow: 0 14px 34px rgba(0,0,0,0.22);
+      box-shadow: 0 14px 34px rgba(0,0,0,0.28);
       padding: 0.45rem;
       display: none;
       flex-direction: column;
       gap: 0.2rem;
-      z-index: 200;
+      z-index: 1050;
       margin-top: 0.5rem;
     }
     /* Invisible hover bridge connecting trigger to dropdown */
