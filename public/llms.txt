@@ -19,6 +19,7 @@ Machine-readable indexes and authoritative references for autonomous ingestion:
   - [Modern Horizons 3 Set Primer](https://avascry.com/guides/modern-horizons-3-primer)
   - [Commander Mana Base Optimization](https://avascry.com/guides/commander-mana-base-guide)
   - [Beyond Syntax Matching: 4096-Dim Embeddings](https://avascry.com/guides/neural-similarity-engine)
+  - [Titania: Elvish Art & Botanical Surrealism](https://avascry.com/guides/titania-elvish-art-botanical-surrealism)
   - [Commander Interaction Packages by Color](https://avascry.com/guides/interaction-packages-by-color)
   - [6 Lesser-Played Commanders & Secret Tech](https://avascry.com/guides/6-hidden-commanders-neural-embeddings)
   - [Cards with Similar Art: Dark Atmospheric Fantasy](https://avascry.com/guides/cards-with-similar-art-dark-atmospheric-fantasy)

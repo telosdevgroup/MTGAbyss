@@ -138,7 +138,115 @@
     .nav-links-group {
       display: flex;
       align-items: center;
-      gap: 1.15rem;
+      gap: 1rem;
+    }
+
+    /* Dropdown Menus */
+    .nav-dropdown {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .dropdown-toggle {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.35rem 0.25rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: color 0.15s ease;
+      line-height: 1.2;
+    }
+    .dropdown-toggle:hover,
+    .nav-dropdown:hover .dropdown-toggle,
+    .nav-dropdown.is-open .dropdown-toggle,
+    .dropdown-toggle.active {
+      color: var(--accent);
+    }
+    .dropdown-caret {
+      width: 9px;
+      height: 6px;
+      transition: transform 0.2s ease;
+      opacity: 0.7;
+    }
+    .nav-dropdown:hover .dropdown-caret,
+    .nav-dropdown.is-open .dropdown-caret {
+      transform: rotate(180deg);
+      stroke: var(--accent);
+      opacity: 1;
+    }
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 270px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--accent);
+      border-radius: var(--radius-sm);
+      box-shadow: 0 14px 34px rgba(0,0,0,0.22);
+      padding: 0.45rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.2rem;
+      z-index: 200;
+      margin-top: 0.5rem;
+    }
+    /* Invisible hover bridge connecting trigger to dropdown */
+    .dropdown-menu::before {
+      content: "";
+      position: absolute;
+      top: -0.65rem;
+      left: 0;
+      right: 0;
+      height: 0.65rem;
+      background: transparent;
+    }
+    .nav-dropdown:hover .dropdown-menu,
+    .nav-dropdown.is-open .dropdown-menu {
+      display: flex;
+    }
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: var(--radius-xs);
+      text-decoration: none !important;
+      transition: background 0.15s ease, border-color 0.15s ease;
+      border: 1px solid transparent;
+    }
+    .dropdown-item:hover {
+      background: var(--surface-hover);
+      border-color: rgba(56, 189, 248, 0.25);
+    }
+    .dropdown-item-icon {
+      font-size: 1.15rem;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .dropdown-item-title {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      line-height: 1.25;
+    }
+    .dropdown-item:hover .dropdown-item-title {
+      color: var(--accent);
+    }
+    .dropdown-item-desc {
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.35;
+      margin-top: 2px;
     }
 
     .nav-divider {
@@ -202,6 +310,29 @@
         padding: 0.35rem 0.5rem;
         border-radius: 4px;
       }
+      .nav-dropdown {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .dropdown-toggle {
+        width: 100%;
+        justify-content: space-between;
+        padding: 0.45rem 0.5rem;
+        font-size: 1rem;
+      }
+      .dropdown-menu {
+        position: static;
+        width: 100%;
+        margin-top: 0.35rem;
+        box-shadow: none;
+        background: var(--surface-raised, var(--surface));
+        border: 1px solid var(--border);
+        border-left: 2px solid var(--accent);
+      }
+      .nav-dropdown.is-open .dropdown-menu {
+        display: flex;
+      }
       .nav-divider {
         display: block !important;
         width: 100% !important;
@@ -261,13 +392,86 @@
 
       <nav id="main-navigation" itemscope itemtype="https://schema.org/SiteNavigationElement" aria-label="Main Navigation">
         
-        <!-- Group 1: AvaScry Core Navigation Links -->
+        <!-- Group 1: Navigation Links with Sleek Dropdowns -->
         <div class="nav-links-group">
-          <a itemprop="url" href="/live-gallery" class="{% if active_nav == 'live-gallery' %}active{% endif %}"><span itemprop="name">{{ t('nav_live_gallery', current_lang or 'en') }}</span></a>
-          <a itemprop="url" href="/commander" class="{% if active_nav == 'commander' %}active{% endif %}" title="SmartDeck — Intelligent Deck Completer"><span itemprop="name">{{ t('nav_deck_builder', current_lang or 'en') }}</span></a>
-          <a itemprop="url" href="/guides" class="{% if active_nav == 'guides' %}active{% endif %}" title="Strategy, Deckbuilding &amp; Set Primers"><span itemprop="name">Guides</span></a>
-          <a itemprop="url" href="/developers" class="{% if active_nav == 'developers' %}active{% endif %}" title="Developers &amp; AI Integration Hub"><span itemprop="name">{% set api_label = t('nav_api', current_lang or 'en') %}{{ 'API &amp; Docs' if api_label == 'nav_api' else api_label }}</span></a>
-          <a itemprop="url" href="/random" title="Jump to a random card"><span itemprop="name">{{ t('nav_random', current_lang or 'en') }}</span></a>
+          <!-- Explore Dropdown -->
+          <div class="nav-dropdown" id="exploreDropdown">
+            <button type="button" class="dropdown-toggle {% if active_nav in ['live-gallery', 'sets', 'artists'] %}active{% endif %}" aria-expanded="false" aria-haspopup="true">
+              <span>Explore</span>
+              <svg class="dropdown-caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M1 1l4 4 4-4"/>
+              </svg>
+            </button>
+            <div class="dropdown-menu" role="menu">
+              <a href="/live-gallery" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">✨</span>
+                <div>
+                  <div class="dropdown-item-title">Live Gallery</div>
+                  <div class="dropdown-item-desc">Real-time artwork stream &amp; visual aesthetics</div>
+                </div>
+              </a>
+              <a href="/sets" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">📦</span>
+                <div>
+                  <div class="dropdown-item-title">Expansion Sets</div>
+                  <div class="dropdown-item-desc">1,048 MTG sets, releases &amp; set manifests</div>
+                </div>
+              </a>
+              <a href="/artists" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">🎨</span>
+                <div>
+                  <div class="dropdown-item-title">Artists Directory</div>
+                  <div class="dropdown-item-desc">2,550 historical Magic illustrators &amp; portfolios</div>
+                </div>
+              </a>
+              <a href="/random" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">🎲</span>
+                <div>
+                  <div class="dropdown-item-title">Random Card</div>
+                  <div class="dropdown-item-desc">Instant deep dive into an unpredictable card</div>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          <!-- SmartDeck Builder Link -->
+          <a itemprop="url" href="/commander" class="{% if active_nav == 'commander' %}active{% endif %}" title="SmartDeck — Intelligent Deck Completer"><span itemprop="name">Builder</span></a>
+
+          <!-- Guides Link -->
+          <a itemprop="url" href="/guides" class="{% if active_nav == 'guides' %}active{% endif %}" title="Strategy, Deckbuilding &amp; Visual Primers"><span itemprop="name">Guides</span></a>
+
+          <!-- Developers Dropdown -->
+          <div class="nav-dropdown" id="developersDropdown">
+            <button type="button" class="dropdown-toggle {% if active_nav == 'developers' %}active{% endif %}" aria-expanded="false" aria-haspopup="true">
+              <span>Developers</span>
+              <svg class="dropdown-caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M1 1l4 4 4-4"/>
+              </svg>
+            </button>
+            <div class="dropdown-menu" role="menu">
+              <a href="/developers#rest-api" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">⚡</span>
+                <div>
+                  <div class="dropdown-item-title">REST API</div>
+                  <div class="dropdown-item-desc">High-speed JSON endpoints, schemas &amp; vectors</div>
+                </div>
+              </a>
+              <a href="/developers#ai-markdown" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">📜</span>
+                <div>
+                  <div class="dropdown-item-title">Documentation</div>
+                  <div class="dropdown-item-desc">LLM Markdown surfaces, llms.txt &amp; integration</div>
+                </div>
+              </a>
+              <a href="/developers#discord" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">💬</span>
+                <div>
+                  <div class="dropdown-item-title">Discord Integration</div>
+                  <div class="dropdown-item-desc">Discord bot slash commands, feeds &amp; deck sharing</div>
+                </div>
+              </a>
+            </div>
+          </div>
         </div>
 
         <span class="nav-divider" aria-hidden="true"></span>
@@ -451,6 +655,36 @@
           }
         });
       }
+
+      // Dropdown interaction logic (Click toggle + outside click dismiss)
+      var dropdowns = document.querySelectorAll('.nav-dropdown');
+      dropdowns.forEach(function(dd) {
+        var btn = dd.querySelector('.dropdown-toggle');
+        if (btn) {
+          btn.addEventListener('click', function(e) {
+            var isOpen = dd.classList.contains('is-open');
+            dropdowns.forEach(function(other) {
+              if (other !== dd) {
+                other.classList.remove('is-open');
+                var otherBtn = other.querySelector('.dropdown-toggle');
+                if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+              }
+            });
+            dd.classList.toggle('is-open', !isOpen);
+            btn.setAttribute('aria-expanded', !isOpen ? 'true' : 'false');
+          });
+        }
+      });
+
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.nav-dropdown')) {
+          dropdowns.forEach(function(dd) {
+            dd.classList.remove('is-open');
+            var btn = dd.querySelector('.dropdown-toggle');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+          });
+        }
+      });
     })();
   </script>
 
