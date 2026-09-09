@@ -264,26 +264,67 @@ def handle_mtg_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
 
 def handle_dominion_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, Any]:
     """Handles /dom or /dominion command looking up Dominion kingdom cards."""
+    from mtgabyss.dominion_router import format_dominion_rules_plain, format_expansion_name
     client = get_mongo_db().client
     dom_db = client["avascry_dominion"]
     query = options.get("name", "").strip()
     if not query:
         return {"content": "⚠️ Please provide a card name. Example: `/dom card Village`"}
 
-    regex = re.compile(re.escape(query), re.IGNORECASE)
-    card = dom_db.cards.find_one({"name": regex}) or dom_db.cards.find_one({"slug": regex})
+    all_cards = list(dom_db.cards.find({}, {"_id": 0}))
+    q_lower = query.lower()
+
+    # Exact match first, then prefix match, then substring match
+    card = next((c for c in all_cards if c.get("name", "").lower() == q_lower or c.get("slug", "").lower() == q_lower), None)
+    if not card:
+        card = next((c for c in all_cards if c.get("name", "").lower().startswith(q_lower) or c.get("slug", "").lower().startswith(q_lower)), None)
+    if not card:
+        card = next((c for c in all_cards if q_lower in c.get("name", "").lower() or q_lower in c.get("slug", "").lower()), None)
 
     if not card:
         return {"content": f"🔍 No Dominion card found matching `{query}`."}
 
     name = card.get("name", "Unknown Card")
     slug = card.get("slug", "")
-    types = card.get("types") or []
-    types_str = " - ".join(types) if isinstance(types, list) else str(types)
-    cost = card.get("cost_str") or card.get("cost", "")
-    expansion = card.get("expansion") or card.get("set", "Base")
-    text = (card.get("text") or card.get("description") or "").strip()
     url = f"https://dominion.avascry.com/card/{slug}"
+
+    # Resolve richest card version (preferring 2nd edition or standard expansion versions)
+    versions = list(dom_db.card_versions.find({"card_id": f"card:{slug}"}))
+    def score_version(v: dict) -> int:
+        ed = str(v.get("edition", "")).lower()
+        stag = str(v.get("expansion_tag", "")).lower()
+        score = 0
+        if "2e" in ed or "2nd" in stag:
+            score += 10
+        if "removed" in stag:
+            score -= 5
+        return score
+
+    best_v = sorted(versions, key=score_version, reverse=True)[0] if versions else {}
+
+    # Types
+    types = best_v.get("types") or card.get("card_kinds") or []
+    types_str = " - ".join([t.title() for t in types]) if isinstance(types, list) else str(types).title()
+
+    # Cost
+    cost_obj = best_v.get("cost") or {}
+    cost_parts = []
+    if cost_obj.get("coins") is not None:
+        cost_parts.append(f"${cost_obj['coins']}")
+    if cost_obj.get("debt"):
+        cost_parts.append(f"{cost_obj['debt']} Debt")
+    if cost_obj.get("potion"):
+        cost_parts.append("1 Potion")
+    cost_display = f" ({', '.join(cost_parts)})" if cost_parts else ""
+
+    # Expansion
+    exp_map = {e.get("set_tag", "").lower(): e.get("name") for e in dom_db.expansions.find({}, {"set_tag": 1, "name": 1})}
+    exp_tag = best_v.get("expansion_tag", "") or card.get("expansion", "")
+    expansion = format_expansion_name(exp_tag, exp_map=exp_map) if exp_tag else "Base"
+
+    # Rules text
+    raw_text = best_v.get("printed_rules_text", "") or card.get("text", "") or card.get("description", "")
+    text = format_dominion_rules_plain(raw_text)
 
     # Embed color based on primary type
     color = 0x2563eb  # Action blue default
@@ -303,23 +344,29 @@ def handle_dominion_command(subcommand: str, options: Dict[str, Any]) -> Dict[st
     elif "reaction" in types_lower:
         color = 0x0284c7  # Light blue
 
-    cost_display = f" (${cost})" if cost else ""
+    desc_lines = [f"**Expansion:** {expansion}"]
+    if types_str:
+        desc_lines.append(f"**Type:** {types_str}")
+    if text:
+        desc_lines.append(f"\n{text}")
+
     embed = {
         "title": f"🏰 {name}{cost_display}",
         "url": url,
         "color": color,
-        "description": f"**Expansion:** {expansion}\n**Type:** {types_str}\n\n{text}" if text else f"**Expansion:** {expansion}\n**Type:** {types_str}",
+        "description": "\n".join(desc_lines),
         "fields": [
             {"name": "Codex Entry", "value": f"[View Official Errata & Combos]({url})", "inline": False}
         ]
     }
 
-    img_url = card.get("image_url") or f"https://dominion.avascry.com/images/{slug}.jpg"
-    if img_url:
-        embed["image"] = {"url": img_url}
+    # High-resolution canonical image URL
+    canonical_img = f"https://dominion.avascry.com/images/{slug}.jpg"
+    embed["image"] = {"url": canonical_img}
 
     embed["footer"] = {"text": "AvaScry Dominion Codex • dominion.avascry.com"}
     return {"embeds": [embed]}
+
 
 def handle_minecraft_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, Any]:
     db = get_mongo_db()
