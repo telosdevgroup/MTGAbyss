@@ -1,0 +1,1252 @@
+{% extends "swu/base.html" %}
+
+{% block title %}Star Wars: Unlimited Deck Builder &amp; Opening Hand Simulator &mdash; AvaScry SWU{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://swu.avascry.com/deckbuilder">
+{% endblock %}
+
+{% block extra_head %}
+<meta name="description" content="Interactive deck builder and opening hand simulator for Star Wars: Unlimited. Choose your Leader and Base, track aspect penalties and resource curves, and test opening hand draws.">
+<style>
+  :root {
+    --asp-vigilance: #3b82f6;
+    --asp-command: #22c55e;
+    --asp-aggression: #ef4444;
+    --asp-cunning: #eab308;
+    --asp-villainy: #8b5cf6;
+    --asp-heroism: #38bdf8;
+  }
+
+  .db-container {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0.5rem 1.5rem 4rem 1.5rem;
+  }
+
+  /* Hero & Title */
+  .db-hero {
+    text-align: center;
+    padding: 1rem 0 2rem 0;
+    margin-bottom: 2rem;
+  }
+  .db-hero h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2rem, 4.5vw, 2.9rem);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+  }
+  .db-hero p {
+    color: #a1a1aa;
+    font-size: 1.05rem;
+    max-width: 720px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* Command Row: Leader & Base Setup */
+  .db-command-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .db-slot-card {
+    background: #18181b;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .db-slot-card.has-selection {
+    border-color: #3f3f46;
+    background: linear-gradient(135deg, #18181b 0%, #1f1f23 100%);
+  }
+
+  .db-slot-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+  }
+
+  .db-slot-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.25rem;
+    line-height: 1.2;
+  }
+
+  .db-slot-sub {
+    font-size: 0.85rem;
+    color: #a1a1aa;
+  }
+
+  .db-aspect-badges {
+    display: flex;
+    gap: 0.35rem;
+    margin-top: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .asp-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid transparent;
+  }
+  .asp-vigilance { background: rgba(59, 130, 246, 0.15); color: var(--asp-vigilance); border-color: rgba(59, 130, 246, 0.4); }
+  .asp-command { background: rgba(34, 197, 94, 0.15); color: var(--asp-command); border-color: rgba(34, 197, 94, 0.4); }
+  .asp-aggression { background: rgba(239, 68, 68, 0.15); color: var(--asp-aggression); border-color: rgba(239, 68, 68, 0.4); }
+  .asp-cunning { background: rgba(234, 179, 8, 0.15); color: var(--asp-cunning); border-color: rgba(234, 179, 8, 0.4); }
+  .asp-villainy { background: rgba(139, 92, 246, 0.15); color: var(--asp-villainy); border-color: rgba(139, 92, 246, 0.4); }
+  .asp-heroism { background: rgba(56, 189, 248, 0.15); color: var(--asp-heroism); border-color: rgba(56, 189, 248, 0.4); }
+  .asp-neutral { background: rgba(161, 161, 170, 0.15); color: #d4d4d8; border-color: rgba(161, 161, 170, 0.3); }
+
+  .btn-select-slot {
+    background: #27272a;
+    border: 1px solid var(--border);
+    color: #fff;
+    padding: 0.55rem 1.1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn-select-slot:hover {
+    background: #3f3f46;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Main Workspace: 2-Column (Card Catalog on Left, Deck & Analytics on Right) */
+  .db-workspace {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  @media (max-width: 1024px) {
+    .db-workspace {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Catalog Controls */
+  .db-search-bar {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .db-search-input {
+    flex: 1;
+    min-width: 240px;
+    background: #18181b;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: #fff;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .db-search-input:focus {
+    border-color: var(--accent);
+  }
+
+  .db-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .db-chip {
+    background: #18181b;
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    padding: 0.3rem 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #a1a1aa;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .db-chip:hover {
+    border-color: #52525b;
+    color: #fff;
+  }
+  .db-chip.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+    font-weight: 800;
+  }
+
+  /* Card Catalog Grid */
+  .db-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+    max-height: 850px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+  }
+
+  .db-card-row {
+    background: #18181b;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.65rem;
+    transition: all 0.15s ease;
+  }
+  .db-card-row:hover {
+    border-color: #52525b;
+    background: #202024;
+  }
+
+  .db-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .db-card-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #fff;
+    line-height: 1.25;
+  }
+  .db-card-subtitle {
+    font-size: 0.75rem;
+    color: #a1a1aa;
+    display: block;
+    margin-top: 0.15rem;
+  }
+
+  .db-card-cost {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #27272a;
+    border: 1px solid #3f3f46;
+    color: #facc15;
+    font-weight: 800;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .db-card-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: #a1a1aa;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 0.5rem;
+  }
+
+  .db-penalty-tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+  }
+
+  .btn-add-card {
+    background: #27272a;
+    border: 1px solid var(--border);
+    color: #fff;
+    border-radius: 6px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn-add-card:hover {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+  }
+
+  /* Right Sidebar: Decklist & Live Analytics */
+  .db-sidebar {
+    background: #18181b;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: sticky;
+    top: 5rem;
+  }
+
+  .db-deck-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.75rem;
+  }
+
+  .db-deck-count {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #fff;
+  }
+  .db-deck-target {
+    font-size: 0.85rem;
+    color: #a1a1aa;
+  }
+
+  /* Resource Curve Bar Chart */
+  .db-curve-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.4rem;
+    height: 90px;
+    padding-top: 1rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.75rem;
+  }
+  .db-curve-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+  }
+  .db-curve-bar {
+    width: 100%;
+    background: linear-gradient(180deg, var(--accent) 0%, #b45309 100%);
+    border-radius: 4px 4px 0 0;
+    min-height: 2px;
+    transition: height 0.2s ease;
+  }
+  .db-curve-count {
+    font-size: 0.68rem;
+    color: #fff;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+  }
+  .db-curve-label {
+    font-size: 0.72rem;
+    color: #a1a1aa;
+    margin-top: 0.35rem;
+  }
+
+  /* Deck Cards List */
+  .db-deck-list {
+    max-height: 380px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-right: 0.25rem;
+  }
+
+  .db-deck-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0.6rem;
+    background: #202024;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    font-size: 0.85rem;
+  }
+
+  .db-deck-entry-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow: hidden;
+  }
+
+  .db-entry-cost {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #27272a;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #facc15;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .db-entry-name {
+    color: #fff;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .db-entry-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+  }
+
+  .btn-qty {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    background: #27272a;
+    border: 1px solid var(--border);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .btn-qty:hover {
+    background: #3f3f46;
+  }
+
+  .db-entry-qty {
+    font-weight: 800;
+    color: #facc15;
+    min-width: 16px;
+    text-align: center;
+  }
+
+  /* Actions Toolbar */
+  .db-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .btn-action-primary {
+    background: linear-gradient(135deg, var(--accent) 0%, #b45309 100%);
+    color: #000;
+    font-weight: 800;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-action-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(250, 204, 21, 0.3);
+  }
+
+  .btn-action-secondary {
+    background: #27272a;
+    border: 1px solid var(--border);
+    color: #fff;
+    font-weight: 700;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: background 0.15s ease;
+  }
+  .btn-action-secondary:hover {
+    background: #3f3f46;
+  }
+
+  /* Hand Simulator Modal */
+  .modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  .sim-modal {
+    background: #18181b;
+    border: 1px solid #3f3f46;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 960px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  }
+
+  .sim-header {
+    padding: 1.25rem 1.75rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .sim-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .sim-body {
+    padding: 1.75rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+  }
+
+  .sim-section-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #a1a1aa;
+    margin-bottom: 0.6rem;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .sim-card-row-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .sim-card-tile {
+    background: #202024;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 110px;
+  }
+  .sim-card-tile:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .sim-card-tile.is-resourced {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+  }
+
+  .sim-tile-cost {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #facc15;
+  }
+  .sim-tile-name {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+    margin-top: 0.3rem;
+  }
+
+  .sim-tile-action {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #a1a1aa;
+    text-align: right;
+    margin-top: 0.5rem;
+  }
+
+  /* Selector Modals (Leader / Base) */
+  .picker-modal {
+    background: #18181b;
+    border: 1px solid #3f3f46;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 900px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.75rem;
+    padding: 1.5rem;
+    overflow-y: auto;
+  }
+  .picker-item {
+    background: #202024;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .picker-item:hover {
+    border-color: var(--accent);
+    background: #27272a;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="db-container">
+  <div class="db-hero">
+    <h1>Star Wars: Unlimited Deck Builder</h1>
+    <p>Construct competitive 50-card decks, calculate aspect penalties, optimize your resource curve, and test draw 6-card opening hands.</p>
+  </div>
+
+  <!-- Command Row: Leader & Base Configuration -->
+  <div class="db-command-row">
+    <!-- Leader Slot -->
+    <div class="db-slot-card has-selection" id="slot-leader-card">
+      <div>
+        <div class="db-slot-label">Leader &mdash; Deployment Unit</div>
+        <div class="db-slot-title" id="active-leader-name">Luke Skywalker</div>
+        <div class="db-slot-sub" id="active-leader-sub">Faithful Friend &bull; Deploy Cost: 6</div>
+        <div class="db-aspect-badges" id="active-leader-aspects">
+          <span class="asp-badge asp-vigilance">Vigilance</span>
+          <span class="asp-badge asp-heroism">Heroism</span>
+        </div>
+      </div>
+      <button type="button" class="btn-select-slot" id="btn-change-leader">Change Leader</button>
+    </div>
+
+    <!-- Base Slot -->
+    <div class="db-slot-card has-selection" id="slot-base-card">
+      <div>
+        <div class="db-slot-label">Base &mdash; 3rd Aspect &amp; HP</div>
+        <div class="db-slot-title" id="active-base-name">Administrator's Tower</div>
+        <div class="db-slot-sub" id="active-base-sub">Cloud City &bull; 30 HP</div>
+        <div class="db-aspect-badges" id="active-base-aspects">
+          <span class="asp-badge asp-cunning">Cunning</span>
+        </div>
+      </div>
+      <button type="button" class="btn-select-slot" id="btn-change-base">Change Base</button>
+    </div>
+  </div>
+
+  <!-- Workspace: Card Catalog on Left, Deck & Curve on Right -->
+  <div class="db-workspace">
+    <!-- Left: Card Catalog -->
+    <div>
+      <div class="db-search-bar">
+        <input 
+          type="text" 
+          id="db-catalog-search" 
+          class="db-search-input" 
+          placeholder="Search card name, trait (e.g. Rebel, Trooper), or ability..." 
+          autocomplete="off"
+        />
+      </div>
+
+      <!-- Quick Filter Chips -->
+      <div class="db-filter-chips">
+        <button type="button" class="db-chip active" data-filter="all">All Playables</button>
+        <button type="button" class="db-chip" data-filter="in-aspect">In-Aspect (0 Penalty)</button>
+        <button type="button" class="db-chip" data-filter="unit">Units Only</button>
+        <button type="button" class="db-chip" data-filter="ground">Ground Arena</button>
+        <button type="button" class="db-chip" data-filter="space">Space Arena</button>
+        <button type="button" class="db-chip" data-filter="event">Events</button>
+        <button type="button" class="db-chip" data-filter="upgrade">Upgrades</button>
+      </div>
+
+      <!-- Filtered Results Grid -->
+      <div class="db-card-grid" id="db-catalog-grid">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Right: Decklist & Real-Time Analytics -->
+    <div class="db-sidebar">
+      <div class="db-deck-summary">
+        <div>
+          <div class="db-deck-count"><span id="deck-card-count">0</span> / 50</div>
+          <div class="db-deck-target">Main Deck (Min 50 Cards)</div>
+        </div>
+        <button type="button" class="btn-qty" id="btn-clear-deck" title="Clear Deck">&times;</button>
+      </div>
+
+      <!-- Resource Curve Bar Chart -->
+      <div>
+        <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.06em; color: #a1a1aa; margin-bottom: 0.25rem;">
+          Resource Cost Curve
+        </div>
+        <div class="db-curve-container" id="db-curve-chart">
+          <!-- 1 to 7+ curve bars generated by JS -->
+        </div>
+      </div>
+
+      <!-- Deck Entries List -->
+      <div class="db-deck-list" id="db-active-decklist">
+        <div style="color: #71717a; font-size: 0.85rem; text-align: center; padding: 2rem 0;">
+          No cards added yet.<br>Browse the catalog on the left to add cards.
+        </div>
+      </div>
+
+      <!-- Tool Actions -->
+      <div class="db-actions">
+        <button type="button" class="btn-action-primary" id="btn-open-sim">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h20"/><path d="M12 2v16"/><circle cx="12" cy="18" r="4"/></svg>
+          Test Opening Hand
+        </button>
+        <button type="button" class="btn-action-secondary" id="btn-copy-deck">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy Decklist (.md)
+        </button>
+        <button type="button" class="btn-action-secondary" id="btn-share-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          Share Deck Link
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Opening Hand Simulator -->
+<div class="modal-backdrop" id="sim-modal" style="display: none;">
+  <div class="sim-modal">
+    <div class="sim-header">
+      <div class="sim-title">Opening Hand Simulator (6 Cards)</div>
+      <button type="button" class="btn-qty" id="btn-close-sim">&times;</button>
+    </div>
+    <div class="sim-body">
+      <div>
+        <div class="sim-section-label">
+          <span>Active Hand (<span id="sim-hand-count">6</span>)</span>
+          <span style="font-size: 0.72rem; color: var(--accent);">Click card to Move to Resources</span>
+        </div>
+        <div class="sim-card-row-grid" id="sim-hand-grid">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <div>
+        <div class="sim-section-label">
+          <span>Resource Row (<span id="sim-resource-count">0</span>)</span>
+          <span style="font-size: 0.72rem; color: #3b82f6;">Click card to Return to Hand</span>
+        </div>
+        <div class="sim-card-row-grid" id="sim-resource-grid">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 1.25rem;">
+        <button type="button" class="btn-action-secondary" id="btn-sim-mulligan">Mulligan (Draw 6)</button>
+        <button type="button" class="btn-action-secondary" id="btn-sim-next-round">Draw 2 (Next Action Phase)</button>
+        <button type="button" class="btn-action-primary" id="btn-sim-reset">Fresh Shuffle</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Leader Picker -->
+<div class="modal-backdrop" id="leader-picker-modal" style="display: none;">
+  <div class="picker-modal">
+    <div class="sim-header">
+      <div class="sim-title">Select Leader</div>
+      <button type="button" class="btn-qty" id="btn-close-leader-picker">&times;</button>
+    </div>
+    <div class="picker-grid" id="leader-picker-grid">
+      <!-- Generated by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Base Picker -->
+<div class="modal-backdrop" id="base-picker-modal" style="display: none;">
+  <div class="picker-modal">
+    <div class="sim-header">
+      <div class="sim-title">Select Base</div>
+      <button type="button" class="btn-qty" id="btn-close-base-picker">&times;</button>
+    </div>
+    <div class="picker-grid" id="base-picker-grid">
+      <!-- Generated by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- Embedded Catalog State for Zero-Latency Deckbuilding -->
+<script>
+  const PLAYABLE_CARDS = {{ cards_json | safe }};
+  const LEADERS = {{ leaders_json | safe }};
+  const BASES = {{ bases_json | safe }};
+
+  // State
+  let activeLeader = LEADERS[0] || null;
+  let activeBase = BASES[0] || null;
+  let currentDeck = {}; // slug -> qty (1..3)
+  let activeFilter = 'all';
+  let searchQuery = '';
+
+  // Simulator State
+  let simDeckList = [];
+  let simHand = [];
+  let simResources = [];
+
+  // Initialize from Query Params if present
+  const urlParams = new URLSearchParams(window.location.search);
+  const qLeader = urlParams.get('leader');
+  const qBase = urlParams.get('base');
+  const qDeck = urlParams.get('deck');
+
+  if (qLeader) {
+    const found = LEADERS.find(l => l.slug === qLeader || l.name.toLowerCase() === qLeader.toLowerCase());
+    if (found) activeLeader = found;
+  }
+  if (qBase) {
+    const found = BASES.find(b => b.slug === qBase || b.name.toLowerCase() === qBase.toLowerCase());
+    if (found) activeBase = found;
+  }
+  if (qDeck) {
+    qDeck.split(',').forEach(part => {
+      const [slug, qty] = part.split(':');
+      if (slug) {
+        currentDeck[slug] = Math.min(3, Math.max(1, parseInt(qty || 1, 10)));
+      }
+    });
+  }
+
+  function getDeckAspects() {
+    const aspects = new Set();
+    if (activeLeader && activeLeader.aspects) {
+      activeLeader.aspects.forEach(a => aspects.add(a.toLowerCase()));
+    }
+    if (activeBase && activeBase.aspects) {
+      activeBase.aspects.forEach(a => aspects.add(a.toLowerCase()));
+    }
+    return aspects;
+  }
+
+  function calculateAspectPenalty(card) {
+    const deckAspects = getDeckAspects();
+    let penalty = 0;
+    (card.aspects || []).forEach(asp => {
+      if (!deckAspects.has(asp.toLowerCase())) {
+        penalty += 2;
+      }
+    });
+    return penalty;
+  }
+
+  function renderLeaderAndBase() {
+    if (activeLeader) {
+      document.getElementById('active-leader-name').textContent = activeLeader.name;
+      document.getElementById('active-leader-sub').textContent = `${activeLeader.subtitle || ''} • Deploy: ${activeLeader.cost}`;
+      const aspEl = document.getElementById('active-leader-aspects');
+      aspEl.innerHTML = activeLeader.aspects.map(a => `<span class="asp-badge asp-${a.toLowerCase()}">${a}</span>`).join('');
+    }
+    if (activeBase) {
+      document.getElementById('active-base-name').textContent = activeBase.name;
+      document.getElementById('active-base-sub').textContent = `${activeBase.hp || 30} HP`;
+      const aspEl = document.getElementById('active-base-aspects');
+      aspEl.innerHTML = (activeBase.aspects || []).map(a => `<span class="asp-badge asp-${a.toLowerCase()}">${a}</span>`).join('');
+    }
+  }
+
+  function filterCards() {
+    const q = searchQuery.toLowerCase().trim();
+    const deckAspects = getDeckAspects();
+
+    return PLAYABLE_CARDS.filter(c => {
+      // Type / Arena filter
+      if (activeFilter === 'unit' && c.type !== 'Unit') return false;
+      if (activeFilter === 'ground' && (!c.arenas || !c.arenas.includes('Ground'))) return false;
+      if (activeFilter === 'space' && (!c.arenas || !c.arenas.includes('Space'))) return false;
+      if (activeFilter === 'event' && c.type !== 'Event') return false;
+      if (activeFilter === 'upgrade' && c.type !== 'Upgrade') return false;
+      if (activeFilter === 'in-aspect' && calculateAspectPenalty(c) > 0) return false;
+
+      // Text query filter
+      if (q) {
+        const matchesName = c.name.toLowerCase().includes(q);
+        const matchesSub = (c.subtitle || '').toLowerCase().includes(q);
+        const matchesTrait = (c.traits || []).some(t => t.toLowerCase().includes(q));
+        if (!matchesName && !matchesSub && !matchesTrait) return false;
+      }
+
+      return true;
+    });
+  }
+
+  function renderCatalog() {
+    const container = document.getElementById('db-catalog-grid');
+    const filtered = filterCards();
+
+    if (filtered.length === 0) {
+      container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #71717a; padding: 3rem 0;">No matching cards found.</div>`;
+      return;
+    }
+
+    container.innerHTML = filtered.slice(0, 150).map(c => {
+      const penalty = calculateAspectPenalty(c);
+      const penaltyBadge = penalty > 0 ? `<span class="db-penalty-tag">+${penalty} Cost Penalty</span>` : `<span style="font-size: 0.7rem; color: #22c55e; font-weight: 700;">In-Aspect</span>`;
+      const arenaBadge = c.arenas && c.arenas.length > 0 ? c.arenas.join('/') : c.type;
+      const aspectsBadges = (c.aspects || []).map(a => `<span class="asp-badge asp-${a.toLowerCase()}">${a}</span>`).join('');
+
+      return `
+        <div class="db-card-row">
+          <div class="db-card-header">
+            <div>
+              <div class="db-card-name">${c.name}</div>
+              <span class="db-card-subtitle">${c.subtitle || c.type} &bull; ${c.set_code || ''}</span>
+            </div>
+            <div class="db-card-cost">${c.cost}</div>
+          </div>
+          <div class="db-aspect-badges">${aspectsBadges}</div>
+          <div class="db-card-stats">
+            <div>${arenaBadge} &bull; ${penaltyBadge}</div>
+            <button type="button" class="btn-add-card" onclick="addCardToDeck('${c.slug}')">+ Add</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function addCardToDeck(slug) {
+    if (!currentDeck[slug]) {
+      currentDeck[slug] = 0;
+    }
+    if (currentDeck[slug] < 3) {
+      currentDeck[slug]++;
+      renderDeck();
+    }
+  }
+
+  function removeCardFromDeck(slug) {
+    if (currentDeck[slug]) {
+      currentDeck[slug]--;
+      if (currentDeck[slug] <= 0) {
+        delete currentDeck[slug];
+      }
+      renderDeck();
+    }
+  }
+
+  function renderDeck() {
+    const listEl = document.getElementById('db-active-decklist');
+    const countEl = document.getElementById('deck-card-count');
+    
+    let totalCards = 0;
+    const curveCounts = [0, 0, 0, 0, 0, 0, 0, 0]; // 1, 2, 3, 4, 5, 6, 7, 8+
+    const deckEntries = [];
+
+    for (const [slug, qty] of Object.entries(currentDeck)) {
+      const card = PLAYABLE_CARDS.find(c => c.slug === slug);
+      if (card) {
+        totalCards += qty;
+        const cost = card.cost || 0;
+        const curveIdx = Math.min(7, Math.max(0, cost - 1));
+        curveCounts[curveIdx] += qty;
+        deckEntries.push({ card, qty });
+      }
+    }
+
+    countEl.textContent = totalCards;
+    if (totalCards >= 50) {
+      countEl.style.color = '#22c55e';
+    } else {
+      countEl.style.color = '#facc15';
+    }
+
+    // Render Curve Chart
+    const maxBar = Math.max(1, ...curveCounts);
+    const chartEl = document.getElementById('db-curve-chart');
+    const labels = ['1', '2', '3', '4', '5', '6', '7', '8+'];
+    chartEl.innerHTML = curveCounts.map((cnt, i) => {
+      const heightPercent = Math.max(4, Math.round((cnt / maxBar) * 100));
+      return `
+        <div class="db-curve-col">
+          <div class="db-curve-count">${cnt > 0 ? cnt : ''}</div>
+          <div class="db-curve-bar" style="height: ${heightPercent}%;"></div>
+          <div class="db-curve-label">${labels[i]}</div>
+        </div>
+      `;
+    }).join('');
+
+    // Render Deck Entries
+    if (deckEntries.length === 0) {
+      listEl.innerHTML = `<div style="color: #71717a; font-size: 0.85rem; text-align: center; padding: 2rem 0;">No cards added yet.<br>Browse the catalog on the left to add cards.</div>`;
+      return;
+    }
+
+    // Sort deck entries by cost then name
+    deckEntries.sort((a, b) => (a.card.cost - b.card.cost) || a.card.name.localeCompare(b.card.name));
+
+    listEl.innerHTML = deckEntries.map(e => `
+      <div class="db-deck-entry">
+        <div class="db-deck-entry-info">
+          <div class="db-entry-cost">${e.card.cost}</div>
+          <div class="db-entry-name" title="${e.card.name}">${e.card.name}</div>
+        </div>
+        <div class="db-entry-controls">
+          <button type="button" class="btn-qty" onclick="removeCardFromDeck('${e.card.slug}')">-</button>
+          <span class="db-entry-qty">${e.qty}</span>
+          <button type="button" class="btn-qty" onclick="addCardToDeck('${e.card.slug}')">+</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Opening Hand Simulator Functions
+  function initSimulator() {
+    simDeckList = [];
+    for (const [slug, qty] of Object.entries(currentDeck)) {
+      const card = PLAYABLE_CARDS.find(c => c.slug === slug);
+      if (card) {
+        for (let i = 0; i < qty; i++) {
+          simDeckList.push({ ...card, uid: `${slug}-${i}-${Math.random().toString(36).substr(2, 5)}` });
+        }
+      }
+    }
+
+    // Fisher-Yates Shuffle
+    for (let i = simDeckList.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [simDeckList[i], simDeckList[j]] = [simDeckList[j], simDeckList[i]];
+    }
+
+    simHand = simDeckList.splice(0, 6);
+    simResources = [];
+    renderSimulator();
+  }
+
+  function renderSimulator() {
+    document.getElementById('sim-hand-count').textContent = simHand.length;
+    document.getElementById('sim-resource-count').textContent = simResources.length;
+
+    const handGrid = document.getElementById('sim-hand-grid');
+    handGrid.innerHTML = simHand.map(c => `
+      <div class="sim-card-tile" onclick="moveToResources('${c.uid}')">
+        <div>
+          <div class="sim-tile-cost">${c.cost} Cost</div>
+          <div class="sim-tile-name">${c.name}</div>
+        </div>
+        <div class="sim-tile-action">&rarr; Resource</div>
+      </div>
+    `).join('');
+
+    const resGrid = document.getElementById('sim-resource-grid');
+    resGrid.innerHTML = simResources.map(c => `
+      <div class="sim-card-tile is-resourced" onclick="moveToHand('${c.uid}')">
+        <div>
+          <div class="sim-tile-cost" style="color: #3b82f6;">Resource</div>
+          <div class="sim-tile-name">${c.name}</div>
+        </div>
+        <div class="sim-tile-action">&uarr; Hand</div>
+      </div>
+    `).join('');
+  }
+
+  function moveToResources(uid) {
+    const idx = simHand.findIndex(c => c.uid === uid);
+    if (idx !== -1) {
+      simResources.push(simHand.splice(idx, 1)[0]);
+      renderSimulator();
+    }
+  }
+
+  function moveToHand(uid) {
+    const idx = simResources.findIndex(c => c.uid === uid);
+    if (idx !== -1) {
+      simHand.push(simResources.splice(idx, 1)[0]);
+      renderSimulator();
+    }
+  }
+
+  // Event Listeners
+  document.getElementById('db-catalog-search').addEventListener('input', e => {
+    searchQuery = e.target.value;
+    renderCatalog();
+  });
+
+  document.querySelectorAll('.db-chip').forEach(chip => {
+    chip.addEventListener('click', e => {
+      document.querySelectorAll('.db-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.getAttribute('data-filter');
+      renderCatalog();
+    });
+  });
+
+  document.getElementById('btn-clear-deck').addEventListener('click', () => {
+    if (confirm('Clear all cards from your deck?')) {
+      currentDeck = {};
+      renderDeck();
+    }
+  });
+
+  // Simulator modal controls
+  document.getElementById('btn-open-sim').addEventListener('click', () => {
+    const total = Object.values(currentDeck).reduce((a, b) => a + b, 0);
+    if (total < 6) {
+      alert('Please add at least 6 cards to your deck to test draw an opening hand.');
+      return;
+    }
+    initSimulator();
+    document.getElementById('sim-modal').style.display = 'flex';
+  });
+
+  document.getElementById('btn-close-sim').addEventListener('click', () => {
+    document.getElementById('sim-modal').style.display = 'none';
+  });
+
+  document.getElementById('btn-sim-reset').addEventListener('click', () => {
+    initSimulator();
+  });
+
+  document.getElementById('btn-sim-mulligan').addEventListener('click', () => {
+    initSimulator();
+  });
+
+  document.getElementById('btn-sim-next-round').addEventListener('click', () => {
+    if (simDeckList.length > 0) {
+      const drawn = simDeckList.splice(0, 2);
+      simHand.push(...drawn);
+      renderSimulator();
+    } else {
+      alert('Deck is empty!');
+    }
+  });
+
+  // Leader Picker
+  document.getElementById('btn-change-leader').addEventListener('click', () => {
+    const grid = document.getElementById('leader-picker-grid');
+    grid.innerHTML = LEADERS.map(l => `
+      <div class="picker-item" onclick="selectLeader('${l.slug}')">
+        <div style="font-weight: 700; color: #fff; font-size: 1rem;">${l.name}</div>
+        <div style="font-size: 0.78rem; color: #a1a1aa; margin: 0.2rem 0;">${l.subtitle || ''} • Deploy: ${l.cost}</div>
+        <div class="db-aspect-badges">${l.aspects.map(a => `<span class="asp-badge asp-${a.toLowerCase()}">${a}</span>`).join('')}</div>
+      </div>
+    `).join('');
+    document.getElementById('leader-picker-modal').style.display = 'flex';
+  });
+
+  document.getElementById('btn-close-leader-picker').addEventListener('click', () => {
+    document.getElementById('leader-picker-modal').style.display = 'none';
+  });
+
+  window.selectLeader = function(slug) {
+    const found = LEADERS.find(l => l.slug === slug);
+    if (found) {
+      activeLeader = found;
+      renderLeaderAndBase();
+      renderCatalog();
+      document.getElementById('leader-picker-modal').style.display = 'none';
+    }
+  };
+
+  // Base Picker
+  document.getElementById('btn-change-base').addEventListener('click', () => {
+    const grid = document.getElementById('base-picker-grid');
+    grid.innerHTML = BASES.map(b => `
+      <div class="picker-item" onclick="selectBase('${b.slug}')">
+        <div style="font-weight: 700; color: #fff; font-size: 1rem;">${b.name}</div>
+        <div style="font-size: 0.78rem; color: #a1a1aa; margin: 0.2rem 0;">${b.hp || 30} HP</div>
+        <div class="db-aspect-badges">${(b.aspects || []).map(a => `<span class="asp-badge asp-${a.toLowerCase()}">${a}</span>`).join('')}</div>
+      </div>
+    `).join('');
+    document.getElementById('base-picker-modal').style.display = 'flex';
+  });
+
+  document.getElementById('btn-close-base-picker').addEventListener('click', () => {
+    document.getElementById('base-picker-modal').style.display = 'none';
+  });
+
+  window.selectBase = function(slug) {
+    const found = BASES.find(b => b.slug === slug);
+    if (found) {
+      activeBase = found;
+      renderLeaderAndBase();
+      renderCatalog();
+      document.getElementById('base-picker-modal').style.display = 'none';
+    }
+  };
+
+  // Share & Copy
+  document.getElementById('btn-share-link').addEventListener('click', () => {
+    const deckStr = Object.entries(currentDeck).map(([s, q]) => `${s}:${q}`).join(',');
+    const url = new URL(window.location.href);
+    if (activeLeader) url.searchParams.set('leader', activeLeader.slug);
+    if (activeBase) url.searchParams.set('base', activeBase.slug);
+    if (deckStr) url.searchParams.set('deck', deckStr);
+    navigator.clipboard.writeText(url.toString()).then(() => {
+      alert('Deck link copied to clipboard!');
+    });
+  });
+
+  document.getElementById('btn-copy-deck').addEventListener('click', () => {
+    let md = `# SWU Deck: ${activeLeader ? activeLeader.name : 'Unknown Leader'} / ${activeBase ? activeBase.name : 'Unknown Base'}\n\n`;
+    md += `**Leader**: ${activeLeader ? activeLeader.name : ''}\n`;
+    md += `**Base**: ${activeBase ? activeBase.name : ''}\n\n`;
+    md += `## Main Deck\n`;
+    for (const [slug, qty] of Object.entries(currentDeck)) {
+      const card = PLAYABLE_CARDS.find(c => c.slug === slug);
+      if (card) {
+        md += `- ${qty}x ${card.name} (${card.cost} cost, ${card.type})\n`;
+      }
+    }
+    navigator.clipboard.writeText(md).then(() => {
+      alert('Decklist copied to clipboard (Markdown)!');
+    });
+  });
+
+  // Initial Boot
+  renderLeaderAndBase();
+  renderDeck();
+  renderCatalog();
+</script>
+{% endblock %}

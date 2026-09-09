@@ -1878,3 +1878,108 @@ async def swu_contact_post(request: Request):
         }
     )
 
+def get_swu_deckbuilder_data():
+    from mtgabyss.shared.cache import RAM_CACHE, set_ram_cache
+    cached = RAM_CACHE.get("swu_deckbuilder_data")
+    if cached:
+        return cached
+
+    db = get_swu_db()
+    raw = list(db.cards.find(
+        {"type": {"$in": ["Leader", "Base", "Unit", "Event", "Upgrade"]}},
+        {
+            "_id": 0,
+            "slug": 1,
+            "name": 1,
+            "title": 1,
+            "subtitle": 1,
+            "type": 1,
+            "cost": 1,
+            "aspects": 1,
+            "arenas": 1,
+            "traits": 1,
+            "power": 1,
+            "hp": 1,
+            "rarity": 1,
+            "variant_type": 1,
+            "set_code": 1,
+            "front_image": 1,
+            "local_image_front": 1
+        }
+    ).sort([("variant_type", -1)]))
+
+    leaders_map, bases_map, playables_map = {}, {}, {}
+    for c in raw:
+        t = c.get("type")
+        name = c.get("name") or c.get("title") or c.get("slug")
+        if not name:
+            continue
+        sub = c.get("subtitle") or ""
+        key = (name.strip(), sub.strip())
+        is_normal = (c.get("variant_type") == "Normal")
+        info = {
+            "slug": c.get("slug"),
+            "name": name.strip(),
+            "subtitle": sub.strip(),
+            "type": t,
+            "cost": c.get("cost") if c.get("cost") is not None else 0,
+            "aspects": [a for a in (c.get("aspects") or []) if a],
+            "arenas": c.get("arenas") or [],
+            "traits": c.get("traits") or [],
+            "power": c.get("power"),
+            "hp": c.get("hp"),
+            "rarity": c.get("rarity") or "Common",
+            "set_code": (c.get("set_code") or "").upper(),
+            "image": c.get("local_image_front") or c.get("front_image") or ""
+        }
+        if t == "Leader":
+            if key not in leaders_map or is_normal:
+                leaders_map[key] = info
+        elif t == "Base":
+            if key not in bases_map or is_normal:
+                bases_map[key] = info
+        else:
+            if key not in playables_map or is_normal:
+                playables_map[key] = info
+
+    res = {
+        "leaders": sorted(list(leaders_map.values()), key=lambda x: x["name"]),
+        "bases": sorted(list(bases_map.values()), key=lambda x: (x.get("hp") or 30, x["name"])),
+        "playables": sorted(list(playables_map.values()), key=lambda x: (x.get("cost") or 0, x["name"]))
+    }
+    set_ram_cache("swu_deckbuilder_data", res)
+    return res
+
+@swu_router.get("/deckbuilder", response_class=HTMLResponse)
+async def swu_deckbuilder(request: Request, leader: Optional[str] = None, base: Optional[str] = None, deck: Optional[str] = None):
+    """
+    Interactive Star Wars: Unlimited Deck Builder & Opening Hand Simulator.
+    Allows players to configure Leader and Base, view real-time resource curve,
+    track aspect penalties, test draw 6-card opening hands, and resource cards.
+    """
+    import json
+    data = get_swu_deckbuilder_data()
+    base_path = get_base_prefix(request)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="swu/deckbuilder.html",
+        context={
+            "base_path": base_path,
+            "leaders": data["leaders"],
+            "bases": data["bases"],
+            "cards_json": json.dumps(data["playables"]),
+            "leaders_json": json.dumps(data["leaders"]),
+            "bases_json": json.dumps(data["bases"]),
+            "initial_leader": leader or "",
+            "initial_base": base or "",
+            "initial_deck": deck or "",
+            "total_cards": len(data["playables"]),
+            "total_leaders": len(data["leaders"]),
+            "total_bases": len(data["bases"])
+        },
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400"
+        }
+    )
+

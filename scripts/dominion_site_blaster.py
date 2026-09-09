@@ -134,6 +134,16 @@ class DominionSiteBlaster:
             ("/contact", 200, "text/html"),
             ("/kingdom-generator", 200, "text/html"),
             ("/kingdom-generator?cards=village,smithy", 200, "text/html"),
+            ("/guides", 200, "text/html"),
+            ("/guides/mathematics-of-trashing", 200, "text/html"),
+            ("/guides/engine-architecture", 200, "text/html"),
+            ("/guides/big-money-vs-engine", 200, "text/html"),
+            ("/guides/1e-vs-2e-evolution", 200, "text/html"),
+            ("/guides/landscapes-and-alternate-scoring", 200, "text/html"),
+            ("/guides/attack-and-defense-dynamics", 200, "text/html"),
+            ("/articles", 200, "text/html"),
+            ("/articles?category=history", 200, "text/html"),
+            ("/articles/1e-vs-2e-evolution", 200, "text/html"),
         ]
 
         for path, expected_status, expected_ct in routes:

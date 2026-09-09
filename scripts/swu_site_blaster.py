@@ -132,6 +132,8 @@ class SWUSiteBlaster:
             ("/errata", 200, "text/html"),
             ("/keywords", 200, "text/html"),
             ("/traits", 200, "text/html"),
+            ("/deckbuilder", 200, "text/html"),
+            ("/deckbuilder?leader=luke-skywalker", 200, "text/html"),
             ("/.well-known/ai-content", 200, "text/plain"),
             ("/sitemap.xml", 200, "application/xml"),
             ("/llms.txt", 200, "text/plain"),

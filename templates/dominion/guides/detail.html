@@ -1,0 +1,347 @@
+{% extends "dominion/base.html" %}
+
+{% block title %}{{ guide.title }} &mdash; AvaScry Dominion Strategy{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://dominion.avascry.com/guides/{{ guide.slug }}">
+{% endblock %}
+
+{% block head_extra %}
+<meta name="description" content="{{ guide.summary }}">
+<style>
+  .guide-article-wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding-bottom: 4rem;
+  }
+
+  /* Article Header */
+  .guide-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 2rem;
+    margin-bottom: 2.5rem;
+  }
+  .guide-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .guide-pill {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: var(--accent);
+  }
+  .guide-time {
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .guide-h1 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.25;
+    margin-bottom: 0.85rem;
+  }
+
+  .guide-sub {
+    font-size: 1.15rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 0;
+  }
+
+  /* Takeaways Box */
+  .takeaways-box {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 3rem;
+  }
+  .takeaways-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.75rem;
+  }
+  .takeaways-list {
+    margin: 0;
+    padding-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    color: #334155;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  /* Article Content */
+  .guide-content {
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: #1e293b;
+    display: flex;
+    flex-direction: column;
+    gap: 2.25rem;
+  }
+  .guide-content h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 1rem;
+    margin-bottom: 0.85rem;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 0.5rem;
+  }
+  .guide-content p {
+    margin: 0;
+  }
+
+  /* Sticky Card Link */
+  .guide-card-link {
+    font-weight: 700;
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 3px;
+    transition: color 0.15s ease;
+  }
+  .guide-card-link:hover {
+    color: #78350f;
+  }
+
+  /* Embedded Cards Row */
+  .guide-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin: 1.25rem 0;
+  }
+  .guide-card-chip {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    transition: all 0.15s ease;
+  }
+  .guide-card-chip:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+  }
+  .card-chip-name {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 0.95rem;
+  }
+  .card-chip-role {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.15rem;
+  }
+  .card-chip-cost {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #f59e0b;
+    color: #78350f;
+    font-size: 0.75rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* Combo Expansion CTA (Mild Bottom Module) */
+  .combo-cta-card {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border: 1px solid #334155;
+    border-radius: 14px;
+    padding: 2rem;
+    color: #f8fafc;
+    margin-top: 3.5rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+  }
+  .combo-cta-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fbbf24;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .combo-cta-desc {
+    color: #cbd5e1;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .combo-companions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+  }
+  .companion-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    color: inherit;
+  }
+  .companion-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #fbbf24;
+    transform: translateY(-2px);
+  }
+  .companion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  .companion-name {
+    font-weight: 700;
+    color: #fff;
+    font-size: 1rem;
+  }
+  .companion-reason {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    line-height: 1.5;
+  }
+
+  .combo-btn-row {
+    display: flex;
+    justify-content: flex-end;
+  }
+  .btn-combo-generator {
+    background: linear-gradient(135deg, #b45309, #d97706);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.65rem 1.25rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 12px rgba(180, 83, 9, 0.3);
+  }
+  .btn-combo-generator:hover {
+    background: linear-gradient(135deg, #92400e, #b45309);
+    transform: translateY(-1px);
+    color: #fff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<article class="guide-article-wrap" itemscope itemtype="https://schema.org/Article">
+  <header class="guide-header">
+    <div class="guide-badge-row">
+      <span class="guide-pill">{{ guide.category }}</span>
+      <span class="guide-time">{{ guide.read_time }}</span>
+    </div>
+    <h1 class="guide-h1" itemprop="headline">{{ guide.title }}</h1>
+    <p class="guide-sub" itemprop="description" style="margin-bottom: 0;">{{ guide.subtitle }}</p>
+  </header>
+
+  <!-- Key Takeaways Box -->
+  <aside class="takeaways-box">
+    <div class="takeaways-title">Strategic Takeaways</div>
+    <ul class="takeaways-list">
+      {% for item in guide.takeaways %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </aside>
+
+  <!-- Main Narrative -->
+  <div class="guide-content" itemprop="articleBody">
+    {% for sec in guide.sections %}
+    <section>
+      <h2>{{ sec.heading }}</h2>
+      {% for p in sec.paragraphs %}
+      <p style="margin-bottom: 1rem;">{{ p }}</p>
+      {% endfor %}
+
+      {% if sec.cards %}
+      <div class="guide-cards-grid">
+        {% for c in sec.cards %}
+        <a href="{{ base_path }}/card/{{ c.slug }}" class="guide-card-chip" target="_blank" rel="noopener">
+          <div>
+            <div class="card-chip-name">{{ c.name }}</div>
+            <div class="card-chip-role">{{ c.role }}</div>
+          </div>
+          <div class="card-chip-cost" title="Cost: ${{ c.cost }}">${{ c.cost }}</div>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </div>
+
+  <!-- Mild Combo Expansion CTA Module -->
+  {% if guide.combo_cta %}
+  <div class="combo-cta-card">
+    <div class="combo-cta-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+      {{ guide.combo_cta.title }}
+    </div>
+    <div class="combo-cta-desc">{{ guide.combo_cta.description }}</div>
+
+    <div class="combo-companions-grid">
+      {% for comp in guide.combo_cta.companions %}
+      <a href="{{ base_path }}/card/{{ comp.slug }}" class="companion-card" target="_blank" rel="noopener">
+        <div>
+          <div class="companion-header">
+            <span class="companion-name">{{ comp.name }}</span>
+            <span class="card-chip-cost">${{ comp.cost }}</span>
+          </div>
+          <div class="companion-reason">{{ comp.reason }}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+
+    <div class="combo-btn-row">
+      <a href="{{ base_path }}/kingdom-generator?cards={{ guide.combo_cta.generator_query }}" class="btn-combo-generator" target="_blank" rel="noopener">
+        Load Full Combo in Kingdom Generator &rarr;
+      </a>
+    </div>
+  </div>
+  {% endif %}
+</article>
+{% endblock %}

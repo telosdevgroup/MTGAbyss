@@ -968,4 +968,58 @@ async def dominion_contact_post(request: Request):
         }
     )
 
+@dominion_router.get("/articles", response_class=HTMLResponse)
+@dominion_router.get("/guides", response_class=HTMLResponse)
+async def dominion_articles_index(request: Request, category: Optional[str] = None):
+    """Articles, theory primers, and history breakdowns for Dominion."""
+    from mtgabyss.data.dominion_guides import DOMINION_GUIDES
+    base_path = get_base_prefix(request)
+    guides_list = list(DOMINION_GUIDES.values())
+    
+    cat_filter = (category or "").strip().lower()
+    if cat_filter:
+        if cat_filter == "strategy":
+            guides_list = [g for g in guides_list if "strategy" in g.get("category", "").lower()]
+        elif cat_filter == "history":
+            guides_list = [g for g in guides_list if "history" in g.get("category", "").lower() or "rules" in g.get("category", "").lower()]
+        elif cat_filter == "theory":
+            guides_list = [g for g in guides_list if "theory" in g.get("category", "").lower() or "deckbuilding" in g.get("category", "").lower()]
+        elif cat_filter == "landscapes":
+            guides_list = [g for g in guides_list if "landscape" in g.get("slug", "").lower() or "advanced" in g.get("category", "").lower()]
+
+    return templates.TemplateResponse(
+        request=request,
+        name="dominion/guides/index.html",
+        context={
+            "base_path": base_path,
+            "guides": guides_list,
+            "active_category": cat_filter or "all",
+            "total_articles": len(DOMINION_GUIDES)
+        },
+        headers={
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+    )
+
+@dominion_router.get("/articles/{slug}", response_class=HTMLResponse)
+@dominion_router.get("/guides/{slug}", response_class=HTMLResponse)
+async def dominion_article_detail(request: Request, slug: str):
+    """Dominion article with sticky card links and combo expansion CTA."""
+    from mtgabyss.data.dominion_guides import DOMINION_GUIDES
+    guide = DOMINION_GUIDES.get(slug)
+    if not guide:
+        raise HTTPException(status_code=404, detail="Dominion article not found")
+    base_path = get_base_prefix(request)
+    return templates.TemplateResponse(
+        request=request,
+        name="dominion/guides/detail.html",
+        context={
+            "base_path": base_path,
+            "guide": guide
+        },
+        headers={
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+    )
+
 

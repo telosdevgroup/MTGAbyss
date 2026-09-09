@@ -169,6 +169,101 @@
       align-items: center;
     }
 
+    /* Dropdown Menus */
+    .nav-dropdown {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .dropdown-toggle {
+      background: transparent;
+      border: none;
+      color: var(--header-muted);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.35rem 0.25rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .dropdown-toggle:hover,
+    .nav-dropdown:hover .dropdown-toggle,
+    .nav-dropdown.is-open .dropdown-toggle {
+      color: #fff;
+    }
+    .dropdown-caret {
+      width: 9px;
+      height: 6px;
+      transition: transform 0.2s ease;
+      opacity: 0.7;
+    }
+    .nav-dropdown:hover .dropdown-caret,
+    .nav-dropdown.is-open .dropdown-caret {
+      transform: rotate(180deg);
+      stroke: var(--accent);
+      opacity: 1;
+    }
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 280px;
+      background: #111827;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-top: 2px solid var(--accent);
+      border-radius: 6px;
+      box-shadow: 0 14px 32px rgba(0,0,0,0.65);
+      padding: 0.5rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.2rem;
+      z-index: 200;
+      margin-top: 0.5rem;
+    }
+    .nav-dropdown:hover .dropdown-menu,
+    .nav-dropdown.is-open .dropdown-menu {
+      display: flex;
+    }
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: 4px;
+      text-decoration: none !important;
+      transition: background 0.15s, border-color 0.15s;
+      border: 1px solid transparent;
+      margin-left: 0 !important;
+    }
+    .dropdown-item:hover {
+      background: #1f2937;
+      border-color: rgba(217, 119, 6, 0.3);
+    }
+    .dropdown-item-icon {
+      font-size: 1.15rem;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .dropdown-item-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .dropdown-item:hover .dropdown-item-title {
+      color: #fbbf24;
+    }
+    .dropdown-item-desc {
+      font-size: 0.74rem;
+      color: #94a3b8;
+      line-height: 1.35;
+    }
+
     @media (max-width: 768px) {
       .header-inner {
         flex-wrap: wrap;
@@ -204,6 +299,29 @@
         width: 100%;
         padding: 0.35rem 0.5rem;
         margin-left: 0 !important;
+      }
+      .nav-dropdown {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .dropdown-toggle {
+        width: 100%;
+        justify-content: space-between;
+        padding: 0.45rem 0.5rem;
+        font-size: 1rem;
+      }
+      .dropdown-menu {
+        position: static;
+        width: 100%;
+        margin-top: 0.35rem;
+        box-shadow: none;
+        background: #0b1120;
+        border: 1px solid var(--header-border);
+        border-left: 2px solid var(--accent);
+      }
+      .nav-dropdown.is-open .dropdown-menu {
+        display: flex;
       }
       .nav-divider {
         display: block !important;
@@ -247,12 +365,50 @@
       </button>
 
       <nav id="main-navigation" aria-label="Dominion Navigation" style="display: flex; align-items: center; gap: 1.25rem;">
-        <!-- Group 1: Navigation Links -->
+        <!-- Group 1: Navigation Links with Dropdowns -->
         <div class="nav-links-group">
-          <a href="{{ base_path or '/' }}">Rulings &amp; Cards</a>
+          <!-- Cards Dropdown -->
+          <div class="nav-dropdown" id="cardsDropdown">
+            <button type="button" class="dropdown-toggle" aria-expanded="false" aria-haspopup="true">
+              <span>Cards</span>
+              <svg class="dropdown-caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M1 1l4 4 4-4"/>
+              </svg>
+            </button>
+            <div class="dropdown-menu" role="menu">
+              <a href="{{ base_path or '/' }}" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">🃏</span>
+                <div>
+                  <div class="dropdown-item-title">Card Catalog &amp; Rules</div>
+                  <div class="dropdown-item-desc">All kingdom cards, errata, editions &amp; synergies</div>
+                </div>
+              </a>
+              <a href="{{ base_path }}/rules.md" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">📜</span>
+                <div>
+                  <div class="dropdown-item-title">Rules Architecture</div>
+                  <div class="dropdown-item-desc">Core turn phases, mechanics &amp; cleanup spec</div>
+                </div>
+              </a>
+              <a href="{{ base_path }}/sets.md" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">📦</span>
+                <div>
+                  <div class="dropdown-item-title">Expansion Sets</div>
+                  <div class="dropdown-item-desc">Complete set manifests from 2008 to present</div>
+                </div>
+              </a>
+              <a href="{{ base_path }}/random" class="dropdown-item" role="menuitem">
+                <span class="dropdown-item-icon">🎲</span>
+                <div>
+                  <div class="dropdown-item-title">Random Card</div>
+                  <div class="dropdown-item-desc">Fast random kingdom card lookup</div>
+                </div>
+              </a>
+            </div>
+          </div>
+
           <a href="{{ base_path }}/kingdom-generator" id="nav-kingdom-generator">Kingdom Generator</a>
-          <a href="{{ base_path }}/sitemap.html">Site Index</a>
-          <a href="{{ base_path }}/random">Random Card</a>
+          <a href="{{ base_path }}/articles">Articles</a>
         </div>
 
         <span class="nav-divider" aria-hidden="true"></span>
@@ -311,6 +467,7 @@
         <div>
           <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 0.6rem;">Developer &amp; Bots</div>
           <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
+            <li><a href="{{ base_path }}/articles" style="color: var(--accent); font-weight: 700;">Articles</a></li>
             <li><a href="{{ base_path }}/sitemap.html">Site Index (.html)</a></li>
             <li><a href="{{ base_path }}/sitemap.md">Markdown Index (.md)</a></li>
             <li><a href="{{ base_path }}/sitemap.xml">XML Sitemap</a></li>
@@ -346,6 +503,35 @@
           }
         });
       }
+
+      var dropdowns = document.querySelectorAll('.nav-dropdown');
+      dropdowns.forEach(function(dd) {
+        var btn = dd.querySelector('.dropdown-toggle');
+        if (btn) {
+          btn.addEventListener('click', function(e) {
+            var isOpen = dd.classList.contains('is-open');
+            dropdowns.forEach(function(other) {
+              if (other !== dd) {
+                other.classList.remove('is-open');
+                var otherBtn = other.querySelector('.dropdown-toggle');
+                if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+              }
+            });
+            dd.classList.toggle('is-open', !isOpen);
+            btn.setAttribute('aria-expanded', !isOpen ? 'true' : 'false');
+          });
+        }
+      });
+
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.nav-dropdown')) {
+          dropdowns.forEach(function(dd) {
+            dd.classList.remove('is-open');
+            var btn = dd.querySelector('.dropdown-toggle');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+          });
+        }
+      });
     })();
   </script>
 </body>
