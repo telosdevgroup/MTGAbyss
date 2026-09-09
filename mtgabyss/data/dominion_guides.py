@@ -482,5 +482,257 @@ DOMINION_GUIDES = {
             ],
             "generator_query": "witch,militia,chapel,village,council-room"
         }
+    },
+
+"7-synergies-with-workshop": {
+        "slug": "7-synergies-with-workshop",
+        "title": "7 Synergies with Workshop: High-Dimensional Gaining Engines",
+        "subtitle": "How semantic vector embeddings reveal the closest mechanical and strategic relatives to Dominion's premiere 4-cost gainer.",
+        "category": "Synergies & Top Lists",
+        "read_time": "7 min read",
+        "hero_card": {
+            "name": "Workshop",
+            "slug": "workshop",
+            "cost": 3,
+            "set_name": "Base"
+        },
+        "summary": "Workshop is the archetype-defining gainer of Dominion: a modest $3 terminal action that bypasses coin totals to directly place cards costing up to $4 into your discard pile. High-dimensional vector analysis across all 500+ kingdom cards isolates the exact 7 cards that cluster closest in mechanical intent, tempo curve, and pile-draining power.",
+        "takeaways": [
+            "Gaining vs Buying: Workshop ignores copper totals, allowing you to flood your deck with key $4 cards without ever generating cash in hand.",
+            "Vector embedding nearest neighbor Ironworks ($4) directly solves Workshop's terminal action limitation by refunding +1 Action whenever gaining Action cards.",
+            "Top-deck gainers like Armory and Artisan trade the discard pile for immediate next-turn access, dramatically increasing engine ramp speed.",
+            "The Workshop-Gardens rush is one of the oldest clock strategies in Dominion, aiming to empty 3 supply piles before big money engines achieve consistency."
+        ],
+        "sections": [
+            {
+                "heading": "1. Ironworks ($4): The Fluid Non-Terminal Upgrade",
+                "paragraphs": [
+                    "Ranking as the #1 closest embedding neighbor to Workshop, Ironworks takes the 'Gain a card costing up to $4' core mechanic and layers on conditional tempo refunds.",
+                    "While Workshop is strictly terminal (consuming your sole Action), Ironworks gives +1 Action when gaining an Action card, +$1 when gaining a Treasure, and +1 Card when gaining a Victory card. When building a mid-game engine, chaining multiple Ironworks together lets you grab an entire army of Villages or Cantrips in a single turn without ever stalling out."
+                ],
+                "cards": [
+                    {"name": "Ironworks", "slug": "ironworks", "cost": 4, "role": "Non-Terminal Action Gainer"}
+                ]
+            },
+            {
+                "heading": "2. Artisan ($6): The Heavyweight Top-Deck Engine",
+                "paragraphs": [
+                    "Where Workshop costs $3 and gains cards to the discard pile, Artisan occupies the heavyweight $6 slot. It gains a card costing up to $5 directly into your hand, then top-decks a card from hand.",
+                    "In vector space, Artisan mirrors Workshop's ability to manufacture key engine pieces out of thin air, but elevates it to the crucial $5 cost bracket (securing Witch, Market, or Laboratory) while solving the immediate tempo lag by putting the gained card directly in play."
+                ],
+                "cards": [
+                    {"name": "Artisan", "slug": "artisan", "cost": 6, "role": "Direct-to-Hand $5 Gainer"}
+                ]
+            },
+            {
+                "heading": "3. Devil's Workshop ($4): The Escalating Night Phase Harvest",
+                "paragraphs": [
+                    "Devil's Workshop lives in the Night phase, meaning it never consumes an Action slot. Its modal payoff directly scales with how active your gaining engine was during the day.",
+                    "If you gained 1 card earlier this turn (for example, with a standard Workshop or Buy), Devil's Workshop gains another card costing up to $4. If you gained 2 or more cards, it grants an Imp—a devastating +2 Cards, +1 Action cantrip. Pairing Workshop with Devil's Workshop turns simple 4-cost gains into relentless Imp spam."
+                ],
+                "cards": [
+                    {"name": "Devil's Workshop", "slug": "devils-workshop", "cost": 4, "role": "Action-Free Night Gainer"}
+                ]
+            },
+            {
+                "heading": "4. Armory ($4): Top-Deck Staging for Zero Shuffle Lag",
+                "paragraphs": [
+                    "Armory matches Workshop's exact gaining threshold: 'Gain a card costing up to $4 Coins'. However, instead of exiling the newly gained card to the bottom of your discard pile, Armory places it directly on top of your deck.",
+                    "This guarantees you draw that Silver, Village, or Militia in your very next hand. When timing is critical—such as setting up a Village-Smithy turn on Turn 3 or 4—Armory completely removes the variance of card cycling."
+                ],
+                "cards": [
+                    {"name": "Armory", "slug": "armory", "cost": 4, "role": "Top-Deck Staging Gainer"}
+                ]
+            },
+            {
+                "heading": "5. Carpenter ($4): The Adaptive Modal Pivot",
+                "paragraphs": [
+                    "Carpenter provides a dual personality that vector embeddings cluster tightly with Workshop's pile-pressure profile. Early in the game while no piles are empty, Carpenter gives +1 Action and gains a card costing up to $4.",
+                    "Once any supply pile empties (often accelerated by your own early Workshop picks), Carpenter pivots into a Remodel: trashing a junk card from hand to gain a card costing up to $2 more. It solves Workshop's biggest late-game flaw: dead draw clutter once $4 cards are no longer needed."
+                ],
+                "cards": [
+                    {"name": "Carpenter", "slug": "carpenter", "cost": 4, "role": "Action Refund & Late-Game Trash-Upgrade"}
+                ]
+            },
+            {
+                "heading": "6. Craftsman ($3): Low-Cost Heavy Lifting with Debt",
+                "paragraphs": [
+                    "Costing $3 just like Workshop, Craftsman achieves immediate access to the elite $5 cost tier by taking on +2 Debt upon play.",
+                    "In kingdoms where reaching key $5 cards on Turn 2 or Turn 3 is paramount, Craftsman acts as an accelerated Workshop. It bypasses early coin limitations, grabs the pivotal card immediately, and lets you pay off the 2 Debt with passive economy later."
+                ],
+                "cards": [
+                    {"name": "Craftsman", "slug": "craftsman", "cost": 3, "role": "Early $5 Debt Surge"}
+                ]
+            },
+            {
+                "heading": "7. Wheelwright ($5): Discard-Driven Action Velocity",
+                "paragraphs": [
+                    "Wheelwright costs $5 and provides +1 Card, +1 Action cantrip reliability alongside an optional discard-to-gain trigger.",
+                    "By discarding an unwanted card from hand (such as an Estate or redundant Copper), Wheelwright allows you to gain an Action card costing as much or less. It preserves your hand size while maintaining the rapid card acquisition tempo that Workshop pioneered."
+                ],
+                "cards": [
+                    {"name": "Wheelwright", "slug": "wheelwright", "cost": 5, "role": "Cantrip Filter & Selective Gainer"}
+                ]
+            }
+        ],
+        "tactical_hook": {
+            "title": "Tactical Pilot Briefing: The 3-Pile Clock Calculation",
+            "summary": "Workshop and its embedding neighbors are not just economy tools—they control the game timer. When paired with alternate victory cards like Gardens, aggressive gaining allows you to exhaust 3 kingdom piles by Turn 10 to 12. Always monitor opponent deck sizes and end the match before traditional engine decks hit their Gold and Province stride."
+        },
+        "combo_cta": {
+            "title": "The Infinite Workshop Swarm",
+            "description": "Pairing Workshop with Ironworks and Armory creates an autonomous gaining machine that drains $4 action piles in rapid succession. Test this gaining engine in the Kingdom Generator:",
+            "core_cards": [
+                {"name": "Workshop", "slug": "workshop"},
+                {"name": "Ironworks", "slug": "ironworks"}
+            ],
+            "companions": [
+                {
+                    "name": "Armory",
+                    "slug": "armory",
+                    "cost": 4,
+                    "reason": "Immediate Top-Decking: Ensures gained cards skip the discard pile and hit play on the next turn."
+                },
+                {
+                    "name": "Carpenter",
+                    "slug": "carpenter",
+                    "cost": 4,
+                    "reason": "Pile Drain Adaptation: Gives +1 Action early, then converts cheap cards into $6 bombs once piles empty."
+                },
+                {
+                    "name": "Gardens",
+                    "slug": "gardens",
+                    "cost": 4,
+                    "reason": "Victory Scaler: Converts massive deck thickness into an unassailable point total."
+                }
+            ],
+            "generator_query": "workshop,ironworks,armory,carpenter,gardens"
+        }
+    },
+
+    "7-action-enablers-with-village": {
+        "slug": "7-action-enablers-with-village",
+        "title": "7 Action Enablers with Village: The Action Multiplying Frontier",
+        "subtitle": "Analyzing the closest mathematical and functional relatives to Dominion's quintessential +2 Actions cantrip.",
+        "category": "Synergies & Top Lists",
+        "read_time": "7 min read",
+        "hero_card": {
+            "name": "Village",
+            "slug": "village",
+            "cost": 3,
+            "set_name": "Base"
+        },
+        "summary": "Every engine in Dominion lives and dies on Action economy. Village provides the canonical baseline: +1 Card, +2 Actions for $3. High-dimensional vector clustering identifies the 7 cards whose mechanical profiles align most intimately with Village, illustrating how designers evolved action generation across different expansions.",
+        "takeaways": [
+            "The Action Surplus Rule: You need an average of 1.5 Village effects for every terminal draw or attack card to prevent terminal action collision.",
+            "Worker's Village ($4) introduces +1 Buy, converting pure action velocity into multi-province victory turns.",
+            "Fishing Village ($3) represents Duration efficiency: carrying actions and coin into the subsequent turn to guarantee uninterrupted flow.",
+            "Border Village ($6) eliminates the opportunity cost of buying actions by granting a free card costing less upon gain."
+        ],
+        "sections": [
+            {
+                "heading": "1. Worker's Village ($4): The Engine Architect's Holy Grail",
+                "paragraphs": [
+                    "Clustering as the #1 closest embedding neighbor to Village, Worker's Village provides +1 Card, +2 Actions, and +1 Buy.",
+                    "In high-performance engines, drawing your entire deck is meaningless if you are capped at a single Buy. Worker's Village provides the identical action output of standard Village while naturally layering on the extra Buy needed to acquire multiple Provinces on mega-turns."
+                ],
+                "cards": [
+                    {"name": "Worker's Village", "slug": "workers-village", "cost": 4, "role": "Action + Buy Engine Keystone"}
+                ]
+            },
+            {
+                "heading": "2. Fishing Village ($3): Two-Turn Continuity & Economy",
+                "paragraphs": [
+                    "Fishing Village costs $3 and introduces the Duration mechanic: giving +2 Actions and +$1 immediately, and +1 Action and +$1 at the start of your next turn.",
+                    "Because it carries actions forward, Fishing Village guarantees that you begin your next turn with 2 Actions before playing a single card from hand, virtually immunizing your engine against starting terminal brick hands."
+                ],
+                "cards": [
+                    {"name": "Fishing Village", "slug": "fishing-village", "cost": 3, "role": "Duration Action Bridge"}
+                ]
+            },
+            {
+                "heading": "3. Snowy Village ($3): The Mega-Action Sprint with a Hard Ceiling",
+                "paragraphs": [
+                    "Snowy Village delivers an astronomical stat line for $3: +1 Card, +4 Actions, and +1 Buy. However, it imposes a strict condition: ignore any further +Actions you get this turn.",
+                    "Vector embeddings place Snowy Village close to standard Village because it solves catastrophic action deficits in a single stroke, making it ideal as the final action in hands loaded with heavy terminal cards like Smithy or Witch."
+                ],
+                "cards": [
+                    {"name": "Snowy Village", "slug": "snowy-village", "cost": 3, "role": "Terminal Action Explosion"}
+                ]
+            },
+            {
+                "heading": "4. Rustic Village ($4): Sun Token Synergy and Hand Cycling",
+                "paragraphs": [
+                    "Rustic Village provides +1 Card, +2 Actions, and +1 Sun Token, along with the ability to discard 2 cards to draw another.",
+                    "It functions as an agile Village variant, providing the crucial +2 Actions while smoothing out clumsy draws by turning dead Coppers or Victory cards into fresh draws."
+                ],
+                "cards": [
+                    {"name": "Rustic Village", "slug": "rustic-village", "cost": 4, "role": "Action & Sift Cantrip"}
+                ]
+            },
+            {
+                "heading": "5. Border Village ($6): Zero Opportunity Cost Acceleration",
+                "paragraphs": [
+                    "Border Village gives the classic +1 Card, +2 Actions, but costs $6. Its vector signature is unique because of its on-gain trigger: 'When you gain this, gain a card costing less than this'.",
+                    "Gaining Border Village effectively nets you a free $5 card (such as a Witch, Laboratory, or Bandit). It completely eliminates the dilemma between drafting action generation and drafting draw power."
+                ],
+                "cards": [
+                    {"name": "Border Village", "slug": "border-village", "cost": 6, "role": "Two-for-One Action Pivot"}
+                ]
+            },
+            {
+                "heading": "6. Harbor Village ($4): Conditional Coin Multiplier",
+                "paragraphs": [
+                    "Harbor Village gives +1 Card, +2 Actions, plus a conditional financial bonus: if the next Action you play gives you coin, Harbor Village gives you +$1 as well.",
+                    "When paired with action cards that produce income (like Market, Festival, or Militia), Harbor Village accelerates your purchasing power while maintaining the action chain."
+                ],
+                "cards": [
+                    {"name": "Harbor Village", "slug": "harbor-village", "cost": 4, "role": "Action & Income Synergist"}
+                ]
+            },
+            {
+                "heading": "7. Bustling Village ($5): The Settlers Reunion",
+                "paragraphs": [
+                    "Bustling Village delivers +1 Card, +3 Actions, and lets you retrieve a Settlers from your discard pile directly into your hand.",
+                    "Generating a net surplus of +2 Actions per play, Bustling Village is a dream fuel source for complex draw engines that rely on multiple terminal draw cards."
+                ],
+                "cards": [
+                    {"name": "Bustling Village", "slug": "bustling-village", "cost": 5, "role": "+3 Actions Surplus Engine"}
+                ]
+            }
+        ],
+        "tactical_hook": {
+            "title": "Tactical Pilot Briefing: Avoiding the Terminal Collision Trap",
+            "summary": "Never draft heavy terminal draw cards (Smithy, Council Room, Torturer) until your deck has at least one Village or Duration action generator in active circulation. A hand with three Smithies and zero Villages results in two wasted actions and a stalled engine turn."
+        },
+        "combo_cta": {
+            "title": "The Golden Village-Smithy Engine",
+            "description": "Village paired with Smithy is the archetype that birthed modern deckbuilding. To push this engine into full multi-Province overdrive, add these 3 companion kingdom cards:",
+            "core_cards": [
+                {"name": "Village", "slug": "village"},
+                {"name": "Smithy", "slug": "smithy"}
+            ],
+            "companions": [
+                {
+                    "name": "Worker's Village",
+                    "slug": "workers-village",
+                    "cost": 4,
+                    "reason": "+1 Buy Integrator: Turns massive single-turn card cycling into multiple Province purchases."
+                },
+                {
+                    "name": "Fishing Village",
+                    "slug": "fishing-village",
+                    "cost": 3,
+                    "reason": "Turn-to-Turn Bridge: Insulates your opening draws against terminal bricking."
+                },
+                {
+                    "name": "Market",
+                    "slug": "market",
+                    "cost": 5,
+                    "reason": "Cantrip Economy: Adds buying power and card flow without consuming action space."
+                }
+            ],
+            "generator_query": "village,smithy,workers-village,fishing-village,market"
+        }
     }
 }

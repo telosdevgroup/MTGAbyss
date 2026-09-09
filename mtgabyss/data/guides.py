@@ -235,6 +235,122 @@ GUIDES = {
             }
         ]
     },
+    "titania-elvish-art-botanical-surrealism": {
+        "slug": "titania-elvish-art-botanical-surrealism",
+        "title": "Titania: A Study in Elvish Art & Botanical Surrealism",
+        "subtitle": "How thirty years of Magic illustration evolved from Rebecca Guay's wisteria romanticism to Iris Compiet's primordial root-woven surrealism.",
+        "category": "Visual Arts & Aesthetics",
+        "read_time": "6 min read",
+        "published_date": "2026-09-09",
+        "updated_date": "2026-09-09",
+        "author": "AvaScry Visual Intelligence",
+        "hero_card": {
+            "name": "Titania, Protector of Argoth",
+            "slug": "titania-protector-of-argoth",
+            "image_url": "https://cards.scryfall.io/normal/front/4/7/4701621e-c05d-428b-a611-cd78555c4be5.jpg?1783925139",
+            "art_crop_url": "https://cards.scryfall.io/art_crop/front/0/d/0d835af8-300b-4c6a-b480-30a7bf394141.jpg?1782879919",
+            "artist": "Iris Compiet",
+            "set_name": "Modern Horizons 2",
+            "set_code": "mh2"
+        },
+        "summary": "Titania is not merely a legendary elemental; she is Magic's foundational icon of nature's vengeance and living foliage. Using AvaScry's Qwen3-VL computer vision analysis and 4096-dimensional artistic embedding clusters, we deconstruct how fantasy illustrators depict botanical life, diffused forest illumination, and the Elvish sublime.",
+        "takeaways": [
+            "Rebecca Guay's 1997 Vanguard Titania established the ethereal high-fantasy archetype: soft wisteria watercolor washes, circular solar halos, and romantic floral drapery.",
+            "Iris Compiet's 2021 Modern Horizons 2 reimagining shifted the paradigm to botanical surrealism: humanoid anatomy woven directly from twisted roots, vine hair, and lotus-pink highlights.",
+            "AvaScry's vision model reveals diffused, source-less illumination as the universal visual motif of enchanted forests, eliminating sharp shadows to enhance timelessness.",
+            "Nearest neural visual neighbors connect Titania directly to Rebecca Guay's Bloodline Shaman (88.8% match) and Anna Steinbauer's Skyshroud Claim (90.3% match)."
+        ],
+        "sections": [
+            {
+                "heading": "From Fairytale Romanticism to Primeval Anatomy",
+                "paragraphs": [
+                    "In fantasy illustration, green mana is often reduced to emerald armor and oak leaves. But Titania has always demanded a more profound artistic thesis: she is the living spirit of Argoth, the sacred forest devastated by Urza and Mishra during the Brothers' War.",
+                    "When Rebecca Guay painted Titania for the 1997 Vanguard series, she leaned into Pre-Raphaelite romanticism. Her figure is illuminated by a majestic celestial circular halo, framed by delicate purple larkspur and flowering boughs. The mood is serene, melancholic, and sacred—a gentle goddess presiding over an unspoiled Eden.",
+                    "Twenty-four years later, Dutch artist Iris Compiet executed a startling, organic transformation for Modern Horizons 2. Compiet dissolved the separation between human and plant. Her Titania is not a woman standing in a forest; she is the forest giving herself physical form. Limbs extend as sinuous brier roots; hair curls outward as living ivy; and blooming lotus petals cluster across her collarbone. It is botanical folklore at its most raw and primeval."
+                ]
+            },
+            {
+                "heading": "Vision Model Breakdown: Deconstructing Compiet's Palette & Light",
+                "paragraphs": [
+                    "Passing Compiet's painting through AvaScry's Qwen3-VL vision analysis pipeline exposes the technical craft behind its hypnotic presence:",
+                    "1. Diffused Forest Illumination: The model notes zero harsh directional shadows. Light filters evenly through a damp canopy, causing highlights to gently glisten off wet plant fibers and floral pistils without creating blinding contrast.",
+                    "2. Chromatic Triad (Verdant Green, Lotus Pink, Pollen Yellow): Rather than a monochromatic green wash, Compiet introduces delicate rose-pink floral accents and pollen-yellow stamens against misty cyan backgrounds, creating depth through complementary temperature shifts.",
+                    "3. Painterly Texture & Soft-Edged Depth: Close foreground vines remain crisp, while the background dissolves into a watercolor mist of blurred forest boughs, guiding the viewer's eye straight to Titania's solemn, elemental expression."
+                ],
+                "cards": [
+                    {"name": "Titania, Protector of Argoth", "slug": "titania-protector-of-argoth", "image_url": "https://cards.scryfall.io/normal/front/4/7/4701621e-c05d-428b-a611-cd78555c4be5.jpg?1783925139", "role": "Primeval Forest Avatar"},
+                    {"name": "Bloodline Shaman", "slug": "bloodline-shaman", "image_url": "https://cards.scryfall.io/normal/front/5/f/5fdfc473-8477-4c04-a4e7-ecac1b0a5716.jpg?1783945045", "role": "Wisteria Watercolor Kinship"},
+                    {"name": "Priest of Titania", "slug": "priest-of-titania", "image_url": "https://cards.scryfall.io/normal/front/0/4/04130251-9950-4710-9f20-3953daae9e05.jpg?1783945748", "role": "Devotional Foliage"}
+                ]
+            },
+            {
+                "heading": "The Elvish Tapestry: How Magic Illustrators Frame Nature as Power",
+                "paragraphs": [
+                    "Titania's iconography anchors the visual language of Magic's Elves and Dryads across every plane. In Llanowar, artists like Kev Walker and Chris Rahn emphasize martial, predatory discipline—tattooed warriors wielding crescent steel among redwood trunks.",
+                    "Yet in the pastoral and ancient sanctuaries of Wirewood and Skyshroud, illustration retreats into symbiosis. Cards like Skyshroud Claim, Sylvan Library, and Wood Elves celebrate botanical majesty over armor. Nature is not a resource to be harvested; it is an omnipotent entity that swallows empires whole.",
+                    "When Titania falls, Argoth is broken, giving birth to the devastating cataclysm that closed the Antiquities cycle. In Compiet's brushwork, that tragic gravitas remains eternal."
+                ]
+            }
+        ],
+        "art_clusters": [
+            {
+                "dimension_title": "Visual Dimension 1: Botanical Humanoids & Root Anatomy",
+                "dimension_tag": "Subject & Figurative Anatomy",
+                "description": "4096-dimensional embedding neighbors that share interwoven root anatomy, vine hair, and human-plant hybrid forms.",
+                "neighbors": [
+                    {
+                        "name": "Sproutwatch Dryad",
+                        "slug": "sproutwatch-dryad",
+                        "artist": "Nereida",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/f/1/f1ca1221-e6d7-46b9-a1ba-8bc5969c6765.jpg?1783912430",
+                        "reason": "88.9% match • Interwoven vine limbs and floral petal highlights"
+                    },
+                    {
+                        "name": "Sanctum Weaver",
+                        "slug": "sanctum-weaver",
+                        "artist": "Kimonas Theodossiou",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/0/1/01315276-97e9-4786-90b7-de1d6fc8f1ca.jpg?1782878849",
+                        "reason": "83.1% match • Ethereal enchanted dryad seated among glowing canopy flora"
+                    },
+                    {
+                        "name": "Skyshroud Claim",
+                        "slug": "skyshroud-claim",
+                        "artist": "Anna Steinbauer",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/2/5/25f8f1a1-585d-4a2d-9a63-5c670ba8d467.jpg?1782817084",
+                        "reason": "85.5% match • Massive boughs bathed in misty cyan atmospheric depth"
+                    }
+                ]
+            },
+            {
+                "dimension_title": "Visual Dimension 2: Ethereal Wisteria & Atmospheric Mysticism",
+                "dimension_tag": "Mood & Color Atmosphere",
+                "description": "Nearest neighbors clustered by soft-edged diffused lighting, watercolor tranquility, and romantic foliage tones.",
+                "neighbors": [
+                    {
+                        "name": "Bloodline Shaman",
+                        "slug": "bloodline-shaman",
+                        "artist": "Rebecca Guay",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/3/8/3872db8b-e052-4728-a9d9-86955934ef70.jpg?1783031150",
+                        "reason": "88.8% match • Classical watercolor washes and delicate Elvish profile"
+                    },
+                    {
+                        "name": "Gretchen Titchwillow",
+                        "slug": "gretchen-titchwillow",
+                        "artist": "Mila Pesic",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/2/2/229e2a39-1f0f-4975-b252-6f296b2b9f4d.jpg?1782876794",
+                        "reason": "90.3% match • Soft garden atmosphere and luminous natural palette"
+                    },
+                    {
+                        "name": "Abundant Harvest",
+                        "slug": "abundant-harvest",
+                        "artist": "Iris Compiet",
+                        "art_url": "https://cards.scryfall.io/art_crop/front/0/1/01035640-ab76-4bdf-9964-9b961cceff3a.jpg?1782881276",
+                        "reason": "81.2% match • Direct sister piece in Compiet's Modern Horizons 2 portfolio"
+                    }
+                ]
+            }
+        ]
+    },
     "interaction-packages-by-color": {
         "slug": "interaction-packages-by-color",
         "title": "The Definitive Guide to Commander Interaction Packages by Color Identity",
