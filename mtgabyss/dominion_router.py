@@ -37,8 +37,19 @@ async def dominion_serve_image(rest_of_path: str):
     # Check public/images/dominion/
     file_path = os.path.join("public", "images", "dominion", rest_of_path)
     if os.path.isfile(file_path):
-        ext = os.path.splitext(file_path)[1].lower()
-        media_type = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}.get(ext, "image/jpeg")
+        media_type = "image/jpeg"
+        try:
+            with open(file_path, "rb") as _f:
+                _hdr = _f.read(12)
+            if _hdr.startswith(b"RIFF") and _hdr[8:12] == b"WEBP":
+                media_type = "image/webp"
+            elif _hdr.startswith(b"\x89PNG"):
+                media_type = "image/png"
+            elif _hdr.startswith(b"\xff\xd8"):
+                media_type = "image/jpeg"
+        except Exception:
+            ext = os.path.splitext(file_path)[1].lower()
+            media_type = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}.get(ext, "image/jpeg")
         return FileResponse(file_path, media_type=media_type, headers={"Cache-Control": "public, max-age=2592000, immutable"})
 
     # Check fallback: public/images/ directly
@@ -898,9 +909,21 @@ async def dominion_card_image(slug: str):
     local_file = os.path.join(DOMINION_IMAGE_DIR, f"{clean_slug}.jpg")
     
     if os.path.isfile(local_file):
+        media_type = "image/jpeg"
+        try:
+            with open(local_file, "rb") as _f:
+                _hdr = _f.read(12)
+            if _hdr.startswith(b"RIFF") and _hdr[8:12] == b"WEBP":
+                media_type = "image/webp"
+            elif _hdr.startswith(b"\x89PNG"):
+                media_type = "image/png"
+            elif _hdr.startswith(b"\xff\xd8"):
+                media_type = "image/jpeg"
+        except Exception:
+            pass
         return FileResponse(
             local_file,
-            media_type="image/jpeg",
+            media_type=media_type,
             headers={"Cache-Control": "public, max-age=2592000, immutable"}
         )
         

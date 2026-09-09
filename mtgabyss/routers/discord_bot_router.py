@@ -403,7 +403,8 @@ def handle_dominion_command(subcommand: str, options: Dict[str, Any]) -> Dict[st
         cost_parts.append(f"{cost_obj['debt']} Debt")
     if cost_obj.get("potion"):
         cost_parts.append("1 Potion")
-    cost_display = f" ({', '.join(cost_parts)})" if cost_parts else ""
+    cost_str = ", ".join(cost_parts) if cost_parts else "$0"
+    cost_display = f" ({cost_str})" if cost_parts else ""
 
     # Expansion
     exp_map = {e.get("set_tag", "").lower(): e.get("name") for e in dom_db.expansions.find({}, {"set_tag": 1, "name": 1})}
@@ -432,25 +433,40 @@ def handle_dominion_command(subcommand: str, options: Dict[str, Any]) -> Dict[st
     elif "reaction" in types_lower:
         color = 0x0284c7  # Light blue
 
-    desc_lines = [f"**Expansion:** {expansion}"]
+    fields = [
+        {"name": "Expansion", "value": expansion, "inline": True},
+        {"name": "Cost", "value": cost_str, "inline": True},
+    ]
+
     if types_str:
-        desc_lines.append(f"**Type:** {types_str}")
+        fields.append({"name": "Type", "value": types_str, "inline": True})
+
     if text:
-        desc_lines.append(f"\n{text}")
+        # Blockquote formatting renders prominent and distinct in Discord embeds
+        formatted_text = "\n".join(f"> {line}" for line in text.split("\n"))
+        fields.append({"name": "Card Text", "value": formatted_text, "inline": False})
+
+    fields.append({
+        "name": "Codex Entry",
+        "value": f"[View Official Errata & Combos]({url})",
+        "inline": False
+    })
 
     embed = {
-        "title": f"🏰 {name}{cost_display}",
+        "title": f"🏰 {name} • {cost_str}",
         "url": url,
         "color": color,
-        "description": "\n".join(desc_lines),
-        "fields": [
-            {"name": "Codex Entry", "value": f"[View Official Errata & Combos]({url})", "inline": False}
-        ]
+        "description": f"**{types_str}** • {expansion}" if types_str else f"**{expansion}**",
+        "fields": fields
     }
 
-    # High-resolution canonical image URL
+    # High-resolution image URL (using direct CDN if available as ultimate fallback)
+    raw_img = card.get("image_url")
     canonical_img = f"https://dominion.avascry.com/images/{slug}.jpg"
-    embed["image"] = {"url": canonical_img}
+    final_img = raw_img if (raw_img and raw_img.startswith("http")) else canonical_img
+
+    embed["image"] = {"url": final_img}
+    embed["thumbnail"] = {"url": final_img}
 
     embed["footer"] = {"text": "AvaScry Dominion Codex • dominion.avascry.com"}
     return {"embeds": [embed]}
