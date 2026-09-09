@@ -1,9 +1,9 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
-{% block title %}Documentation &amp; Integration Hub | AvaScry{% endblock %}
+{% block title %}Developer Documentation &amp; API Guide | AvaScry{% endblock %}
 
 {% block meta %}
-  <meta name="description" content="Comprehensive developer and AI documentation for AvaScry. Discover Markdown endpoints, llms.txt ingestion, rules corpus, Cockatrice XML, and RSS feeds.">
+  <meta name="description" content="Official developer documentation for AvaScry. High-speed REST JSON endpoints, cURL examples, Python & JavaScript snippets, rules corpus, Cockatrice XML, and RSS feeds.">
   <link rel="alternate" type="text/markdown" href="/docs.md">
   <link rel="alternate" type="application/json" href="/docs.json">
 {% endblock %}
@@ -14,29 +14,35 @@
   <!-- Hero Header -->
   <div style="text-align: center; margin-bottom: 2.5rem;">
     <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--card-bg, rgba(255,255,255,0.05)); border: 1px solid var(--border); padding: 0.35rem 0.9rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; color: var(--accent, #38bdf8); margin-bottom: 1rem;">
-      <span>📜 Developer &amp; AI Documentation</span>
+      <span>📜 Developer Documentation</span>
       <span style="opacity: 0.4;">•</span>
-      <span>Tri-Surface Architecture</span>
+      <span>REST &amp; Open Data</span>
       <span style="opacity: 0.4;">•</span>
-      <span>Open Access</span>
+      <span>No API Key Required</span>
     </div>
     <h1 style="font-size: 2.35rem; font-weight: 800; color: var(--text); margin: 0 0 0.75rem 0; letter-spacing: -0.02em;">
-      Platform Documentation
+      API &amp; Integration Documentation
     </h1>
     <p style="font-size: 1.05rem; color: var(--muted); max-width: 780px; margin: 0 auto 1.5rem auto; line-height: 1.6;">
-      Specifications, ingestion guides, rules corpus, and desktop integration for developers, automated pipelines, and LLM agent systems.
+      Everything you need to build apps, bots, integrations, and desktop deck-builder tools on top of AvaScry's card database.
     </p>
 
     <!-- Quick Navigation Links -->
     <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin-top: 1rem;">
-      <a href="/developers" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--surface, rgba(255,255,255,0.03)); color: var(--text); transition: all 0.15s ease;">
-        <span>⚡ REST API Reference</span>
+      <a href="#quickstart" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--surface, rgba(255,255,255,0.03)); color: var(--text); transition: all 0.15s ease;">
+        <span>⚡ Quickstart</span>
+      </a>
+      <a href="#endpoints" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--surface, rgba(255,255,255,0.03)); color: var(--text); transition: all 0.15s ease;">
+        <span>🎯 Core Endpoints</span>
+      </a>
+      <a href="#cockatrice-xml" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--surface, rgba(255,255,255,0.03)); color: var(--text); transition: all 0.15s ease;">
+        <span>🎴 Cockatrice XML</span>
       </a>
       <a href="/bot" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--surface, rgba(255,255,255,0.03)); color: var(--text); transition: all 0.15s ease;">
-        <span>🤖 Discord Bot Integration</span>
+        <span>🤖 Discord Bot</span>
       </a>
-      <a href="/methodology" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--surface, rgba(255,255,255,0.03)); color: var(--text); transition: all 0.15s ease;">
-        <span>🧠 Synergy Methodology</span>
+      <a href="/developers" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--surface, rgba(255,255,255,0.03)); color: var(--text); transition: all 0.15s ease;">
+        <span>📊 Complete Schema Spec</span>
       </a>
     </div>
   </div>
@@ -44,61 +50,117 @@
   <!-- Documentation Sections Grid -->
   <div style="display: grid; grid-template-columns: 1fr; gap: 2rem; margin-bottom: 3rem;">
 
-    <!-- 1. AI & LLM Ingestion (Markdown Surface) -->
-    <div id="ai-markdown" style="background: var(--card-bg, #1e293b); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+    <!-- 1. Quickstart & Integration Examples -->
+    <div id="quickstart" style="background: var(--card-bg, #1e293b); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
         <h2 style="font-size: 1.35rem; font-weight: 700; color: var(--text); margin: 0;">
-          1. AI Agents &amp; LLM Markdown Surface
+          1. Quickstart: Querying Cards &amp; Data
         </h2>
-        <span style="font-size: 0.75rem; font-weight: 700; background: #0284c7; color: #ffffff; padding: 2px 8px; border-radius: 4px;">Content-Type: text/markdown</span>
+        <span style="font-size: 0.75rem; font-weight: 700; background: #0284c7; color: #ffffff; padding: 2px 8px; border-radius: 4px;">Zero Auth • REST JSON</span>
       </div>
       <p style="color: var(--muted); font-size: 0.95rem; margin-top: 0; margin-bottom: 1.25rem; line-height: 1.55;">
-        Every resource on AvaScry supports high-density, token-efficient Markdown representations designed specifically for context windows and retrieval pipelines. Append <code>.md</code> or send header <code>Accept: text/markdown</code> to receive clean structured Markdown with YAML frontmatter.
+        All endpoints are open, read-only, and served from memory with sub-millisecond response times. Append <code>.json</code> to any card, set, or search URL to receive a structured JSON payload.
       </p>
 
-      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-        <div style="font-size: 0.85rem; font-weight: 600; color: var(--text);">Canonical Markdown Endpoints:</div>
-        <pre style="background: var(--bg, #0f172a); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; color: #38bdf8; font-family: monospace; font-size: 0.85rem; overflow-x: auto; margin: 0;"><code># LLM Discovery Indexes (standardized llms.txt protocol)
-https://avascry.com/llms.txt
-https://avascry.com/llms-full.txt
+      <!-- Code Examples -->
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <div>
+          <div style="font-size: 0.85rem; font-weight: 700; color: var(--text); margin-bottom: 0.4rem;">cURL</div>
+          <pre style="background: var(--bg, #0f172a); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; color: #38bdf8; font-family: monospace; font-size: 0.85rem; overflow-x: auto; margin: 0;"><code># Fetch card details (Oracle text, mana cost, rulings, images)
+curl -s "https://avascry.com/card/sol-ring.json"
 
-# Individual Card &amp; Printing (Oracle text, rulings, printings)
-https://avascry.com/printing/combat-research-dmu.md
-https://avascry.com/card/sol-ring.md
+# Search cards by name or syntax query
+curl -s "https://avascry.com/search.json?q=counterspell&format=commander"
 
-# Neural Synergy &amp; Similar Cards Cluster
-https://avascry.com/similar/combat-research.md
+# Fetch expansion set metadata and card list
+curl -s "https://avascry.com/set/dmu.json"</code></pre>
+        </div>
 
-# Expansion Set Checklists &amp; Manifests
-https://avascry.com/set/dmu.md
+        <div>
+          <div style="font-size: 0.85rem; font-weight: 700; color: var(--text); margin-bottom: 0.4rem;">JavaScript (Fetch)</div>
+          <pre style="background: var(--bg, #0f172a); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; color: #a5f3fc; font-family: monospace; font-size: 0.85rem; overflow-x: auto; margin: 0;"><code>const res = await fetch("https://avascry.com/card/black-lotus.json");
+const card = await res.json();
+console.log(`${card.name} (${card.mana_cost || '0'}) - ${card.type_line}`);</code></pre>
+        </div>
 
-# Artist Portfolios
-https://avascry.com/artist/dan-frazier.md</code></pre>
+        <div>
+          <div style="font-size: 0.85rem; font-weight: 700; color: var(--text); margin-bottom: 0.4rem;">Python (Requests)</div>
+          <pre style="background: var(--bg, #0f172a); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; color: #34d399; font-family: monospace; font-size: 0.85rem; overflow-x: auto; margin: 0;"><code>import requests
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
-          <div style="font-size: 0.85rem; color: var(--muted);">Content negotiation via HTTP Header: <code>Accept: text/markdown</code></div>
-          <button onclick="navigator.clipboard.writeText('curl -s -H \'Accept: text/markdown\' https://avascry.com/printing/combat-research-dmu'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy cURL', 2000);" 
-                  style="background: var(--border); border: none; color: var(--text); font-size: 0.75rem; font-weight: 600; padding: 5px 12px; border-radius: 6px; cursor: pointer;">
-            Copy cURL
-          </button>
+res = requests.get("https://avascry.com/search.json", params={"q": "t:instant c:u cmc<=2"})
+data = res.json()
+for card in data.get("cards", []):
+    print(f"{card['name']} - {card['type_line']}")</code></pre>
         </div>
       </div>
     </div>
 
-    <!-- 2. Rules & Legalities Corpus -->
+    <!-- 2. Core Endpoints Reference -->
+    <div id="endpoints" style="background: var(--card-bg, #1e293b); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+        <h2 style="font-size: 1.35rem; font-weight: 700; color: var(--text); margin: 0;">
+          2. Core Endpoints &amp; URL Patterns
+        </h2>
+        <span style="font-size: 0.75rem; font-weight: 700; background: #059669; color: #ffffff; padding: 2px 8px; border-radius: 4px;">HTTPS GET</span>
+      </div>
+      <p style="color: var(--muted); font-size: 0.95rem; margin-top: 0; margin-bottom: 1.25rem; line-height: 1.55;">
+        Every resource exposes human HTML, structured JSON (via <code>.json</code> or <code>Accept: application/json</code>), and clean raw text (via <code>.md</code>).
+      </p>
+
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; color: var(--text); text-align: left;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border); background: var(--surface, rgba(255,255,255,0.02));">
+              <th style="padding: 0.75rem 1rem; font-weight: 700;">Endpoint</th>
+              <th style="padding: 0.75rem 1rem; font-weight: 700;">Format</th>
+              <th style="padding: 0.75rem 1rem; font-weight: 700;">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.75rem 1rem; font-family: monospace; color: #38bdf8;">GET /card/{slug}.json</td>
+              <td style="padding: 0.75rem 1rem;"><span style="font-size: 0.75rem; background: #0284c7; color: white; padding: 2px 6px; border-radius: 4px;">JSON</span></td>
+              <td style="padding: 0.75rem 1rem; color: var(--muted);">Canonical Oracle card record, mana cost, type line, legalities, and printings list.</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.75rem 1rem; font-family: monospace; color: #38bdf8;">GET /printing/{slug}-{set}.json</td>
+              <td style="padding: 0.75rem 1rem;"><span style="font-size: 0.75rem; background: #0284c7; color: white; padding: 2px 6px; border-radius: 4px;">JSON</span></td>
+              <td style="padding: 0.75rem 1rem; color: var(--muted);">Specific set printing, collector number, artist credit, flavor text, and image CDN URLs.</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.75rem 1rem; font-family: monospace; color: #38bdf8;">GET /search.json?q={query}</td>
+              <td style="padding: 0.75rem 1rem;"><span style="font-size: 0.75rem; background: #0284c7; color: white; padding: 2px 6px; border-radius: 4px;">JSON</span></td>
+              <td style="padding: 0.75rem 1rem; color: var(--muted);">Full-text and syntax card search with syntax filters (<code>c:</code>, <code>t:</code>, <code>f:</code>, <code>cmc:</code>).</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.75rem 1rem; font-family: monospace; color: #38bdf8;">GET /set/{set_code}.json</td>
+              <td style="padding: 0.75rem 1rem;"><span style="font-size: 0.75rem; background: #0284c7; color: white; padding: 2px 6px; border-radius: 4px;">JSON</span></td>
+              <td style="padding: 0.75rem 1rem; color: var(--muted);">Complete set checklist, release date, block info, and total card count.</td>
+            </tr>
+            <tr>
+              <td style="padding: 0.75rem 1rem; font-family: monospace; color: #38bdf8;">GET /similar/{slug}.json</td>
+              <td style="padding: 0.75rem 1rem;"><span style="font-size: 0.75rem; background: #0284c7; color: white; padding: 2px 6px; border-radius: 4px;">JSON</span></td>
+              <td style="padding: 0.75rem 1rem; color: var(--muted);">Mechanically related cards and synergy rankings calculated across card embeddings.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 3. Rules & Legalities Corpus -->
     <div id="rules-corpus" style="background: var(--card-bg, #1e293b); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
         <h2 style="font-size: 1.35rem; font-weight: 700; color: var(--text); margin: 0;">
-          2. Magic Rules &amp; Legalities Corpus
+          3. Rules &amp; Tournament Legalities
         </h2>
         <span style="font-size: 0.75rem; font-weight: 700; background: #059669; color: #ffffff; padding: 2px 8px; border-radius: 4px;">Comprehensive Reference</span>
       </div>
       <p style="color: var(--muted); font-size: 0.95rem; margin-top: 0; margin-bottom: 1.25rem; line-height: 1.55;">
-        Complete machine-readable sources for official Magic: The Gathering comprehensive rules, tournament formats, and banlists.
+        Machine-readable sources for official Magic: The Gathering comprehensive rules, tournament formats, and banlists.
       </p>
 
       <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-        <pre style="background: var(--bg, #0f172a); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; color: #34d399; font-family: monospace; font-size: 0.85rem; overflow-x: auto; margin: 0;"><code># Official Comprehensive Rules (indexed &amp; markdown-formatted)
+        <pre style="background: var(--bg, #0f172a); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; color: #34d399; font-family: monospace; font-size: 0.85rem; overflow-x: auto; margin: 0;"><code># Official Comprehensive Rules (indexed &amp; formatted)
 https://avascry.com/rules.md
 
 # Format Legalities &amp; Banned/Restricted Lists
@@ -106,11 +168,11 @@ https://avascry.com/legalities.md</code></pre>
       </div>
     </div>
 
-    <!-- 3. Cockatrice Desktop Simulator Integration -->
+    <!-- 4. Cockatrice Desktop Simulator Integration -->
     <div id="cockatrice-xml" style="background: var(--card-bg, #1e293b); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
         <h2 style="font-size: 1.35rem; font-weight: 700; color: var(--text); margin: 0;">
-          3. Cockatrice Desktop XML Simulator Database
+          4. Cockatrice Desktop XML Simulator Database
         </h2>
         <span style="font-size: 0.75rem; font-weight: 700; background: #6366f1; color: #ffffff; padding: 2px 8px; border-radius: 4px;">Cockatrice v4 XML</span>
       </div>
@@ -129,11 +191,11 @@ https://avascry.com/legalities.md</code></pre>
       </div>
     </div>
 
-    <!-- 4. RSS 2.0 Syndication Feeds -->
+    <!-- 5. RSS 2.0 Syndication Feeds -->
     <div id="rss-feeds" style="background: var(--card-bg, #1e293b); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
         <h2 style="font-size: 1.35rem; font-weight: 700; color: var(--text); margin: 0;">
-          4. RSS 2.0 Syndication Feeds
+          5. RSS 2.0 Syndication Feeds
         </h2>
         <span style="font-size: 0.75rem; font-weight: 700; background: #ec4899; color: #ffffff; padding: 2px 8px; border-radius: 4px;">Syndication</span>
       </div>
@@ -148,22 +210,6 @@ https://avascry.com/feed/sets.xml
 # Official MTG Card Rulings &amp; Errata Updates
 https://avascry.com/feed/rulings.xml</code></pre>
       </div>
-    </div>
-
-    <!-- 5. REST JSON Endpoints Shortcut -->
-    <div id="rest-shortcut" style="background: var(--card-bg, #1e293b); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
-        <h2 style="font-size: 1.35rem; font-weight: 700; color: var(--text); margin: 0;">
-          5. REST JSON Endpoints &amp; 4096-Dim Embeddings
-        </h2>
-        <span style="font-size: 0.75rem; font-weight: 700; background: #0284c7; color: #ffffff; padding: 2px 8px; border-radius: 4px;">Content-Type: application/json</span>
-      </div>
-      <p style="color: var(--muted); font-size: 0.95rem; margin-top: 0; margin-bottom: 1.25rem; line-height: 1.55;">
-        Looking for JSON schemas, curl examples, JavaScript/Python SDK snippets, or 4096-dimensional neural vector embeddings? Head over to our dedicated REST API reference.
-      </p>
-      <a href="/developers" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #0284c7; color: #ffffff; text-decoration: none; padding: 0.65rem 1.35rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem; transition: background 0.15s ease;">
-        <span>Open REST API Reference &rarr;</span>
-      </a>
     </div>
 
   </div>
