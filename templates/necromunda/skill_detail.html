@@ -32,14 +32,76 @@
     </div>
 
     <!-- Tactics -->
-    <div>
+    <div style="margin-bottom: 2rem;">
       <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
         Tactical Analysis &amp; Fighter Synergy
       </h2>
-      <p style="color: #cbd5e1; line-height: 1.6; font-size: 0.95rem;">
+      <p style="color: #cbd5e1; line-height: 1.6; font-size: 0.95rem; background: #141722; border: 1px solid var(--border); padding: 1rem 1.25rem; border-radius: 4px; margin: 0;">
         {{ skill.tactics }}
       </p>
     </div>
+
+    <!-- Gang & Faction Specialization -->
+    {% if factions %}
+    <div style="margin-bottom: 2.25rem; padding-top: 1.5rem; border-top: 1px dashed var(--border);">
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.35rem;">
+        Gang &amp; House Specialization
+      </h2>
+      <p style="color: var(--muted); font-size: 0.85rem; margin: 0 0 1rem 0;">
+        Factions possessing primary advancement access to the {{ skill.tree }} discipline tree:
+      </p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.85rem;">
+        {% for f in factions %}
+        <a href="{{ base_path }}/house/{{ f.slug }}" style="background: #141722; border: 1px solid var(--border); border-radius: 6px; padding: 0.9rem 1.1rem; text-decoration: none; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.15s, border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.borderColor='var(--border)'; this.style.transform='none';">
+          <div>
+            <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 1.05rem; color: #fff; margin-bottom: 0.25rem;">
+              {{ f.name }}
+            </div>
+            {% if f.title %}
+            <div style="font-size: 0.76rem; color: var(--accent); font-family: 'JetBrains Mono', monospace; margin-bottom: 0.4rem;">
+              {{ f.title }}
+            </div>
+            {% endif %}
+            {% if f.specialty %}
+            <div style="font-size: 0.82rem; color: #94a3b8; line-height: 1.4;">
+              {{ f.specialty }}
+            </div>
+            {% endif %}
+          </div>
+          <div style="margin-top: 0.6rem; font-size: 0.78rem; color: var(--accent); font-weight: 600;">
+            View Clan Dossier &rarr;
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Sibling Skills in Same Discipline -->
+    {% if sibling_skills %}
+    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px dashed var(--border);">
+      <h2 style="font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.35rem;">
+        Other Skills in {{ skill.tree }} Discipline ({{ sibling_skills|length }})
+      </h2>
+      <p style="color: var(--muted); font-size: 0.85rem; margin: 0 0 1rem 0;">
+        Explore complementary powers and advancements across this skill tree:
+      </p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.85rem;">
+        {% for s in sibling_skills %}
+        <a href="{{ base_path }}/skill/{{ s.slug }}" style="background: #141722; border: 1px solid var(--border); border-radius: 6px; padding: 0.9rem 1.1rem; text-decoration: none; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.15s, border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.borderColor='var(--border)'; this.style.transform='none';">
+          <div>
+            <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 1.05rem; color: #ff7043; margin-bottom: 0.35rem;">
+              {{ s.name }} &rarr;
+            </div>
+            <div style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+              {{ s.rules_text }}
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

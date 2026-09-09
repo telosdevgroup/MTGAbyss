@@ -768,6 +768,17 @@ async def necromunda_skill_detail(request: Request, slug: str):
     if not skill:
         raise HTTPException(status_code=404, detail="Skill not found")
 
+    tree = skill.get("tree", "")
+    sibling_skills = list(db.skills.find(
+        {"tree": tree, "slug": {"$ne": slug}},
+        {"_id": 0, "name": 1, "slug": 1, "rules_text": 1, "tactics": 1}
+    ).sort("name", 1))
+
+    factions = list(db.houses.find(
+        {"primary_skills": tree},
+        {"_id": 0, "name": 1, "slug": 1, "title": 1, "specialty": 1}
+    ).sort("name", 1))
+
     base_path = get_base_prefix(request)
     return templates.TemplateResponse(
         request=request,
@@ -775,6 +786,8 @@ async def necromunda_skill_detail(request: Request, slug: str):
         context={
             "base_path": base_path,
             "skill": skill,
+            "sibling_skills": sibling_skills,
+            "factions": factions,
         }
     )
 
