@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 from fastapi import APIRouter, Request, BackgroundTasks, Response, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, PlainTextResponse
 from db_mongo import get_mongo_db
 import i18n
 from mtgabyss.shared.helpers import slugify, templates
@@ -327,3 +327,111 @@ async def developers_hub_json(request: Request):
             "Link": '</developers>; rel="alternate"; type="text/html", </developers.md>; rel="alternate"; type="text/markdown"'
         }
     )
+
+
+@pages_router.get("/docs", response_class=HTMLResponse)
+@pages_router.head("/docs")
+@pages_router.get("/documentation", response_class=HTMLResponse)
+@pages_router.head("/documentation")
+async def docs_hub(request: Request):
+    format_param = request.query_params.get("format", "").lower()
+    accept_header = request.headers.get("accept", "").lower()
+    if format_param == "md" or "text/markdown" in accept_header:
+        return await docs_hub_markdown(request)
+    if format_param == "json" or "application/json" in accept_header:
+        return await docs_hub_json(request)
+
+    lang = i18n.get_locale(request)
+    return templates.TemplateResponse(
+        request=request,
+        name="docs.html",
+        context={
+            "current_lang": lang,
+            "languages": i18n.LANGUAGES,
+            "active_nav": "developers"
+        },
+        headers={
+            "Link": '</docs.md>; rel="alternate"; type="text/markdown", </docs.json>; rel="alternate"; type="application/json"'
+        }
+    )
+
+
+@pages_router.get("/docs.md")
+@pages_router.head("/docs.md")
+async def docs_hub_markdown(request: Request):
+    content = """# AvaScry Documentation & AI Ingestion Hub
+
+> Comprehensive technical documentation, LLM markdown surfaces, rules corpus, Cockatrice integration, and RSS syndication.
+
+## 1. AI Agents & LLM Markdown Surface
+Every resource on AvaScry supports high-density, token-efficient Markdown representations designed specifically for context windows and retrieval pipelines.
+Append `.md` or send HTTP Header `Accept: text/markdown`:
+
+- LLM Indexes: `https://avascry.com/llms.txt`, `https://avascry.com/llms-full.txt`
+- Card Printings: `https://avascry.com/printing/{slug}-{set}.md`
+- Oracle Synergy: `https://avascry.com/similar/{slug}.md`
+- Set Checklists: `https://avascry.com/set/{code}.md`
+- Artist Portfolios: `https://avascry.com/artist/{slug}.md`
+
+## 2. Magic Rules & Legalities Corpus
+- Comprehensive Rules: `https://avascry.com/rules.md`
+- Format Legalities & Banlists: `https://avascry.com/legalities.md`
+
+## 3. Cockatrice Desktop Simulator Integration
+- Custom Sets XML: `https://avascry.com/set/{code}/cockatrice.xml`
+- Import via Cockatrice: Card Database -> Add Custom Sets/Spoilers... -> paste set XML URL.
+
+## 4. RSS 2.0 Syndication Feeds
+- New Sets & Expansions: `https://avascry.com/feed/sets.xml`
+- Card Rulings & Errata: `https://avascry.com/feed/rulings.xml`
+
+## 5. REST JSON Reference
+For high-speed REST JSON endpoints, schemas, and 4096-dimensional neural vectors, visit:
+`https://avascry.com/developers` or `https://avascry.com/developers.json`
+"""
+    return PlainTextResponse(
+        content=content,
+        media_type="text/markdown; charset=utf-8",
+        headers={
+            "Link": '</docs>; rel="alternate"; type="text/html", </docs.json>; rel="alternate"; type="application/json"'
+        }
+    )
+
+
+@pages_router.get("/docs.json")
+@pages_router.head("/docs.json")
+async def docs_hub_json(request: Request):
+    return JSONResponse(
+        content={
+            "name": "AvaScry Platform Documentation Hub",
+            "version": "1.0",
+            "canonical_host": "https://avascry.com",
+            "sections": {
+                "llm_markdown_surface": {
+                    "description": "Standardized token-efficient markdown representations for LLMs",
+                    "discovery_index": "https://avascry.com/llms.txt",
+                    "full_manifest": "https://avascry.com/llms-full.txt",
+                    "pattern": "https://avascry.com/{route}.md"
+                },
+                "rules_and_legalities": {
+                    "comprehensive_rules": "https://avascry.com/rules.md",
+                    "format_legalities": "https://avascry.com/legalities.md"
+                },
+                "simulator_integration": {
+                    "cockatrice_xml": "https://avascry.com/set/{code}/cockatrice.xml"
+                },
+                "syndication_feeds": {
+                    "sets_rss": "https://avascry.com/feed/sets.xml",
+                    "rulings_rss": "https://avascry.com/feed/rulings.xml"
+                },
+                "rest_api": {
+                    "reference": "https://avascry.com/developers",
+                    "json_spec": "https://avascry.com/developers.json"
+                }
+            }
+        },
+        headers={
+            "Link": '</docs>; rel="alternate"; type="text/html", </docs.md>; rel="alternate"; type="text/markdown"'
+        }
+    )
+

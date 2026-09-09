@@ -57,7 +57,12 @@ from mtgabyss.routers.card_router import card_router
 from mtgabyss.routers.api_router import api_router
 from mtgabyss.routers.discord_bot_router import discord_bot_router
 
-app = FastAPI(title="AvaScry", description="Magic: The Gathering Visual Explorer & Strategy Engine")
+app = FastAPI(
+    title="AvaScry",
+    description="Magic: The Gathering Visual Explorer & Strategy Engine",
+    docs_url="/api-docs",
+    redoc_url="/redoc"
+)
 
 SESSION_SECRET_KEY = os.environ.get("SESSION_SECRET_KEY", "fallback-insecure-secret-key-32-bytes-min")
 SESSION_COOKIE_DOMAIN = os.environ.get("SESSION_COOKIE_DOMAIN", "").strip() or None
