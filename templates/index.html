@@ -164,61 +164,187 @@
 </section>
 
 <!-- ======================================================= -->
-<!-- SECTION 2.5: DEVELOPER & AI API HERO CONTAINER          -->
+<!-- SECTION 3: DEVELOPER & AI MACHINE API SHOWCASE           -->
 <!-- ======================================================= -->
-<section style="max-width: 640px; margin: 3.5rem auto 1.5rem; padding: 0 1.5rem;">
-  <div style="background: linear-gradient(145deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.75) 100%); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.75rem 2rem; text-align: center; box-shadow: 0 16px 40px rgba(0,0,0,0.25); position: relative; overflow: hidden;">
+<section style="max-width: 1100px; margin: 3.5rem auto 0; padding: 0 1.5rem;">
+  <div style="background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 2.5rem; display: flex; align-items: center; justify-content: space-between; gap: 3rem; flex-wrap: wrap; box-shadow: 0 12px 36px rgba(0,0,0,0.18);">
     
-    <!-- Subtle Background Glow -->
-    <div style="position: absolute; top: -50px; left: 50%; transform: translateX(-50%); width: 260px; height: 120px; background: radial-gradient(circle, rgba(56, 189, 248, 0.18) 0%, transparent 70%); pointer-events: none;"></div>
-
-    <!-- Pill Badge -->
-    <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; font-size: 0.73rem; font-weight: 700; padding: 0.25rem 0.8rem; border-radius: var(--radius-pill); margin-bottom: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; position: relative;">
-      <span>⚡</span> HIGH-PERFORMANCE OPEN SURFACE &bull; ZERO API KEYS
-    </div>
-
-    <!-- Title -->
-    <h3 style="font-size: 1.45rem; font-weight: 800; color: var(--text); margin-bottom: 0.45rem; line-height: 1.25; position: relative;">
-      Build Next-Gen Magic Tools With The AvaScry API
-    </h3>
-
-    <!-- Subtitle -->
-    <p style="font-size: 0.88rem; color: var(--muted); line-height: 1.5; margin: 0 auto 1.25rem; max-width: 500px; position: relative;">
-      Engineered for bot developers, deckbuilders, and AI agents. Query card stats, Oracle rulings, and vision embeddings via instant, edge-cached JSON and Markdown.
-    </p>
-
-    <!-- Terminal Code Box -->
-    <div style="max-width: 480px; margin: 0 auto 1.25rem; background: #0b1120; border: 1px solid #1e293b; border-radius: 8px; padding: 0.6rem 0.95rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); text-align: left; position: relative;">
-      <div style="display: flex; align-items: center; gap: 0.5rem; overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.8rem; color: #cbd5e1;">
-        <span style="color: #38bdf8; user-select: none; font-weight: 700;">$</span>
-        <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #f1f5f9;">curl -s https://avascry.com/card/sol-ring.json</span>
+    <!-- Left: Copy & Bullet Points -->
+    <div style="flex: 1; min-width: 320px;">
+      <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-size: 0.78rem; font-weight: 700; padding: 0.3rem 0.85rem; border-radius: var(--radius-pill); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.06em;">
+        ⚡ OPEN DATA &bull; ZERO API KEYS
       </div>
-      <span style="font-size: 0.65rem; font-weight: 700; color: #64748b; background: rgba(255,255,255,0.06); padding: 0.15rem 0.45rem; border-radius: 4px; white-space: nowrap; text-transform: uppercase;">JSON</span>
+      <h2 style="font-size: 1.85rem; font-weight: 800; color: var(--text); margin-bottom: 0.6rem; line-height: 1.25;">
+        Build Next-Gen Tools With The AvaScry API
+      </h2>
+      <p style="font-size: 1rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.5rem;">
+        Engineered for bot developers, deckbuilders, and autonomous LLM agents. Query live card stats, official Oracle rulings, vision embeddings, and deck graphs via instant, edge-cached JSON and Markdown endpoints.
+      </p>
+
+      <ul style="list-style: none; padding: 0; margin: 0 0 1.85rem 0; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.9rem; color: var(--text);">
+        <li style="display: flex; align-items: flex-start; gap: 0.65rem;">
+          <span style="color: var(--accent); font-weight: 800;">✓</span>
+          <span>Instant card lookups, pricing, and full Oracle text via clean JSON schemas</span>
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 0.65rem;">
+          <span style="color: var(--accent); font-weight: 800;">✓</span>
+          <span>Official rulings history, legalities, and printings ready for Discord bots</span>
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 0.65rem;">
+          <span style="color: var(--accent); font-weight: 800;">✓</span>
+          <span>High-dimensional vision embeddings &amp; visual similarity vectors for AI agents</span>
+        </li>
+      </ul>
+
+      <div style="display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap;">
+        <a href="/developers" class="btn-hero-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.75rem 1.6rem; font-size: 0.95rem;">
+          Explore Developer Hub &amp; Docs &rarr;
+        </a>
+        <a href="/developers.md" target="_blank" rel="noopener noreferrer" class="btn-hero-secondary" style="display: inline-flex; align-items: center; text-decoration: none; padding: 0.75rem 1.35rem; font-size: 0.95rem;">
+          Raw Markdown Docs (.md)
+        </a>
+      </div>
     </div>
 
-    <!-- Action Buttons -->
-    <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; flex-wrap: wrap; position: relative;">
-      <a href="/developers" 
-         class="btn-hero-primary"
-         style="display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; text-decoration: none; padding: 0.65rem 1.4rem; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius-pill); box-shadow: 0 4px 16px rgba(2, 132, 199, 0.35);">
-        Explore Developer Hub &amp; Docs &rarr;
-      </a>
-      <a href="/developers.md" 
-         target="_blank"
-         rel="noopener noreferrer"
-         class="btn-hero-secondary"
-         style="display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; text-decoration: none; padding: 0.65rem 1.15rem; font-size: 0.88rem; font-weight: 600; border-radius: var(--radius-pill); border: 1px solid var(--border); color: var(--text);">
-        Raw Markdown Docs (.md)
-      </a>
+    <!-- Right: Graphic REST Cutout / Discord Bot Window -->
+    <div style="flex: 1; min-width: 300px; display: flex; justify-content: center; position: relative;">
+      <div style="width: 100%; max-width: 440px; background: #090d16; border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+        
+        <!-- Window Top Bar -->
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 1rem; background: #0f172a; border-bottom: 1px solid #1e293b;">
+          <div style="display: flex; align-items: center; gap: 0.45rem;">
+            <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+            <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+            <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+          </div>
+          <div style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.72rem; color: #94a3b8; letter-spacing: 0.02em;">
+            api.avascry.com/card/sol-ring.json
+          </div>
+          <span style="font-size: 0.65rem; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.12); padding: 0.15rem 0.45rem; border-radius: 4px; text-transform: uppercase;">200 OK</span>
+        </div>
+
+        <!-- Terminal Request Snippet -->
+        <div style="background: #0d1322; padding: 0.65rem 1rem; border-bottom: 1px solid #1e293b; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.76rem; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
+          <div><span style="color: #38bdf8; font-weight: 700;">GET</span> <span style="color: #cbd5e1;">/card/sol-ring.json</span></div>
+          <span style="color: #64748b; font-size: 0.7rem;">18ms</span>
+        </div>
+
+        <!-- Graphic JSON Response Cutout -->
+        <div style="padding: 1.15rem 1.25rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.78rem; line-height: 1.6; color: #cbd5e1; overflow-x: auto;">
+          <div><span style="color: #94a3b8;">{</span></div>
+          <div style="padding-left: 1.2rem;"><span style="color: #38bdf8;">"name"</span>: <span style="color: #a78bfa;">"Sol Ring"</span>,</div>
+          <div style="padding-left: 1.2rem;"><span style="color: #38bdf8;">"mana_cost"</span>: <span style="color: #a78bfa;">"{1}"</span>,</div>
+          <div style="padding-left: 1.2rem;"><span style="color: #38bdf8;">"type_line"</span>: <span style="color: #a78bfa;">"Artifact"</span>,</div>
+          <div style="padding-left: 1.2rem;"><span style="color: #38bdf8;">"oracle_text"</span>: <span style="color: #a78bfa;">"{T}: Add {C}{C}."</span>,</div>
+          <div style="padding-left: 1.2rem;"><span style="color: #38bdf8;">"image_uris"</span>: { <span style="color: #64748b;">...</span> },</div>
+          <div style="padding-left: 1.2rem;"><span style="color: #38bdf8;">"rulings_count"</span>: <span style="color: #f59e0b;">5</span>,</div>
+          <div style="padding-left: 1.2rem;"><span style="color: #38bdf8;">"embeddings_dim"</span>: <span style="color: #f59e0b;">4096</span></div>
+          <div><span style="color: #94a3b8;">}</span></div>
+        </div>
+
+        <!-- Discord Bot Footer Graphic Preview -->
+        <div style="background: #111827; border-top: 1px solid #1e293b; padding: 0.65rem 1rem; display: flex; align-items: center; gap: 0.65rem;">
+          <div style="width: 26px; height: 26px; border-radius: 50%; background: #5865F2; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.7rem; font-weight: 800; flex-shrink: 0;">
+            🤖
+          </div>
+          <div style="font-size: 0.72rem; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <span style="color: #fff; font-weight: 600;">AvaBot</span> <span style="background: #5865F2; color: #fff; font-size: 0.6rem; padding: 0.1rem 0.35rem; border-radius: 3px; font-weight: 700; margin-left: 0.2rem;">BOT</span>
+            <span style="margin-left: 0.4rem; color: #64748b;">!card sol ring &bull; 0.04s reply</span>
+          </div>
+        </div>
+
+      </div>
     </div>
 
   </div>
 </section>
 
 <!-- ======================================================= -->
-<!-- SECTION 3: CENTERED FUNNEL PARTNERSHIP CARD              -->
+<!-- SECTION 4: EDITORIAL & STRATEGY GUIDES SHOWCASE          -->
 <!-- ======================================================= -->
-<section style="max-width: 640px; margin: 1.5rem auto 3rem; padding: 0 1.5rem;">
+<section style="max-width: 1100px; margin: 3.5rem auto 0; padding: 0 1.5rem;">
+  <div style="background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 2.5rem; display: flex; align-items: center; justify-content: space-between; gap: 3rem; flex-wrap: wrap-reverse; box-shadow: 0 12px 36px rgba(0,0,0,0.18);">
+    
+    <!-- Left: Graphic Guide Magazine Mockup -->
+    <div style="flex: 1; min-width: 300px; display: flex; justify-content: center;">
+      <a href="/guides/commander-deckbuilding-8x8" style="text-decoration: none; width: 100%; max-width: 420px; display: block;">
+        <div style="background: #090d16; border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.45); transition: transform 0.2s ease, border-color 0.2s ease;">
+          
+          <!-- Guide Image Header with Category Tag -->
+          <div style="position: relative; width: 100%; height: 160px; overflow: hidden; background: #0f172a;">
+            <img src="https://cards.scryfall.io/art_crop/front/0/4/04002706-2236-4b79-bdea-4f263e43cb9c.jpg?1783911518" 
+                 alt="Sol Ring Art" 
+                 style="width: 100%; height: 100%; object-fit: cover; opacity: 0.9;">
+            <div style="position: absolute; top: 0.75rem; left: 0.75rem; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-pill); padding: 0.2rem 0.65rem; font-size: 0.72rem; font-weight: 700; color: #38bdf8; text-transform: uppercase;">
+              Deckbuilding &amp; Theory
+            </div>
+            <div style="position: absolute; bottom: 0.75rem; right: 0.75rem; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.2rem 0.55rem; font-size: 0.7rem; font-weight: 600; color: #94a3b8;">
+              ⏱️ 7 min read
+            </div>
+          </div>
+
+          <!-- Guide Card Body -->
+          <div style="padding: 1.25rem;">
+            <div style="font-size: 1.15rem; font-weight: 800; color: #f1f5f9; line-height: 1.35; margin-bottom: 0.5rem;">
+              The 8x8 Commander Framework: Structuring a Balanced 100-Card EDH Deck
+            </div>
+            <p style="font-size: 0.84rem; color: var(--muted); line-height: 1.5; margin: 0 0 1rem 0;">
+              A modular, mathematically sound blueprint for designing resilient, consistent Commander decks without stalling out.
+            </p>
+            <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #1e293b; padding-top: 0.75rem; font-size: 0.76rem; color: #64748b;">
+              <span>By AvaScry Editorial</span>
+              <span style="color: #38bdf8; font-weight: 700;">Read Primer &rarr;</span>
+            </div>
+          </div>
+
+        </div>
+      </a>
+    </div>
+
+    <!-- Right: Copy & Bullet Points -->
+    <div style="flex: 1; min-width: 320px;">
+      <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-size: 0.78rem; font-weight: 700; padding: 0.3rem 0.85rem; border-radius: var(--radius-pill); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.06em;">
+        📖 Editorial &amp; Strategy Hub
+      </div>
+      <h2 style="font-size: 1.85rem; font-weight: 800; color: var(--text); margin-bottom: 0.6rem; line-height: 1.25;">
+        Guides &amp; Articles to Help You Become a Smarter Magic Player
+      </h2>
+      <p style="font-size: 1rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.5rem;">
+        Clear, actionable deckbuilding frameworks, format primers, and deep dives into visual card aesthetics and vision model art clusters.
+      </p>
+
+      <ul style="list-style: none; padding: 0; margin: 0 0 1.85rem 0; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.9rem; color: var(--text);">
+        <li style="display: flex; align-items: flex-start; gap: 0.65rem;">
+          <span style="color: var(--accent); font-weight: 800;">✓</span>
+          <span>Practical deckbuilding systems like the 8x8 singleton framework</span>
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 0.65rem;">
+          <span style="color: var(--accent); font-weight: 800;">✓</span>
+          <span>Deep dives into visual card aesthetics and vision model art clusters</span>
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 0.65rem;">
+          <span style="color: var(--accent); font-weight: 800;">✓</span>
+          <span>High-yield strategy primers written for kitchen table and competitive tables alike</span>
+        </li>
+      </ul>
+
+      <div style="display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap;">
+        <a href="/guides" class="btn-hero-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.75rem 1.6rem; font-size: 0.95rem;">
+          Explore Strategy Guides &rarr;
+        </a>
+        <a href="/sitemaps/guides.html" class="btn-hero-secondary" style="display: inline-flex; align-items: center; text-decoration: none; padding: 0.75rem 1.35rem; font-size: 0.95rem;">
+          Guides Index
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ======================================================= -->
+<!-- SECTION 5: CENTERED FUNNEL PARTNERSHIP CARD              -->
+<!-- ======================================================= -->
+<section style="max-width: 640px; margin: 3.5rem auto 1.5rem; padding: 0 1.5rem;">
   <div style="background: linear-gradient(180deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.75rem 2rem; text-align: center; box-shadow: 0 16px 40px rgba(0,0,0,0.25); position: relative;">
     
     <!-- Top Funnel Badge -->

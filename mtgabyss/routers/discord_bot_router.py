@@ -141,6 +141,147 @@ def handle_swu_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
     embed["footer"] = {"text": "AvaScry Star Wars Unlimited • swu.avascry.com"}
     return {"embeds": [embed]}
 
+def handle_mtg_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, Any]:
+    """Handles /mtg or /card command looking up Magic: The Gathering cards."""
+    db = get_mongo_db()
+    query = options.get("name", "").strip()
+    if not query:
+        return {"content": "⚠️ Please provide a card name. Example: `/mtg card Sol Ring`"}
+
+    regex = re.compile(re.escape(query), re.IGNORECASE)
+    card = db.cards.find_one({"name": regex, "lang": "en"}) or db.cards.find_one({"slug": regex, "lang": "en"})
+    if not card:
+        card = db.cards.find_one({"name": regex}) or db.cards.find_one({"slug": regex})
+
+    if not card:
+        return {"content": f"🔍 No Magic card found matching `{query}`."}
+
+    name = card.get("name", "Unknown Card")
+    mana_cost = card.get("mana_cost", "")
+    type_line = card.get("type_line", "")
+    oracle_text = card.get("oracle_text", "")
+    set_code = (card.get("set") or "").upper()
+    set_name = card.get("set_name") or set_code
+    slug = card.get("slug") or name.lower().replace(" ", "-")
+
+    url = f"https://avascry.com/card/{slug}"
+
+    # Determine embed color by card colors
+    colors = card.get("colors") or []
+    if len(colors) > 1:
+        color = 0xfacc15  # Gold / Multicolor
+    elif "W" in colors:
+        color = 0xf8fafc
+    elif "U" in colors:
+        color = 0x38bdf8
+    elif "B" in colors:
+        color = 0x64748b
+    elif "R" in colors:
+        color = 0xef4444
+    elif "G" in colors:
+        color = 0x22c55e
+    elif "Artifact" in type_line:
+        color = 0x94a3b8
+    elif "Land" in type_line:
+        color = 0xa16207
+    else:
+        color = 0x6366f1
+
+    title_display = f"✨ {name} {mana_cost}".strip()
+    embed = {
+        "title": title_display,
+        "url": url,
+        "color": color,
+        "description": f"**{type_line}**\n\n{oracle_text}" if oracle_text else f"**{type_line}**",
+        "fields": [
+            {"name": "Set", "value": f"{set_name} (`{set_code}`)", "inline": True},
+        ]
+    }
+
+    # Add Power/Toughness or Loyalty if present
+    if card.get("power") is not None and card.get("toughness") is not None:
+        embed["fields"].append({"name": "P / T", "value": f"{card.get('power')} / {card.get('toughness')}", "inline": True})
+    elif card.get("loyalty") is not None:
+        embed["fields"].append({"name": "Loyalty", "value": str(card.get("loyalty")), "inline": True})
+
+    embed["fields"].append({"name": "Database", "value": f"[View Rulings, Prints & Visual Graph]({url})", "inline": False})
+
+    # Images - display full card image prominently plus avatar thumbnail
+    img_uris = card.get("image_uris")
+    if not img_uris and card.get("card_faces"):
+        img_uris = card["card_faces"][0].get("image_uris") or {}
+    img_uris = img_uris or {}
+    
+    full_card_url = img_uris.get("normal") or img_uris.get("large")
+    art_crop_url = img_uris.get("art_crop")
+    
+    if full_card_url:
+        embed["image"] = {"url": full_card_url}
+    if art_crop_url:
+        embed["thumbnail"] = {"url": art_crop_url}
+
+    embed["footer"] = {"text": "AvaScry Magic Engine • avascry.com"}
+    return {"embeds": [embed]}
+
+def handle_dominion_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, Any]:
+    """Handles /dom or /dominion command looking up Dominion kingdom cards."""
+    client = get_mongo_db().client
+    dom_db = client["avascry_dominion"]
+    query = options.get("name", "").strip()
+    if not query:
+        return {"content": "⚠️ Please provide a card name. Example: `/dom card Village`"}
+
+    regex = re.compile(re.escape(query), re.IGNORECASE)
+    card = dom_db.cards.find_one({"name": regex}) or dom_db.cards.find_one({"slug": regex})
+
+    if not card:
+        return {"content": f"🔍 No Dominion card found matching `{query}`."}
+
+    name = card.get("name", "Unknown Card")
+    slug = card.get("slug", "")
+    types = card.get("types") or []
+    types_str = " - ".join(types) if isinstance(types, list) else str(types)
+    cost = card.get("cost_str") or card.get("cost", "")
+    expansion = card.get("expansion") or card.get("set", "Base")
+    text = (card.get("text") or card.get("description") or "").strip()
+    url = f"https://dominion.avascry.com/card/{slug}"
+
+    # Embed color based on primary type
+    color = 0x2563eb  # Action blue default
+    types_lower = types_str.lower()
+    if "treasure" in types_lower:
+        color = 0xeab308  # Gold
+    elif "victory" in types_lower:
+        color = 0x16a34a  # Green
+    elif "curse" in types_lower:
+        color = 0x9333ea  # Purple
+    elif "attack" in types_lower:
+        color = 0xef4444  # Red
+    elif "night" in types_lower:
+        color = 0x1e1b4b  # Dark slate
+    elif "duration" in types_lower:
+        color = 0xf97316  # Orange
+    elif "reaction" in types_lower:
+        color = 0x0284c7  # Light blue
+
+    cost_display = f" (${cost})" if cost else ""
+    embed = {
+        "title": f"🏰 {name}{cost_display}",
+        "url": url,
+        "color": color,
+        "description": f"**Expansion:** {expansion}\n**Type:** {types_str}\n\n{text}" if text else f"**Expansion:** {expansion}\n**Type:** {types_str}",
+        "fields": [
+            {"name": "Codex Entry", "value": f"[View Official Errata & Combos]({url})", "inline": False}
+        ]
+    }
+
+    img_url = card.get("image_url") or f"https://dominion.avascry.com/images/{slug}.jpg"
+    if img_url:
+        embed["image"] = {"url": img_url}
+
+    embed["footer"] = {"text": "AvaScry Dominion Codex • dominion.avascry.com"}
+    return {"embeds": [embed]}
+
 def handle_minecraft_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, Any]:
     db = get_mongo_db()
     query = options.get("name", "").strip()
@@ -184,10 +325,13 @@ async def discord_interactions(request: Request):
     timestamp = request.headers.get("X-Signature-Timestamp", "")
     body_bytes = await request.body()
 
-    # If DISCORD_PUBLIC_KEY is configured, enforce strict cryptographic check
-    pub_key = os.environ.get("DISCORD_PUBLIC_KEY", "").strip()
-    if pub_key:
-        if not verify_discord_signature(signature, timestamp, body_bytes, pub_key):
+    # Check public key (accept active env var or fallback to current application key)
+    configured_key = os.environ.get("DISCORD_PUBLIC_KEY", "").strip()
+    active_keys = [k for k in [configured_key, "1deb34918d8cb7c6598e89ec11ec5b1bc65077db56f7a38b266927dc602e542a"] if k]
+    
+    if active_keys:
+        verified = any(verify_discord_signature(signature, timestamp, body_bytes, k) for k in active_keys)
+        if not verified:
             raise HTTPException(status_code=401, detail="Invalid request signature")
 
     import json
@@ -220,14 +364,28 @@ async def discord_interactions(request: Request):
                 param_dict[opt.get("name")] = opt.get("value")
 
         response_data = {}
-        if root_command in ("necro", "necromunda"):
+        if root_command in ("mtg", "card", "magic"):
+            response_data = handle_mtg_command(subcommand, param_dict)
+        elif root_command in ("dom", "dominion"):
+            response_data = handle_dominion_command(subcommand, param_dict)
+        elif root_command in ("necro", "necromunda"):
             response_data = handle_necro_command(subcommand, param_dict)
         elif root_command in ("swu", "starwars"):
             response_data = handle_swu_command(subcommand, param_dict)
         elif root_command in ("mc", "minecraft"):
             response_data = handle_minecraft_command(subcommand, param_dict)
         else:
-            response_data = {"content": f"AvaScry Bot active. Unknown command: `{root_command}`."}
+            response_data = {
+                "content": (
+                    f"AvaScry Gaming Bot active. Unknown command: `{root_command}`.\n"
+                    "Supported games:\n"
+                    "• `/mtg card <name>` — Magic: The Gathering\n"
+                    "• `/dom card <name>` — Dominion Kingdom Cards\n"
+                    "• `/swu card <name>` — Star Wars: Unlimited\n"
+                    "• `/necro weapon <name>` — Necromunda Armory\n"
+                    "• `/mc item <name>` — Minecraft Codex"
+                )
+            }
 
         # Type 4: CHANNEL_MESSAGE_WITH_SOURCE
         return JSONResponse({

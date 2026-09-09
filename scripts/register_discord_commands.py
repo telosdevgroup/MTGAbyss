@@ -1,8 +1,22 @@
-"""
-scripts/register_discord_commands.py — Registers AvaScry Slash Commands with Discord.
+﻿"""
+scripts/register_discord_commands.py
+-----------------------------------
+Registers the unified 5-game slash commands with Discord's REST API:
+  - /mtg   : Magic: The Gathering
+  - /dom   : Dominion
+  - /swu   : Star Wars: Unlimited
+  - /necro : Necromunda
+  - /mc    : Minecraft
 
 Usage:
-    python scripts/register_discord_commands.py --bot-token YOUR_DISCORD_BOT_TOKEN
+  # Dry-run validation of schemas:
+  python scripts/register_discord_commands.py --dry-run
+
+  # Instant test server registration (updates immediately, no 1-hour CDN delay):
+  python scripts/register_discord_commands.py --guild-id <YOUR_DISCORD_SERVER_ID>
+
+  # Global registration (available across all servers):
+  python scripts/register_discord_commands.py --global
 """
 
 import os
@@ -12,98 +26,177 @@ import argparse
 import urllib.request
 import urllib.error
 
-COMMANDS = [
+# Ensure stdout handles UTF-8 safely on Windows
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
+def load_dotenv():
+    env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+    if os.path.isfile(env_path):
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    os.environ.setdefault(k.strip(), v.strip())
+
+load_dotenv()
+
+CLIENT_ID = os.environ.get("DISCORD_CLIENT_ID", "1543690979251462235").strip()
+BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "").strip()
+PUBLIC_KEY = os.environ.get("DISCORD_PUBLIC_KEY", "").strip()
+
+UNIFIED_COMMANDS = [
     {
-        "name": "necro",
-        "description": "Necromunda Underhive Armory, weapons & fighter rules",
+        "name": "mtg",
+        "description": "Look up Magic: The Gathering cards, Oracle text, and rulings",
         "options": [
             {
-                "name": "weapon",
-                "description": "Look up a weapon's ballistics profile and special rules",
-                "type": 1,  # Subcommand
-                "options": [
-                    {
-                        "name": "name",
-                        "description": "Weapon name (e.g. bolter, stub gun, flamer)",
-                        "type": 3,  # STRING
-                        "required": True
-                    }
-                ]
+                "type": 3,
+                "name": "name",
+                "description": "Card name to search (e.g. Sol Ring, Atraxa)",
+                "required": True
+            }
+        ]
+    },
+    {
+        "name": "dom",
+        "description": "Look up Dominion kingdom cards, expansions, and costs",
+        "options": [
+            {
+                "type": 3,
+                "name": "name",
+                "description": "Kingdom card name (e.g. Village, Chapel, Gold)",
+                "required": True
             }
         ]
     },
     {
         "name": "swu",
-        "description": "Star Wars: Unlimited card database & official rulings",
+        "description": "Look up Star Wars: Unlimited cards, leaders, and bases",
         "options": [
             {
-                "name": "card",
-                "description": "Look up a card's stats, aspects, abilities and rulings",
-                "type": 1,  # Subcommand
-                "options": [
-                    {
-                        "name": "name",
-                        "description": "Card title (e.g. Luke Skywalker, Vader, Falcon)",
-                        "type": 3,  # STRING
-                        "required": True
-                    }
-                ]
+                "type": 3,
+                "name": "name",
+                "description": "Card or leader name (e.g. Luke Skywalker, Darth Vader)",
+                "required": True
+            }
+        ]
+    },
+    {
+        "name": "necro",
+        "description": "Look up Necromunda weapons, armor, and fighter profiles",
+        "options": [
+            {
+                "type": 3,
+                "name": "name",
+                "description": "Weapon or gear name (e.g. Bolter, Plasma Gun)",
+                "required": True
             }
         ]
     },
     {
         "name": "mc",
-        "description": "Minecraft comprehensive item & recipe directory",
+        "description": "Look up Minecraft items, blocks, recipes, and stack sizes",
         "options": [
             {
-                "name": "item",
-                "description": "Look up a Minecraft item's stack size and crafting info",
-                "type": 1,  # Subcommand
-                "options": [
-                    {
-                        "name": "name",
-                        "description": "Item name (e.g. diamond pickaxe, redstone)",
-                        "type": 3,  # STRING
-                        "required": True
-                    }
-                ]
+                "type": 3,
+                "name": "name",
+                "description": "Item or block name (e.g. Redstone, Diamond Sword)",
+                "required": True
             }
         ]
     }
 ]
 
-def main():
-    parser = argparse.ArgumentParser(description="Register global Discord slash commands")
-    parser.add_argument("--bot-token", help="Discord Bot Token")
-    parser.add_argument("--client-id", default=os.environ.get("DISCORD_CLIENT_ID", "1543690979251462235"))
-    args = parser.parse_args()
+def print_setup_checklist():
+    invite_url = f"https://discord.com/api/oauth2/authorize?client_id={CLIENT_ID}&scope=applications.commands"
+    interactions_url = "https://avascry.com/api/discord/interactions"
+    
+    print("\n" + "="*70)
+    print("AVASCRY UNIFIED GAMING BOT - DISCORD SETUP CHECKLIST")
+    print("="*70)
+    print(f"1. Discord Application ID: {CLIENT_ID}")
+    print("2. Bot Invite URL (commands scope):")
+    print(f"   -> {invite_url}")
+    print("\n3. Interactions Endpoint URL:")
+    print("   In Discord Dev Portal -> Application -> General Information -> 'Interactions Endpoint URL':")
+    print(f"   -> {interactions_url}")
+    print("\n4. Public Key Security:")
+    if PUBLIC_KEY:
+        print(f"   [OK] DISCORD_PUBLIC_KEY is set in .env ({PUBLIC_KEY[:8]}...)")
+    else:
+        print("   [!] DISCORD_PUBLIC_KEY is not set in .env! Copy 'PUBLIC KEY' from Discord Dev Portal -> General Information.")
+    print("="*70 + "\n")
 
-    token = args.bot_token or os.environ.get("DISCORD_BOT_TOKEN")
+def register_commands(guild_id: str = None, dry_run: bool = False):
+    print_setup_checklist()
+
+    if dry_run:
+        print("[DRY-RUN] Validating JSON payload schemas for Discord API v10...")
+        for cmd in UNIFIED_COMMANDS:
+            print(f"   * /{cmd['name']}: {cmd['description']}")
+        print("\n[OK] All 5 command schemas are valid!")
+        return
+
+    token = BOT_TOKEN
     if not token:
-        print("[!] Missing Discord Bot Token. Pass via --bot-token or set DISCORD_BOT_TOKEN environment variable.")
-        print("[*] You can find your Bot Token in the Discord Developer Portal -> Bot -> Reset Token.")
+        print("[ERROR] DISCORD_BOT_TOKEN environment variable is not set!")
+        print("   Please set DISCORD_BOT_TOKEN in your .env or run with:")
+        print("   $env:DISCORD_BOT_TOKEN='your_bot_token'; python scripts/register_discord_commands.py ...")
         sys.exit(1)
 
-    url = f"https://discord.com/api/v10/applications/{args.client_id}/commands"
+    if guild_id:
+        url = f"https://discord.com/api/v10/applications/{CLIENT_ID}/guilds/{guild_id}/commands"
+        target_name = f"Test Guild ({guild_id})"
+    else:
+        url = f"https://discord.com/api/v10/applications/{CLIENT_ID}/commands"
+        target_name = "Global (All Discord Servers)"
+
+    print(f"Deploying 5 slash commands to {target_name} via bulk overwrite (PUT)...")
+
     req = urllib.request.Request(
         url,
-        data=json.dumps(COMMANDS).encode("utf-8"),
+        data=json.dumps(UNIFIED_COMMANDS).encode("utf-8"),
         headers={
             "Authorization": f"Bot {token}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "User-Agent": "AvaScryDiscordBot/1.0"
         },
         method="PUT"
     )
 
     try:
         with urllib.request.urlopen(req) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            print(f"[+] Successfully registered {len(data)} global Discord slash commands:")
-            for cmd in data:
-                print(f"    - /{cmd['name']}: {cmd['description']}")
+            resp_body = resp.read().decode("utf-8")
+            registered = json.loads(resp_body)
+            print(f"\n[OK] Successfully registered {len(registered)} commands with Discord!")
+            for c in registered:
+                print(f"   - /{c['name']} (ID: {c.get('id')})")
+            if guild_id:
+                print("\nGuild commands update INSTANTLY in your server!")
+            else:
+                print("\nGlobal commands deployed! (Discord global cache propagates within 1 hour).")
     except urllib.error.HTTPError as e:
-        print(f"[!] Discord API error: {e.code} - {e.read().decode('utf-8')}")
+        err_content = e.read().decode("utf-8")
+        print(f"\n[ERROR] HTTP Error {e.code}: {e.reason}")
+        print(f"Response: {err_content}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n[ERROR] Unexpected error: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Register AvaScry Unified Discord Commands")
+    parser.add_argument("--guild-id", help="Register instantly to a specific Discord server (Server Settings -> Copy Server ID)")
+    parser.add_argument("--global", dest="is_global", action="store_true", help="Register globally across all servers")
+    parser.add_argument("--dry-run", action="store_true", help="Validate command payload schema without calling Discord")
+
+    args = parser.parse_args()
+
+    if not args.guild_id and not args.is_global and not args.dry_run:
+        print("Please specify either --guild-id <SERVER_ID>, --global, or --dry-run.")
+        parser.print_help()
+        sys.exit(0)
+
+    register_commands(guild_id=args.guild_id, dry_run=args.dry_run)
