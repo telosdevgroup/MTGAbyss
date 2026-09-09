@@ -346,27 +346,24 @@
     <!-- Official Rulings & Clarifications (Hydrated from FFG Errata & Rulings) -->
     {% if card.official_rulings or card.rules or card.rules_styled %}
       <div style="background: #141417; border: 1px solid #27272a; border-radius: 12px; padding: 1.5rem;">
-        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; border-bottom: 1px solid #27272a; padding-bottom: 0.75rem;">
-          <div>
-            <h2 style="font-size: 1.05rem; font-weight: 700; color: #f4f4f5; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Space Grotesk', sans-serif;">
-              Official Rules &amp; Clarifications
-            </h2>
-            <span style="font-size: 0.75rem; color: var(--muted);">Authoritative rulings from the official Fantasy Flight Games document</span>
-          </div>
-          <a href="{{ base_path }}/rulings?q={{ card.title or card.name }}" style="font-size: 0.8rem; color: #60a5fa; text-decoration: none;">
-            View in Rulings Directory &rarr;
-          </a>
+        <div style="margin-bottom: 1.25rem; border-bottom: 1px solid #27272a; padding-bottom: 0.75rem;">
+          <h2 style="font-size: 1.05rem; font-weight: 700; color: #f4f4f5; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Space Grotesk', sans-serif;">
+            Official Rules &amp; Clarifications
+          </h2>
+          <span style="font-size: 0.78rem; color: #a1a1aa; margin-top: 0.25rem; display: inline-block;">
+            Authoritative card-specific rulings and timing clarifications from Fantasy Flight Games
+          </span>
         </div>
 
         {% if card.official_rulings %}
           <div style="display: flex; flex-direction: column; gap: 0.85rem;">
             {% for r in card.official_rulings %}
-              <div style="background: #09090b; border: 1px solid #27272a; border-left: 3px solid #ef4444; border-radius: 6px; padding: 0.85rem 1rem;">
-                <div style="font-size: 0.95rem; line-height: 1.55; color: #e4e4e7;">
+              <div style="background: #18181b; border: 1px solid #27272a; border-left: 3px solid #38bdf8; border-radius: 6px; padding: 1rem 1.25rem;">
+                <div style="font-size: 0.98rem; line-height: 1.65; color: #f4f4f5; font-weight: 400;">
                   {{ r.answer }}
                 </div>
-                <div style="margin-top: 0.4rem; font-size: 0.72rem; color: #71717a; display: flex; align-items: center; gap: 0.5rem;">
-                  <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
+                <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #a1a1aa; display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #38bdf8;"></span>
                   <span>{{ r.source }}</span>
                 </div>
               </div>
