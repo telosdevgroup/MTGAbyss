@@ -220,8 +220,47 @@ def handle_mtg_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
     if art_crop_url:
         embed["thumbnail"] = {"url": art_crop_url}
 
-    embed["footer"] = {"text": "AvaScry Magic Engine • avascry.com"}
-    return {"embeds": [embed]}
+    # Fetch oldest printing for visual comparison (Alpha/Beta/first printing vs modern)
+    embeds = [embed]
+    oracle_id = card.get("oracle_id")
+    if oracle_id:
+        try:
+            oldest_docs = list(
+                db.cards.find({"oracle_id": oracle_id, "lang": "en"})
+                .sort("released_at", 1)
+                .limit(1)
+            )
+            if oldest_docs:
+                oldest_card = oldest_docs[0]
+                old_img_uris = oldest_card.get("image_uris")
+                if not old_img_uris and oldest_card.get("card_faces"):
+                    old_img_uris = oldest_card["card_faces"][0].get("image_uris") or {}
+                old_img_uris = old_img_uris or {}
+                old_card_url = old_img_uris.get("normal") or old_img_uris.get("large")
+
+                # If oldest printing has a valid image and is a different printing from current
+                if old_card_url and (oldest_card.get("id") != card.get("id") or full_card_url != old_card_url):
+                    old_set_name = oldest_card.get("set_name") or (oldest_card.get("set") or "").upper()
+                    old_year = (oldest_card.get("released_at") or "")[:4]
+                    year_label = f" ({old_year})" if old_year else ""
+
+                    embed["footer"] = {
+                        "text": f"AvaScry • Left: {set_name} | Right: {old_set_name}{year_label} (Original)"
+                    }
+
+                    # Discord groups embeds sharing the exact same URL into a multi-image gallery/collage
+                    old_embed = {
+                        "url": url,
+                        "image": {"url": old_card_url}
+                    }
+                    embeds.append(old_embed)
+        except Exception:
+            pass
+
+    if "footer" not in embed:
+        embed["footer"] = {"text": "AvaScry Magic Engine • avascry.com"}
+
+    return {"embeds": embeds}
 
 def handle_dominion_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, Any]:
     """Handles /dom or /dominion command looking up Dominion kingdom cards."""
