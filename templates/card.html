@@ -6,11 +6,15 @@
   <meta name="description" content="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} MTG card from {{ card.set_name }}. Illustrated by {{ card.artist or 'Unknown' }}. Rulings, legalities, and all historical printings on AvaScry.">
   <meta property="og:title" content="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} — {{ card.set_name }} | AvaScry">
   <meta property="og:description" content="Explore high-resolution Magic: The Gathering scans, printings, and rulings for {{ card.printed_name }} on AvaScry.">
-  <meta property="og:image" content="{{ card.large_image_url or card.image_url }}">
+  {% set meta_img = card.large_image_url or card.image_url %}
+  {% if meta_img and meta_img.startswith('/') %}
+    {% set meta_img = 'https://avascry.com' ~ meta_img %}
+  {% endif %}
+  <meta property="og:image" content="{{ meta_img }}">
   <meta property="og:image:alt" content="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} from {{ card.set_name }} illustrated by {{ card.artist or 'Unknown' }}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} — {{ card.set_name }} | AvaScry">
-  <meta name="twitter:image" content="{{ card.large_image_url or card.image_url }}">
+  <meta name="twitter:image" content="{{ meta_img }}">
 
   <link rel="canonical" href="https://avascry.com/printing/{{ card.printing_slug }}">
   <link rel="alternate" type="text/markdown" title="Markdown representation for AI Agents" href="/printing/{{ card.printing_slug or card.slug }}.md">
