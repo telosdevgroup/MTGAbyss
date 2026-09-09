@@ -1,23 +1,123 @@
-﻿{% extends "necromunda/base.html" %}
+{% extends "necromunda/base.html" %}
 
 {% block title %}Necromunda Underhive Tactica & Guides | AvaScry Necromunda{% endblock %}
 {% block meta_description %}Authoritative Necromunda Underhive campaign guides: starting 1,000 credit rosters, trading post economy, pinning mechanics, and House gang archetypes.{% endblock %}
 
+{% block extra_head %}
+<style>
+  .guides-hero {
+    position: relative;
+    max-width: 900px;
+    margin: 1rem auto 3.5rem auto;
+    text-align: center;
+    padding: 2.75rem 1.5rem 2.25rem 1.5rem;
+    background: radial-gradient(circle at 50% 15%, rgba(255, 87, 34, 0.14) 0%, rgba(20, 25, 36, 0.4) 55%, transparent 75%);
+    border: 1px solid rgba(255, 87, 34, 0.22);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 87, 34, 0.15);
+    overflow: hidden;
+  }
+  .guides-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    opacity: 0.6;
+  }
+  .guides-hero-insignia {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255, 87, 34, 0.2), rgba(20, 25, 36, 0.9));
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 24px rgba(255, 87, 34, 0.35), inset 0 0 12px rgba(255, 87, 34, 0.2);
+    margin-bottom: 1.15rem;
+    position: relative;
+    z-index: 1;
+  }
+  .guides-hero-insignia svg {
+    width: 28px;
+    height: 28px;
+    fill: none;
+    stroke: #ff7043;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .guides-hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    background: rgba(255, 87, 34, 0.12);
+    border: 1px solid rgba(255, 87, 34, 0.3);
+    padding: 0.25rem 0.85rem;
+    border-radius: 4px;
+    margin-bottom: 0.85rem;
+    font-family: 'Chakra Petch', sans-serif;
+    position: relative;
+    z-index: 1;
+  }
+  .guides-hero-title {
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: clamp(2rem, 4.5vw, 2.75rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #fff;
+    margin: 0 0 0.85rem 0;
+    line-height: 1.2;
+    position: relative;
+    z-index: 1;
+  }
+  .guides-hero-title span.accent {
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(255, 87, 34, 0.5);
+  }
+  .guides-hero-desc {
+    font-size: 1.02rem;
+    color: var(--muted);
+    max-width: 650px;
+    margin: 0 auto;
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div style="max-width: 1100px; margin: 2rem auto 5rem; padding: 0 1.25rem;">
+<div style="max-width: 1100px; margin: 1rem auto 5rem; padding: 0 1.25rem;">
 
   <!-- Hero Banner -->
-  <header style="margin-bottom: 3.5rem; text-align: center; max-width: 760px; margin-left: auto; margin-right: auto;">
-    <div style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); background: rgba(255, 87, 34, 0.12); border: 1px solid rgba(255, 87, 34, 0.3); padding: 0.25rem 0.85rem; border-radius: 4px; margin-bottom: 1rem; font-family: 'Chakra Petch', sans-serif;">
-      <span>💀</span> Underhive Tactica &amp; Playbooks
+  <div class="guides-hero">
+    <div class="guides-hero-insignia" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+      </svg>
     </div>
-    <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: 0.02em; margin: 0 0 0.85rem 0; color: #fff; line-height: 1.2; font-family: 'Chakra Petch', sans-serif; text-transform: uppercase;">
-      Underhive Campaign Guides
+    <div>
+      <span class="guides-hero-tag">SECTOR 13 // TACTICA &amp; PLAYBOOKS</span>
+    </div>
+    <h1 class="guides-hero-title">
+      Underhive Campaign <span class="accent">Guides</span>
     </h1>
-    <p style="font-size: 1.05rem; color: var(--muted); margin: 0 0 1rem 0; line-height: 1.6;">
+    <p class="guides-hero-desc">
       Essential tactical doctrines, credit ledger allocation, action suppression mathematics, and campaign progression rules for Necromunda.
     </p>
-  </header>
+  </div>
 
   <!-- Guides List -->
   <div style="display: flex; flex-direction: column; gap: 2rem;">

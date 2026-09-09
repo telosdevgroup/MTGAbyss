@@ -55,7 +55,7 @@
     }
     a { color: inherit; text-decoration: none; }
     
-    header {
+    header.site-header {
       background: #141923;
       border-bottom: 2px solid var(--accent);
       position: sticky;
@@ -480,7 +480,7 @@
     }
 
     @media (max-width: 768px) {
-      header {
+      header.site-header {
         position: relative !important;
         top: auto !important;
       }
@@ -572,7 +572,7 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body>
-  <header>
+  <header class="site-header">
     <div class="header-inner">
       <a href="{{ base_path or '/' }}" class="brand" aria-label="AvaScry Necromunda">
         AvaScry <span class="accent">Necromunda</span>
