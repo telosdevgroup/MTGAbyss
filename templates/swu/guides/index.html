@@ -1,0 +1,227 @@
+{% extends "swu/base.html" %}
+
+{% block title %}Star Wars: Unlimited Articles, Synergies &amp; Primers &mdash; AvaScry SWU{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://swu.avascry.com/articles">
+{% endblock %}
+
+{% block extra_head %}
+<meta name="description" content="Engaging Star Wars: Unlimited articles, top synergy lists, expansion reviews, and tactical pilot primers. Level up your SWU game and simulate opening hands.">
+<style>
+  .guides-container {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 4rem 1rem;
+  }
+
+  .guides-hero {
+    text-align: center;
+    padding: 1.5rem 0 2rem 0;
+    margin-bottom: 2rem;
+  }
+  .guides-hero h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2.2rem, 5vw, 3rem);
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.75rem;
+  }
+  .guides-hero p {
+    color: var(--muted);
+    font-size: 1.1rem;
+    max-width: 760px;
+    margin: 0 auto;
+    line-height: 1.65;
+  }
+
+  /* Category Filter Pills */
+  .category-nav-pills {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-bottom: 2.5rem;
+  }
+  .cat-pill-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    padding: 0.45rem 1.15rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-decoration: none;
+    transition: all 0.15s ease;
+  }
+  .cat-pill-btn:hover {
+    border-color: var(--accent);
+    color: #ffffff;
+  }
+  .cat-pill-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #ffffff;
+    box-shadow: 0 0 15px var(--accent-glow);
+  }
+
+  /* Guides Cards Grid */
+  .guides-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.75rem;
+  }
+
+  .guide-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .guide-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.5), 0 0 16px var(--accent-glow);
+  }
+
+  .guide-card-header {
+    padding: 1.5rem 1.5rem 0.75rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .guide-card-badge-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .guide-category-badge {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: var(--accent-cyan);
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+  }
+  .guide-read-time {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .guide-card-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: #ffffff;
+    margin: 0;
+  }
+
+  .guide-card-body {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .guide-card-subtitle {
+    font-size: 0.92rem;
+    color: var(--muted);
+    line-height: 1.55;
+    margin: 0 0 1.25rem 0;
+  }
+
+  .guide-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 1rem;
+  }
+  .hero-card-tag {
+    font-size: 0.82rem;
+    color: #e2e8f0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .hero-card-bullet {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .read-more-link {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  @media (max-width: 640px) {
+    .guides-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="guides-container">
+  <div class="guides-hero">
+    <h1>Star Wars: Unlimited Articles &amp; Primers</h1>
+    <p>
+      High-velocity synergy lists, expansion reviews, tempo breakdowns, and deckbuilding theory. Real tactical play insights for competitive tournament grinders and casual pilots alike.
+    </p>
+  </div>
+
+  <!-- Category Nav Pills -->
+  <nav class="category-nav-pills" aria-label="Article Categories">
+    <a href="{{ base_path }}/articles" class="cat-pill-btn {% if not current_category %}active{% endif %}">All Articles</a>
+    <a href="{{ base_path }}/articles?category=synergies" class="cat-pill-btn {% if current_category == 'synergies' %}active{% endif %}">Synergies &amp; Top Lists</a>
+    <a href="{{ base_path }}/articles?category=expansions" class="cat-pill-btn {% if current_category == 'expansions' %}active{% endif %}">Expansions &amp; Meta</a>
+    <a href="{{ base_path }}/articles?category=strategy" class="cat-pill-btn {% if current_category == 'strategy' %}active{% endif %}">Core Strategy</a>
+    <a href="{{ base_path }}/articles?category=mechanics" class="cat-pill-btn {% if current_category == 'mechanics' %}active{% endif %}">Card Mechanics</a>
+  </nav>
+
+  <!-- Articles Grid -->
+  <div class="guides-grid">
+    {% for g in guides %}
+    <a href="{{ base_path }}/articles/{{ g.slug }}" class="guide-card">
+      <div class="guide-card-header">
+        <div class="guide-card-badge-row">
+          <span class="guide-category-badge">{{ g.category }}</span>
+          <span class="guide-read-time">{{ g.read_time }}</span>
+        </div>
+        <h2 class="guide-card-title">{{ g.title }}</h2>
+      </div>
+      <div class="guide-card-body">
+        <p class="guide-card-subtitle">{{ g.subtitle }}</p>
+        <div class="guide-card-footer">
+          <div class="hero-card-tag">
+            <span class="hero-card-bullet"></span>
+            <span>Focus: <strong>{{ g.hero_card.name }}</strong></span>
+          </div>
+          <span class="read-more-link">
+            Read Article &rarr;
+          </span>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

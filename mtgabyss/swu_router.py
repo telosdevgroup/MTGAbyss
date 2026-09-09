@@ -1950,6 +1950,68 @@ def get_swu_deckbuilder_data():
     set_ram_cache("swu_deckbuilder_data", res)
     return res
 
+@swu_router.get("/articles", response_class=HTMLResponse)
+@swu_router.get("/guides", response_class=HTMLResponse)
+async def swu_articles_index(request: Request, category: Optional[str] = None):
+    """
+    SWU Articles & Tactical Primers Hub.
+    Offers listicles, expansion breakdowns, action tempo theory, and card mechanics.
+    """
+    from mtgabyss.data.swu_guides import SWU_GUIDES
+    base_path = get_base_prefix(request)
+    all_guides = list(SWU_GUIDES.values())
+
+    cat_slug = (category or "").strip().lower()
+    if cat_slug in ("synergies", "top-lists", "lists"):
+        filtered = [g for g in all_guides if "synergies" in g.get("category", "").lower() or "list" in g.get("category", "").lower()]
+    elif cat_slug in ("expansions", "meta", "sets"):
+        filtered = [g for g in all_guides if "expansion" in g.get("category", "").lower()]
+    elif cat_slug in ("strategy", "core"):
+        filtered = [g for g in all_guides if "strategy" in g.get("category", "").lower()]
+    elif cat_slug in ("mechanics", "rules"):
+        filtered = [g for g in all_guides if "mechanic" in g.get("category", "").lower()]
+    else:
+        filtered = all_guides
+
+    return templates.TemplateResponse(
+        request=request,
+        name="swu/guides/index.html",
+        context={
+            "base_path": base_path,
+            "guides": filtered,
+            "current_category": cat_slug,
+            "total_guides": len(all_guides)
+        },
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400"
+        }
+    )
+
+@swu_router.get("/articles/{slug}", response_class=HTMLResponse)
+@swu_router.get("/guides/{slug}", response_class=HTMLResponse)
+async def swu_article_detail(request: Request, slug: str):
+    """
+    Individual SWU Article & Strategy Primer detail view.
+    """
+    from mtgabyss.data.swu_guides import SWU_GUIDES
+    clean_slug = slug.strip().lower()
+    guide = SWU_GUIDES.get(clean_slug)
+    if not guide:
+        raise HTTPException(status_code=404, detail="SWU article not found")
+
+    base_path = get_base_prefix(request)
+    return templates.TemplateResponse(
+        request=request,
+        name="swu/guides/detail.html",
+        context={
+            "base_path": base_path,
+            "guide": guide
+        },
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400"
+        }
+    )
+
 @swu_router.get("/deckbuilder", response_class=HTMLResponse)
 async def swu_deckbuilder(request: Request, leader: Optional[str] = None, base: Optional[str] = None, deck: Optional[str] = None):
     """

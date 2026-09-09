@@ -134,6 +134,9 @@ class SWUSiteBlaster:
             ("/traits", 200, "text/html"),
             ("/deckbuilder", 200, "text/html"),
             ("/deckbuilder?leader=luke-skywalker", 200, "text/html"),
+            ("/articles", 200, "text/html"),
+            ("/guides", 200, "text/html"),
+            ("/articles/7-great-synergies-with-rey", 200, "text/html"),
             ("/.well-known/ai-content", 200, "text/plain"),
             ("/sitemap.xml", 200, "application/xml"),
             ("/llms.txt", 200, "text/plain"),
@@ -760,6 +763,64 @@ class SWUSiteBlaster:
             self.log_fail("subdomain routing", "Host routing check", str(e))
 
     # =========================================================================
+    # 11. ARTICLES & STRATEGIC PRIMERS HUB
+    # =========================================================================
+    def test_articles_hub(self):
+        print("\n--- [11/11] Running Articles & Primers Hub Suite ---")
+        from mtgabyss.data.swu_guides import SWU_GUIDES
+
+        # 1. Index page & categories
+        for cat_param in ["", "?category=synergies", "?category=expansions", "?category=strategy", "?category=mechanics"]:
+            try:
+                resp = self.get(f"/articles{cat_param}")
+                if resp.status_code == 200:
+                    self.log_pass("articles index", f"/articles{cat_param} returns 200 OK")
+                else:
+                    self.log_fail("articles index", f"/articles{cat_param}", f"Status {resp.status_code}")
+            except Exception as e:
+                self.log_fail("articles index", f"/articles{cat_param}", str(e))
+
+        # 2. Detail pages for all guides
+        for slug, guide in SWU_GUIDES.items():
+            path = f"/articles/{slug}"
+            try:
+                resp = self.get(path)
+                if resp.status_code == 200:
+                    text = resp.text
+                    title = guide["title"]
+                    if title.lower() in text.lower():
+                        self.log_pass("article detail title", f"Article '{slug}' displays headline")
+                    else:
+                        self.log_fail("article detail title", path, "Headline not found in HTML body")
+
+                    # Verify no publication dates or editorial house names
+                    for forbidden in ["published", "editorial team", "strategy team"]:
+                        if forbidden in text.lower():
+                            self.log_fail("article clean byline", path, f"Found forbidden byline element: {forbidden}")
+
+                    # Verify tactical hook
+                    if "Tactical Pilot Briefing" in text:
+                        self.log_pass("article tactical hook", f"Article '{slug}' includes Tactical Pilot Briefing")
+                    else:
+                        self.log_fail("article tactical hook", path, "Missing Tactical Pilot Briefing hook")
+
+                    # Verify deckbuilder CTA button
+                    if "/deckbuilder?" in text:
+                        self.log_pass("article deckbuilder CTA", f"Article '{slug}' contains Deck Builder launch link")
+                    else:
+                        self.log_fail("article deckbuilder CTA", path, "Missing Deck Builder link in CTA")
+
+                    # Verify card links have target="_blank"
+                    if 'target="_blank"' in text and 'rel="noopener"' in text:
+                        self.log_pass("article sticky links", f"Article '{slug}' has target=_blank rel=noopener links")
+                    else:
+                        self.log_fail("article sticky links", path, "Missing target=_blank rel=noopener on links")
+                else:
+                    self.log_fail("article detail", path, f"Status {resp.status_code}")
+            except Exception as e:
+                self.log_fail("article detail", path, str(e))
+
+    # =========================================================================
     # RUNNER
     # =========================================================================
     def run_all(self) -> int:
@@ -781,6 +842,7 @@ class SWUSiteBlaster:
         self.test_image_delivery()
         self.test_boundary_and_404()
         self.test_subdomain_routing_symmetry()
+        self.test_articles_hub()
 
         elapsed = time.time() - self.start_time
 

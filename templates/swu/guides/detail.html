@@ -1,0 +1,429 @@
+{% extends "swu/base.html" %}
+
+{% block title %}{{ guide.title }} &mdash; AvaScry SWU{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="https://swu.avascry.com/articles/{{ guide.slug }}">
+{% endblock %}
+
+{% block extra_head %}
+<meta name="description" content="{{ guide.summary }}">
+<style>
+  .guide-article-wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 5rem 1rem;
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: #e4e4e7;
+  }
+
+  .guide-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .guide-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+  }
+  .guide-pill {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.65rem;
+    border-radius: 4px;
+  }
+  .guide-time {
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .guide-h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2rem, 4.5vw, 2.75rem);
+    font-weight: 800;
+    line-height: 1.25;
+    color: #ffffff;
+    margin: 0 0 1rem 0;
+    letter-spacing: -0.02em;
+  }
+  .guide-sub {
+    font-size: 1.15rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* Takeaways Callout Box */
+  .takeaways-box {
+    background: rgba(24, 24, 27, 0.75);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+    padding: 1.4rem 1.6rem;
+    margin-bottom: 2.5rem;
+  }
+  .takeaways-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .takeaways-list {
+    margin: 0;
+    padding-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    color: #d4d4d8;
+  }
+
+  /* Main Article Body */
+  .guide-content section {
+    margin-bottom: 2.75rem;
+  }
+  .guide-content h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-top: 1rem;
+    margin-bottom: 0.85rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding-bottom: 0.5rem;
+  }
+  .guide-content p {
+    margin: 0;
+  }
+
+  /* Embedded Cards Row */
+  .guide-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin: 1.25rem 0;
+  }
+  .guide-card-chip {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    transition: all 0.15s ease;
+  }
+  .guide-card-chip:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+  }
+  .card-chip-name {
+    font-weight: 700;
+    color: #ffffff;
+    font-size: 0.95rem;
+  }
+  .card-chip-role {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.15rem;
+  }
+  .card-chip-cost {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid var(--accent);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* Tactical Wrap-Up Hook */
+  .tactical-hook-box {
+    background: linear-gradient(135deg, #18181b 0%, #1e1b2e 100%);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-left: 4px solid #a855f7;
+    border-radius: 10px;
+    padding: 1.5rem 1.75rem;
+    margin-top: 3rem;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .tactical-hook-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #c084fc;
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .tactical-hook-text {
+    font-size: 0.98rem;
+    line-height: 1.65;
+    color: #f3e8ff;
+    margin: 0;
+  }
+
+  /* Deck Builder CTA Module */
+  .deckbuilder-cta-card {
+    background: linear-gradient(135deg, #111114 0%, #18181b 100%);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    color: #f4f4f5;
+    margin-top: 2rem;
+    margin-bottom: 3rem;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  }
+  .deckbuilder-cta-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .deckbuilder-cta-desc {
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .deckbuilder-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .builder-recommend-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.15s ease;
+  }
+  .builder-recommend-card:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .builder-card-name {
+    font-weight: 700;
+    color: #ffffff;
+    font-size: 0.92rem;
+  }
+  .builder-card-role {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.15rem;
+  }
+
+  .deckbuilder-btn-row {
+    display: flex;
+    justify-content: flex-end;
+  }
+  .btn-deckbuilder-launch {
+    background: var(--accent);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.7rem 1.4rem;
+    font-size: 0.92rem;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  }
+  .btn-deckbuilder-launch:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.5);
+    color: #ffffff;
+  }
+
+  /* Next Missions / Related Guides */
+  .related-guides-wrap {
+    border-top: 1px solid var(--border);
+    padding-top: 2rem;
+  }
+  .related-guides-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 1.25rem;
+  }
+  .related-guides-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  .related-guide-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.15rem;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .related-guide-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .related-guide-cat {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent-cyan);
+    margin-bottom: 0.4rem;
+  }
+  .related-guide-headline {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 0.98rem;
+    color: #ffffff;
+    line-height: 1.4;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<article class="guide-article-wrap" itemscope itemtype="https://schema.org/Article">
+  <header class="guide-header">
+    <div class="guide-badge-row">
+      <span class="guide-pill">{{ guide.category }}</span>
+      <span class="guide-time">{{ guide.read_time }}</span>
+    </div>
+    <h1 class="guide-h1" itemprop="headline">{{ guide.title }}</h1>
+    <p class="guide-sub" itemprop="description">{{ guide.subtitle }}</p>
+  </header>
+
+  <!-- Key Takeaways Box -->
+  <aside class="takeaways-box">
+    <div class="takeaways-title">Tactical Briefing &amp; Key Takeaways</div>
+    <ul class="takeaways-list">
+      {% for item in guide.takeaways %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </aside>
+
+  <!-- Main Narrative -->
+  <div class="guide-content" itemprop="articleBody">
+    {% for sec in guide.sections %}
+    <section>
+      <h2>{{ sec.heading }}</h2>
+      {% for p in sec.paragraphs %}
+      <p style="margin-bottom: 1rem;">{{ p }}</p>
+      {% endfor %}
+
+      {% if sec.cards %}
+      <div class="guide-cards-grid">
+        {% for c in sec.cards %}
+        <a href="{{ base_path }}/card/{{ c.slug }}" class="guide-card-chip" target="_blank" rel="noopener">
+          <div>
+            <div class="card-chip-name">{{ c.name }}{% if c.subtitle %} ({{ c.subtitle }}){% endif %}</div>
+            <div class="card-chip-role">{{ c.role }}</div>
+          </div>
+          <div class="card-chip-cost" title="Resource Cost: {{ c.cost }}">{{ c.cost }}</div>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </div>
+
+  <!-- Tactical Wrap-Up Hook -->
+  {% if guide.tactical_hook %}
+  <div class="tactical-hook-box">
+    <div class="tactical-hook-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+      {{ guide.tactical_hook.title }}
+    </div>
+    <p class="tactical-hook-text">{{ guide.tactical_hook.summary }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Deck Builder CTA Module -->
+  {% if guide.deckbuilder_cta %}
+  <div class="deckbuilder-cta-card">
+    <div class="deckbuilder-cta-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      {{ guide.deckbuilder_cta.title }}
+    </div>
+    <div class="deckbuilder-cta-desc">{{ guide.deckbuilder_cta.description }}</div>
+
+    {% if guide.deckbuilder_cta.recommended_cards %}
+    <div class="deckbuilder-cards-grid">
+      {% for rec in guide.deckbuilder_cta.recommended_cards %}
+      <a href="{{ base_path }}/card/{{ rec.slug }}" class="builder-recommend-card" target="_blank" rel="noopener">
+        <div class="builder-card-name">{{ rec.name }}</div>
+        <div class="builder-card-role">{{ rec.role }}</div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="deckbuilder-btn-row">
+      <a href="{{ base_path }}/deckbuilder?{{ guide.deckbuilder_cta.builder_query }}" class="btn-deckbuilder-launch" target="_blank" rel="noopener">
+        Open in Deck Builder &amp; Test Hand &rarr;
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Next Missions / Related Guides -->
+  {% if guide.related_guides %}
+  <div class="related-guides-wrap">
+    <div class="related-guides-title">Next Missions &amp; Tactical Briefings</div>
+    <div class="related-guides-grid">
+      {% for rel in guide.related_guides %}
+      <a href="{{ base_path }}/articles/{{ rel.slug }}" class="related-guide-card">
+        <div>
+          <div class="related-guide-cat">{{ rel.category }}</div>
+          <div class="related-guide-headline">{{ rel.title }}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</article>
+{% endblock %}
