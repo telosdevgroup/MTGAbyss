@@ -193,40 +193,6 @@
       </script>
     {% endif %}
 
-    <!-- Machine Exports & Links -->
-    <div style="width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.25rem;">
-      <div style="display: flex; gap: 0.5rem; justify-content: center;">
-        <a href="{{ base_path }}/card/{{ card.slug }}.md" target="_blank"
-           style="flex: 1; text-align: center; font-size: 0.78rem; font-family: monospace; background: #141417; border: 1px solid var(--border); padding: 0.45rem 0.6rem; border-radius: 6px; color: var(--muted); text-decoration: none;">
-          .MD Raw
-        </a>
-        <a href="{{ base_path }}/card/{{ card.slug }}.json" target="_blank"
-           style="flex: 1; text-align: center; font-size: 0.78rem; font-family: monospace; background: #141417; border: 1px solid var(--border); padding: 0.45rem 0.6rem; border-radius: 6px; color: var(--muted); text-decoration: none;">
-          .JSON Data
-        </a>
-      </div>
-      <button onclick="copyAICitation()" id="btnCopyAICitation"
-              style="width: 100%; background: #18181b; border: 1px dashed #52525b; color: #facc15; font-size: 0.8rem; font-weight: 700; padding: 0.5rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: background 0.15s;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-        </svg>
-        <span id="citationBtnText">Copy AI / LLM Citation</span>
-      </button>
-      <script>
-        function copyAICitation() {
-          const citation = `> **{{ card.title or card.name }}{% if card.subtitle %}: {{ card.subtitle }}{% endif %}** ({{ card.expansion.code or card.set_code }} #{{ card.card_number or card.number }})
-> Type: {{ card.type }}{% if card.cost is not none %} | Cost: {{ card.cost }}{% endif %}{% if card.power is not none and card.hp is not none %} | Stats: {{ card.power }}/{{ card.hp }}{% endif %} | Aspects: {{ card.aspects | join(', ') if card.aspects else 'Neutral' }}
-> Rules: "{{ (card.text or '') | replace('\n', ' ') }}"
-> Source: AvaScry Star Wars Unlimited (https://swu.avascry.com/card/{{ card.slug }})`;
-          navigator.clipboard.writeText(citation).then(() => {
-            const btnText = document.getElementById('citationBtnText');
-            btnText.innerText = 'Citation Copied for AI!';
-            setTimeout(() => { btnText.innerText = 'Copy AI / LLM Citation'; }, 2200);
-          });
-        }
-      </script>
-    </div>
   </div>
 
   <!-- Right Column: Specs, Rules & Stats -->
