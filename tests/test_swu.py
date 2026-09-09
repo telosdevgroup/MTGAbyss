@@ -198,7 +198,7 @@ def test_swu_card_official_rulings():
     res = client.get("/swu/card/darth-vader-dark-lord-of-the-sith-sor-10")
     assert res.status_code == 200
     assert "Official Rules &amp; Clarifications" in res.text
-    assert "Official Fantasy Flight Games Rulings &amp; Errata Document" in res.text
+    assert "Fantasy Flight Games" in res.text
     assert "Vader" in res.text
 
     # Test unit with multiple official rulings

@@ -356,26 +356,18 @@
         </div>
 
         {% if card.official_rulings %}
-          <div style="display: flex; flex-direction: column; gap: 0.9rem;">
+          <div style="display: flex; flex-direction: column; gap: 0.85rem;">
             {% for r in card.official_rulings %}
               {% if loop.index % 2 == 1 %}
                 <div style="background: #18181b; border: 1px solid #27272a; border-left: 3px solid #38bdf8; border-radius: 6px; padding: 1rem 1.25rem;">
                   <div style="font-size: 0.98rem; line-height: 1.65; color: #f4f4f5; font-weight: 400;">
                     {{ r.answer }}
                   </div>
-                  <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #a1a1aa; display: flex; align-items: center; gap: 0.5rem;">
-                    <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #38bdf8;"></span>
-                    <span>{{ r.source }}</span>
-                  </div>
                 </div>
               {% else %}
                 <div style="background: #18181b; border: 1px solid #27272a; border-right: 3px solid #ef4444; border-radius: 6px; padding: 1rem 1.25rem;">
                   <div style="font-size: 0.98rem; line-height: 1.65; color: #f4f4f5; font-weight: 400;">
                     {{ r.answer }}
-                  </div>
-                  <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #a1a1aa; display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem;">
-                    <span>{{ r.source }}</span>
-                    <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #ef4444;"></span>
                   </div>
                 </div>
               {% endif %}
