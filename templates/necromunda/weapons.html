@@ -299,19 +299,12 @@
       <button type="button" class="badge-mono cat-btn active" data-cat="all">
         <span>🌐</span> All Munitions ({{ total_weapons }})
       </button>
-      {% for cat in categories %}
-      <button type="button" class="badge-mono cat-btn" data-cat="{{ cat|lower }}">
-        {% if 'pistol' in cat|lower %}🔫
-        {% elif 'basic' in cat|lower %}🎯
-        {% elif 'special' in cat|lower %}⚡
-        {% elif 'heavy' in cat|lower %}💥
-        {% elif 'close combat' in cat|lower or 'melee' in cat|lower %}⚔️
-        {% elif 'grenade' in cat|lower or 'booby' in cat|lower %}💣
-        {% elif 'exotic' in cat|lower %}✨
-        {% else %}📦{% endif %}
-        {{ cat }}
+      <button type="button" class="badge-mono cat-btn" data-cat="ranged">
+        <span>🔫</span> Ranged &amp; Heavy
       </button>
-      {% endfor %}
+      <button type="button" class="badge-mono cat-btn" data-cat="melee">
+        <span>⚔️</span> Melee &amp; Close Combat
+      </button>
     </div>
   </div>
 </div>
@@ -418,8 +411,17 @@
 
     let matchCount = 0;
     cards.forEach(card => {
-      const cat = card.dataset.category || '';
-      const catMatch = (activeCategory === 'all') || (cat === activeCategory);
+      const cat = (card.dataset.category || '').toLowerCase();
+      let catMatch = false;
+      if (activeCategory === 'all') {
+        catMatch = true;
+      } else if (activeCategory === 'ranged') {
+        catMatch = cat.includes('pistol') || cat.includes('basic') || cat.includes('special') || cat.includes('heavy');
+      } else if (activeCategory === 'melee') {
+        catMatch = cat.includes('close combat') || cat.includes('melee') || cat.includes('grenade') || cat.includes('booby');
+      } else {
+        catMatch = (cat === activeCategory);
+      }
 
       if (!catMatch) {
         card.style.display = 'none';

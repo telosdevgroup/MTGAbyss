@@ -324,22 +324,14 @@
     <span class="category-pill-label">Category Quick Jump</span>
     <div class="category-pill-row" id="equipmentCatPillRow">
       <button type="button" class="badge-mono cat-btn active" data-cat="all">
-        <span>🌐</span> All Categories ({{ total_equipment }})
+        <span>🌐</span> All Wargear ({{ total_equipment }})
       </button>
-      {% for cat in categories %}
-      <button type="button" class="badge-mono cat-btn" data-cat="{{ cat|lower }}">
-        {% if 'armor' in cat|lower %}🛡️
-        {% elif 'bionic' in cat|lower or 'body' in cat|lower %}🦾
-        {% elif 'chem' in cat|lower %}🧪
-        {% elif 'beast' in cat|lower or 'mount' in cat|lower %}🐾
-        {% elif 'servo' in cat|lower %}👁️
-        {% elif 'weapon' in cat|lower %}⚙️
-        {% elif 'vehicle' in cat|lower or 'drive' in cat|lower or 'engine' in cat|lower or 'hardpoint' in cat|lower %}🚗
-        {% elif 'status' in cat|lower %}👑
-        {% else %}📦{% endif %}
-        {{ cat }}
+      <button type="button" class="badge-mono cat-btn" data-cat="defense">
+        <span>🛡️</span> Armor &amp; Bionics
       </button>
-      {% endfor %}
+      <button type="button" class="badge-mono cat-btn" data-cat="tactical">
+        <span>🧪</span> Chems &amp; Field Gear
+      </button>
     </div>
   </div>
 </div>
@@ -433,12 +425,22 @@
 
     cards.forEach(card => {
       const name = card.dataset.name || '';
-      const category = card.dataset.category || '';
+      const category = (card.dataset.category || '').toLowerCase();
       const rarity = card.dataset.rarity || '';
       const rules = card.dataset.rules || '';
       const desc = card.dataset.desc || '';
 
-      const catMatch = (activeCategory === 'all') || (category === activeCategory);
+      let catMatch = false;
+      if (activeCategory === 'all') {
+        catMatch = true;
+      } else if (activeCategory === 'defense') {
+        catMatch = category.includes('armor') || category.includes('bionic') || category.includes('body');
+      } else if (activeCategory === 'tactical') {
+        catMatch = category.includes('chem') || category.includes('equip') || category.includes('weapon') || category.includes('beast') || category.includes('status') || category.includes('servo');
+      } else {
+        catMatch = (category === activeCategory);
+      }
+
       if (!catMatch) {
         card.style.display = 'none';
         return;

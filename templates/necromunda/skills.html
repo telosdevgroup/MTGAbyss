@@ -289,21 +289,15 @@
     <kbd class="search-shortcut-hint" aria-hidden="true">/</kbd>
   </div>
 
-  {% if trees %}
   <!-- Quick-Jump Tree Pills -->
   <div class="category-pill-container">
     <span class="category-pill-label">Filter By Skill Discipline</span>
     <div class="category-pill-row" id="skillTreePillRow">
       <button type="button" class="cat-btn active" data-cat="all">All Disciplines ({{ total_skills }})</button>
-      {% for tree in trees %}
-      <button type="button" class="cat-btn" data-cat="{{ tree|lower }}">
-        {% if 'agility' in tree|lower %}🏃{% elif 'brawn' in tree|lower %}💪{% elif 'combat' in tree|lower %}⚔️{% elif 'cunning' in tree|lower %}🐍{% elif 'ferocity' in tree|lower %}🔥{% elif 'leadership' in tree|lower %}👑{% elif 'shooting' in tree|lower %}🎯{% elif 'savagery' in tree|lower %}🐾{% elif 'wyrd' in tree|lower %}🔮{% elif 'palatine' in tree|lower or 'precision' in tree|lower %}🛡️{% elif 'tech' in tree|lower or 'finesse' in tree|lower %}⚙️{% else %}✨{% endif %}
-        {{ tree }}
-      </button>
-      {% endfor %}
+      <button type="button" class="cat-btn" data-cat="physical">💪 Combat &amp; Physical</button>
+      <button type="button" class="cat-btn" data-cat="mental">🧠 Tactical &amp; Powers</button>
     </div>
   </div>
-  {% endif %}
 </div>
 
 <div class="skill-count-row">
@@ -373,11 +367,21 @@
     let matchCount = 0;
     cards.forEach(card => {
       const name = card.dataset.name || '';
-      const tree = card.dataset.tree || '';
+      const tree = (card.dataset.tree || '').toLowerCase();
       const rules = card.dataset.rules || '';
       const tactics = card.dataset.tactics || '';
 
-      const treeMatch = (activeTree === 'all') || (tree === activeTree);
+      let treeMatch = false;
+      if (activeTree === 'all') {
+        treeMatch = true;
+      } else if (activeTree === 'physical') {
+        treeMatch = tree.includes('agility') || tree.includes('brawn') || tree.includes('combat') || tree.includes('ferocity') || tree.includes('muscle') || tree.includes('savagery');
+      } else if (activeTree === 'mental') {
+        treeMatch = tree.includes('cunning') || tree.includes('leadership') || tree.includes('shooting') || tree.includes('tech') || tree.includes('savant') || tree.includes('wyrd') || tree.includes('psychic') || tree.includes('drill');
+      } else {
+        treeMatch = (tree === activeTree);
+      }
+
       if (!treeMatch) {
         card.style.display = 'none';
         return;

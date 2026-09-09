@@ -389,6 +389,72 @@
       color: #ff7043;
     }
 
+    /* Global Bottom API CTA */
+    .api-cta-section {
+      margin: 3.5rem auto 2.5rem auto;
+      max-width: 1040px;
+      padding: 0 1rem;
+    }
+    .api-cta-card {
+      position: relative;
+      background: linear-gradient(145deg, #10141d 0%, #0c0f16 100%);
+      border: 1px solid rgba(255, 87, 34, 0.28);
+      border-radius: 12px;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 87, 34, 0.2);
+      overflow: hidden;
+    }
+    .api-cta-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 0%, rgba(255, 87, 34, 0.12) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .api-cta-title {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+      font-weight: 700;
+      color: #fff;
+      margin: 0.6rem 0 0.75rem 0;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .api-cta-desc {
+      font-size: 0.96rem;
+      color: #cbd5e1;
+      max-width: 680px;
+      margin: 0 auto 1.5rem auto;
+      line-height: 1.6;
+    }
+    .api-cta-curl {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: #090b10;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.65rem 1.15rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: #ff7043;
+      margin-bottom: 1.5rem;
+      max-width: 100%;
+      overflow-x: auto;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+    }
+    .api-cta-curl::before {
+      content: "$";
+      color: var(--muted);
+    }
+    .api-cta-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
     @media (max-width: 768px) {
       .header-inner {
         flex-wrap: wrap;
@@ -492,8 +558,6 @@
       <nav id="main-navigation" aria-label="Necromunda Navigation" style="display: flex; align-items: center; gap: 1.25rem;">
         <!-- Group 1: Navigation Links with Dropdowns -->
         <div class="nav-links-group">
-          <a href="{{ base_path or '/' }}" class="nav-link">Hub</a>
-
           <!-- Database Dropdown -->
           <div class="nav-dropdown" id="databaseDropdown">
             <button type="button" class="dropdown-toggle" aria-expanded="false" aria-haspopup="true">
@@ -592,14 +656,15 @@
               </a>
             </div>
           </div>
-
-          <a href="{{ base_path }}/sitemap.html" class="nav-link">Sitemap</a>
         </div>
 
         <span class="nav-divider" aria-hidden="true"></span>
 
-        <!-- Group 2: User Profile or Discord Sign In -->
+        <!-- Group 2: Developers Link & Discord User Authentication -->
         <div class="nav-user-group">
+          <a href="{{ base_path }}/developers" class="nav-link" style="color: #cbd5e1; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+            <span>⚡ Developers</span>
+          </a>
         {% if user %}
           <div style="display: inline-flex; align-items: center; gap: 0.35rem; width: 100%;">
             <a href="https://avascry.com/dashboard" title="View Your Account Dashboard" style="display: inline-flex; align-items: center; gap: 0.45rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.3rem 0.65rem; text-decoration: none; color: #fff; flex: 1;">
@@ -624,6 +689,37 @@
 
   <main id="main-content">
     {% block content %}{% endblock %}
+
+    {% block bottom_cta %}
+    <!-- Global Open API & Machine Corpus CTA Banner -->
+    <section class="api-cta-section" aria-label="Developer API Engine">
+      <div class="api-cta-card">
+        <div class="brand-tag" style="display: inline-block; margin-bottom: 0.35rem;">⚡ OPEN UNDERHIVE DATA ENGINE</div>
+        <h2 class="api-cta-title">
+          Build Tools With The <span class="accent">JSON &amp; Markdown API</span>
+        </h2>
+        <p class="api-cta-desc">
+          Zero paywalls. Realtime Underhive database endpoints designed for community Discord bots, roster builders, injury calculators, and AI agents.
+        </p>
+
+        <div class="api-cta-curl" aria-label="Terminal cURL snippet">
+          <code>curl -s https://necromunda.avascry.com/weapon/heavy-bolter.json</code>
+        </div>
+
+        <div class="api-cta-buttons">
+          <a href="{{ base_path }}/developers" class="badge-mono badge-accent" style="padding: 8px 18px; font-size: 0.85rem;">
+            🔑 Developer Hub &amp; API Key Signup
+          </a>
+          <a href="{{ base_path }}/llms.txt" class="badge-mono" style="padding: 8px 16px; font-size: 0.85rem;">
+            🤖 LLM Manifest (/llms.txt)
+          </a>
+          <a href="{{ base_path }}/sitemap.md" class="badge-mono" style="padding: 8px 16px; font-size: 0.85rem;">
+            📄 Full Markdown Corpus
+          </a>
+        </div>
+      </div>
+    </section>
+    {% endblock %}
   </main>
 
   <footer>

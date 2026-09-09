@@ -293,15 +293,8 @@
     <span class="category-pill-label">Quick Faction Jump</span>
     <div class="category-pill-row">
       <button type="button" class="cat-btn active" data-faction="all">All Factions ({{ total_houses }})</button>
-      <button type="button" class="cat-btn" data-faction="goliath">⚒️ House Goliath</button>
-      <button type="button" class="cat-btn" data-faction="escher">🧪 House Escher</button>
-      <button type="button" class="cat-btn" data-faction="van saar">⚡ House Van Saar</button>
-      <button type="button" class="cat-btn" data-faction="delaque">👁️ House Delaque</button>
-      <button type="button" class="cat-btn" data-faction="orlock">⛏️ House Orlock</button>
-      <button type="button" class="cat-btn" data-faction="cawdor">🔥 House Cawdor</button>
-      <button type="button" class="cat-btn" data-faction="enforcers">🛡️ Palanite Enforcers</button>
-      <button type="button" class="cat-btn" data-faction="nomads">🏜️ Ash Wastes Nomads</button>
-      <button type="button" class="cat-btn" data-faction="squat">⚙️ Ironhead Squats</button>
+      <button type="button" class="cat-btn" data-faction="clans">⚒️ Core Clan Houses</button>
+      <button type="button" class="cat-btn" data-faction="outcasts">🛡️ Enforcers &amp; Outcasts</button>
     </div>
   </div>
 </div>
@@ -368,22 +361,41 @@
   const cards = Array.from(document.querySelectorAll('.house-card'));
   const total = cards.length;
 
+  let activeFaction = 'all';
+
   function filterHouses() {
     const rawVal = input.value.trim().toLowerCase();
     clearBtn.style.display = rawVal.length > 0 ? 'block' : 'none';
 
     let matchCount = 0;
     cards.forEach(card => {
+      const name = (card.dataset.name || '').toLowerCase();
+      const title = card.dataset.title || '';
+      const specialty = card.dataset.specialty || '';
+      const weapons = card.dataset.weapons || '';
+      const skills = card.dataset.skills || '';
+
+      let factionMatch = false;
+      if (activeFaction === 'all') {
+        factionMatch = true;
+      } else if (activeFaction === 'clans') {
+        factionMatch = name.includes('goliath') || name.includes('escher') || name.includes('van saar') || name.includes('delaque') || name.includes('orlock') || name.includes('cawdor');
+      } else if (activeFaction === 'outcasts') {
+        factionMatch = name.includes('enforcer') || name.includes('nomad') || name.includes('squat') || name.includes('cult') || name.includes('ogryn') || name.includes('venator');
+      } else {
+        factionMatch = name.includes(activeFaction);
+      }
+
+      if (!factionMatch) {
+        card.style.display = 'none';
+        return;
+      }
+
       if (!rawVal) {
         card.style.display = '';
         matchCount++;
         return;
       }
-      const name = card.dataset.name || '';
-      const title = card.dataset.title || '';
-      const specialty = card.dataset.specialty || '';
-      const weapons = card.dataset.weapons || '';
-      const skills = card.dataset.skills || '';
 
       const isMatch = name.includes(rawVal) || 
                       title.includes(rawVal) || 
@@ -399,8 +411,11 @@
       }
     });
 
+    let fLabel = activeFaction === 'all' ? '' : ` in ${activeFaction}`;
     if (rawVal) {
-      status.textContent = `Showing ${matchCount} of ${total} factions for "${rawVal}"`;
+      status.textContent = `Showing ${matchCount} of ${total} factions${fLabel} for "${rawVal}"`;
+    } else if (activeFaction !== 'all') {
+      status.textContent = `Showing ${matchCount} of ${total} factions${fLabel}`;
     } else {
       status.textContent = `Showing ${total} of ${total} factions`;
     }
@@ -417,12 +432,7 @@
     btn.addEventListener('click', function() {
       factionButtons.forEach(b => b.classList.remove('active'));
       this.classList.add('active');
-      const faction = this.dataset.faction;
-      if (faction === 'all') {
-        input.value = '';
-      } else {
-        input.value = faction;
-      }
+      activeFaction = this.dataset.faction;
       filterHouses();
       input.focus();
     });

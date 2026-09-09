@@ -851,6 +851,15 @@ async def necromunda_equipment_detail(request: Request, slug: str):
     )
 
 
+@necromunda_router.get("/developers", response_class=HTMLResponse)
+async def necromunda_developers(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="necromunda/developers.html",
+        context={"base_path": get_base_prefix(request)}
+    )
+
+
 @necromunda_router.get("/about", response_class=HTMLResponse)
 async def necromunda_about(request: Request):
     return templates.TemplateResponse(

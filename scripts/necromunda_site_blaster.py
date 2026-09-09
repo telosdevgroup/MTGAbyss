@@ -130,6 +130,7 @@ class NecromundaSiteBlaster:
             ("/contact", 200, "text/html"),
             ("/privacy", 200, "text/html"),
             ("/terms", 200, "text/html"),
+            ("/developers", 200, "text/html"),
             ("/weapons", 200, "text/html"),
             ("/equipment", 200, "text/html"),
             ("/traits", 200, "text/html"),
@@ -533,7 +534,7 @@ class NecromundaSiteBlaster:
     def test_subdomain_routing_symmetry(self):
         print("\n--- [10/10] Running Subdomain Routing Symmetry Suite ---")
         # Subdomain host routing vs prefix routing
-        test_paths = ["/", "/weapons", "/equipment", "/traits", "/houses", "/skills", "/about", "/privacy", "/terms", "/contact"]
+        test_paths = ["/", "/weapons", "/equipment", "/traits", "/houses", "/skills", "/about", "/privacy", "/terms", "/contact", "/developers"]
 
         for p in test_paths:
             # 1. As host 'necromunda.avascry.com' at path 'p'
