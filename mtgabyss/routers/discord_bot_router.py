@@ -68,6 +68,9 @@ def handle_necro_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, 
         "url": url,
         "color": 0xff5722,
         "description": f"**Cost:** `{cost} credits` | **Rarity:** `{rarity}`\n**Traits:** {traits}",
+        "thumbnail": {
+            "url": "https://raw.githubusercontent.com/twitter/twemoji/master/assets/72x72/1f52b.png"
+        },
         "fields": [
             {"name": "Range (S / L)", "value": f"{r_s} / {r_l}", "inline": True},
             {"name": "Acc (S / L)", "value": f"{acc_s} / {acc_l}", "inline": True},
@@ -275,8 +278,15 @@ def handle_mtg_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
 
     embed["fields"].append({"name": "Database", "value": f"[View Rulings, Prints & Visual Graph]({url})", "inline": False})
 
-    # Resolve AvaScry hosted card image URL
+    # Resolve card image URL (prefer direct Scryfall CDN URI so Discordbot proxy bypasses Cloudflare challenge)
     def _get_card_image(card_doc: dict) -> str:
+        # 1. Primary: High-resolution Scryfall CDN image
+        img_uris = card_doc.get("image_uris") or {}
+        if isinstance(img_uris, dict) and img_uris:
+            cdn_url = img_uris.get("normal") or img_uris.get("large") or img_uris.get("png")
+            if cdn_url and cdn_url.startswith("http"):
+                return cdn_url
+
         from mtgabyss.shared.helpers import slugify
         try:
             from mtgabyss.routers.image_router import IMAGE_PREFIX_MAP
@@ -535,10 +545,19 @@ def handle_minecraft_command(subcommand: str, options: Dict[str, Any]) -> Dict[s
     # Resolve High-Resolution Asset Image
     raw_img = facts.get("image_url")
     if raw_img:
-        if raw_img.startswith("/"):
-            full_img_url = f"https://minecraft.avascry.com{raw_img}"
+        # Convert internal /static/minecraft/textures path to public raw asset CDN so Discordbot proxy bypasses Cloudflare challenge
+        clean_img = raw_img.strip()
+        if "/textures/items/" in clean_img:
+            item_name = clean_img.split("/textures/items/")[-1]
+            full_img_url = f"https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21/assets/minecraft/textures/item/{item_name}"
+        elif "/textures/blocks/" in clean_img:
+            block_name = clean_img.split("/textures/blocks/")[-1]
+            full_img_url = f"https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21/assets/minecraft/textures/block/{block_name}"
+        elif clean_img.startswith("/"):
+            full_img_url = f"https://minecraft.avascry.com{clean_img}"
         else:
-            full_img_url = raw_img
+            full_img_url = clean_img
+
         # For items and blocks, a thumbnail renders crisp; for entities, a large image renders best
         if is_entity:
             embed["image"] = {"url": full_img_url}
