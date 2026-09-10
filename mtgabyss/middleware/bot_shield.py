@@ -49,9 +49,13 @@ PROBE_SENSITIVE_PATTERNS = (
     "api/env", "api/config", "docker-compose", "web.config", "phpinfo"
 )
 
+BLOCKED_BOT_AGENTS = (
+    "applebot", "amazonbot", "bytespider", "bytedance",
+    "meta-externalagent", "meta-externalfetcher", "facebookbot"
+)
+
 SCRAPER_USER_AGENTS = (
-    "meta-externalagent", "meta-externalfetcher", "shapbot", "bytespider", "bytedance",
-    "gptbot", "oai-search", "cohere-ai", "diffbot", "ccbot", "commoncrawl", "amazonbot"
+    "shapbot", "gptbot", "oai-search", "cohere-ai", "diffbot", "ccbot", "commoncrawl"
 )
 
 _SCRAPER_SEMAPHORE = None
@@ -69,6 +73,16 @@ async def bot_probe_shield_middleware(request: Request, call_next):
     norm_path = re.sub(r'/+', '/', raw_path)
 
     ua = request.headers.get("user-agent", "").lower()
+
+    # Immediate rejection for blocked bots (Applebot, Amazonbot, Meta, ByteSpider)
+    if any(b in ua for b in BLOCKED_BOT_AGENTS):
+        return Response(
+            content="410 Gone: This resource is permanently removed and no longer exists.",
+            status_code=410,
+            media_type="text/plain; charset=utf-8",
+            headers={"X-Shield": "Bot-Gone", "Cache-Control": "public, max-age=604800"}
+        )
+
     is_scraper = any(s in ua for s in SCRAPER_USER_AGENTS)
     if is_scraper:
         sem = get_scraper_semaphore()
