@@ -272,10 +272,10 @@ def resolve_card_images(card_doc: dict, background_tasks: Optional[BackgroundTas
             scryfall_large
         )
 
-    # Return local if that specific file exists, else hotlink CDN URL, else placeholder
-    img_url = f"/images/normal/{normal_filename or slug_name}" if normal_exists else (scryfall_normal or f"/images/normal/{slug_name}")
-    large_img_url = f"/images/large/{large_filename or slug_name}" if large_exists else (scryfall_large or img_url)
-    small_img_url = scryfall_small or img_url
+    # Prefer local image if exists or self-hosted AvaScry route, avoiding external Scryfall CDN
+    img_url = f"/images/normal/{normal_filename or slug_name}" if normal_exists else f"/images/normal/{slug_name}"
+    large_img_url = f"/images/large/{large_filename or slug_name}" if large_exists else (f"/images/large/{slug_name}" if os.path.exists(f"public/images/large/{slug_name}") else img_url)
+    small_img_url = img_url
 
     return small_img_url, img_url, large_img_url
 

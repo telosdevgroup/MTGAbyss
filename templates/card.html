@@ -167,6 +167,7 @@
          fetchpriority="high"
          width="488"
          height="680"
+         onerror="if (!this.dataset.triedFallback) { this.dataset.triedFallback = '1'; this.src = '/images/normal/{{ card.slug }}.jpg'; this.removeAttribute('srcset'); }"
          alt="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} - {{ card.set_name }} (#{{ card.collector_number }}){% if card.artist and card.artist != 'Unknown' %} - Illustrated by {{ card.artist }}{% endif %}{% if visual_artwork and visual_artwork.vision_observations and visual_artwork.vision_observations.visual_summary %} - {{ visual_artwork.vision_observations.visual_summary }}{% endif %} - Magic: The Gathering Card"
          title="{{ card.printed_name }}{% if card.printed_name != card.name %} ({{ card.name }}){% endif %} card art — {{ card.set_name }}{% if card.artist and card.artist != 'Unknown' %} — {{ card.artist }}{% endif %}{% if visual_artwork and visual_artwork.vision_observations and visual_artwork.vision_observations.visual_summary %} — {{ visual_artwork.vision_observations.visual_summary }}{% endif %}">
   </div>
@@ -434,7 +435,7 @@
                              alt="{{ p.printed_name or p.name }} - {{ p.set_name }} MTG card scan" 
                              title="{{ p.printed_name or p.name }} card art — {{ p.set_name }}{% if p.artist and p.artist != 'Unknown' %} — {{ p.artist }}{% endif %}"
                              loading="lazy" 
-                             onerror="this.style.display='none';"
+                             onerror="if (!this.dataset.triedFallback) { this.dataset.triedFallback = '1'; this.src = '/images/normal/{{ card.slug }}.jpg'; } else { this.style.display = 'none'; }"
                              style="width: 46px; height: 64px; border-radius: 4px; object-fit: cover; box-shadow: 0 2px 6px rgba(0,0,0,0.18); display: inline-block; vertical-align: middle;">
                       </a>
                     </td>
@@ -506,11 +507,7 @@
         <p style="font-size: 0.88rem; color: var(--muted); margin: 0; line-height: 1.4;">
           {{ t('sim_section_sub', current_lang or 'en') }}
         </p>
-        <a href="/methodology" 
-           style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; font-weight: 600; color: var(--muted); text-decoration: none; background: var(--surface); border: 1px solid var(--border); padding: 0.15rem 0.55rem; border-radius: var(--radius-pill);" 
-           title="How similarity is calculated using 4,096-dimensional high-parameter embeddings">
-          <span>🧠 4,096-Dim Neural Synergy</span>
-        </a>
+
         <a href="/similar/{{ card.slug }}" 
            style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; font-weight: 700; color: var(--accent); text-decoration: none; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); padding: 0.25rem 0.75rem; border-radius: var(--radius-pill); transition: background 0.15s, border-color 0.15s;"
            onmouseover="this.style.background='rgba(56, 189, 248, 0.16)'; this.style.borderColor='var(--accent)';"
@@ -535,6 +532,7 @@
              alt="{{ sim.name }} - {{ sim.set_name }} Magic card"
              title="{{ sim.name }} card art — {{ sim.set_name }}"
              loading="lazy" 
+             onerror="if (!this.dataset.triedFallback) { this.dataset.triedFallback = '1'; this.src = '/images/normal/{{ sim.slug }}.jpg'; } else { this.style.display = 'none'; }"
              style="width: 100%; height: 100%; object-fit: cover; display: block;">
       </div>
       
@@ -614,6 +612,7 @@
         <img src="{{ sim.image_url }}" 
              alt="{{ sim.card_name }} art by {{ sim.artist }}" 
              loading="lazy" 
+             onerror="if (!this.dataset.triedFallback) { this.dataset.triedFallback = '1'; this.src = '/images/normal/{{ sim.slug }}.jpg'; } else { this.style.display = 'none'; }"
              style="width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.25s ease;"
              onmouseover="this.style.transform='scale(1.03)';"
              onmouseout="this.style.transform='scale(1.0)';">

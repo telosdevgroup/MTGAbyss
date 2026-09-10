@@ -1,4 +1,4 @@
-﻿"""
+"""
 scripts/register_discord_commands.py
 -----------------------------------
 Registers the unified 5-game slash commands with Discord's REST API:
@@ -42,7 +42,7 @@ def load_dotenv():
 
 load_dotenv()
 
-CLIENT_ID = os.environ.get("DISCORD_CLIENT_ID", "1543690979251462235").strip()
+CLIENT_ID = os.environ.get("DISCORD_CLIENT_ID", "1547376653129224282").strip()
 BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "").strip()
 PUBLIC_KEY = os.environ.get("DISCORD_PUBLIC_KEY", "").strip()
 

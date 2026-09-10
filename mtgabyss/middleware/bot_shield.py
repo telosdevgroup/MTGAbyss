@@ -85,7 +85,8 @@ async def bot_probe_shield_middleware(request: Request, call_next):
             sem.release()
 
     # 1. CMS & WordPress Exploit Scanners -> Trap & Honeypot
-    is_cms_probe = any(k in norm_path for k in PROBE_KEYWORDS)
+    is_static_asset = norm_path.startswith(("/images/", "/static/", "/favicon"))
+    is_cms_probe = not is_static_asset and any(k in norm_path for k in PROBE_KEYWORDS)
     is_sensitive_probe = any(p in norm_path for p in PROBE_SENSITIVE_PATTERNS) or (norm_path.startswith("/.") and not norm_path.startswith("/.well-known"))
 
     if is_cms_probe or is_sensitive_probe:

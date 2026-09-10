@@ -55,6 +55,11 @@ SITES = [
         "name": "Necromunda",
         "script": os.path.join(SCRIPT_DIR, "necromunda_site_blaster.py"),
     },
+    {
+        "id": "minecraft",
+        "name": "Minecraft",
+        "script": os.path.join(SCRIPT_DIR, "minecraft_site_blaster.py"),
+    },
 ]
 
 SUMMARY_PATTERN = re.compile(

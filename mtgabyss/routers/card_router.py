@@ -774,7 +774,7 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
                     "artist": p_artist,
                     "artist_slug": slugify(p_artist),
                     "released_at": p.get("released_at", ""),
-                    "image_url": p_small_url or p_img_url,
+                    "image_url": p_img_url,
                     "large_image_url": p_large_url or p_img_url,
                 })
             set_ram_cache(raw_p_cache_key, raw_printings)
@@ -871,7 +871,7 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
             
             sim_cursor = list(db["cards"].find(
                 {"oracle_id": {"$in": sim_oids}, "lang": "en"},
-                {"name": 1, "slug": 1, "set": 1, "set_name": 1, "image_uris": 1, "card_faces": 1, "type_line": 1, "mana_cost": 1, "oracle_id": 1, "image_slug": 1}
+                {"name": 1, "slug": 1, "set": 1, "set_name": 1, "collector_number": 1, "image_uris": 1, "card_faces": 1, "type_line": 1, "mana_cost": 1, "oracle_id": 1, "image_slug": 1, "raw": 1}
             ))
             doc_map = {}
             for sc in sim_cursor:
@@ -886,16 +886,9 @@ async def printing_detail(request: Request, identifier: str, background_tasks: B
                     sc_set = (sc.get("set") or "").lower()
                     sc_slug = slugify(sc_name)
                     sc_p_slug = f"{sc_slug}-{sc_set}" if sc_set else sc_slug
-                    sc_img = sc.get("image_uris") or {}
-                    if not sc_img and sc.get("card_faces"):
-                        sc_img = sc["card_faces"][0].get("image_uris") or {}
-                    
-                    sc_norm = sc_img.get("normal") or (f"https://avascry.com/images/normal/{sc.get('image_slug')}.jpg" if sc.get("image_slug") else f"https://avascry.com/images/normal/{sc_slug}.jpg")
-                    if sc_norm.startswith("/"):
-                        sc_norm = f"https://avascry.com{sc_norm}"
-                    sc_large = sc_img.get("large") or sc_norm
-                    if sc_large.startswith("/"):
-                        sc_large = f"https://avascry.com{sc_large}"
+                    _, sc_img_url, sc_large_url = resolve_card_images(sc, None)
+                    sc_norm = sc_img_url
+                    sc_large = sc_large_url
 
                     similar_cards.append({
                         "name": sc_name,
@@ -1255,7 +1248,7 @@ async def similar_cards_page(slug: str, request: Request, background_tasks: Back
         
         c_docs = list(db["cards"].find(
             {"oracle_id": {"$in": sim_oids[:60]}, "lang": "en"},
-            {"name": 1, "slug": 1, "set": 1, "set_name": 1, "collector_number": 1, "image_uris": 1, "card_faces": 1, "type_line": 1, "mana_cost": 1, "oracle_id": 1, "image_slug": 1}
+            {"name": 1, "slug": 1, "set": 1, "set_name": 1, "collector_number": 1, "image_uris": 1, "card_faces": 1, "type_line": 1, "mana_cost": 1, "oracle_id": 1, "image_slug": 1, "raw": 1}
         ))
         
         doc_by_oid = {}

@@ -183,7 +183,7 @@ class NecromundaSiteBlaster:
                 r_html = self.get(html_path)
                 if r_html.status_code == 200:
                     text = r_html.text
-                    if name in text or html.escape(name) in text:
+                    if name in text or html.escape(name) in text or name in html.unescape(text):
                         self.log_pass("weapon html", f"{html_path} contains '{name}'")
                     else:
                         self.log_fail("weapon html content", html_path, f"Name '{name}' missing from page")
@@ -319,7 +319,8 @@ class NecromundaSiteBlaster:
 
             if r_html.status_code == 200 and r_md.status_code == 200 and r_json.status_code == 200:
                 data = r_json.json()
-                if data.get("tree") == tree and name in r_html.text and f"# Skill: {name}" in r_md.text:
+                html_text = html.unescape(r_html.text)
+                if data.get("tree") == tree and (name in html_text or html.escape(name) in r_html.text) and f"# Skill: {name}" in r_md.text:
                     self.log_pass("skill tri-surface", f"Skill '{name}' [{tree}] consistent across endpoints")
                 else:
                     self.log_fail("skill content check", slug, "Tree badge or title mismatch")

@@ -809,7 +809,7 @@
           <a href="{{ base_path }}/card/{{ rel.slug }}" class="related-card-card" title="View {{ rel.name }} Dominion card">
             <div class="related-card-img-wrap">
               <img 
-                src="{{ base_path }}/images/{{ rel.slug }}.jpg" 
+                src="{{ rel.image_url or (base_path ~ '/images/' ~ rel.slug ~ '.jpg') }}" 
                 alt="{{ rel.name }} card scan" 
                 class="related-card-img" 
                 loading="lazy"

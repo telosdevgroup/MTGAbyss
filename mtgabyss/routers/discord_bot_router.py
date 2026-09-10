@@ -149,7 +149,6 @@ def handle_swu_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
 
     if front_img and front_img.startswith("http"):
         embed["image"] = {"url": front_img}
-        embed["thumbnail"] = {"url": front_img}
 
     # Search for alternate art / premium variant (Showcase, Hyperspace, etc.)
     alt_matches = list(db.cards.find({"title": title, "subtitle": subtitle}))
@@ -252,6 +251,11 @@ def handle_mtg_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
     else:
         color = 0x6366f1
 
+    from mtgabyss.shared.helpers import slugify
+    c_slug = slug or slugify(name)
+    printing_slug = card.get("printing_slug") or (f"{c_slug}-{set_code.lower()}" if set_code else c_slug)
+    printing_url = f"https://avascry.com/printing/{printing_slug}"
+
     title_display = f"✨ {name} {mana_cost}".strip()
     embed = {
         "title": title_display,
@@ -259,7 +263,7 @@ def handle_mtg_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
         "color": color,
         "description": f"**{type_line}**\n\n{oracle_text}" if oracle_text else f"**{type_line}**",
         "fields": [
-            {"name": "Set", "value": f"{set_name} (`{set_code}`)", "inline": True},
+            {"name": "Set", "value": f"[{set_name} (`{set_code}`)]({printing_url})", "inline": True},
         ]
     }
 
@@ -271,84 +275,48 @@ def handle_mtg_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
 
     embed["fields"].append({"name": "Database", "value": f"[View Rulings, Prints & Visual Graph]({url})", "inline": False})
 
-    # Resolve image URLs for primary card (prefer local AvaScry hosted image)
-    from mtgabyss.shared.helpers import slugify
-    def _get_avascry_card_image(card_doc: dict) -> str:
+    # Resolve AvaScry hosted card image URL
+    def _get_card_image(card_doc: dict) -> str:
+        from mtgabyss.shared.helpers import slugify
+        try:
+            from mtgabyss.routers.image_router import IMAGE_PREFIX_MAP
+        except Exception:
+            IMAGE_PREFIX_MAP = {"normal": {}, "large": {}}
         c_slug = slugify(card_doc.get("name") or "")
         set_slug = slugify(card_doc.get("set_name") or "")
         artist_slug = slugify(card_doc.get("artist") or "")
         c_num = str(card_doc.get("collector_number") or "").strip()
+        set_code = str(card_doc.get("set") or "").lower()
+
+        # Check exact filenames
         specific = f"{c_slug}-{set_slug}-{artist_slug}-{c_num}.jpg"
         if os.path.exists(os.path.join("public", "images", "normal", specific)):
             return f"https://avascry.com/images/normal/{specific}"
+
+        # Check prefix map
+        for prefix_try in [
+            f"{c_slug}-{set_slug}-{c_num}" if c_num else None,
+            f"{c_slug}-{set_code}-{c_num}" if c_num else None,
+            f"{c_slug}-{set_slug}",
+            f"{c_slug}-{set_code}"
+        ]:
+            if prefix_try and prefix_try in IMAGE_PREFIX_MAP.get("normal", {}):
+                fname = IMAGE_PREFIX_MAP["normal"][prefix_try]
+                return f"https://avascry.com/images/normal/{fname}"
+
         generic = f"{c_slug}.jpg"
         if os.path.exists(os.path.join("public", "images", "normal", generic)):
             return f"https://avascry.com/images/normal/{generic}"
-        uris = card_doc.get("image_uris") or {}
-        if not uris and card_doc.get("card_faces"):
-            uris = card_doc["card_faces"][0].get("image_uris") or {}
-        raw_url = uris.get("normal") or uris.get("large") or ""
-        return raw_url.split("?")[0] if raw_url else ""
 
-    primary_card_url = _get_avascry_card_image(card)
-    if primary_card_url:
-        embed["image"] = {"url": primary_card_url}
+        # Fallback to avascry canonical slug image URL
+        return f"https://avascry.com/images/normal/{c_slug}.jpg"
 
-    # Fetch oldest printing:
-    # 1. Embed Thumbnail: Art crop of the iconic original vintage printing
-    # 2. Embed 2 (Collage): Full original card scan side-by-side with modern scan
-    embeds = [embed]
-    oracle_id = card.get("oracle_id")
-    if oracle_id:
-        try:
-            oldest_docs = list(
-                db.cards.find({"oracle_id": oracle_id, "lang": "en"})
-                .sort("released_at", 1)
-                .limit(1)
-            )
-            if oldest_docs:
-                oldest_card = oldest_docs[0]
-                old_img_uris = oldest_card.get("image_uris")
-                if not old_img_uris and oldest_card.get("card_faces"):
-                    old_img_uris = oldest_card["card_faces"][0].get("image_uris") or {}
-                old_img_uris = old_img_uris or {}
+    card_img_url = _get_card_image(card)
+    if card_img_url:
+        embed["image"] = {"url": card_img_url}
 
-                # Use original vintage art crop for the top-right thumbnail
-                old_art_crop = old_img_uris.get("art_crop")
-                if old_art_crop:
-                    embed["thumbnail"] = {"url": old_art_crop.split("?")[0]}
-
-                old_card_url = _get_avascry_card_image(oldest_card)
-
-                # If oldest printing has a valid image and is distinct from primary
-                if old_card_url and (oldest_card.get("id") != card.get("id") or primary_card_url != old_card_url):
-                    old_set_name = oldest_card.get("set_name") or (oldest_card.get("set") or "").upper()
-                    old_year = (oldest_card.get("released_at") or "")[:4]
-                    year_label = f" ({old_year})" if old_year else ""
-
-                    embed["footer"] = {
-                        "text": f"AvaScry • Left: {set_name} | Right: {old_set_name}{year_label} (Original)"
-                    }
-
-                    # Discord groups embeds sharing the exact same URL into a multi-image gallery/collage
-                    old_embed = {
-                        "url": url,
-                        "image": {"url": old_card_url}
-                    }
-                    embeds.append(old_embed)
-        except Exception:
-            pass
-
-    # Fallback art crop if thumbnail was not set from oldest
-    if "thumbnail" not in embed:
-        cur_art_crop = (card.get("image_uris") or {}).get("art_crop")
-        if cur_art_crop:
-            embed["thumbnail"] = {"url": cur_art_crop.split("?")[0]}
-
-    if "footer" not in embed:
-        embed["footer"] = {"text": "AvaScry Magic Engine • avascry.com"}
-
-    return {"embeds": embeds}
+    embed["footer"] = {"text": "AvaScry Magic Engine • avascry.com"}
+    return {"embeds": [embed]}
 
 def handle_dominion_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, Any]:
     """Handles /dom or /dominion command looking up Dominion kingdom cards."""
@@ -460,13 +428,12 @@ def handle_dominion_command(subcommand: str, options: Dict[str, Any]) -> Dict[st
         "fields": fields
     }
 
-    # High-resolution image URL (using direct CDN if available as ultimate fallback)
+    # High-resolution image URL
     raw_img = card.get("image_url")
     canonical_img = f"https://dominion.avascry.com/images/{slug}.jpg"
     final_img = raw_img if (raw_img and raw_img.startswith("http")) else canonical_img
 
     embed["image"] = {"url": final_img}
-    embed["thumbnail"] = {"url": final_img}
 
     embed["footer"] = {"text": "AvaScry Dominion Codex • dominion.avascry.com"}
     return {"embeds": [embed]}
@@ -572,9 +539,11 @@ def handle_minecraft_command(subcommand: str, options: Dict[str, Any]) -> Dict[s
             full_img_url = f"https://minecraft.avascry.com{raw_img}"
         else:
             full_img_url = raw_img
-        # Set both big hero image and thumbnail
-        embed["image"] = {"url": full_img_url}
-        embed["thumbnail"] = {"url": full_img_url}
+        # For items and blocks, a thumbnail renders crisp; for entities, a large image renders best
+        if is_entity:
+            embed["image"] = {"url": full_img_url}
+        else:
+            embed["thumbnail"] = {"url": full_img_url}
 
     return {"embeds": [embed]}
 
@@ -622,6 +591,7 @@ async def discord_interactions(request: Request):
             for opt in options_list:
                 param_dict[opt.get("name")] = opt.get("value")
 
+        print(f"[DISCORD-BOT] Received command: {root_command}, subcommand: {subcommand}, params: {param_dict}", flush=True)
         response_data = {}
         if root_command in ("mtg", "card", "magic"):
             response_data = handle_mtg_command(subcommand, param_dict)
@@ -645,6 +615,11 @@ async def discord_interactions(request: Request):
                     "• `/mc item <name>` — Minecraft Codex"
                 )
             }
+
+        # Log what we're sending back to Discord
+        if "embeds" in response_data and response_data["embeds"]:
+            img_info = response_data["embeds"][0].get("image")
+            print(f"[DISCORD-BOT] Sending embed image to Discord: {img_info}", flush=True)
 
         # Type 4: CHANNEL_MESSAGE_WITH_SOURCE
         return JSONResponse({
