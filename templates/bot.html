@@ -1,7 +1,87 @@
-{% extends "base.html" %}
+{% extends base_template|default("base.html") %}
 
-{% block title %}AvaScry Discord Bot — Unified Tabletop & Gaming Bot{% endblock %}
-{% block meta_description %}Add AvaScry to your Discord server. Instant card lookups, official rulings, weapon profiles, and crafting specs across Magic: The Gathering, Dominion, Star Wars: Unlimited, Necromunda, and Minecraft.{% endblock %}
+{% set game_meta = {
+  "mtg": {
+    "name": "Magic: The Gathering",
+    "slug": "mtg",
+    "domain": "https://avascry.com",
+    "badge": "AvaScry MTG",
+    "color": "#38bdf8",
+    "accent_bg": "rgba(56, 189, 248, 0.12)",
+    "command": "/mtg name: <card_name>",
+    "hero_title": "Magic: The Gathering Discord Bot",
+    "hero_desc": "Instant Oracle rulings, legalities, mana costs, and high-resolution card scans across 1,000+ expansion sets directly in your Discord channels.",
+    "primary_cmd": "/mtg name: Sol Ring",
+    "feature_1": "Full-resolution card scans & art crops",
+    "feature_2": "Instant Oracle text, mana costs & format legalities",
+    "feature_3": "Deep links to 4,096-dimensional vision embeddings"
+  },
+  "swu": {
+    "name": "Star Wars: Unlimited",
+    "slug": "swu",
+    "domain": "https://swu.avascry.com",
+    "badge": "AvaScry SWU",
+    "color": "#ef4444",
+    "accent_bg": "rgba(239, 68, 68, 0.12)",
+    "command": "/swu name: <card_name>",
+    "hero_title": "Star Wars: Unlimited Discord Bot",
+    "hero_desc": "Two-sided leader units, deploy stats, aspect penalties, and official FFG rulings delivered in sub-50ms directly inside your Star Wars Discord server.",
+    "primary_cmd": "/swu name: Luke Skywalker",
+    "feature_1": "Two-sided leader deploy stats & epic actions",
+    "feature_2": "Aspect color coding (Vigilance, Command, Aggression, Cunning)",
+    "feature_3": "Deep links directly to swu.avascry.com"
+  },
+  "dominion": {
+    "name": "Dominion",
+    "slug": "dominion",
+    "domain": "https://dominion.avascry.com",
+    "badge": "AvaScry Dominion",
+    "color": "#60a5fa",
+    "accent_bg": "rgba(37, 99, 235, 0.12)",
+    "command": "/dom name: <card_name>",
+    "hero_title": "Dominion Codex Discord Bot",
+    "hero_desc": "Every Kingdom card, official Donald X. Vaccarino rulings, 1st vs 2nd edition errata comparisons, and coin costs right inside your Discord channels.",
+    "primary_cmd": "/dom name: Village",
+    "feature_1": "Coin costs, potion requirements & debt symbols",
+    "feature_2": "Official Donald X. errata & 1st vs 2nd edition comparisons",
+    "feature_3": "Deep links directly to dominion.avascry.com"
+  },
+  "necromunda": {
+    "name": "Necromunda",
+    "slug": "necromunda",
+    "domain": "https://necromunda.avascry.com",
+    "badge": "AvaScry Necromunda",
+    "color": "#ff7043",
+    "accent_bg": "rgba(255, 87, 34, 0.12)",
+    "command": "/necro name: <weapon_name>",
+    "hero_title": "Necromunda Armory Discord Bot",
+    "hero_desc": "Instant weapon profiles, ballistic stats, range bands, ammo checks, and House equipment lists for Underhive skirmish arbiters.",
+    "primary_cmd": "/necro name: Bolter",
+    "feature_1": "Range (Short/Long) & Accuracy modifiers",
+    "feature_2": "Weapon traits (Rapid Fire, Blast, Plentiful, etc.)",
+    "feature_3": "Deep links directly to necromunda.avascry.com"
+  },
+  "minecraft": {
+    "name": "Minecraft",
+    "slug": "minecraft",
+    "domain": "https://minecraft.avascry.com",
+    "badge": "AvaScry Minecraft",
+    "color": "#34d399",
+    "accent_bg": "rgba(16, 185, 129, 0.12)",
+    "command": "/mc name: <item_name>",
+    "hero_title": "Minecraft Codex Discord Bot",
+    "hero_desc": "Query block parameters, entity IDs, blast resistances, crafting recipe chains, and max stack sizes for technical redstone builders.",
+    "primary_cmd": "/mc name: Redstone Dust",
+    "feature_1": "Official Minecraft Java 1.21.4 entity IDs & block specs",
+    "feature_2": "Crafting recipes, blast resistances & hardness ratings",
+    "feature_3": "Deep links directly to minecraft.avascry.com"
+  }
+} %}
+
+{% set active_meta = game_meta.get(current_game, game_meta['mtg']) %}
+
+{% block title %}AvaScry Discord Bot — {{ active_meta.name }} Slash Commands & Rulings{% endblock %}
+{% block meta_description %}Add the AvaScry Discord Bot to your server for {{ active_meta.name }}. Instant card search, official rulings, and stats. Plus unified support across all 5 AvaScry games.{% endblock %}
 
 {% block head_extra %}
 <style>
@@ -22,8 +102,8 @@
     height: 120px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid #38bdf8;
-    box-shadow: 0 12px 35px rgba(56, 189, 248, 0.4);
+    border: 3px solid {{ active_meta.color }};
+    box-shadow: 0 12px 35px rgba(88, 101, 242, 0.4);
     position: relative;
     z-index: 2;
   }
@@ -31,7 +111,7 @@
     position: absolute;
     inset: -15px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.45) 0%, rgba(56, 189, 248, 0.25) 50%, transparent 70%);
+    background: radial-gradient(circle, rgba(88, 101, 242, 0.45) 0%, {{ active_meta.color }}33 50%, transparent 70%);
     filter: blur(14px);
     z-index: 1;
   }
@@ -51,13 +131,68 @@
     letter-spacing: 0.05em;
   }
 
+  /* Spotlight Box for Current Game */
+  .bot-spotlight-box {
+    background: var(--surface, #18181b);
+    border: 2px solid {{ active_meta.color }};
+    border-radius: var(--radius-lg, 14px);
+    padding: 2.5rem;
+    margin: 0 auto 3.5rem auto;
+    max-width: 1000px;
+    box-shadow: 0 16px 45px rgba(0,0,0,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2.5rem;
+    text-align: left;
+  }
+
+  /* Multi-Game Network Switcher Strip */
+  .bot-network-strip {
+    background: #0f172a;
+    border: 1px solid rgba(88, 101, 242, 0.35);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin: 0 auto 4rem auto;
+    max-width: 1040px;
+    text-align: center;
+  }
+  .bot-game-links {
+    display: flex;
+    justify-content: center;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+  .bot-game-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.15rem;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #e2e8f0;
+    transition: all 0.15s ease;
+  }
+  .bot-game-pill:hover, .bot-game-pill.active {
+    background: #5865F2;
+    border-color: #5865F2;
+    color: #ffffff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(88, 101, 242, 0.4);
+  }
+
   /* Alternating Breathing Showcase Rows with Lateral Pull */
   .bot-card-row {
-    background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-lg);
+    background: var(--surface, #18181b);
+    border: 1.5px solid var(--border, #27272a);
+    border-radius: var(--radius-lg, 14px);
     padding: 2.5rem;
-    margin-bottom: 3rem;
+    margin-bottom: 2.5rem;
     box-shadow: 0 12px 36px rgba(0,0,0,0.18);
     display: flex;
     align-items: center;
@@ -67,7 +202,7 @@
   }
   .bot-card-row:hover {
     transform: translateY(-2px);
-    border-color: var(--accent);
+    border-color: var(--accent, #38bdf8);
     box-shadow: 0 18px 45px rgba(0,0,0,0.25);
   }
 
@@ -84,11 +219,11 @@
 
   .bot-card-content {
     flex: 1;
-    min-width: 320px;
+    min-width: 300px;
   }
   .bot-card-preview {
     flex: 1;
-    min-width: 300px;
+    min-width: 280px;
     display: flex;
     justify-content: center;
   }
@@ -124,18 +259,17 @@
     background: #1e1f22;
     border-radius: 6px;
     padding: 0.85rem 1rem;
-    border-left: 4px solid var(--accent);
+    border-left: 4px solid {{ active_meta.color }};
   }
 
   @media (max-width: 820px) {
+    .bot-spotlight-box,
     .bot-card-row,
     .bot-row-left,
     .bot-row-right {
       flex-direction: column !important;
       padding: 1.75rem 1.25rem;
       gap: 1.75rem;
-      margin-left: auto !important;
-      margin-right: auto !important;
     }
   }
 </style>
@@ -151,47 +285,120 @@
   </div>
 
   <!-- Pill Badge -->
-  <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(88, 101, 242, 0.12); border: 1px solid rgba(88, 101, 242, 0.35); color: #818cf8; font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.95rem; border-radius: var(--radius-pill); margin-bottom: 1.25rem; text-transform: uppercase; letter-spacing: 0.06em;">
-    <span>⚡</span> 5 Tabletop &amp; Sandbox Universes &bull; Sub-50ms Responses &bull; Zero Lag
+  <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: {{ active_meta.accent_bg }}; border: 1px solid {{ active_meta.color }}; color: {{ active_meta.color }}; font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.95rem; border-radius: var(--radius-pill, 9999px); margin-bottom: 1.25rem; text-transform: uppercase; letter-spacing: 0.06em;">
+    <span>⚡</span> {{ active_meta.badge }} &bull; Sub-50ms Responses &bull; Official Discord App
   </div>
 
   <!-- Heading -->
   <h1 style="font-size: clamp(2.2rem, 4vw, 3.2rem); font-weight: 800; color: var(--text); margin: 0 0 1rem 0; letter-spacing: -0.025em; line-height: 1.15;">
-    AvaScry Discord Bot <span class="bot-app-badge">APP</span>
+    {{ active_meta.hero_title }} <span class="bot-app-badge">APP</span>
   </h1>
 
   <!-- Subtitle -->
-  <p style="font-size: 1.15rem; color: var(--muted); max-width: 720px; margin: 0 auto 2.25rem; line-height: 1.6;">
-    The unified gaming companion for tabletop communities. Look up cards, rules, weapon profiles, and crafting specs across five games right inside your Discord channels.
+  <p style="font-size: 1.15rem; color: var(--muted); max-width: 740px; margin: 0 auto 2.25rem; line-height: 1.6;">
+    {{ active_meta.hero_desc }}
   </p>
 
   <!-- CTA Buttons -->
-  <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 4rem;">
+  <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 3.5rem;">
     <a href="{{ invite_url }}" 
        target="_blank" 
-       rel="noopener noreferrer"
+       rel="noopener noreferrer" 
        class="btn-hero-primary"
-       style="background: #5865F2; border-color: #5865F2; display: inline-flex; align-items: center; gap: 0.65rem; padding: 0.9rem 2.2rem; font-size: 1.05rem; font-weight: 800; border-radius: var(--radius-pill); box-shadow: 0 6px 25px rgba(88, 101, 242, 0.45); text-decoration: none;">
+       style="background: #5865F2; border-color: #5865F2; display: inline-flex; align-items: center; gap: 0.65rem; padding: 0.9rem 2.2rem; font-size: 1.05rem; font-weight: 800; border-radius: var(--radius-pill, 9999px); box-shadow: 0 6px 25px rgba(88, 101, 242, 0.45); text-decoration: none; color: #ffffff !important;">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
         <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
       </svg>
       Add AvaScry to Discord &rarr;
     </a>
-    <a href="#showcase" 
+    <a href="https://discord.gg/2wvqmHKxS" 
+       target="_blank" 
+       rel="noopener noreferrer" 
        class="btn-hero-secondary"
-       style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.9rem 1.8rem; font-size: 1.05rem; font-weight: 700; border-radius: var(--radius-pill); border: 1.5px solid var(--border); text-decoration: none; color: var(--text);">
-      Explore 5-Game Showcase
+       style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.9rem 1.8rem; font-size: 1.05rem; font-weight: 700; border-radius: var(--radius-pill, 9999px); border: 1.5px solid var(--border); text-decoration: none; color: var(--text);">
+      💬 Join Community Discord
     </a>
+  </div>
+
+  <!-- Primary Spotlight Box for Current Game -->
+  <div class="bot-spotlight-box">
+    <div style="flex: 1;">
+      <div style="font-size: 0.8rem; font-weight: 800; color: {{ active_meta.color }}; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+        Active Game Slash Command
+      </div>
+      <h2 style="font-size: 1.7rem; font-weight: 800; color: var(--text); margin: 0 0 0.75rem 0;">
+        {{ active_meta.name }}
+      </h2>
+      <div style="background: #090d16; border: 1.5px solid {{ active_meta.color }}; border-radius: 8px; padding: 0.6rem 1rem; display: inline-block; font-family: monospace; font-size: 1.1rem; color: {{ active_meta.color }}; font-weight: 800; margin-bottom: 1.15rem;">
+        {{ active_meta.command }}
+      </div>
+      <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.95rem; color: var(--text);">
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: {{ active_meta.color }}; font-weight: 800;">✓</span> {{ active_meta.feature_1 }}</li>
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: {{ active_meta.color }}; font-weight: 800;">✓</span> {{ active_meta.feature_2 }}</li>
+        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: {{ active_meta.color }}; font-weight: 800;">✓</span> {{ active_meta.feature_3 }}</li>
+      </ul>
+    </div>
+    <div style="flex: 1; display: flex; justify-content: center;">
+      <div class="discord-chat-frame">
+        <div class="discord-user-header">
+          <span style="width: 20px; height: 20px; border-radius: 50%; background: {{ active_meta.color }}; display: inline-block;"></span>
+          <span style="font-weight: 600; color: #f2f3f5;">player</span>
+          <span>used</span>
+          <span class="discord-command-pill">{{ active_meta.command.split(' ')[0] }}</span>
+        </div>
+        <div class="discord-embed-box">
+          <div style="font-weight: 800; color: {{ active_meta.color }}; font-size: 0.95rem; margin-bottom: 0.25rem;">
+            {{ active_meta.primary_cmd }}
+          </div>
+          <div style="font-size: 0.8rem; color: #949ba4; margin-bottom: 0.5rem;">
+            {{ active_meta.name }} &bull; Live Database Lookup
+          </div>
+          <div style="font-size: 0.85rem; color: #dbdee1; line-height: 1.5;">
+            Sub-50ms rich embeds with card art, rule clarifications, and instant deep links back to {{ active_meta.badge }}.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-Game Network Switcher: One Bot • 5 Games -->
+  <div class="bot-network-strip">
+    <div style="display: inline-flex; align-items: center; gap: 0.45rem; background: rgba(88, 101, 242, 0.2); color: #818cf8; font-size: 0.75rem; font-weight: 800; padding: 0.25rem 0.75rem; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+      <span>🌐 One Bot • 5 Universes</span>
+    </div>
+    <h3 style="font-size: 1.35rem; font-weight: 800; color: #ffffff; margin: 0 0 0.4rem 0;">
+      One Bot for Your Whole Server
+    </h3>
+    <p style="font-size: 0.9rem; color: #94a3b8; max-width: 680px; margin: 0 auto; line-height: 1.5;">
+      Install AvaScry once and give each game channel dedicated slash commands. Explore the bot command manual for each universe:
+    </p>
+    <div class="bot-game-links">
+      <a href="https://avascry.com/bot" class="bot-game-pill {% if current_game == 'mtg' %}active{% endif %}" style="border-left: 3px solid #38bdf8;">
+        <span>🔮 MTG (/mtg)</span>
+      </a>
+      <a href="https://dominion.avascry.com/bot" class="bot-game-pill {% if current_game == 'dominion' %}active{% endif %}" style="border-left: 3px solid #60a5fa;">
+        <span>🏰 Dominion (/dom)</span>
+      </a>
+      <a href="https://swu.avascry.com/bot" class="bot-game-pill {% if current_game == 'swu' %}active{% endif %}" style="border-left: 3px solid #ef4444;">
+        <span>⚔️ Star Wars (/swu)</span>
+      </a>
+      <a href="https://necromunda.avascry.com/bot" class="bot-game-pill {% if current_game == 'necromunda' %}active{% endif %}" style="border-left: 3px solid #ff7043;">
+        <span>🔫 Necromunda (/necro)</span>
+      </a>
+      <a href="https://minecraft.avascry.com/bot" class="bot-game-pill {% if current_game == 'minecraft' %}active{% endif %}" style="border-left: 3px solid #34d399;">
+        <span>⛏️ Minecraft (/mc)</span>
+      </a>
+    </div>
   </div>
 
 </div>
 
-<!-- 5-Game Alternating Breathing Showcase Stream -->
+<!-- 5-Game Detailed Command Roster -->
 <div id="showcase" style="max-width: 1140px; margin: 0 auto 5rem; padding: 0 1.25rem;">
   
   <div style="text-align: center; margin-bottom: 3.5rem;">
-    <div style="display: inline-flex; align-items: center; gap: 0.45rem; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); color: #38bdf8; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.8rem; border-radius: var(--radius-pill); margin-bottom: 0.85rem; text-transform: uppercase;">
-      Five Universes &bull; One Application
+    <div style="display: inline-flex; align-items: center; gap: 0.45rem; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); color: #38bdf8; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.8rem; border-radius: var(--radius-pill, 9999px); margin-bottom: 0.85rem; text-transform: uppercase;">
+      All 5 Universes &bull; Single Install
     </div>
     <h2 style="font-size: clamp(1.85rem, 3.5vw, 2.4rem); font-weight: 800; color: var(--text); margin-bottom: 0.5rem;">
       Unified Command Roster

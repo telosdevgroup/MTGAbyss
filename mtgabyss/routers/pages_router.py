@@ -197,14 +197,30 @@ async def terms_of_service(request: Request):
 @pages_router.get("/bot", response_class=HTMLResponse)
 @pages_router.head("/bot")
 async def discord_bot_page(request: Request):
+    from mtgabyss.network_router import extract_subdomain, get_request_host
     lang = i18n.get_locale(request)
+    host = get_request_host(request)
+    sub = extract_subdomain(host) or "mtg"
     invite_url = "https://discord.com/api/oauth2/authorize?client_id=1547376653129224282&scope=applications.commands"
+    
+    # Base layout template depends on the active site subdomain
+    base_template_map = {
+        "mtg": "base.html",
+        "dominion": "dominion/base.html",
+        "swu": "swu/base.html",
+        "necromunda": "necromunda/base.html",
+        "minecraft": "minecraft/base.html"
+    }
+    base_template = base_template_map.get(sub, "base.html")
+
     return templates.TemplateResponse(
         request=request,
         name="bot.html",
         context={
             "current_lang": lang,
             "active_nav": "bot",
+            "current_game": sub,
+            "base_template": base_template,
             "invite_url": invite_url
         }
     )

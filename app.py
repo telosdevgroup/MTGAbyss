@@ -146,7 +146,7 @@ async def subdomain_routing_middleware(request: Request, call_next):
     path = request.scope.get("path", "")
 
     # Network-wide routes exempt from subdomain prefixing
-    if path.startswith(("/auth", "/static", "/api/discord")):
+    if path.startswith(("/auth", "/static", "/api/discord", "/bot")):
         return await call_next(request)
 
     if sub == "dominion":

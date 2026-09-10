@@ -183,6 +183,113 @@
       box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
     }
 
+    /* Dropdown Menus */
+    .nav-dropdown {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .dropdown-toggle {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 0.35rem 0.2rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: color 0.15s ease;
+      line-height: 1.2;
+    }
+    .dropdown-toggle:hover,
+    .nav-dropdown:hover .dropdown-toggle,
+    .nav-dropdown.is-open .dropdown-toggle,
+    .dropdown-toggle.active {
+      color: #fff;
+    }
+    .dropdown-caret {
+      width: 8px;
+      height: 5px;
+      transition: transform 0.2s ease;
+      opacity: 0.7;
+    }
+    .nav-dropdown:hover .dropdown-caret,
+    .nav-dropdown.is-open .dropdown-caret {
+      transform: rotate(180deg);
+      stroke: var(--accent);
+      opacity: 1;
+    }
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 260px;
+      background: #141417;
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--accent);
+      border-radius: 8px;
+      box-shadow: 0 14px 34px rgba(0,0,0,0.7);
+      padding: 0.45rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.2rem;
+      z-index: 1050;
+      margin-top: 0.5rem;
+    }
+    .dropdown-menu::before {
+      content: "";
+      position: absolute;
+      top: -0.65rem;
+      left: 0;
+      right: 0;
+      height: 0.65rem;
+      background: transparent;
+    }
+    .nav-dropdown:hover .dropdown-menu,
+    .nav-dropdown.is-open .dropdown-menu {
+      display: flex;
+    }
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 6px;
+      text-decoration: none !important;
+      transition: background 0.15s ease, border-color 0.15s ease;
+      border: 1px solid transparent;
+    }
+    .dropdown-item:hover {
+      background: #1f1f26;
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+    .dropdown-item-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .dropdown-item-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      line-height: 1.2;
+    }
+    .dropdown-item:hover .dropdown-item-title {
+      color: var(--accent);
+    }
+    .dropdown-item-desc {
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.3;
+      margin-top: 2px;
+    }
+
     /* Mobile Navigation & Divided Groups */
     .mobile-nav-toggle {
       display: none;
@@ -212,7 +319,7 @@
       align-items: center;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 900px) {
       .header-inner {
         flex-wrap: wrap;
         padding: 0.75rem 1.25rem;
@@ -225,34 +332,59 @@
         width: 100%;
         flex-direction: column;
         align-items: stretch !important;
-        gap: 1.15rem !important;
+        gap: 1rem !important;
         background: #18181b;
         border: 1px solid var(--border);
-        border-radius: 6px;
+        border-radius: 8px;
         padding: 1.25rem 1rem;
         margin-top: 0.75rem;
-        box-shadow: 0 16px 36px rgba(0,0,0,0.6);
+        box-shadow: 0 16px 36px rgba(0,0,0,0.8);
       }
       nav#main-navigation.nav-open {
         display: flex !important;
       }
       .nav-links-group {
         flex-direction: column;
-        align-items: flex-start !important;
-        gap: 0.75rem !important;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
         width: 100%;
       }
-      .nav-links-group a {
-        font-size: 1rem !important;
+      .nav-dropdown {
         width: 100%;
-        padding: 0.35rem 0.5rem;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .dropdown-toggle {
+        width: 100%;
+        justify-content: space-between;
+        padding: 0.55rem 0.65rem;
+        font-size: 0.95rem;
+        border-radius: 6px;
+        background: #141417;
+        border: 1px solid var(--border);
+      }
+      .dropdown-menu {
+        position: static;
+        width: 100%;
+        margin-top: 0.35rem;
+        box-shadow: none;
+        background: #0d0d0f;
+        border: 1px solid var(--border);
+        border-left: 2px solid var(--accent);
+        display: none;
+      }
+      .nav-dropdown.is-open .dropdown-menu {
+        display: flex;
+      }
+      .dropdown-item {
+        padding: 0.5rem 0.65rem;
       }
       .nav-divider {
         display: block !important;
         width: 100% !important;
         height: 1px !important;
         background: var(--border) !important;
-        margin: 0.2rem 0 !important;
+        margin: 0.3rem 0 !important;
       }
       .nav-user-group {
         width: 100%;
@@ -292,29 +424,125 @@
       <nav id="main-navigation" aria-label="SWU Navigation" style="display: flex; align-items: center; gap: 1.25rem;">
         <!-- Group 1: Navigation Links -->
         <div class="nav-links-group">
-          <a href="{{ base_path or '/' }}">Card Catalog</a>
-          <a href="{{ base_path or '/' }}?type=Leader">Leaders</a>
-          <a href="{{ base_path or '/' }}?type=Base">Bases</a>
-          <a href="{{ base_path }}/deckbuilder">Deck Builder</a>
-          <a href="{{ base_path }}/articles">Articles</a>
-          <a href="{{ base_path }}/traits">Traits</a>
-          <a href="{{ base_path }}/keywords">Keywords</a>
-          <a href="{{ base_path }}/rules">Rules</a>
-          <a href="{{ base_path }}/rulings">Clarifications</a>
-          <a href="{{ base_path }}/random">Random</a>
+          
+          <!-- Dropdown 1: Cards & Database -->
+          <div class="nav-dropdown">
+            <button class="dropdown-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+              <span>Cards</span>
+              <svg class="dropdown-caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 1 5 5 9 1"></polyline></svg>
+            </button>
+            <div class="dropdown-menu">
+              <a href="{{ base_path or '/' }}" class="dropdown-item">
+                <span class="dropdown-item-icon">🃏</span>
+                <div>
+                  <div class="dropdown-item-title">Card Catalog</div>
+                  <div class="dropdown-item-desc">Search all cards with aspects, costs &amp; arena filters</div>
+                </div>
+              </a>
+              <a href="{{ base_path or '/' }}?type=Leader" class="dropdown-item">
+                <span class="dropdown-item-icon">👑</span>
+                <div>
+                  <div class="dropdown-item-title">Leaders</div>
+                  <div class="dropdown-item-desc">Two-sided commanders with epic deploy stats</div>
+                </div>
+              </a>
+              <a href="{{ base_path or '/' }}?type=Base" class="dropdown-item">
+                <span class="dropdown-item-icon">🛡️</span>
+                <div>
+                  <div class="dropdown-item-title">Bases</div>
+                  <div class="dropdown-item-desc">Rare 30 HP &amp; common 25 HP aspect bases</div>
+                </div>
+              </a>
+              <a href="{{ base_path }}/random" class="dropdown-item">
+                <span class="dropdown-item-icon">🎲</span>
+                <div>
+                  <div class="dropdown-item-title">Random Card</div>
+                  <div class="dropdown-item-desc">Instant random card jump for deck ideas</div>
+                </div>
+              </a>
+            </div>
+          </div>
 
-          <!-- Prime CTA: 1-Click Discord Bot Invite -->
-          <a href="https://discord.com/api/oauth2/authorize?client_id=1547376653129224282&amp;scope=applications.commands" 
-             target="_blank" 
-             rel="noopener noreferrer" 
+          <!-- Dropdown 2: Rules & Lore -->
+          <div class="nav-dropdown">
+            <button class="dropdown-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+              <span>Rules &amp; Lore</span>
+              <svg class="dropdown-caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 1 5 5 9 1"></polyline></svg>
+            </button>
+            <div class="dropdown-menu">
+              <a href="{{ base_path }}/rules" class="dropdown-item">
+                <span class="dropdown-item-icon">📜</span>
+                <div>
+                  <div class="dropdown-item-title">Comprehensive Rules</div>
+                  <div class="dropdown-item-desc">Full official section breakdown (1.0 - 8.0)</div>
+                </div>
+              </a>
+              <a href="{{ base_path }}/rulings" class="dropdown-item">
+                <span class="dropdown-item-icon">⚖️</span>
+                <div>
+                  <div class="dropdown-item-title">Clarifications &amp; Errata</div>
+                  <div class="dropdown-item-desc">Official Fantasy Flight tournament FAQ entries</div>
+                </div>
+              </a>
+              <a href="{{ base_path }}/keywords" class="dropdown-item">
+                <span class="dropdown-item-icon">⚡</span>
+                <div>
+                  <div class="dropdown-item-title">Keywords &amp; Mechanics</div>
+                  <div class="dropdown-item-desc">Sentinel, Ambush, Smuggle, Saboteur &amp; more</div>
+                </div>
+              </a>
+              <a href="{{ base_path }}/traits" class="dropdown-item">
+                <span class="dropdown-item-icon">🧬</span>
+                <div>
+                  <div class="dropdown-item-title">Traits Lexicon</div>
+                  <div class="dropdown-item-desc">Tribal archetypes: Force, Trooper, Rebel, Imperial</div>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          <!-- Dropdown 3: Tools & Strategy -->
+          <div class="nav-dropdown">
+            <button class="dropdown-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+              <span>Tools &amp; Strategy</span>
+              <svg class="dropdown-caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 1 5 5 9 1"></polyline></svg>
+            </button>
+            <div class="dropdown-menu">
+              <a href="{{ base_path }}/deckbuilder" class="dropdown-item">
+                <span class="dropdown-item-icon">🛠️</span>
+                <div>
+                  <div class="dropdown-item-title">Deck Builder</div>
+                  <div class="dropdown-item-desc">Live aspect penalty check &amp; hand simulation</div>
+                </div>
+              </a>
+              <a href="{{ base_path }}/articles" class="dropdown-item">
+                <span class="dropdown-item-icon">📰</span>
+                <div>
+                  <div class="dropdown-item-title">Articles &amp; Primers</div>
+                  <div class="dropdown-item-desc">Tactical breakdown, synergies &amp; tournament prep</div>
+                </div>
+              </a>
+              <a href="{{ base_path }}/developers" class="dropdown-item">
+                <span class="dropdown-item-icon">🤖</span>
+                <div>
+                  <div class="dropdown-item-title">Discord Bot &amp; API</div>
+                  <div class="dropdown-item-desc">Live card search with oracle &amp; alt-art gallery</div>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          <!-- Prime CTA: Discord Bot Guide & 1-Click Add -->
+          <a href="{{ base_path|default('') }}/bot" 
              class="nav-bot-cta-btn" 
-             title="Add AvaScry Discord Bot to Your Server"
-             style="display: inline-flex; align-items: center; gap: 0.4rem; background: #5865F2; color: #ffffff !important; padding: 0.3rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 700; text-decoration: none; box-shadow: 0 2px 8px rgba(88,101,242,0.4); border: 1px solid rgba(255,255,255,0.2); transition: all 0.15s ease; white-space: nowrap;">
-            <span>🤖 Add Discord Bot</span>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: 0.85;">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <line x1="10" y1="14" x2="21" y2="3"></line>
+             title="Star Wars: Unlimited Discord Bot: Slash commands, leaders & 1-click server invite"
+             style="display: inline-flex; align-items: center; gap: 0.45rem; background: #5865F2; color: #ffffff !important; padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.82rem; font-weight: 700; text-decoration: none; box-shadow: 0 2px 10px rgba(88,101,242,0.45); border: 1px solid rgba(255,255,255,0.25); transition: all 0.15s ease; white-space: nowrap;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+            </svg>
+            <span>Discord Bot</span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: 0.85;">
+              <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
           </a>
         </div>
@@ -337,8 +565,6 @@
             </a>
             <a href="/auth/logout" title="Sign out" aria-label="Sign out" style="color: var(--muted); font-size: 0.85rem; text-decoration: none; padding: 0.3rem 0.5rem; border-radius: 50%; border: 1px solid var(--border); background: var(--card-bg);">✕</a>
           </div>
-        {% else %}
-          {% include "partials/discord_login_button.html" %}
         {% endif %}
         </div>
       </nav>
@@ -385,10 +611,10 @@
             <li><a href="{{ base_path }}/deckbuilder" style="color: var(--accent); font-weight: 700;">Deck Builder &amp; Hand Sim</a></li>
             <li><a href="{{ base_path }}/developers" style="color: var(--accent); font-weight: 700;">Developer API &amp; Bot</a></li>
             <li><a href="{{ base_path }}/sitemap.html">HTML Sitemap Directory</a></li>
-            <li><a href="{{ base_path }}/sitemap.md">Markdown Sitemap (AI)</a></li>
+            <li><a href="{{ base_path }}/sitemap.md">Markdown Sitemap</a></li>
             <li><a href="{{ base_path }}/sitemap.xml">XML Sitemap</a></li>
             <li><a href="{{ base_path }}/robots.txt">Robots.txt</a></li>
-            <li><a href="{{ base_path }}/llms.txt">LLM Training (llms.txt)</a></li>
+            <li><a href="{{ base_path }}/llms.txt">Data Manifest (llms.txt)</a></li>
           </ul>
         </div>
       </div>
@@ -417,6 +643,19 @@
           }
         });
       }
+
+      // Dropdown toggle on mobile touch devices
+      var dropdownToggles = document.querySelectorAll('.nav-dropdown .dropdown-toggle');
+      dropdownToggles.forEach(function(btn){
+        btn.addEventListener('click', function(e){
+          if (window.innerWidth <= 900) {
+            e.preventDefault();
+            var parent = btn.closest('.nav-dropdown');
+            var isOpen = parent.classList.toggle('is-open');
+            btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+          }
+        });
+      });
     })();
   </script>
 </body>
