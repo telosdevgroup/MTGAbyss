@@ -64,7 +64,7 @@ def get_caller_badge(request: Request) -> str:
         "100.26.", "100.27.", "107.20.", "107.21.", "107.22.", "107.23.",
         "130.211.", "136.116.", "136.117.", "136.118.", "136.119.", "136.120."
     )
-    if any(ip.startswith(p) for p in cloud_dc_prefixes) and not any(k in ua for k in ("googlebot", "bingbot", "discordbot")):
+    if not ip.startswith("136.32.") and any(ip.startswith(p) for p in cloud_dc_prefixes) and not any(k in ua for k in ("googlebot", "bingbot", "discordbot")):
         if any(ip.startswith(p) for p in ("136.116.", "136.117.", "136.118.", "136.119.", "136.120.", "130.211.")):
             return "[GCP:Blocked]"
         return "[AWS:Blocked]"

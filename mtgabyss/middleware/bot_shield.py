@@ -85,8 +85,8 @@ async def bot_probe_shield_middleware(request: Request, call_next):
             headers={"X-Shield": "Bot-Gone", "Cache-Control": "public, max-age=604800"}
         )
 
-    # Immediate rejection for spoofed/fake browser scrapers (e.g. fake future Chrome 148+ user agents)
-    if "chrome/148." in ua or re.search(r'chrome/1[4-9][0-9]\.', ua):
+    # Immediate rejection for spoofed/fake browser scrapers (specifically fake Chrome 148.0.0.0 image dumper)
+    if "chrome/148.0.0.0" in ua:
         return Response(
             content="410 Gone: Automated scraper signature rejected.",
             status_code=410,
@@ -98,13 +98,19 @@ async def bot_probe_shield_middleware(request: Request, call_next):
     # AWS IPv4 major ranges: 3., 18., 23.20., 34., 44., 52., 54., 99., 100.24-27., 107.20-23.
     # GCP Compute major ranges: 34., 35., 136.116., 136.117., 136.118., 136.119., 136.120., 130.211.
     client_ip = get_client_ip(request)
-    cloud_datacenter_prefixes = (
-        "3.", "18.", "23.20.", "23.21.", "23.22.", "23.23.",
-        "34.", "35.", "44.", "52.", "54.", "99.", "100.24.", "100.25.",
-        "100.26.", "100.27.", "107.20.", "107.21.", "107.22.", "107.23.",
-        "130.211.", "136.116.", "136.117.", "136.118.", "136.119.", "136.120."
-    )
-    is_datacenter_ip = any(client_ip.startswith(p) for p in cloud_datacenter_prefixes)
+
+    # Explicit whitelist: Developer IP / Residential Google Fiber (136.32.*) is NEVER blocked
+    if client_ip.startswith("136.32."):
+        is_datacenter_ip = False
+    else:
+        cloud_datacenter_prefixes = (
+            "3.", "18.", "23.20.", "23.21.", "23.22.", "23.23.",
+            "34.", "35.", "44.", "52.", "54.", "99.", "100.24.", "100.25.",
+            "100.26.", "100.27.", "107.20.", "107.21.", "107.22.", "107.23.",
+            "130.211.", "136.116.", "136.117.", "136.118.", "136.119.", "136.120."
+        )
+        is_datacenter_ip = any(client_ip.startswith(p) for p in cloud_datacenter_prefixes)
+
     if is_datacenter_ip:
         # Exclude legitimate search crawlers or verified engines that might bounce through cloud proxies
         is_known_search = any(k in ua for k in ("googlebot", "bingbot", "discordbot", "twitterbot"))
