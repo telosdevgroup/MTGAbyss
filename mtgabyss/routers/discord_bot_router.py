@@ -323,7 +323,10 @@ def handle_mtg_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
 
     card_img_url = _get_card_image(card)
     if card_img_url:
-        embed["image"] = {"url": card_img_url}
+        # Strip timestamp cache query string so Discord's image caching proxy resolves cleanly
+        clean_img_url = card_img_url.split("?")[0] if "cards.scryfall.io" in card_img_url else card_img_url
+        embed["image"] = {"url": clean_img_url}
+        embed["thumbnail"] = {"url": clean_img_url}
 
     embed["footer"] = {"text": "AvaScry Magic Engine • avascry.com"}
     return {"embeds": [embed]}
