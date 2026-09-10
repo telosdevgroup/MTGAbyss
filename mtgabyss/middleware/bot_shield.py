@@ -50,7 +50,8 @@ PROBE_SENSITIVE_PATTERNS = (
 )
 
 BLOCKED_BOT_AGENTS = (
-    "applebot", "amazonbot", "bytespider", "bytedance",
+    "applebot", "amazonbot", "amzn-searchbot", "amzn-search",
+    "bytespider", "bytedance",
     "meta-externalagent", "meta-externalfetcher", "facebookbot"
 )
 

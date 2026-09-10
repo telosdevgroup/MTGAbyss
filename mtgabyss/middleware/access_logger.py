@@ -107,9 +107,9 @@ def get_caller_badge(request: Request) -> str:
     if any(b in ua for b in ("bytespider", "bytedance")):
         return "[ByteSpider]"
     if any(a in ua for a in ("applebot", "applebot-extended", "apple-search")):
-        return "[Applebot]"
-    if "amazonbot" in ua:
-        return "[Amazonbot]"
+        return "[Apple:Blocked]"
+    if any(amz in ua for amz in ("amazonbot", "amzn-search", "amzn-searchbot")):
+        return "[Amazon:Blocked]"
     if "shapbot" in ua or "parallel" in ua:
         return "[AI:ShapBot]"
     if any(c in ua for c in ("cohere-ai", "cohere")):
