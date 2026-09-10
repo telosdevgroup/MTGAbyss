@@ -52,7 +52,8 @@ PROBE_SENSITIVE_PATTERNS = (
 BLOCKED_BOT_AGENTS = (
     "applebot", "amazonbot", "amzn-searchbot", "amzn-search",
     "bytespider", "bytedance",
-    "meta-externalagent", "meta-externalfetcher", "facebookbot"
+    "meta-externalagent", "meta-externalfetcher", "facebookbot",
+    "sleepbot"
 )
 
 SCRAPER_USER_AGENTS = (
@@ -75,7 +76,7 @@ async def bot_probe_shield_middleware(request: Request, call_next):
 
     ua = request.headers.get("user-agent", "").lower()
 
-    # Immediate rejection for blocked bots (Applebot, Amazonbot, Meta, ByteSpider)
+    # Immediate rejection for blocked bots (Applebot, Amazonbot, Meta, ByteSpider, SleepBot)
     if any(b in ua for b in BLOCKED_BOT_AGENTS):
         return Response(
             content="410 Gone: This resource is permanently removed and no longer exists.",
@@ -92,6 +93,28 @@ async def bot_probe_shield_middleware(request: Request, call_next):
             media_type="text/plain; charset=utf-8",
             headers={"X-Shield": "Scraper-Blocked", "Cache-Control": "public, max-age=604800"}
         )
+
+    # Cloud Datacenter scraper defense (410 Gone on AWS & GCP compute crawler hits)
+    # AWS IPv4 major ranges: 3., 18., 23.20., 34., 44., 52., 54., 99., 100.24-27., 107.20-23.
+    # GCP Compute major ranges: 34., 35., 136.116., 136.117., 136.118., 136.119., 136.120., 130.211.
+    client_ip = get_client_ip(request)
+    cloud_datacenter_prefixes = (
+        "3.", "18.", "23.20.", "23.21.", "23.22.", "23.23.",
+        "34.", "35.", "44.", "52.", "54.", "99.", "100.24.", "100.25.",
+        "100.26.", "100.27.", "107.20.", "107.21.", "107.22.", "107.23.",
+        "130.211.", "136.116.", "136.117.", "136.118.", "136.119.", "136.120."
+    )
+    is_datacenter_ip = any(client_ip.startswith(p) for p in cloud_datacenter_prefixes)
+    if is_datacenter_ip:
+        # Exclude legitimate search crawlers or verified engines that might bounce through cloud proxies
+        is_known_search = any(k in ua for k in ("googlebot", "bingbot", "discordbot", "twitterbot"))
+        if not is_known_search:
+            return Response(
+                content="410 Gone: Datacenter traffic rejected.",
+                status_code=410,
+                media_type="text/plain; charset=utf-8",
+                headers={"X-Shield": "Datacenter-Gone", "Cache-Control": "public, max-age=604800"}
+            )
 
     is_scraper = any(s in ua for s in SCRAPER_USER_AGENTS)
     if is_scraper:

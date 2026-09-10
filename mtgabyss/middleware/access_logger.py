@@ -57,6 +57,21 @@ def get_caller_badge(request: Request) -> str:
     if ip in WATCHLIST:
         return WATCHLIST[ip].get("badge", "[Watchlist]")
 
+    # Datacenter Scraper check (AWS & GCP compute)
+    cloud_dc_prefixes = (
+        "3.", "18.", "23.20.", "23.21.", "23.22.", "23.23.",
+        "34.", "35.", "44.", "52.", "54.", "99.", "100.24.", "100.25.",
+        "100.26.", "100.27.", "107.20.", "107.21.", "107.22.", "107.23.",
+        "130.211.", "136.116.", "136.117.", "136.118.", "136.119.", "136.120."
+    )
+    if any(ip.startswith(p) for p in cloud_dc_prefixes) and not any(k in ua for k in ("googlebot", "bingbot", "discordbot")):
+        if any(ip.startswith(p) for p in ("136.116.", "136.117.", "136.118.", "136.119.", "136.120.", "130.211.")):
+            return "[GCP:Blocked]"
+        return "[AWS:Blocked]"
+
+    if "sleepbot" in ua:
+        return "[SleepBot:Blocked]"
+
     # 1. Real-Time Live AI User Grounding Prompts (The Holy Grail)
     if "claude-user" in ua:
         return "[Claude-User]"
