@@ -57,6 +57,10 @@ def get_caller_badge(request: Request) -> str:
     if ip in WATCHLIST:
         return WATCHLIST[ip].get("badge", "[Watchlist]")
 
+    # Discord Bot Interaction Webhooks & Crawlers (Discord uses Discord-Interactions or Discordbot)
+    if "discord" in ua or request.url.path.startswith("/api/discord"):
+        return "[Social:Discord]"
+
     # Datacenter Scraper check (AWS & GCP compute)
     cloud_dc_prefixes = (
         "3.", "18.", "23.20.", "23.21.", "23.22.", "23.23.",
@@ -64,7 +68,7 @@ def get_caller_badge(request: Request) -> str:
         "100.26.", "100.27.", "107.20.", "107.21.", "107.22.", "107.23.",
         "130.211.", "136.116.", "136.117.", "136.118.", "136.119.", "136.120."
     )
-    if not ip.startswith("136.32.") and any(ip.startswith(p) for p in cloud_dc_prefixes) and not any(k in ua for k in ("googlebot", "bingbot", "discordbot")):
+    if not ip.startswith("136.32.") and any(ip.startswith(p) for p in cloud_dc_prefixes) and not any(k in ua for k in ("googlebot", "bingbot", "discord")):
         if any(ip.startswith(p) for p in ("136.116.", "136.117.", "136.118.", "136.119.", "136.120.", "130.211.")):
             return "[GCP:Blocked]"
         return "[AWS:Blocked]"

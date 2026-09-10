@@ -75,6 +75,10 @@ async def bot_probe_shield_middleware(request: Request, call_next):
     raw_path = request.url.path.lower()
     norm_path = re.sub(r'/+', '/', raw_path)
 
+    # Discord Interaction Webhooks must never be intercepted or blocked
+    if norm_path.startswith("/api/discord"):
+        return await call_next(request)
+
     ua = request.headers.get("user-agent", "").lower()
 
     # Immediate rejection for blocked bots (Applebot, Amazonbot, Meta, ByteSpider, SleepBot)
