@@ -133,18 +133,25 @@
 
   /* Spotlight Box for Current Game */
   .bot-spotlight-box {
-    background: var(--surface, #18181b);
+    background: #0f172a !important;
     border: 2px solid {{ active_meta.color }};
     border-radius: var(--radius-lg, 14px);
     padding: 2.5rem;
     margin: 0 auto 3.5rem auto;
     max-width: 1000px;
-    box-shadow: 0 16px 45px rgba(0,0,0,0.35);
+    box-shadow: 0 16px 45px rgba(0,0,0,0.45);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 2.5rem;
     text-align: left;
+    color: #f8fafc !important;
+  }
+  .bot-spotlight-box h2 {
+    color: #ffffff !important;
+  }
+  .bot-spotlight-box ul li {
+    color: #cbd5e1 !important;
   }
 
   /* Multi-Game Network Switcher Strip */
@@ -326,16 +333,16 @@
       <div style="font-size: 0.8rem; font-weight: 800; color: {{ active_meta.color }}; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
         Active Game Slash Command
       </div>
-      <h2 style="font-size: 1.7rem; font-weight: 800; color: var(--text); margin: 0 0 0.75rem 0;">
+      <h2 style="font-size: 1.7rem; font-weight: 800; color: #ffffff !important; margin: 0 0 0.75rem 0;">
         {{ active_meta.name }}
       </h2>
       <div style="background: #090d16; border: 1.5px solid {{ active_meta.color }}; border-radius: 8px; padding: 0.6rem 1rem; display: inline-block; font-family: monospace; font-size: 1.1rem; color: {{ active_meta.color }}; font-weight: 800; margin-bottom: 1.15rem;">
         {{ active_meta.command }}
       </div>
-      <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.95rem; color: var(--text);">
-        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: {{ active_meta.color }}; font-weight: 800;">✓</span> {{ active_meta.feature_1 }}</li>
-        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: {{ active_meta.color }}; font-weight: 800;">✓</span> {{ active_meta.feature_2 }}</li>
-        <li style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: {{ active_meta.color }}; font-weight: 800;">✓</span> {{ active_meta.feature_3 }}</li>
+      <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.95rem; color: #cbd5e1 !important;">
+        <li style="display: flex; align-items: center; gap: 0.5rem; color: #cbd5e1 !important;"><span style="color: {{ active_meta.color }}; font-weight: 800;">✓</span> {{ active_meta.feature_1 }}</li>
+        <li style="display: flex; align-items: center; gap: 0.5rem; color: #cbd5e1 !important;"><span style="color: {{ active_meta.color }}; font-weight: 800;">✓</span> {{ active_meta.feature_2 }}</li>
+        <li style="display: flex; align-items: center; gap: 0.5rem; color: #cbd5e1 !important;"><span style="color: {{ active_meta.color }}; font-weight: 800;">✓</span> {{ active_meta.feature_3 }}</li>
       </ul>
     </div>
     <div style="flex: 1; display: flex; justify-content: center;">
