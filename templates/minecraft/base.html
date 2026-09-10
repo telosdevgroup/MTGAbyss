@@ -65,7 +65,8 @@
       top: 0;
       z-index: 100;
       padding: 0 1.5rem;
-      height: 60px;
+      min-height: 60px;
+      height: auto;
       display: flex;
       align-items: center;
     }
@@ -595,43 +596,100 @@
 
     @media (max-width: 768px) {
       .nav-bar {
-        flex-wrap: wrap;
-        padding: 0.75rem 1.25rem;
+        padding: 0.75rem 1rem !important;
+        height: auto !important;
+        min-height: 56px !important;
+        position: relative !important;
       }
-      #nav-search-container {
-        order: 3;
-        flex: 1 1 100% !important;
-        margin: 0.5rem 0 0 0 !important;
+      .nav-inner {
+        flex-wrap: wrap !important;
+        justify-content: space-between !important;
+        gap: 0.5rem !important;
       }
       .mobile-nav-toggle {
-        display: block;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
       }
       nav#main-navigation {
         display: none !important;
-        width: 100%;
-        flex-direction: column;
+        width: 100% !important;
+        flex-basis: 100% !important;
+        flex-direction: column !important;
         align-items: stretch !important;
-        gap: 1.15rem !important;
-        background: #0d1317;
-        border: 1px solid #22323d;
-        border-radius: 6px;
-        padding: 1.25rem 1rem;
-        margin-top: 0.75rem;
-        box-shadow: 0 16px 36px rgba(0,0,0,0.6);
+        gap: 0.85rem !important;
+        background: #0f161b !important;
+        border: 1px solid #22323d !important;
+        border-radius: 8px !important;
+        padding: 1rem 0.85rem !important;
+        margin-top: 0.5rem !important;
+        box-shadow: 0 16px 36px rgba(0,0,0,0.6) !important;
       }
       nav#main-navigation.nav-open {
         display: flex !important;
       }
       .nav-links-group {
-        flex-direction: column;
-        align-items: flex-start !important;
-        gap: 0.75rem !important;
-        width: 100%;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+      }
+      .nav-links-group > li {
+        width: 100% !important;
+        list-style: none !important;
       }
       .nav-links-group a {
-        font-size: 1rem !important;
-        width: 100%;
-        padding: 0.35rem 0.5rem;
+        font-size: 0.95rem !important;
+        width: 100% !important;
+        padding: 0.45rem 0.65rem !important;
+        border-radius: 6px !important;
+      }
+      .nav-dropdown {
+        width: 100% !important;
+        position: static !important;
+      }
+      .nav-dropdown:hover .nav-dropdown-content {
+        display: none; /* Disable hover opening on mobile touch screens */
+      }
+      .nav-dropdown:hover .nav-dropdown-content.show {
+        display: flex !important;
+      }
+      .nav-dropdown-btn {
+        width: 100% !important;
+        justify-content: space-between !important;
+        padding: 0.5rem 0.65rem !important;
+        font-size: 0.95rem !important;
+        background: #172129 !important;
+        border-radius: 6px !important;
+      }
+      .nav-dropdown-content {
+        display: none;
+        position: static !important;
+        width: 100% !important;
+        min-width: unset !important;
+        margin-top: 0.35rem !important;
+        box-shadow: none !important;
+        background: #090e11 !important;
+        border: 1px solid #22323d !important;
+        border-left: 3px solid #2dd4bf !important;
+        border-radius: 6px !important;
+        padding: 0.35rem !important;
+      }
+      .nav-dropdown-content.show {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.2rem !important;
+      }
+      .nav-dropdown-item {
+        font-size: 0.9rem !important;
+        padding: 0.5rem 0.75rem !important;
+        border-radius: 4px !important;
+      }
+      .nav-palette-pill {
+        justify-content: center !important;
+      }
+      .nav-bot-cta-btn {
+        justify-content: center !important;
       }
       .nav-divider {
         display: block !important;
@@ -641,17 +699,11 @@
         margin: 0.2rem 0 !important;
       }
       .nav-user-group {
-        width: 100%;
-        display: flex !important;
-        flex-direction: column;
-        align-items: stretch !important;
-        gap: 0.75rem !important;
-      }
-      .nav-user-group .discord-sign-in-btn {
-        justify-content: center !important;
         width: 100% !important;
-        padding: 0.65rem 1rem !important;
-        font-size: 0.95rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
       }
       .nav-user-group .user-profile-menu,
       .nav-user-group > div {

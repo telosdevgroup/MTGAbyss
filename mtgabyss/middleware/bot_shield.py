@@ -52,7 +52,8 @@ PROBE_SENSITIVE_PATTERNS = (
 BLOCKED_BOT_AGENTS = (
     "applebot", "amazonbot", "amzn-searchbot", "amzn-search",
     "bytespider", "bytedance",
-    "meta-externalagent", "meta-externalfetcher", "facebookbot",
+    "meta-externalagent", "meta-externalfetcher", "meta-webindexer",
+    "facebookbot", "facebookcatalog", "meta-catalog",
     "sleepbot"
 )
 
@@ -107,7 +108,8 @@ async def bot_probe_shield_middleware(request: Request, call_next):
             "3.", "18.", "23.20.", "23.21.", "23.22.", "23.23.",
             "34.", "35.", "44.", "52.", "54.", "99.", "100.24.", "100.25.",
             "100.26.", "100.27.", "107.20.", "107.21.", "107.22.", "107.23.",
-            "130.211.", "136.116.", "136.117.", "136.118.", "136.119.", "136.120."
+            "130.211.", "136.116.", "136.117.", "136.118.", "136.119.", "136.120.",
+            "2a01:4ff:", "2a01:4f8:", "2a01:4f9:", "144.76."
         )
         is_datacenter_ip = any(client_ip.startswith(p) for p in cloud_datacenter_prefixes)
 

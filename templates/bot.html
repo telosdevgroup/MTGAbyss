@@ -83,6 +83,7 @@
 {% block title %}AvaScry Discord Bot — {{ active_meta.name }} Slash Commands & Rulings{% endblock %}
 {% block meta_description %}Add the AvaScry Discord Bot to your server for {{ active_meta.name }}. Instant card search, official rulings, and stats. Plus unified support across all 5 AvaScry games.{% endblock %}
 
+{% block extra_head %}
 {% block head_extra %}
 <style>
   .bot-hero-container {
@@ -280,6 +281,7 @@
     }
   }
 </style>
+{% endblock %}
 {% endblock %}
 
 {% block content %}

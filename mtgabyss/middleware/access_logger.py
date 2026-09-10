@@ -206,6 +206,9 @@ def get_caller_badge(request: Request) -> str:
     if any(s in ua for s in ("python", "requests", "aiohttp", "curl", "wget", "httpclient", "go-http-client", "node-fetch", "urllib", "axios", "postman")):
         return "[Dev:Script]"
 
+    if "testclient" in ua or "pytest" in ua:
+        return "[TestClient]"
+
     if any(bot in ua for bot in ("spider", "crawl", "slurp", "fetcher", "headless", "bot")):
         return "[Cloud:Spider]"
 
@@ -308,7 +311,11 @@ async def request_logger_middleware(request: Request, call_next):
     site_badge_color, site_badge_raw = get_site_badge(get_request_host(request))
     full_audit_line = f"{ip:<28} {badge:<18} {site_badge_raw} {status} ({duration_ms:>4.0f}ms) {raw_type:<6} {raw_fmt:<6} -> {method} {path}"
     console_line = f"{ip:<22} {badge:<16} {site_badge_color} {type_badge} {fmt_tag} {path}"
-    print(console_line, flush=True)
+
+    # Do not print blocked traffic to the active console terminal
+    is_blocked = status in (410, 418) or "Blocked" in badge or response.headers.get("x-shield") in ("Scraper-Blocked", "Bot-Gone", "Datacenter-Gone", "The-Abyss-Active")
+    if not is_blocked:
+        print(console_line, flush=True)
 
     try:
         with open(ACCESS_LOG_PATH, "a", encoding="utf-8") as f_log:
