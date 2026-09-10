@@ -138,6 +138,15 @@
       margin-top: auto;
       color: var(--muted);
     }
+    footer a {
+      color: #a1a1aa;
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+    footer a:hover {
+      color: #f4f4f5;
+      text-decoration: underline;
+    }
     .footer-inner {
       max-width: 1300px;
       margin: 0 auto;
@@ -581,21 +590,12 @@
 
   <footer>
     <div class="footer-inner">
-      <div style="display: flex; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 2rem;">
-        <div style="max-width: 400px;">
-          <div style="font-family: 'Space Grotesk', sans-serif; font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">
-            AvaScry <span style="color: var(--accent);">SWU</span>
-          </div>
-          <p style="margin: 0; line-height: 1.5; font-size: 0.84rem;">
-            Structured Star Wars: Unlimited card, rules, errata, clarification, mechanic, and format-legality data across all canonical sets.
-          </p>
-        </div>
-
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); width: 100%; gap: 2.5rem;">
         {% include "partials/network_games.html" %}
 
         <div>
           <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #a1a1aa; margin-bottom: 0.6rem;">Legal &amp; Support</div>
-          <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.45rem;">
             <li><a href="{{ base_path }}/articles">Articles &amp; Primers</a></li>
             <li><a href="{{ base_path }}/about">About AvaScry SWU</a></li>
             <li><a href="{{ base_path }}/contact">Contact &amp; Errata Reports</a></li>
@@ -606,7 +606,7 @@
 
         <div>
           <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #a1a1aa; margin-bottom: 0.6rem;">Developer &amp; Bots</div>
-          <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.45rem;">
             <li><a href="{{ base_path }}/articles" style="color: var(--accent); font-weight: 700;">Articles &amp; Top Lists</a></li>
             <li><a href="{{ base_path }}/deckbuilder" style="color: var(--accent); font-weight: 700;">Deck Builder &amp; Hand Sim</a></li>
             <li><a href="{{ base_path }}/developers" style="color: var(--accent); font-weight: 700;">Developer API &amp; Bot</a></li>

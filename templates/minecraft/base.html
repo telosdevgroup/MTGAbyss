@@ -833,30 +833,37 @@
     <main class="container">
       {% block content %}{% endblock %}
     </main>
+    {% block bottom_cta %}
+      {% include "partials/bot_bottom_cta.html" %}
+    {% endblock %}
   </div>
 
-  {% block bottom_cta %}
-    {% include "partials/bot_bottom_cta.html" %}
-  {% endblock %}
-
+  <style>
+    footer {
+      background: #0f172a;
+      border-top: 1px solid #1e293b;
+      padding: 3rem 1.5rem 2rem;
+      margin-top: auto;
+      color: #94a3b8;
+    }
+    footer a {
+      color: #94a3b8;
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+    footer a:hover {
+      color: #f8fafc;
+      text-decoration: underline;
+    }
+  </style>
   <footer>
     <div style="max-width: 1140px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem;">
-      <div style="display: flex; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 2rem;">
-        <div style="max-width: 380px;">
-          <div style="font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span class="cube" style="width: 16px; height: 16px;"></span>
-            <span>AvaScry <span style="color: var(--accent);">Minecraft</span></span>
-          </div>
-          <p style="margin: 0; line-height: 1.5; font-size: 0.84rem; color: var(--muted);">
-            Fast, deterministic vanilla data atlas for Minecraft Java Edition. Structured item stats, crafting recipes, harvest requirements, and loot mechanics.
-          </p>
-        </div>
-
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); width: 100%; gap: 2.5rem;">
         {% include "partials/network_games.html" %}
 
         <div>
           <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #a1a1aa; margin-bottom: 0.6rem;">Legal &amp; Support</div>
-          <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.45rem;">
             <li><a href="{{ base_prefix }}/about">About AvaScry Minecraft</a></li>
             <li><a href="{{ base_prefix }}/contact">Contact</a></li>
             <li><a href="{{ base_prefix }}/privacy">Privacy Policy</a></li>
@@ -865,8 +872,8 @@
         </div>
 
         <div>
-          <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #a1a1aa; margin-bottom: 0.6rem;">Index</div>
-          <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
+          <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: #a1a1aa; margin-bottom: 0.6rem;">Index &amp; Tools</div>
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.45rem;">
             <li><a href="{{ base_prefix }}/guides" style="color: var(--accent); font-weight: 600;">Guides &amp; Strategy</a></li>
             <li><a href="{{ base_prefix }}/sitemap.html">Sitemap Directory</a></li>
             <li><a href="{{ base_prefix }}/sitemap.md">Markdown Index</a></li>

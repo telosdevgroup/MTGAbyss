@@ -8,8 +8,9 @@ for Necromunda (/necro), Star Wars: Unlimited (/swu), and Minecraft (/mc).
 
 import os
 import re
+import time
 from typing import Optional, Dict, Any, List
-from fastapi import APIRouter, Request, HTTPException, Response
+from fastapi import APIRouter, Request, HTTPException, Response, BackgroundTasks
 from fastapi.responses import JSONResponse
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.exceptions import InvalidSignature
@@ -20,6 +21,7 @@ from mtgabyss.swu_router import get_swu_db
 discord_bot_router = APIRouter(prefix="/api/discord", tags=["Discord Bot"])
 
 DISCORD_PUBLIC_KEY = os.environ.get("DISCORD_PUBLIC_KEY", "").strip()
+DISCORD_APPLICATION_ID = os.environ.get("DISCORD_APPLICATION_ID", "1547376653129224282").strip()
 
 def verify_discord_signature(signature_hex: str, timestamp: str, body_bytes: bytes, public_key_hex: str) -> bool:
     """Verifies Discord Ed25519 signature per Discord developer specification."""
@@ -33,6 +35,112 @@ def verify_discord_signature(signature_hex: str, timestamp: str, body_bytes: byt
         return True
     except (InvalidSignature, ValueError, Exception):
         return False
+
+def fetch_image_bytes(url: str, timeout: float = 3.0) -> Optional[bytes]:
+    """Fetches image bytes using standard HTTP with a browser User-Agent or reads from local disk."""
+    if not url:
+        return None
+    # Check local static/images first if it references avascry.com
+    if "avascry.com/images/normal/" in url:
+        fname = url.split("avascry.com/images/normal/")[-1].split("?")[0]
+        local_path = os.path.join("public", "images", "normal", fname)
+        if os.path.exists(local_path):
+            try:
+                with open(local_path, "rb") as f:
+                    return f.read()
+            except Exception:
+                pass
+
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            if resp.status == 200:
+                return resp.read()
+    except Exception as e:
+        print(f"[DISCORD-BOT] Failed to fetch image bytes for {url}: {e}", flush=True)
+    return None
+
+def log_discord(msg: str):
+    """Writes timestamped diagnostic message to discord.log and stdout."""
+    line = f"{time.strftime('%Y-%m-%d %H:%M:%S')} {msg}\n"
+    print(f"[DISCORD-BOT] {msg}", flush=True)
+    try:
+        os.makedirs(r"C:\avascry_data\logs", exist_ok=True)
+        with open(r"C:\avascry_data\logs\discord.log", "a", encoding="utf-8") as f:
+            f.write(line)
+    except Exception:
+        pass
+
+def with_discord_bot_utm(url: str) -> str:
+    """Appends utm_source=discord_bot to outbound web URLs."""
+    if not url:
+        return url
+    sep = "&" if "?" in url else "?"
+    return f"{url}{sep}utm_source=discord_bot"
+
+def update_discord_original_interaction_with_attachment(app_id: str, interaction_token: str, response_data: dict, img_url: str):
+    """Sends deferred message update with direct image attachment rendering cleanly across all clients."""
+    log_discord(f"Starting background attachment update for {img_url} (app_id={app_id})")
+    try:
+        import requests
+        import json
+        img_bytes = fetch_image_bytes(img_url)
+        if not img_bytes:
+            log_discord(f"Background update: could not fetch image for {img_url}")
+            return
+
+        fname = "card.png" if img_url.lower().endswith(".png") else "card.jpg"
+        mime = "image/png" if fname.endswith(".png") else "image/jpeg"
+
+        # Build clean message text from embed fields
+        embed = response_data.get("embeds", [{}])[0] if response_data.get("embeds") else {}
+        title = embed.get("title", "")
+        desc = embed.get("description", "")
+        fields = embed.get("fields", [])
+
+        lines = []
+        if title:
+            lines.append(f"**{title}**")
+        if desc:
+            lines.append(desc)
+        for f in fields:
+            f_name = f.get("name", "")
+            f_val = f.get("value", "")
+            if f_name and f_val:
+                lines.append(f"• **{f_name}**: {f_val}")
+
+        text_content = "\n\n".join(lines) if lines else response_data.get("content", "")
+
+        patch_payload = {
+            "content": text_content,
+            "embeds": []  # Clear embeds so Discord attaches image directly to message body
+        }
+
+        patch_url = f"https://discord.com/api/v10/webhooks/{app_id}/{interaction_token}/messages/@original"
+        resp = requests.patch(
+            patch_url,
+            data={"payload_json": json.dumps(patch_payload)},
+            files={"files[0]": (fname, img_bytes, mime)},
+            timeout=10.0
+        )
+        try:
+            rjson = resp.json()
+            att_len = len(rjson.get("attachments", []))
+            log_discord(f"Background edit status: {resp.status_code}, attachments: {att_len}")
+        except Exception:
+            log_discord(f"Background edit status: {resp.status_code}")
+    except Exception as e:
+        log_discord(f"Background update exception: {e}")
+
+
+
+
 
 def handle_necro_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, Any]:
     db = get_necromunda_db()
@@ -52,7 +160,7 @@ def handle_necro_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, 
     cost = weapon.get("cost_credits", 0)
     rarity = weapon.get("rarity", "-")
     traits = ", ".join(weapon.get("traits", [])) or "None"
-    url = f"https://necromunda.avascry.com/weapon/{slug}"
+    url = with_discord_bot_utm(f"https://necromunda.avascry.com/weapon/{slug}")
 
     r_s = weapon.get("range_short") or "-"
     r_l = weapon.get("range_long") or "-"
@@ -115,7 +223,7 @@ def handle_swu_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
     hp = card.get("hp")
     aspects = ", ".join(card.get("aspects", [])) or "Neutral"
     text = (card.get("text") or card.get("rules") or "").strip()
-    url = f"https://swu.avascry.com/card/{slug}"
+    url = with_discord_bot_utm(f"https://swu.avascry.com/card/{slug}")
 
     aspect_colors = {
         "Vigilance": 0x38bdf8,
@@ -231,7 +339,7 @@ def handle_mtg_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
     set_name = card.get("set_name") or set_code
     slug = card.get("slug") or name.lower().replace(" ", "-")
 
-    url = f"https://avascry.com/card/{slug}"
+    url = with_discord_bot_utm(f"https://avascry.com/card/{slug}")
 
     # Determine embed color by card colors
     colors = card.get("colors") or []
@@ -257,7 +365,7 @@ def handle_mtg_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
     from mtgabyss.shared.helpers import slugify
     c_slug = slug or slugify(name)
     printing_slug = card.get("printing_slug") or (f"{c_slug}-{set_code.lower()}" if set_code else c_slug)
-    printing_url = f"https://avascry.com/printing/{printing_slug}"
+    printing_url = with_discord_bot_utm(f"https://avascry.com/printing/{printing_slug}")
 
     title_display = f"✨ {name} {mana_cost}".strip()
     embed = {
@@ -355,7 +463,7 @@ def handle_dominion_command(subcommand: str, options: Dict[str, Any]) -> Dict[st
 
     name = card.get("name", "Unknown Card")
     slug = card.get("slug", "")
-    url = f"https://dominion.avascry.com/card/{slug}"
+    url = with_discord_bot_utm(f"https://dominion.avascry.com/card/{slug}")
 
     # Resolve richest card version (preferring 2nd edition or standard expansion versions)
     versions = list(dom_db.card_versions.find({"card_id": f"card:{slug}"}))
@@ -489,15 +597,15 @@ def handle_minecraft_command(subcommand: str, options: Dict[str, Any]) -> Dict[s
 
     if is_entity:
         rec_type = "Mob / Entity"
-        url = f"https://minecraft.avascry.com/entity/{slug}"
+        url = with_discord_bot_utm(f"https://minecraft.avascry.com/entity/{slug}")
         color = 0xef4444 if "hostile" in str(facts.get("category", "")).lower() else 0x10b981
     elif is_block:
         rec_type = "Block"
-        url = f"https://minecraft.avascry.com/block/{slug}"
+        url = with_discord_bot_utm(f"https://minecraft.avascry.com/block/{slug}")
         color = 0x0ea5e9
     else:
         rec_type = "Item & Tool"
-        url = f"https://minecraft.avascry.com/item/{slug}"
+        url = with_discord_bot_utm(f"https://minecraft.avascry.com/item/{slug}")
         color = 0x10b981
 
     # Format header description
@@ -570,7 +678,7 @@ def handle_minecraft_command(subcommand: str, options: Dict[str, Any]) -> Dict[s
     return {"embeds": [embed]}
 
 @discord_bot_router.post("/interactions")
-async def discord_interactions(request: Request):
+async def discord_interactions(request: Request, background_tasks: BackgroundTasks):
     signature = request.headers.get("X-Signature-Ed25519", "")
     timestamp = request.headers.get("X-Signature-Timestamp", "")
     body_bytes = await request.body()
@@ -613,7 +721,7 @@ async def discord_interactions(request: Request):
             for opt in options_list:
                 param_dict[opt.get("name")] = opt.get("value")
 
-        print(f"[DISCORD-BOT] Received command: {root_command}, subcommand: {subcommand}, params: {param_dict}", flush=True)
+        log_discord(f"Received command: {root_command}, subcommand: {subcommand}, params: {param_dict}")
         response_data = {}
         try:
             if root_command in ("mtg", "card", "magic"):
@@ -641,12 +749,33 @@ async def discord_interactions(request: Request):
         except Exception as e:
             import traceback
             traceback.print_exc()
+            log_discord(f"Error processing command {root_command}: {e}")
             response_data = {"content": f"⚠️ Error processing command: {str(e)}"}
+
+        interaction_token = data.get("token", "")
+        app_id = data.get("application_id", "") or DISCORD_APPLICATION_ID
+
+        # If response has an embed with an image, defer (Type 5) and patch original message with image attachment via Discord Webhook API
+        if "embeds" in response_data and response_data["embeds"] and interaction_token:
+            first_embed = response_data["embeds"][0]
+            img_obj = first_embed.get("image") or first_embed.get("thumbnail")
+            if img_obj and isinstance(img_obj, dict) and img_obj.get("url"):
+                orig_url = img_obj["url"]
+                log_discord(f"Scheduling deferred background attachment update for {orig_url}")
+                background_tasks.add_task(
+                    update_discord_original_interaction_with_attachment,
+                    app_id=app_id,
+                    interaction_token=interaction_token,
+                    response_data=response_data,
+                    img_url=orig_url
+                )
+                # Type 5: DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE (tells Discord bot is thinking, then background task edits message)
+                return JSONResponse({"type": 5})
 
         # Log what we're sending back to Discord
         if "embeds" in response_data and response_data["embeds"]:
             img_info = response_data["embeds"][0].get("image")
-            print(f"[DISCORD-BOT] Sending embed image to Discord: {img_info}", flush=True)
+            log_discord(f"Sending embed image to Discord (immediate Type 4): {img_info}")
 
         # Type 4: CHANNEL_MESSAGE_WITH_SOURCE
         return JSONResponse({
@@ -655,3 +784,4 @@ async def discord_interactions(request: Request):
         })
 
     return JSONResponse({"type": 4, "data": {"content": "Unsupported interaction type."}})
+
