@@ -44,10 +44,10 @@ def test_auth_login_sanitizes_next_parameter(monkeypatch):
     assert "discord.com/oauth2/authorize" in auth_url
 
 def test_auth_logout_sanitizes_external_redirect():
-    """Verify /auth/logout with external ?next= safely redirects to /commander."""
+    """Verify /auth/logout with external ?next= safely redirects to /."""
     response = client.get("/auth/logout?next=https://evil.com", follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers.get("location") == "/commander"
+    assert response.headers.get("location") == "/"
 
 def test_auth_callback_missing_saved_state_rejected():
     """Verify Discord callback without prior session state is immediately rejected."""

@@ -515,6 +515,10 @@
           </a>
           <a href="/auth/logout" title="Sign out" aria-label="Sign out" style="color: var(--muted); font-size: 0.75rem; text-decoration: none; padding: 0.2rem 0.4rem; border-radius: 50%;">✕</a>
         </div>
+        {% else %}
+        <div class="nav-user-group">
+          {% include "partials/discord_login_button.html" %}
+        </div>
         {% endif %}
 
         <span class="nav-divider" aria-hidden="true"></span>

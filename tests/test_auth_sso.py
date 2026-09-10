@@ -74,10 +74,10 @@ def test_subsite_auth_logout_redirects_to_subsite_home():
         assert res.status_code == 303
         assert res.headers["location"] == f"http://{sub_host}/"
 
-def test_primary_auth_logout_redirects_to_commander():
+def test_primary_auth_logout_redirects_to_home():
     res = client.get("/auth/logout", headers={"host": "avascry.com"}, follow_redirects=False)
     assert res.status_code == 303
-    assert res.headers["location"] == "/commander"
+    assert res.headers["location"] == "/"
     # Verify cookie clearance headers
     raw_cookies = res.headers.get_list("set-cookie")
     assert len(raw_cookies) > 0
