@@ -84,6 +84,15 @@ async def bot_probe_shield_middleware(request: Request, call_next):
             headers={"X-Shield": "Bot-Gone", "Cache-Control": "public, max-age=604800"}
         )
 
+    # Immediate rejection for spoofed/fake browser scrapers (e.g. fake future Chrome 148+ user agents)
+    if "chrome/148." in ua or re.search(r'chrome/1[4-9][0-9]\.', ua):
+        return Response(
+            content="410 Gone: Automated scraper signature rejected.",
+            status_code=410,
+            media_type="text/plain; charset=utf-8",
+            headers={"X-Shield": "Scraper-Blocked", "Cache-Control": "public, max-age=604800"}
+        )
+
     is_scraper = any(s in ua for s in SCRAPER_USER_AGENTS)
     if is_scraper:
         sem = get_scraper_semaphore()

@@ -216,6 +216,8 @@ async def request_logger_middleware(request: Request, call_next):
     badge = get_caller_badge(request)
     if response.headers.get("x-shield") == "The-Abyss-Active" or response.status_code == 418:
         badge = "[Shield:Blocked]"
+    elif response.headers.get("x-shield") in ("Scraper-Blocked", "Bot-Gone") or response.status_code == 410:
+        badge = "[Scraper:Blocked]"
     method = request.method
     path = request.url.path
     if request.url.query:
