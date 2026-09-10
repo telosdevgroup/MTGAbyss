@@ -612,28 +612,33 @@ async def discord_interactions(request: Request):
 
         print(f"[DISCORD-BOT] Received command: {root_command}, subcommand: {subcommand}, params: {param_dict}", flush=True)
         response_data = {}
-        if root_command in ("mtg", "card", "magic"):
-            response_data = handle_mtg_command(subcommand, param_dict)
-        elif root_command in ("dom", "dominion"):
-            response_data = handle_dominion_command(subcommand, param_dict)
-        elif root_command in ("necro", "necromunda"):
-            response_data = handle_necro_command(subcommand, param_dict)
-        elif root_command in ("swu", "starwars"):
-            response_data = handle_swu_command(subcommand, param_dict)
-        elif root_command in ("mc", "minecraft"):
-            response_data = handle_minecraft_command(subcommand, param_dict)
-        else:
-            response_data = {
-                "content": (
-                    f"AvaScry Gaming Bot active. Unknown command: `{root_command}`.\n"
-                    "Supported games:\n"
-                    "• `/mtg card <name>` — Magic: The Gathering\n"
-                    "• `/dom card <name>` — Dominion Kingdom Cards\n"
-                    "• `/swu card <name>` — Star Wars: Unlimited\n"
-                    "• `/necro weapon <name>` — Necromunda Armory\n"
-                    "• `/mc item <name>` — Minecraft Codex"
-                )
-            }
+        try:
+            if root_command in ("mtg", "card", "magic"):
+                response_data = handle_mtg_command(subcommand, param_dict)
+            elif root_command in ("dom", "dominion"):
+                response_data = handle_dominion_command(subcommand, param_dict)
+            elif root_command in ("necro", "necromunda"):
+                response_data = handle_necro_command(subcommand, param_dict)
+            elif root_command in ("swu", "starwars"):
+                response_data = handle_swu_command(subcommand, param_dict)
+            elif root_command in ("mc", "minecraft"):
+                response_data = handle_minecraft_command(subcommand, param_dict)
+            else:
+                response_data = {
+                    "content": (
+                        f"AvaScry Gaming Bot active. Unknown command: `{root_command}`.\n"
+                        "Supported games:\n"
+                        "• `/mtg <name>` — Magic: The Gathering\n"
+                        "• `/dom <name>` — Dominion Kingdom Cards\n"
+                        "• `/swu <name>` — Star Wars: Unlimited\n"
+                        "• `/necro <name>` — Necromunda Armory\n"
+                        "• `/mc <name>` — Minecraft Codex"
+                    )
+                }
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            response_data = {"content": f"⚠️ Error processing command: {str(e)}"}
 
         # Log what we're sending back to Discord
         if "embeds" in response_data and response_data["embeds"]:
