@@ -1,4 +1,4 @@
-﻿"""
+"""
 mtgabyss.data.necromunda_guides
 -------------------------------
 Evergreen tactical primers and rules playbooks for Necromunda underhive skirmishes.
@@ -158,6 +158,52 @@ NECROMUNDA_GUIDES = {
                 "paragraphs": [
                     "Delaque dominates psychological warfare. Utilizing Pitch Black rules, Infiltrate tactics, and Web Gauntlets that capture fighters without wound rolls, they disorient conventional gunlines.",
                     "Cawdor leverages the lowest-cost fighters in the game. Swarming the board with 10–12 models, Cawdor players overwhelm elite gangs with Blunderbuss templates and Acts of Faith miracles."
+                ]
+            }
+        ]
+    },
+    "fighter-types-and-gang-creation-tactics": {
+        "slug": "fighter-types-and-gang-creation-tactics",
+        "title": "Fighter Hierarchy & Gang Creation: The Complete Underhive Roster Guide",
+        "subtitle": "Deconstructing Leaders, Champions, Specialists, Gangers, Prospects, and Juves—plus the math of starting roster composition.",
+        "category": "Gang Construction & Tactics",
+        "read_time": "9 min read",
+        "author": "AvaScry Underhive Tactica",
+        "summary": "Every successful Necromunda campaign begins on the gang roster sheet. Discover how to balance Leaders, Champions, Specialists, Gangers, Prospects, and Juves to maximize action economy, control the board, and prevent catastrophic round-one bottle cascades.",
+        "takeaways": [
+            "Maintain an ironclad 7–9 model count floor at 1,000 credits to protect your 25% Bottle Test casualty threshold.",
+            "Leaders and Champions are your action economy hubs with Group Activations (2 and 1) and primary skill access.",
+            "Specialists allow a standard ganger-cost model to bring a devastating Special Weapon without paying Champion tax.",
+            "Prospects and Juves provide disposable screening, fast objective movement, and accelerated XP advancement curves.",
+            "Resist the temptation of buying 200+ credit heavy weapons during gang creation; the Trading Post opens right after game one."
+        ],
+        "sections": [
+            {
+                "heading": "The Underhive Fighter Hierarchy Deconstructed",
+                "paragraphs": [
+                    "• Leader: The undisputed apex of your roster. Leaders boast the highest Willpower, Leadership, and Cool stats, paired with access to game-altering skill trees like Leadership (Overseer, Iron Will) or Ferocity. Crucially, a Leader possesses Group Activation (2), allowing them to activate two adjacent friendly fighters within 4 inches simultaneously to execute coordinated strikes.",
+                    "• Champions: Your primary damage dealers and tactical anchors. Champions come equipped with Group Activation (1) and broad access to Special and Heavy weapons. Because they can choose starting skills freely from primary skill trees (such as Fast Shot, Infiltrate, or Nerves of Steel), they form the core offensive threat of your gang.",
+                    "• Specialists: At gang creation, one Ganger may be designated as a Specialist for no additional credit cost. Specialists can be equipped with Special Weapons (e.g. Grenade Launchers or Plasma Guns). Unlike regular Gangers who advance on random progression tables, Specialists advance like Champions, unlocking custom stat improvements and skill choices as they earn XP.",
+                    "• Gangers: The reliable industrial line troops. Gangers provide the steady volume of fire (Autoguns, Lasguns, Shotguns) needed to pin enemy fighters at range. In campaign play, Gangers perform a vital secondary role: during the post-battle sequence, unwounded Gangers work your captured territories to generate gang income.",
+                    "• Prospects: Introduced in the 'House of...' rulebooks, Prospects represent reckless young fighters equipped with unique House wargear—such as Orlock Wreckers with jump boosters or Escher Wyld Runners with bow-fed hunting beasts. They advance faster than Gangers and transition into Champions once they gain enough experience.",
+                    "• Juves: The cheapest warm bodies on your roster (often 30–45 credits). While their starting Ballistic and Weapon Skills are modest, their lightning-fast advancement thresholds mean a surviving Juve can quickly morph into a deadly specialist. On the tabletop, Juves act as screening meat shields, button-pressers, and charge-absorbers."
+                ]
+            },
+            {
+                "heading": "The Mathematical Pillars of Starting Gang Composition",
+                "paragraphs": [
+                    "1. The 25% Bottle Threshold: In Necromunda, you must take a Bottle Test at the start of every action phase once 25% of your starting fighters are Seriously Injured or Taken Out of Action. If you field a frail 5-man elite gang, losing just 2 fighters forces bottle rolls immediately. By maintaining a roster of 8 or 9 fighters, you can absorb 2 casualties with zero bottle risk, ensuring your gang fights at full morale.",
+                    "2. Activation Economy & The Alternating Turn: Necromunda uses alternating activations. If your gang has 8 fighters and your opponent has 5, you have 3 'free' activations at the end of every round. You can maneuver Juves to claim loot crates, position flankers, or force the opponent to expose their Champions before you commit your primary damage dealers.",
+                    "3. Group Activation Synergy: A Leader initiating a Group Activation (2) can order an Autogun Ganger to pin a defending Goliath, followed immediately by a shotgun blast to strip armor, before ordering a close-combat Specialist to charge the prone target—all before the opponent can respond."
+                ]
+            },
+            {
+                "heading": "Four Deadly Traps to Avoid at Gang Creation",
+                "paragraphs": [
+                    "• Trap 1: The 'Christmas Tree' Leader: Stacking a Leader with an expensive master-crafted weapon, digital lasers, carapace armor, and multiple grenades easily inflates their cost beyond 300 credits. A single lucky lasgun shot that pins or seriously injures your Leader paralyzes a third of your entire gang's net worth. Keep starting loadouts focused and cost-effective.",
+                    "• Trap 2: Starting with Unwieldy Heavy Weapons: Heavy Bolters, Lascannons, and Mining Lasers cost 160–250 credits and suffer from the 'Unwieldy' trait, requiring two full actions to fire unless equipped with a Suspensor harness. Buying one in round one leaves the model stationary and vulnerable. Take a Grenade Launcher or Plasma Gun instead, and save heavy weapons for campaign cycle two.",
+                    "• Trap 3: Ignoring Pinning Utility: New players often judge weapons purely by damage output. In Necromunda, merely hitting a fighter knocks them Prone and Pinned, which costs them an action to stand up and prevents them from charging. Cheap 15-credit Autoguns with Rapid Fire (1) are unmatched at locking down expensive enemy melee threats.",
+                    "• Trap 4: Spending Every Single Credit: Never leave yourself with exactly zero credits. Reserving 10–25 unspent credits provides insurance to hire an immediate replacement or purchase a Medical Escort if a key fighter suffers an early lasting injury."
                 ]
             }
         ]
