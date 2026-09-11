@@ -144,9 +144,219 @@ def update_discord_original_interaction_with_attachment(app_id: str, interaction
 
 def handle_necro_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, Any]:
     db = get_necromunda_db()
+    subcmd = (subcommand or "").strip().lower()
+
+    # Check if this is a Lasting Injury roll or lookup
+    is_injury = (
+        subcmd in ("injury", "roll-injury", "lasting-injury")
+        or options.get("action") in ("injury", "roll-injury")
+        or options.get("name", "").strip().lower() in ("injury", "roll-injury", "lasting-injury")
+        or "roll" in options
+    )
+    if is_injury:
+        import random
+        from mtgabyss.data.necromunda_injuries import get_injury
+
+        raw_roll = options.get("roll")
+        d1, d2, d66 = 0, 0, 0
+        is_manual = False
+        if raw_roll:
+            try:
+                r_int = int(raw_roll)
+                t_tens = r_int // 10
+                t_ones = r_int % 10
+                if 1 <= t_tens <= 6 and 1 <= t_ones <= 6:
+                    d1, d2, d66 = t_tens, t_ones, r_int
+                    is_manual = True
+            except (ValueError, TypeError):
+                pass
+
+        if not is_manual:
+            d1 = random.randint(1, 6)
+            d2 = random.randint(1, 6)
+            d66 = d1 * 10 + d2
+
+        injury = get_injury(d66) or {
+            "title": f"Unknown Result ({d66})",
+            "category": "Unclassified",
+            "effect": "Fighter crawls back into the air vents. Consult Arbites.",
+            "flavor": "Unusual underhive anomaly.",
+            "remedy": "Visit Rogue Doc.",
+            "severity": "moderate",
+            "color": 0xf59e0b,
+            "emoji": "🎲"
+        }
+
+        fighter_name = options.get("fighter") or ""
+        raw_name = options.get("name", "").strip()
+        if not fighter_name and raw_name and raw_name.lower() not in ("injury", "roll-injury", "lasting-injury"):
+            fighter_name = raw_name
+
+        title_prefix = f"🎲 D66 [{d1}, {d2}] ➔ {d66}"
+        embed_title = f"{title_prefix}: {injury['emoji']} {injury['title']}"
+        if fighter_name:
+            desc_header = f"**Casualty Report:** `{fighter_name}`\n*{injury['flavor']}*"
+        else:
+            desc_header = f"*{injury['flavor']}*"
+
+        url = with_discord_bot_utm("https://necromunda.avascry.com/guides/underhive-black-market-and-exotic-beasts")
+
+        embed = {
+            "title": embed_title,
+            "url": url,
+            "color": injury["color"],
+            "description": desc_header,
+            "fields": [
+                {"name": "Mechanical Effect", "value": f"**{injury['effect']}**", "inline": False},
+                {"name": "Category", "value": f"`{injury['category']}`", "inline": True},
+                {"name": "Roster Status", "value": "In Recovery" if injury["severity"] != "fatal" else "**DEAD** (Remove from Roster)", "inline": True},
+                {"name": "Campaign Remedy", "value": injury["remedy"], "inline": False},
+            ],
+            "footer": {
+                "text": "AvaScry Underhive Tactica • Core Rules D66 Table • necromunda.avascry.com"
+            }
+        }
+        return {"embeds": [embed]}
+
     query = options.get("name", "").strip()
+
+    # Subcommand: trait
+    if subcmd == "trait":
+        if not query:
+            return {"content": "⚠️ Please provide a trait name. Example: `/necro trait Rapid Fire`"}
+        regex = re.compile(re.escape(query), re.IGNORECASE)
+        trait = db.traits.find_one({"name": regex}) or db.traits.find_one({"slug": regex})
+        if not trait:
+            return {"content": f"🔍 No Necromunda weapon trait found matching `{query}`."}
+
+        name = trait.get("name", query)
+        slug = trait.get("slug", "")
+        rules_text = trait.get("rules_text", "No rules text recorded.")
+        faq = trait.get("faq", "")
+        url = with_discord_bot_utm(f"https://necromunda.avascry.com/trait/{slug}") if slug else with_discord_bot_utm("https://necromunda.avascry.com/traits")
+
+        fields = [{"name": "Rules Effect", "value": rules_text, "inline": False}]
+        if faq:
+            fields.append({"name": "FAQ & Clarification", "value": faq, "inline": False})
+        fields.append({"name": "Database", "value": f"[View on Underhive Trait Lexicon]({url})", "inline": True})
+
+        embed = {
+            "title": f"⚡ Trait: {name}",
+            "url": url,
+            "color": 0xeab308,
+            "description": f"Official Underhive weapon trait and special rule.",
+            "fields": fields,
+            "footer": {"text": "AvaScry Underhive Trait Lexicon • necromunda.avascry.com"}
+        }
+        return {"embeds": [embed]}
+
+    # Subcommand: house
+    if subcmd == "house":
+        if not query:
+            return {"content": "⚠️ Please provide a Clan House name. Example: `/necro house Van Saar`"}
+        regex = re.compile(re.escape(query), re.IGNORECASE)
+        house = db.houses.find_one({"name": regex}) or db.houses.find_one({"slug": regex})
+        if not house:
+            return {"content": f"🔍 No Necromunda Clan House found matching `{query}`."}
+
+        name = house.get("name", query)
+        title = house.get("title", "Clan House")
+        slug = house.get("slug", "")
+        specialty = house.get("specialty", "Tactical Skirmish")
+        sig_weapons = ", ".join(house.get("signature_weapons", [])) or "Standard Issue"
+        primary_skills = ", ".join(house.get("primary_skills", [])) or "Varied"
+        lore = house.get("lore", "")
+        if len(lore) > 280:
+            lore = lore[:277] + "..."
+        url = with_discord_bot_utm(f"https://necromunda.avascry.com/house/{slug}") if slug else with_discord_bot_utm("https://necromunda.avascry.com/houses")
+
+        display_name = name if name.lower().startswith("house ") else f"House {name}"
+        embed = {
+            "title": f"🏛️ {display_name} ({title})",
+            "url": url,
+            "color": 0x3b82f6,
+            "description": lore,
+            "fields": [
+                {"name": "Doctrine & Specialty", "value": f"`{specialty}`", "inline": True},
+                {"name": "Primary Skills", "value": primary_skills, "inline": True},
+                {"name": "Favored Arsenal", "value": sig_weapons, "inline": False},
+                {"name": "Database", "value": f"[View Clan Gang Profile]({url})", "inline": True}
+            ],
+            "footer": {"text": "AvaScry Underhive Clan Registry • necromunda.avascry.com"}
+        }
+        return {"embeds": [embed]}
+
+    # Subcommand: skill
+    if subcmd == "skill":
+        if not query:
+            return {"content": "⚠️ Please provide a skill name. Example: `/necro skill Fast Shot`"}
+        regex = re.compile(re.escape(query), re.IGNORECASE)
+        skill = db.skills.find_one({"name": regex}) or db.skills.find_one({"slug": regex})
+        if not skill:
+            return {"content": f"🔍 No Necromunda skill found matching `{query}`."}
+
+        name = skill.get("name", query)
+        tree = skill.get("tree", "General")
+        slug = skill.get("slug", "")
+        rules_text = skill.get("rules_text", "No rules text recorded.")
+        tactics = skill.get("tactics", "")
+        url = with_discord_bot_utm(f"https://necromunda.avascry.com/skill/{slug}") if slug else with_discord_bot_utm("https://necromunda.avascry.com/skills")
+
+        fields = [{"name": "Discipline", "value": f"`{tree}`", "inline": True}]
+        fields.append({"name": "Rules Effect", "value": rules_text, "inline": False})
+        if tactics:
+            fields.append({"name": "Tactical Application", "value": tactics, "inline": False})
+        fields.append({"name": "Database", "value": f"[View Skill Detail]({url})", "inline": True})
+
+        embed = {
+            "title": f"🧠 Skill: {name} [{tree}]",
+            "url": url,
+            "color": 0x10b981,
+            "description": f"Official Underhive fighter capability and skill tree rule.",
+            "fields": fields,
+            "footer": {"text": "AvaScry Underhive Skill Matrix • necromunda.avascry.com"}
+        }
+        return {"embeds": [embed]}
+
+    # Subcommand: equipment
+    if subcmd in ("equipment", "gear", "wargear"):
+        if not query:
+            return {"content": "⚠️ Please provide equipment or wargear name. Example: `/necro equipment Armoured Undersuit`"}
+        regex = re.compile(re.escape(query), re.IGNORECASE)
+        eq = db.equipment.find_one({"name": regex}) or db.equipment.find_one({"slug": regex})
+        if not eq:
+            return {"content": f"🔍 No Necromunda equipment found matching `{query}`."}
+
+        name = eq.get("name", query)
+        category = eq.get("category", "Equipment")
+        cost = eq.get("cost_credits", 0)
+        rarity = eq.get("rarity", "-")
+        rules_text = eq.get("rules_text", "")
+        desc = eq.get("description", "")
+        slug = eq.get("slug", "")
+        url = with_discord_bot_utm(f"https://necromunda.avascry.com/equipment/{slug}") if slug else with_discord_bot_utm("https://necromunda.avascry.com/equipment")
+
+        fields = [
+            {"name": "Cost / Rarity", "value": f"`{cost} creds` | `{rarity}`", "inline": True},
+            {"name": "Category", "value": f"`{category}`", "inline": True}
+        ]
+        if rules_text:
+            fields.append({"name": "Rules", "value": rules_text, "inline": False})
+        fields.append({"name": "Database", "value": f"[View Trading Post Listing]({url})", "inline": True})
+
+        embed = {
+            "title": f"🛡️ {name} ({category})",
+            "url": url,
+            "color": 0x8b5cf6,
+            "description": desc or rules_text or "Underhive Trading Post equipment.",
+            "fields": fields,
+            "footer": {"text": "AvaScry Underhive Trading Post • necromunda.avascry.com"}
+        }
+        return {"embeds": [embed]}
+
+    # Default / Subcommand: weapon (or flat command fallback)
     if not query:
-        return {"content": "⚠️ Please provide a weapon name. Example: `/necro weapon bolter`"}
+        return {"content": "⚠️ Please provide a weapon name or use `/necro injury`. Example: `/necro weapon bolter`"}
 
     regex = re.compile(re.escape(query), re.IGNORECASE)
     weapon = db.weapons.find_one({"name": regex}) or db.weapons.find_one({"slug": regex})
@@ -316,15 +526,187 @@ def handle_swu_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, An
 
     return {"embeds": embeds}
 
+def handle_mtg_visual_search(query: str) -> Dict[str, Any]:
+    """Natural language visual search across 33,400+ blinded MTG artwork analyses."""
+    db = get_mongo_db()
+    clean_q = (query or "").strip()
+    if not clean_q:
+        return {"content": "⚠️ Please provide a visual expression to search. Example: `/mtg visual-search query:moody blue merfolk`"}
+
+    tokens = [w.strip() for w in re.split(r"\s+", clean_q) if len(w.strip()) > 1]
+
+    # 1. Try strict $and across tokens
+    and_clauses = []
+    for t in tokens[:5]:
+        and_clauses.append({
+            "$or": [
+                {"vision_observations.visual_summary": {"$regex": re.escape(t), "$options": "i"}},
+                {"vision_observations.subjects": {"$regex": re.escape(t), "$options": "i"}},
+                {"vision_observations.dominant_colors": {"$regex": re.escape(t), "$options": "i"}},
+                {"vision_observations.mood_keywords": {"$regex": re.escape(t), "$options": "i"}},
+                {"vision_observations.style_descriptors": {"$regex": re.escape(t), "$options": "i"}},
+                {"source.card_name": {"$regex": re.escape(t), "$options": "i"}}
+            ]
+        })
+
+    docs = list(db.vl_art_analysis.find({"status": "complete", "$and": and_clauses}).limit(4))
+
+    # 2. If strict $and finds nothing, fall back to $or across tokens
+    if not docs and len(tokens) > 1:
+        or_clauses = []
+        for t in tokens[:5]:
+            or_clauses.append({"vision_observations.visual_summary": {"$regex": re.escape(t), "$options": "i"}})
+            or_clauses.append({"vision_observations.subjects": {"$regex": re.escape(t), "$options": "i"}})
+            or_clauses.append({"vision_observations.dominant_colors": {"$regex": re.escape(t), "$options": "i"}})
+            or_clauses.append({"vision_observations.mood_keywords": {"$regex": re.escape(t), "$options": "i"}})
+        docs = list(db.vl_art_analysis.find({"status": "complete", "$or": or_clauses}).limit(4))
+
+    if not docs:
+        return {"content": f"🔍 No artwork found matching visual expression `{clean_q}`."}
+
+    first_doc = docs[0]
+    first_src = first_doc.get("source", {})
+    primary_img = first_src.get("image_url", "").split("?")[0]
+
+    fields = []
+    for idx, d in enumerate(docs[:3], 1):
+        src = d.get("source", {})
+        obs = d.get("vision_observations", {})
+        c_name = src.get("card_name", "Card")
+        c_artist = src.get("artist", "Unknown Artist")
+        c_set = (src.get("set") or "").upper()
+        summary = (obs.get("visual_summary") or "")[:110]
+        if len(obs.get("visual_summary") or "") > 110:
+            summary += "..."
+        colors = ", ".join(obs.get("dominant_colors", [])) or "N/A"
+        moods = ", ".join(obs.get("mood_keywords", [])) or "N/A"
+        ill_id = d.get("illustration_id", "")
+        art_link = f"https://avascry.com/art/{ill_id}" if ill_id else "https://avascry.com"
+
+        f_val = f"*{summary}*\n🎨 **Palette:** {colors} • **Mood:** {moods}\n🔗 **[View Art Graph & Neighbors]({with_discord_bot_utm(art_link)})**"
+        fields.append({
+            "name": f"{idx}. {c_name} — {c_artist} ({c_set})",
+            "value": f_val,
+            "inline": False
+        })
+
+    embed = {
+        "title": f"🎨 Visual Art Search: \"{clean_q}\"",
+        "url": with_discord_bot_utm(f"https://avascry.com/art/{first_doc.get('illustration_id')}"),
+        "color": 0x38bdf8,
+        "description": f"Found **{len(docs)}** artworks matching your visual expression across AvaScry's blinded vision corpus.",
+        "fields": fields,
+        "footer": {"text": "AvaScry Visual Intelligence • 33,400+ Blinded Art Analyses • avascry.com"}
+    }
+    if primary_img:
+        embed["image"] = {"url": primary_img}
+        embed["thumbnail"] = {"url": primary_img}
+
+    return {"embeds": [embed]}
+
+
+def handle_mtg_similar_art(card_name: str) -> Dict[str, Any]:
+    """Finds visually similar MTG artwork by precomputed nearest neighbors."""
+    db = get_mongo_db()
+    from mtgabyss.shared.helpers import slugify
+
+    clean_name = (card_name or "").strip()
+    if not clean_name:
+        return {"content": "⚠️ Please provide a card name to find similar art. Example: `/mtg similar-art card:Damnation`"}
+
+    c_slug = slugify(clean_name)
+    card = db.cards.find_one({"slug": c_slug, "lang": "en"}) or db.cards.find_one({"name": clean_name, "lang": "en"})
+    if not card:
+        regex = re.compile(re.escape(clean_name), re.IGNORECASE)
+        card = db.cards.find_one({"name": regex, "lang": "en"}) or db.cards.find_one({"slug": regex, "lang": "en"})
+
+    if not card:
+        return {"content": f"🔍 No Magic card found matching `{clean_name}`."}
+
+    resolved_name = card.get("name", clean_name)
+    artist = card.get("artist", "Unknown Artist")
+    set_code = (card.get("set") or "").upper()
+    ill_id = card.get("illustration_id") or card.get("raw", {}).get("illustration_id")
+
+    sim_doc = None
+    if ill_id:
+        sim_doc = db.vl_art_similarities.find_one({"illustration_id": ill_id})
+
+    # If no precomputed similarity doc yet, fall back to visual search using card name
+    if not sim_doc:
+        return handle_mtg_visual_search(resolved_name)
+
+    top_vibe = sim_doc.get("top_neighbors", {}).get("by_vibe", [])
+    top_subject = sim_doc.get("top_neighbors", {}).get("by_subject", [])
+    neighbors = top_vibe[:3] or top_subject[:3]
+
+    if not neighbors:
+        return handle_mtg_visual_search(resolved_name)
+
+    primary_img = neighbors[0].get("image_url", "").split("?")[0]
+    art_page_url = with_discord_bot_utm(f"https://avascry.com/art/{ill_id}")
+
+    fields = []
+    for idx, n in enumerate(neighbors, 1):
+        n_name = n.get("card_name", "Card")
+        n_artist = n.get("artist", "Unknown Artist")
+        n_set = (n.get("set") or "").upper()
+        n_ill_id = n.get("illustration_id", "")
+        n_link = with_discord_bot_utm(f"https://avascry.com/art/{n_ill_id}") if n_ill_id else art_page_url
+
+        fields.append({
+            "name": f"{idx}. {n_name} ({n_set})",
+            "value": f"**Artist:** {n_artist}\n🔗 **[Explore Artwork]({n_link})**",
+            "inline": True
+        })
+
+    fields.append({
+        "name": "Visual Knowledge Graph",
+        "value": f"Explore complete nearest-neighbor vectors and lighting observations on **[AvaScry Visual Art Detail]({art_page_url})**.",
+        "inline": False
+    })
+
+    embed = {
+        "title": f"✨ Visually Similar Art: {resolved_name}",
+        "url": art_page_url,
+        "color": 0xec4899,
+        "description": f"Card artwork sharing visual themes, lighting, and aesthetic composition with **{resolved_name}** (*{artist}*, `{set_code}`).",
+        "fields": fields,
+        "footer": {"text": "AvaScry Visual Intelligence • 3-Dimensional Multimodal Graph • avascry.com"}
+    }
+    if primary_img:
+        embed["image"] = {"url": primary_img}
+        embed["thumbnail"] = {"url": primary_img}
+
+    return {"embeds": [embed]}
+
+
 def handle_mtg_command(subcommand: str, options: Dict[str, Any]) -> Dict[str, Any]:
     """Handles /mtg or /card command looking up Magic: The Gathering cards."""
+    subcmd = (subcommand or "").strip().lower()
+
+    # Route 1: Visual Search (natural language expression)
+    if subcmd in ("visual-search", "vibe-search", "art-search", "vibe") or "query" in options:
+        q_val = options.get("query") or options.get("name") or options.get("expression") or ""
+        return handle_mtg_visual_search(q_val)
+
+    # Route 2: Similar Art (card-based nearest neighbors)
+    if subcmd in ("similar-art", "similar", "vibe-neighbors") or "card" in options or options.get("action") == "similar":
+        c_val = options.get("card") or options.get("name") or ""
+        return handle_mtg_similar_art(c_val)
+
+    # Route 3: Standard Card Lookup (Optimized <1ms indexed slug check)
     db = get_mongo_db()
+    from mtgabyss.shared.helpers import slugify
     query = options.get("name", "").strip()
     if not query:
         return {"content": "⚠️ Please provide a card name. Example: `/mtg card Sol Ring`"}
 
-    regex = re.compile(re.escape(query), re.IGNORECASE)
-    card = db.cards.find_one({"name": regex, "lang": "en"}) or db.cards.find_one({"slug": regex, "lang": "en"})
+    c_slug = slugify(query)
+    card = db.cards.find_one({"slug": c_slug, "lang": "en"}) or db.cards.find_one({"name": query, "lang": "en"})
+    if not card:
+        regex = re.compile(re.escape(query), re.IGNORECASE)
+        card = db.cards.find_one({"name": regex, "lang": "en"}) or db.cards.find_one({"slug": regex, "lang": "en"})
     if not card:
         card = db.cards.find_one({"name": regex}) or db.cards.find_one({"slug": regex})
 

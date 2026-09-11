@@ -36,6 +36,11 @@ if REPO_ROOT not in sys.path:
 
 SITES = [
     {
+        "id": "discord",
+        "name": "Discord Bot",
+        "script": os.path.join(SCRIPT_DIR, "discord_bot_blaster.py"),
+    },
+    {
         "id": "mtg",
         "name": "MTG",
         "script": os.path.join(SCRIPT_DIR, "site_blaster.py"),
@@ -148,8 +153,11 @@ def main():
     parser = argparse.ArgumentParser(description="AvaScry Unified NetworkBlaster Release Gate")
     parser.add_argument("--deep", action="store_true", help="Run comprehensive deep suite across sites")
     parser.add_argument("--quick", action="store_true", help="Run fast sanity check suite (default)")
-    parser.add_argument("--site", choices=["mtg", "dominion", "swu", "necromunda", "all"], default="all",
-                        help="Filter execution to a specific site")
+    site_choices = [s["id"] for s in SITES] + ["all"]
+    parser.add_argument("--site", choices=site_choices, default="all",
+                        help="Filter execution to a specific site or target")
+    parser.add_argument("--bot", "--discord", dest="bot_only", action="store_true",
+                        help="Run only the Discord bot blaster solo")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility")
     parser.add_argument("--base-url", type=str, default=None, help="Optional base URL override (for local/testing)")
     parser.add_argument("--json", action="store_true", help="Output machine-readable JSON summary")
@@ -163,7 +171,9 @@ def main():
         deep = False
 
     target_sites = SITES
-    if args.site and args.site != "all":
+    if args.bot_only:
+        target_sites = [s for s in SITES if s["id"] == "discord"]
+    elif args.site and args.site != "all":
         target_sites = [s for s in SITES if s["id"] == args.site]
 
     results: List[Dict[str, Any]] = []

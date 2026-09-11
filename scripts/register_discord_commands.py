@@ -85,13 +85,91 @@ UNIFIED_COMMANDS = [
     },
     {
         "name": "necro",
-        "description": "Look up Necromunda weapons, armor, and fighter profiles",
+        "description": "Look up Necromunda Underhive weapons, injuries, traits, houses, skills, and wargear",
         "options": [
             {
-                "type": 3,
-                "name": "name",
-                "description": "Weapon or gear name (e.g. Bolter, Plasma Gun)",
-                "required": True
+                "type": 1,
+                "name": "weapon",
+                "description": "Look up Underhive weapon profiles, statlines, and traits",
+                "options": [
+                    {
+                        "type": 3,
+                        "name": "name",
+                        "description": "Weapon name (e.g. Bolter, Plasma Gun, Autogun)",
+                        "required": True
+                    }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "injury",
+                "description": "Roll or look up Necromunda D66 Lasting Injuries",
+                "options": [
+                    {
+                        "type": 4,
+                        "name": "roll",
+                        "description": "Optional manual D66 roll result (e.g. 61 for Memorable Death)",
+                        "required": False
+                    },
+                    {
+                        "type": 3,
+                        "name": "fighter",
+                        "description": "Optional fighter or ganger name for casualty log",
+                        "required": False
+                    }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "trait",
+                "description": "Look up weapon traits and special rules (e.g. Rapid Fire, Blaze, Melta)",
+                "options": [
+                    {
+                        "type": 3,
+                        "name": "name",
+                        "description": "Trait name (e.g. Rapid Fire, Blaze, Knockback)",
+                        "required": True
+                    }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "house",
+                "description": "Look up House/Faction lore, gang doctrines, and rules",
+                "options": [
+                    {
+                        "type": 3,
+                        "name": "name",
+                        "description": "House name (e.g. Van Saar, Goliath, Escher, Cawdor)",
+                        "required": True
+                    }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "skill",
+                "description": "Look up Skill disciplines and ability rules",
+                "options": [
+                    {
+                        "type": 3,
+                        "name": "name",
+                        "description": "Skill name (e.g. Fast Shot, Nerves of Steel, Infiltrate)",
+                        "required": True
+                    }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "equipment",
+                "description": "Look up armor, field gear, ammo, and black market equipment",
+                "options": [
+                    {
+                        "type": 3,
+                        "name": "name",
+                        "description": "Equipment name (e.g. Armoured Undersuit, Photo-goggles)",
+                        "required": True
+                    }
+                ]
             }
         ]
     },

@@ -4,6 +4,8 @@ mtgabyss.middleware.access_logger
 Request logger middleware, IP extraction, caller badge classifier, and watchlist.
 """
 import os
+import sys
+import re
 import json
 import time
 from datetime import datetime, timezone
@@ -14,6 +16,70 @@ from fastapi.responses import Response
 import i18n
 from mtgabyss.network_router import get_request_host, get_site_badge
 from mtgabyss.shared.bot_verifier import check_googlebot
+
+# Enable Virtual Terminal Processing on Windows if supported
+if os.name == 'nt':
+    try:
+        os.system('')
+    except Exception:
+        pass
+
+# Detect if stdout supports ANSI colors
+def _supports_color() -> bool:
+    if os.environ.get("NO_COLOR"):
+        return False
+    if os.environ.get("FORCE_COLOR") == "1":
+        return True
+    return hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+
+USE_COLOR = _supports_color()
+
+# ANSI SGR color primitives
+CLR_RESET   = "\033[0m" if USE_COLOR else ""
+CLR_BOLD    = "\033[1m" if USE_COLOR else ""
+CLR_DIM     = "\033[2m" if USE_COLOR else ""
+
+CLR_RED     = "\033[91m" if USE_COLOR else ""
+CLR_GREEN   = "\033[92m" if USE_COLOR else ""
+CLR_YELLOW  = "\033[93m" if USE_COLOR else ""
+CLR_BLUE    = "\033[94m" if USE_COLOR else ""
+CLR_MAGENTA = "\033[95m" if USE_COLOR else ""
+CLR_CYAN    = "\033[96m" if USE_COLOR else ""
+CLR_WHITE   = "\033[97m" if USE_COLOR else ""
+
+# Color helpers
+def c_dim(text: str) -> str:
+    return f"{CLR_DIM}{text}{CLR_RESET}" if USE_COLOR else text
+
+def c_bold(text: str) -> str:
+    return f"{CLR_BOLD}{text}{CLR_RESET}" if USE_COLOR else text
+
+def c_cyan(text: str) -> str:
+    return f"{CLR_CYAN}{text}{CLR_RESET}" if USE_COLOR else text
+
+def c_green(text: str) -> str:
+    return f"{CLR_GREEN}{text}{CLR_RESET}" if USE_COLOR else text
+
+def c_yellow(text: str) -> str:
+    return f"{CLR_YELLOW}{text}{CLR_RESET}" if USE_COLOR else text
+
+def c_magenta(text: str) -> str:
+    return f"{CLR_MAGENTA}{text}{CLR_RESET}" if USE_COLOR else text
+
+def c_blue(text: str) -> str:
+    return f"{CLR_BLUE}{text}{CLR_RESET}" if USE_COLOR else text
+
+def c_red(text: str) -> str:
+    return f"{CLR_RED}{text}{CLR_RESET}" if USE_COLOR else text
+
+def c_red_bold(text: str) -> str:
+    return f"{CLR_BOLD}{CLR_RED}{text}{CLR_RESET}" if USE_COLOR else text
+
+def c_yellow_bold(text: str) -> str:
+    return f"{CLR_BOLD}{CLR_YELLOW}{text}{CLR_RESET}" if USE_COLOR else text
+
+def c_green_bold(text: str) -> str:
+    return f"{CLR_BOLD}{CLR_GREEN}{text}{CLR_RESET}" if USE_COLOR else text
 
 # ---------------------------------------------------------------------------
 # IP extraction
@@ -248,75 +314,148 @@ async def request_logger_middleware(request: Request, call_next):
 
     res_ct = response.headers.get("content-type", "").lower()
 
-    # Classify surface and assign color-coded 4-letter badges
+    # 1. Surface tag (4 chars inside brackets)
     clean_p = path.lower().split("?")[0]
     if "image/" in res_ct or clean_p.startswith(("/images/", "/image/")) or clean_p.endswith((".jpg", ".jpeg", ".png", ".webp", ".gif", ".ico", ".svg")):
-        type_badge = "\033[94m[IMG ]\033[0m"
-        raw_type = "[IMG ]"
+        raw_surf = "[IMG ]"
+        surf_col = c_blue(raw_surf)
     elif clean_p.startswith(("/printing/", "/card/")):
-        type_badge = "\033[92m\033[1m[PRIN]\033[0m"
-        raw_type = "[PRIN]"
+        raw_surf = "[PRIN]"
+        surf_col = c_green(raw_surf)
     elif clean_p.startswith("/similar"):
-        type_badge = "\033[95m\033[1m[SIM ]\033[0m"
-        raw_type = "[SIM ]"
+        raw_surf = "[SIM ]"
+        surf_col = c_magenta(raw_surf)
     elif clean_p.startswith("/vector"):
-        type_badge = "\033[96m\033[1m[VECT]\033[0m"
-        raw_type = "[VECT]"
+        raw_surf = "[VECT]"
+        surf_col = c_cyan(raw_surf)
     elif clean_p.startswith("/commander"):
-        type_badge = "\033[93m\033[1m[CMDR]\033[0m"
-        raw_type = "[CMDR]"
+        raw_surf = "[CMDR]"
+        surf_col = c_yellow(raw_surf)
     elif clean_p.startswith("/artist"):
-        type_badge = "\033[94m\033[1m[ARTS]\033[0m"
-        raw_type = "[ARTS]"
+        raw_surf = "[ARTS]"
+        surf_col = c_blue(raw_surf)
     elif clean_p.startswith("/set"):
-        type_badge = "\033[93m[SETS]\033[0m"
-        raw_type = "[SETS]"
+        raw_surf = "[SETS]"
+        surf_col = c_yellow(raw_surf)
     elif clean_p.startswith(("/sitemap", "/robots.txt", "/llms")) or clean_p.endswith((".xml", ".txt")):
-        type_badge = "\033[93m[MAP ]\033[0m"
-        raw_type = "[MAP ]"
+        raw_surf = "[MAP ]"
+        surf_col = c_dim(raw_surf)
     elif clean_p.startswith("/deck"):
-        type_badge = "\033[95m[DECK]\033[0m"
-        raw_type = "[DECK]"
+        raw_surf = "[DECK]"
+        surf_col = c_magenta(raw_surf)
     elif clean_p in ("/", ""):
-        type_badge = "\033[96m[HOME]\033[0m"
-        raw_type = "[HOME]"
+        raw_surf = "[HOME]"
+        surf_col = c_cyan(raw_surf)
     elif clean_p.endswith((".css", ".js", ".woff", ".woff2", ".ttf")):
-        type_badge = "\033[2m[ASST]\033[0m"
-        raw_type = "[ASST]"
+        raw_surf = "[ASST]"
+        surf_col = c_dim(raw_surf)
     else:
-        type_badge = "\033[97m[PAGE]\033[0m"
-        raw_type = "[PAGE]"
+        raw_surf = "[PAGE]"
+        surf_col = c_dim(raw_surf)
 
-    # Format tag (HTML, MD, JSON, IMG, etc.)
+    # 2. Format tag (4 chars inside brackets)
     if "text/markdown" in res_ct or clean_p.endswith(".md"):
-        fmt_tag = "\033[95m[MD  ]\033[0m"
         raw_fmt = "[MD  ]"
+        fmt_col = c_magenta(raw_fmt)
     elif "application/json" in res_ct or clean_p.endswith(".json"):
-        fmt_tag = "\033[93m[JSON]\033[0m"
         raw_fmt = "[JSON]"
+        fmt_col = c_yellow(raw_fmt)
     elif "image/" in res_ct or clean_p.endswith((".jpg", ".jpeg", ".png", ".webp", ".gif", ".ico", ".svg")):
-        fmt_tag = "\033[94m[IMG ]\033[0m"
         raw_fmt = "[IMG ]"
+        fmt_col = c_blue(raw_fmt)
     elif "text/plain" in res_ct or clean_p.endswith(".txt"):
-        fmt_tag = "\033[93m[TXT ]\033[0m"
         raw_fmt = "[TXT ]"
+        fmt_col = c_dim(raw_fmt)
     elif clean_p.endswith((".xml", ".rss")):
-        fmt_tag = "\033[93m[XML ]\033[0m"
         raw_fmt = "[XML ]"
+        fmt_col = c_dim(raw_fmt)
     elif clean_p.endswith((".css", ".js", ".woff", ".woff2", ".ttf")):
-        fmt_tag = "\033[2m[ASST]\033[0m"
         raw_fmt = "[ASST]"
+        fmt_col = c_dim(raw_fmt)
     else:
-        fmt_tag = "\033[96m[HTML]\033[0m"
         raw_fmt = "[HTML]"
+        fmt_col = c_cyan(raw_fmt)
 
+    # 3. Game / Subdomain site badge
+    site_badge_color, site_badge_raw = get_site_badge(get_request_host(request))
+    # Standardize to 6 chars "[MTG ]", "[DOM ]", "[SWU ]"
+    clean_site_raw = site_badge_raw if len(site_badge_raw) == 6 else f"{site_badge_raw:<6}"
+    if USE_COLOR:
+        # Match game color theme
+        if "DOM" in clean_site_raw:
+            site_col = c_cyan(clean_site_raw)
+        elif "SWU" in clean_site_raw:
+            site_col = c_magenta(clean_site_raw)
+        elif "NEC" in clean_site_raw:
+            site_col = c_red_bold(clean_site_raw)
+        elif "MIN" in clean_site_raw:
+            site_col = c_green(clean_site_raw)
+        else:
+            site_col = c_yellow(clean_site_raw)
+    else:
+        site_col = clean_site_raw
+
+    # 4. Bot / Caller badge with visual hierarchy
+    clean_badge = badge.strip()
+    # Normalize badge width to exactly 18 chars
+    if len(clean_badge) > 18:
+        raw_badge_18 = clean_badge[:17] + "]"
+    else:
+        raw_badge_18 = f"{clean_badge:<18}"
+
+    b_lower = clean_badge.lower()
+    if any(k in b_lower for k in ("-user", "chatgpt-user", "claude-user", "perplexity-user")):
+        # High-value live user prompt / citation
+        badge_col = c_yellow_bold(raw_badge_18)
+    elif "spoofed" in b_lower:
+        badge_col = c_red_bold(raw_badge_18)
+    elif "blocked" in b_lower:
+        badge_col = c_red(raw_badge_18)
+    elif any(v in b_lower for v in ("verified", "googlebot:verified", "bingbot")):
+        # Quiet verified traffic — calm dim / normal
+        badge_col = c_dim(raw_badge_18)
+    elif "claimed" in b_lower:
+        badge_col = c_yellow(raw_badge_18)
+    elif any(s in b_lower for s in ("scraper", "scanner")):
+        badge_col = c_red(raw_badge_18)
+    elif "browser" in b_lower:
+        badge_col = c_green(raw_badge_18)
+    else:
+        badge_col = c_dim(raw_badge_18)
+
+    # 5. Status code styling (Prominent stand-out)
+    if status >= 500:
+        status_col = c_red_bold(str(status))
+    elif status >= 400:
+        status_col = c_yellow_bold(str(status))
+    elif status >= 300:
+        status_col = c_cyan(str(status))
+    else:
+        status_col = c_green(str(status))
+
+    # 6. Latency styling (Fast = dim, Normal = default, Slow = highlighted)
+    dur_int = int(round(duration_ms))
+    dur_raw = f"{dur_int:>4}ms"
+    if dur_int >= 1000:
+        dur_col = c_red_bold(dur_raw)
+    elif dur_int >= 400:
+        dur_col = c_yellow_bold(dur_raw)
+    else:
+        dur_col = c_dim(dur_raw)
+
+    # 7. Rigid column composition
+    # [Site  ] [Caller/Bot        ] Status (Duration) [Surf] [Fmt ] -> Path
+    # Example:
+    # [MTG ] [Googlebot:Verified] 200 (  45ms) [PRIN] [HTML] -> /printing/sol-ring-cmm
+    console_line = f"{site_col} {badge_col} {status_col} ({dur_col}) {surf_col} {fmt_col} -> {path}"
+
+    # Exact format required by watch_traffic.py LOG_REGEX:
+    # (?P<ts>\S+)\s+(?P<ip>\S+)\s+(?P<badge>\[[^\]]+\])\s+(?:\[(?P<site>[A-Z0-9_\s]+)\]\s+)?(?P<status>\d{3})\s+\(\s*(?P<lat>\d+)ms\)(?P<tags>(?:\s+\[[^\]]*\])*)\s+->\s+(?P<method>\S+)\s+(?P<path>\S+)
     raw_ua = request.headers.get("user-agent", "").replace("\r", " ").replace("\n", " ").strip()
     ua_suffix = f' "{raw_ua}"' if raw_ua else ""
-    site_badge_color, site_badge_raw = get_site_badge(get_request_host(request))
-    full_audit_line = f"{ip:<28} {badge:<18} {site_badge_raw} {status} ({duration_ms:>4.0f}ms) {raw_type:<6} {raw_fmt:<6} -> {method} {path}"
-    console_line = f"{ip:<22} {badge:<16} {site_badge_color} {type_badge} {fmt_tag} {path}"
+    full_audit_line = f"{ip:<28} {clean_badge:<18} {clean_site_raw} {status} ({dur_int:>4d}ms) {raw_surf} {raw_fmt} -> {method} {path}"
 
-    # Do not print blocked traffic to the active console terminal
+    # Suppress console printing for blocked noise (still captured in audit log)
     is_blocked = status in (410, 418) or "Blocked" in badge or response.headers.get("x-shield") in ("Scraper-Blocked", "Bot-Gone", "Datacenter-Gone", "The-Abyss-Active")
     if not is_blocked:
         print(console_line, flush=True)
