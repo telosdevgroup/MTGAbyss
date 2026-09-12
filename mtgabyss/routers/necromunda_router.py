@@ -14,7 +14,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from db_mongo import get_mongo_db
 
-from mtgabyss.shared.cache import RAM_CACHE, set_ram_cache
+from mtgabyss.shared.cache import RAM_CACHE, set_ram_cache, get_page_cache, set_page_cache
 from mtgabyss.shared.helpers import slugify
 
 necromunda_router = APIRouter(prefix="", tags=["Necromunda"])
@@ -499,6 +499,17 @@ canonical_url: "https://necromunda.avascry.com/weapon/{slug}"
 
 @necromunda_router.get("/weapon/{slug}", response_class=HTMLResponse)
 async def necromunda_weapon_detail(request: Request, slug: str):
+    cache_key = f"necro:weapon:{slug.lower()}"
+    cached_html = get_page_cache(cache_key)
+    if cached_html:
+        return HTMLResponse(
+            content=cached_html,
+            headers={
+                "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+                "X-Cache": "HIT"
+            }
+        )
+
     db = get_necromunda_db()
     weapon = db.weapons.find_one({"slug": slug}, {"_id": 0})
     if not weapon:
@@ -519,7 +530,7 @@ async def necromunda_weapon_detail(request: Request, slug: str):
     tactical_alternatives = (sim_doc.get("similar") or [])[:6] if sim_doc else []
 
     base_path = get_base_prefix(request)
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request=request,
         name="necromunda/weapon_detail.html",
         context={
@@ -527,8 +538,17 @@ async def necromunda_weapon_detail(request: Request, slug: str):
             "weapon": weapon,
             "traits_data": traits_data,
             "tactical_alternatives": tactical_alternatives,
+        },
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "X-Cache": "MISS"
         }
     )
+    try:
+        set_page_cache(cache_key, response.body.decode("utf-8"))
+    except Exception:
+        pass
+    return response
 
 
 # ==========================================

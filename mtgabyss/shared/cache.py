@@ -9,26 +9,67 @@ import os
 from typing import Any, Dict, Optional
 from datetime import datetime, timezone
 
+from collections import OrderedDict
+
 # =========================================================================
-# HIGH-SPEED IN-MEMORY RAM CACHE (Auto-flushed Sunday night or at 64GB RAM)
+# HIGH-SPEED IN-MEMORY RAM CACHE (LRU, Auto-flushed Sunday night or at 48GB RAM)
 # =========================================================================
-RAM_CACHE: Dict[str, Any] = {}
+RAM_CACHE: OrderedDict[str, Any] = OrderedDict()
+PAGE_CACHE: OrderedDict[str, str] = OrderedDict()
 LAST_SUNDAY_FLUSH: Optional[str] = None
 MAX_CACHE_ITEMS: int = 200_000  # Max ~8-10 GB RAM footprint (safe guardrail on 128GB box)
+MAX_PAGE_CACHE_ITEMS: int = 100_000  # Max ~2-4 GB rendered HTML footprint
+
+
+def get_ram_cache(key: str) -> Optional[Any]:
+    """Retrieve item from RAM cache and mark recently used (LRU)."""
+    if key in RAM_CACHE:
+        RAM_CACHE.move_to_end(key)
+        return RAM_CACHE[key]
+    return None
 
 
 def set_ram_cache(key: str, value: Any):
-    """Store item in cache with safety ceiling."""
+    """Store item in cache with LRU safety ceiling."""
+    if key in RAM_CACHE:
+        RAM_CACHE.move_to_end(key)
+        RAM_CACHE[key] = value
+        return
+
     if len(RAM_CACHE) >= MAX_CACHE_ITEMS:
-        # Trim oldest half to preserve warm buffer while reclaiming memory
+        # Trim least recently used half to preserve hot buffer while reclaiming memory
         try:
             half_size = len(RAM_CACHE) // 2
-            keys_to_remove = list(RAM_CACHE.keys())[:half_size]
-            for k in keys_to_remove:
-                RAM_CACHE.pop(k, None)
+            for _ in range(half_size):
+                RAM_CACHE.popitem(last=False)
         except Exception:
             RAM_CACHE.clear()
     RAM_CACHE[key] = value
+
+
+def get_page_cache(key: str) -> Optional[str]:
+    """Retrieve fully rendered HTML string from RAM cache and mark recently used (LRU)."""
+    if key in PAGE_CACHE:
+        PAGE_CACHE.move_to_end(key)
+        return PAGE_CACHE[key]
+    return None
+
+
+def set_page_cache(key: str, html: str):
+    """Store fully rendered HTML string in RAM cache with LRU eviction."""
+    if key in PAGE_CACHE:
+        PAGE_CACHE.move_to_end(key)
+        PAGE_CACHE[key] = html
+        return
+
+    if len(PAGE_CACHE) >= MAX_PAGE_CACHE_ITEMS:
+        try:
+            half_size = len(PAGE_CACHE) // 2
+            for _ in range(half_size):
+                PAGE_CACHE.popitem(last=False)
+        except Exception:
+            PAGE_CACHE.clear()
+    PAGE_CACHE[key] = html
 
 
 def get_ram_usage_gb() -> float:
@@ -54,11 +95,10 @@ def check_periodic_cache_flush():
             total_items = len(RAM_CACHE)
             if total_items > 500:
                 half_count = total_items // 2
-                keys_to_drop = list(RAM_CACHE.keys())[:half_count]
-                for k in keys_to_drop:
-                    RAM_CACHE.pop(k, None)
+                for _ in range(half_count):
+                    RAM_CACHE.popitem(last=False)
                 LAST_SUNDAY_FLUSH = date_key
                 reason = "Sunday weekly trim" if is_sunday_night else f"48GB soft-cap reached ({ram_gb:.1f}GB)"
-                print(f"[RAM CACHE] Trimmed oldest {len(keys_to_drop):,} items. Kept {len(RAM_CACHE):,} hot entries warm (Reason: {reason})")
+                print(f"[RAM CACHE] Trimmed least-recently-used {half_count:,} items. Kept {len(RAM_CACHE):,} hot entries warm (Reason: {reason})")
     except Exception as e:
         print(f"[RAM CACHE] Monitor error: {e}")

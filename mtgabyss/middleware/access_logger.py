@@ -17,6 +17,12 @@ import i18n
 from mtgabyss.network_router import get_request_host, get_site_badge
 from mtgabyss.shared.bot_verifier import check_googlebot
 
+# Add TDG root (c:\Users\dev\Code\tdg) to sys.path for shared_logger
+TDG_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+if TDG_ROOT not in sys.path:
+    sys.path.insert(0, TDG_ROOT)
+from shared_logger import format_terminal_line, format_disk_log_line, normalize_site_badge
+
 # Enable Virtual Terminal Processing on Windows if supported
 if os.name == 'nt':
     try:
@@ -168,10 +174,11 @@ def get_caller_badge(request: Request) -> str:
 
     if is_google_ua or is_google_ip:
         v_status = check_googlebot(ip)
-        suffix = ":Verified" if v_status == "VERIFIED" else (":SPOOFED" if v_status == "SPOOFED" else ":Claimed")
+        if v_status == "SPOOFED":
+            return "[Googlebot:SPOOFED]"
         if "googlebot-image" in ua or "image" in ua:
-            return f"[Googlebot-Image{suffix}]"
-        return f"[Googlebot{suffix}]"
+            return "[Googlebot-Image]"
+        return "[Googlebot]"
 
     # 4. Bing / Microsoft IP subnets & User-Agents
     bing_prefixes = ("40.77.", "157.55.", "20.171.", "13.66.", "52.167.", "20.36.", "20.247.")
@@ -377,83 +384,34 @@ async def request_logger_middleware(request: Request, call_next):
         fmt_col = c_cyan(raw_fmt)
 
     # 3. Game / Subdomain site badge
-    site_badge_color, site_badge_raw = get_site_badge(get_request_host(request))
-    # Standardize to 6 chars "[MTG ]", "[DOM ]", "[SWU ]"
-    clean_site_raw = site_badge_raw if len(site_badge_raw) == 6 else f"{site_badge_raw:<6}"
-    if USE_COLOR:
-        # Match game color theme
-        if "DOM" in clean_site_raw:
-            site_col = c_cyan(clean_site_raw)
-        elif "SWU" in clean_site_raw:
-            site_col = c_magenta(clean_site_raw)
-        elif "NEC" in clean_site_raw:
-            site_col = c_red_bold(clean_site_raw)
-        elif "MIN" in clean_site_raw:
-            site_col = c_green(clean_site_raw)
-        else:
-            site_col = c_yellow(clean_site_raw)
-    else:
-        site_col = clean_site_raw
+    _, site_badge_raw = get_site_badge(get_request_host(request))
 
-    # 4. Bot / Caller badge with visual hierarchy
-    clean_badge = badge.strip()
-    # Normalize badge width to exactly 18 chars
-    if len(clean_badge) > 18:
-        raw_badge_18 = clean_badge[:17] + "]"
-    else:
-        raw_badge_18 = f"{clean_badge:<18}"
-
-    b_lower = clean_badge.lower()
-    if any(k in b_lower for k in ("-user", "chatgpt-user", "claude-user", "perplexity-user")):
-        # High-value live user prompt / citation
-        badge_col = c_yellow_bold(raw_badge_18)
-    elif "spoofed" in b_lower:
-        badge_col = c_red_bold(raw_badge_18)
-    elif "blocked" in b_lower:
-        badge_col = c_red(raw_badge_18)
-    elif any(v in b_lower for v in ("verified", "googlebot:verified", "bingbot")):
-        # Quiet verified traffic — calm dim / normal
-        badge_col = c_dim(raw_badge_18)
-    elif "claimed" in b_lower:
-        badge_col = c_yellow(raw_badge_18)
-    elif any(s in b_lower for s in ("scraper", "scanner")):
-        badge_col = c_red(raw_badge_18)
-    elif "browser" in b_lower:
-        badge_col = c_green(raw_badge_18)
-    else:
-        badge_col = c_dim(raw_badge_18)
-
-    # 5. Status code styling (Prominent stand-out)
-    if status >= 500:
-        status_col = c_red_bold(str(status))
-    elif status >= 400:
-        status_col = c_yellow_bold(str(status))
-    elif status >= 300:
-        status_col = c_cyan(str(status))
-    else:
-        status_col = c_green(str(status))
-
-    # 6. Latency styling (Fast = dim, Normal = default, Slow = highlighted)
     dur_int = int(round(duration_ms))
-    dur_raw = f"{dur_int:>4}ms"
-    if dur_int >= 1000:
-        dur_col = c_red_bold(dur_raw)
-    elif dur_int >= 400:
-        dur_col = c_yellow_bold(dur_raw)
-    else:
-        dur_col = c_dim(dur_raw)
+    console_line = format_terminal_line(
+        site=site_badge_raw,
+        badge=badge,
+        status_code=status,
+        duration_ms=dur_int,
+        surface=raw_surf,
+        fmt=raw_fmt,
+        method=method,
+        path=path,
+        ip=ip
+    )
 
-    # 7. Rigid column composition
-    # [Site  ] [Caller/Bot        ] Status (Duration) [Surf] [Fmt ] -> Path
-    # Example:
-    # [MTG ] [Googlebot:Verified] 200 (  45ms) [PRIN] [HTML] -> /printing/sol-ring-cmm
-    console_line = f"{site_col} {badge_col} {status_col} ({dur_col}) {surf_col} {fmt_col} -> {path}"
-
-    # Exact format required by watch_traffic.py LOG_REGEX:
-    # (?P<ts>\S+)\s+(?P<ip>\S+)\s+(?P<badge>\[[^\]]+\])\s+(?:\[(?P<site>[A-Z0-9_\s]+)\]\s+)?(?P<status>\d{3})\s+\(\s*(?P<lat>\d+)ms\)(?P<tags>(?:\s+\[[^\]]*\])*)\s+->\s+(?P<method>\S+)\s+(?P<path>\S+)
     raw_ua = request.headers.get("user-agent", "").replace("\r", " ").replace("\n", " ").strip()
-    ua_suffix = f' "{raw_ua}"' if raw_ua else ""
-    full_audit_line = f"{ip:<28} {clean_badge:<18} {clean_site_raw} {status} ({dur_int:>4d}ms) {raw_surf} {raw_fmt} -> {method} {path}"
+    disk_line = format_disk_log_line(
+        ip=ip,
+        badge=badge,
+        site=site_badge_raw,
+        status_code=status,
+        duration_ms=dur_int,
+        surface=raw_surf,
+        fmt=raw_fmt,
+        method=method,
+        path=path,
+        ua=raw_ua
+    )
 
     # Suppress console printing for blocked noise (still captured in audit log)
     is_blocked = status in (410, 418) or "Blocked" in badge or response.headers.get("x-shield") in ("Scraper-Blocked", "Bot-Gone", "Datacenter-Gone", "The-Abyss-Active")
@@ -462,7 +420,7 @@ async def request_logger_middleware(request: Request, call_next):
 
     try:
         with open(ACCESS_LOG_PATH, "a", encoding="utf-8") as f_log:
-            f_log.write(f"{datetime.now(timezone.utc).isoformat()} {full_audit_line}{ua_suffix}\n")
+            f_log.write(disk_line)
     except Exception:
         pass
     return response

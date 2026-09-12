@@ -36,8 +36,8 @@ def verify_discord_signature(signature_hex: str, timestamp: str, body_bytes: byt
     except (InvalidSignature, ValueError, Exception):
         return False
 
-def fetch_image_bytes(url: str, timeout: float = 3.0) -> Optional[bytes]:
-    """Fetches image bytes using standard HTTP with a browser User-Agent or reads from local disk."""
+def fetch_image_bytes(url: str, timeout: float = 3.141, max_retries: int = 2) -> Optional[bytes]:
+    """Fetches image bytes using prime timeout and prime-jitter backoff retry ladder."""
     if not url:
         return None
     # Check local static/images first if it references avascry.com
@@ -51,19 +51,27 @@ def fetch_image_bytes(url: str, timeout: float = 3.0) -> Optional[bytes]:
             except Exception:
                 pass
 
-    try:
-        import urllib.request
-        req = urllib.request.Request(
-            url,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-            }
-        )
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            if resp.status == 200:
-                return resp.read()
-    except Exception as e:
-        print(f"[DISCORD-BOT] Failed to fetch image bytes for {url}: {e}", flush=True)
+    from mtgabyss.shared.prime_jitter import get_prime_backoff
+    import urllib.request
+    import time
+
+    for attempt in range(max_retries + 1):
+        try:
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                if resp.status == 200:
+                    return resp.read()
+        except Exception as e:
+            if attempt < max_retries:
+                delay = get_prime_backoff(attempt)
+                time.sleep(delay)
+            else:
+                print(f"[DISCORD-BOT] Failed to fetch image bytes for {url} (attempt {attempt+1}): {e}", flush=True)
     return None
 
 def log_discord(msg: str):
@@ -91,12 +99,6 @@ def update_discord_original_interaction_with_attachment(app_id: str, interaction
         import requests
         import json
         img_bytes = fetch_image_bytes(img_url)
-        if not img_bytes:
-            log_discord(f"Background update: could not fetch image for {img_url}")
-            return
-
-        fname = "card.png" if img_url.lower().endswith(".png") else "card.jpg"
-        mime = "image/png" if fname.endswith(".png") else "image/jpeg"
 
         # Build clean message text from embed fields
         embed = response_data.get("embeds", [{}])[0] if response_data.get("embeds") else {}
@@ -119,10 +121,23 @@ def update_discord_original_interaction_with_attachment(app_id: str, interaction
 
         patch_payload = {
             "content": text_content,
-            "embeds": []  # Clear embeds so Discord attaches image directly to message body
+            "embeds": []  # Clear embeds so Discord renders clean text or message body
         }
-
         patch_url = f"https://discord.com/api/v10/webhooks/{app_id}/{interaction_token}/messages/@original"
+
+        if not img_bytes:
+            log_discord(f"Background update: could not fetch image for {img_url}, falling back to text-only")
+            resp = requests.patch(
+                patch_url,
+                json=patch_payload,
+                timeout=10.0
+            )
+            log_discord(f"Background text fallback status: {resp.status_code}")
+            return
+
+        fname = "card.png" if img_url.lower().endswith(".png") else "card.jpg"
+        mime = "image/png" if fname.endswith(".png") else "image/jpeg"
+
         resp = requests.patch(
             patch_url,
             data={"payload_json": json.dumps(patch_payload)},

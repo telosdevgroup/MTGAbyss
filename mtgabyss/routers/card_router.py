@@ -17,6 +17,16 @@ card_router = APIRouter()
 
 KNOWN_LANG_CODES = {'ja', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ko', 'zhs', 'zht'}
 _MECHANICS_MAP = None
+_KNOWN_SET_CODES: Optional[set] = None
+
+def _get_known_set_codes(db) -> set:
+    global _KNOWN_SET_CODES
+    if _KNOWN_SET_CODES is None:
+        try:
+            _KNOWN_SET_CODES = set(s["code"].lower() for s in db["sets"].find({}, {"code": 1}))
+        except Exception:
+            _KNOWN_SET_CODES = set()
+    return _KNOWN_SET_CODES
 
 @card_router.get("/vector/{identifier}", include_in_schema=False)
 @card_router.get("/vector/{identifier}.json", include_in_schema=False)
@@ -82,6 +92,11 @@ async def card_name_shortcut(request: Request, slug: str):
     if slug_clean in ("null", "undefined", "none") or slug_clean.startswith(("null.", "undefined.", "none.")):
         return RedirectResponse(url="/", status_code=301)
 
+    # 0. Check in-memory RAM cache for previously resolved redirect target (<0.05ms)
+    cache_key = f"card_redirect:{slug_clean}"
+    if cache_key in RAM_CACHE:
+        return RedirectResponse(url=RAM_CACHE[cache_key], status_code=303)
+
     ext = ""
     for check_ext in (".json", ".md", ".xml", ".csv"):
         if slug.lower().endswith(check_ext):
@@ -90,32 +105,37 @@ async def card_name_shortcut(request: Request, slug: str):
             break
 
     db = get_mongo_db()
-    
-    # 1. Fast direct lookup by slug, printing_slug, or card name (prefer English)
-    card = (
-        db["cards"].find_one({"slug": slug, "lang": "en"})
-        or db["cards"].find_one({"printing_slug": slug, "lang": "en"})
-        or db["cards"].find_one({"slug": slug})
-        or db["cards"].find_one({"printing_slug": slug})
-    )
+    card = None
+    known_sets = _get_known_set_codes(db)
 
-    # 2. Fast lookup by full card name slug (e.g. "water-wurm" is the actual card name!)
-    if not card:
-        card = find_card_by_slug(db, slug)
-
-    # 3. Check if slug has a set code suffix (e.g. "scrib-nibblers-wwk" -> base="scrib-nibblers", set="wwk")
-    if not card and '-' in slug:
+    # 1. Check if slug has a REAL set code suffix (e.g. "fractured-identity-c17" -> base="fractured-identity", set="c17")
+    # Validating against known sets prevents treating card words like "ring" in "sol-ring" as a set code!
+    if '-' in slug:
         parts = slug.split('-')
-        if len(parts) >= 2 and len(parts[-1]) in (3, 4):
-            card_slug, set_code = "-".join(parts[:-1]), parts[-1].lower()
+        potential_set = parts[-1].lower()
+        if len(parts) >= 2 and potential_set in known_sets:
+            card_slug = "-".join(parts[:-1])
             base_card = find_card_by_slug(db, card_slug)
             if base_card and base_card.get("oracle_id"):
                 card = (
-                    db["cards"].find_one({"oracle_id": base_card["oracle_id"], "set": set_code, "lang": "en"})
-                    or db["cards"].find_one({"oracle_id": base_card["oracle_id"], "set": set_code})
+                    db["cards"].find_one({"oracle_id": base_card["oracle_id"], "set": potential_set, "lang": "en"})
+                    or db["cards"].find_one({"oracle_id": base_card["oracle_id"], "set": potential_set})
                     or base_card
                 )
-    
+
+    # 2. Fast direct lookup by slug, printing_slug, or card name (prefer English)
+    if not card:
+        card = (
+            db["cards"].find_one({"slug": slug, "lang": "en"})
+            or db["cards"].find_one({"printing_slug": slug, "lang": "en"})
+            or db["cards"].find_one({"slug": slug})
+            or db["cards"].find_one({"printing_slug": slug})
+        )
+
+    # 3. Fast lookup by full card name slug (e.g. "water-wurm" is the actual card name!)
+    if not card:
+        card = find_card_by_slug(db, slug)
+
     if card:
         oracle_id = card.get("oracle_id")
         if oracle_id:
@@ -132,10 +152,14 @@ async def card_name_shortcut(request: Request, slug: str):
                 ) or card
             c_slug = slugify(oracle_card.get("name") or "")
             c_set = (oracle_card.get("set") or "").lower()
-            return RedirectResponse(url=f"/printing/{c_slug}-{c_set}{ext}", status_code=303)
-            
+            target_url = f"/printing/{c_slug}-{c_set}{ext}"
+            set_ram_cache(cache_key, target_url)
+            return RedirectResponse(url=target_url, status_code=303)
+
     # Fallback to direct printing route
-    return RedirectResponse(url=f"/printing/{slug}{ext}", status_code=303)
+    fallback_url = f"/printing/{slug}{ext}"
+    set_ram_cache(cache_key, fallback_url)
+    return RedirectResponse(url=fallback_url, status_code=303)
 
 def format_card_markdown(card_doc: dict, printings_count: int = 1, rulings: list = None, similar_cards: list = None, visual_artwork: dict = None) -> str:
     """Format structured, machine-native Markdown with YAML frontmatter for AI agents and LLMs."""

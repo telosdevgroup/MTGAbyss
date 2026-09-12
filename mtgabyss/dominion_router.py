@@ -16,8 +16,17 @@ from db_mongo import get_mongo_db
 dominion_router = APIRouter(prefix="", tags=["Dominion"])
 templates = Jinja2Templates(directory="templates")
 
+from mtgabyss.shared.cache import get_page_cache, set_page_cache
+
 # In-memory TTL cache for expensive crawler manifests (1h TTL)
 DOMINION_CACHE = {}
+_DOMINION_EXP_MAP = None
+
+def get_dominion_exp_map(db):
+    global _DOMINION_EXP_MAP
+    if _DOMINION_EXP_MAP is None:
+        _DOMINION_EXP_MAP = {e.get('set_tag', '').lower(): e.get('name') for e in db.expansions.find({}, {"set_tag": 1, "name": 1})}
+    return _DOMINION_EXP_MAP
 
 def get_cached(key: str, ttl_seconds: int = 3600):
     entry = DOMINION_CACHE.get(key)
@@ -781,6 +790,20 @@ async def dominion_card_markdown(slug: str):
 
 @dominion_router.get("/card/{slug}", response_class=HTMLResponse)
 async def dominion_card_html(request: Request, slug: str):
+    cache_key = f"dom:card:{slug.lower()}"
+    cached_html = get_page_cache(cache_key)
+    if cached_html:
+        return HTMLResponse(
+            content=cached_html,
+            headers={
+                "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+                "Vary": "Accept",
+                "Link": f'</card/{slug}.md>; rel="alternate"; type="text/markdown", </card/{slug}.json>; rel="alternate"; type="application/json"',
+                "Content-Signal": "ai-train=yes, search=yes, ai-input=yes",
+                "X-Cache": "HIT"
+            }
+        )
+
     db = get_dominion_db()
     card = db.cards.find_one({"slug": slug})
     if not card:
@@ -789,7 +812,7 @@ async def dominion_card_html(request: Request, slug: str):
     versions = list(db.card_versions.find({"card_id": f"card:{slug}"}))
     rulings = list(db.rulings.find({"card_id": f"card:{slug}"}))
 
-    exp_map = {e.get('set_tag', '').lower(): e.get('name') for e in db.expansions.find({}, {"set_tag": 1, "name": 1})}
+    exp_map = get_dominion_exp_map(db)
 
     def _format_expansion(tag: str) -> str:
         return format_expansion_name(tag, exp_map=exp_map)
@@ -856,7 +879,7 @@ async def dominion_card_html(request: Request, slug: str):
     if "treasure" in kinds:
         synergies.append({"label": "Treasure", "query": "treasure"})
 
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request=request,
         name="dominion/card.html",
         context={
@@ -874,9 +897,15 @@ async def dominion_card_html(request: Request, slug: str):
             "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
             "Vary": "Accept",
             "Link": f'</card/{slug}.md>; rel="alternate"; type="text/markdown", </card/{slug}.json>; rel="alternate"; type="application/json"',
-            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes",
+            "X-Cache": "MISS"
         }
     )
+    try:
+        set_page_cache(cache_key, response.body.decode("utf-8"))
+    except Exception:
+        pass
+    return response
 
 import os
 import asyncio

@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from db_mongo import get_mongo_db
-from mtgabyss.shared.cache import RAM_CACHE, set_ram_cache
+from mtgabyss.shared.cache import RAM_CACHE, set_ram_cache, get_page_cache, set_page_cache
 from mtgabyss.shared.helpers import slugify
 
 def human_name(val: str) -> str:
@@ -836,6 +836,17 @@ async def minecraft_item_detail(request: Request, slug: str):
     if "text/markdown" in accept and "text/html" not in accept:
         return await minecraft_item_md(slug)
 
+    cache_key = f"mc:item:{slug.lower()}"
+    cached_html = get_page_cache(cache_key)
+    if cached_html:
+        return HTMLResponse(
+            content=cached_html,
+            headers={
+                "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+                "X-Cache": "HIT"
+            }
+        )
+
     db = get_minecraft_db()
     item = db.items.find_one({"edition": EDITION, "version": VERSION, "slug": slug}, {"_id": 0})
     if not item:
@@ -860,7 +871,7 @@ async def minecraft_item_detail(request: Request, slug: str):
     # If this item is also a block, fetch corresponding block data for stats
     block_counterpart = db.blocks.find_one({"edition": EDITION, "version": VERSION, "slug": slug}, {"_id": 0, "facts": 1})
 
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request=request,
         name="minecraft/item.html",
         context={
@@ -871,8 +882,17 @@ async def minecraft_item_detail(request: Request, slug: str):
             "palette_matches": palette_matches,
             "progression_matches": progression_matches,
             "block_counterpart": block_counterpart
+        },
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "X-Cache": "MISS"
         }
     )
+    try:
+        set_page_cache(cache_key, response.body.decode("utf-8"))
+    except Exception:
+        pass
+    return response
 
 
 # ---------------- BLOCK ROUTES ----------------
@@ -1124,6 +1144,17 @@ async def minecraft_block_detail(request: Request, slug: str):
     if "text/markdown" in accept and "text/html" not in accept:
         return await minecraft_block_md(slug)
 
+    cache_key = f"mc:block:{slug.lower()}"
+    cached_html = get_page_cache(cache_key)
+    if cached_html:
+        return HTMLResponse(
+            content=cached_html,
+            headers={
+                "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+                "X-Cache": "HIT"
+            }
+        )
+
     db = get_minecraft_db()
     block_data = db.blocks.find_one({"edition": EDITION, "version": VERSION, "slug": slug}, {"_id": 0})
     if not block_data:
@@ -1142,7 +1173,7 @@ async def minecraft_block_detail(request: Request, slug: str):
     # Check if item counterpart exists
     item_counterpart = db.items.find_one({"edition": EDITION, "version": VERSION, "slug": slug}, {"_id": 0, "facts": 1, "derived": 1})
 
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request=request,
         name="minecraft/block.html",
         context={
@@ -1153,8 +1184,17 @@ async def minecraft_block_detail(request: Request, slug: str):
             "similar_items": similar_items,
             "progression_matches": progression_matches,
             "item_counterpart": item_counterpart
+        },
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "X-Cache": "MISS"
         }
     )
+    try:
+        set_page_cache(cache_key, response.body.decode("utf-8"))
+    except Exception:
+        pass
+    return response
 
 
 # ---------------- RECIPE ROUTES ----------------
@@ -1483,6 +1523,17 @@ async def minecraft_recipe_detail(request: Request, slug: str):
     if "text/markdown" in accept and "text/html" not in accept:
         return await minecraft_recipe_md(slug)
 
+    cache_key = f"mc:recipe:{slug.lower()}"
+    cached_html = get_page_cache(cache_key)
+    if cached_html:
+        return HTMLResponse(
+            content=cached_html,
+            headers={
+                "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+                "X-Cache": "HIT"
+            }
+        )
+
     db = get_minecraft_db()
     recipe = db.recipes.find_one({"edition": EDITION, "version": VERSION, "slug": slug}, {"_id": 0})
     if not recipe:
@@ -1650,7 +1701,7 @@ async def minecraft_recipe_detail(request: Request, slug: str):
     elif in_item_ids:
         primary_material_name = human_name(in_item_ids[0])
 
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request=request,
         name="minecraft/recipe.html",
         context={
@@ -1668,8 +1719,17 @@ async def minecraft_recipe_detail(request: Request, slug: str):
             "similar_items": similar_items,
             "progression_matches": progression_matches,
             "block_counterpart": block_counterpart
+        },
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "X-Cache": "MISS"
         }
     )
+    try:
+        set_page_cache(cache_key, response.body.decode("utf-8"))
+    except Exception:
+        pass
+    return response
 
 
 # ---------------- ENTITY ROUTES ----------------
@@ -1872,20 +1932,40 @@ async def minecraft_entity_detail(request: Request, slug: str):
     if "text/markdown" in accept and "text/html" not in accept:
         return await minecraft_entity_md(slug)
 
+    cache_key = f"mc:entity:{slug.lower()}"
+    cached_html = get_page_cache(cache_key)
+    if cached_html:
+        return HTMLResponse(
+            content=cached_html,
+            headers={
+                "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+                "X-Cache": "HIT"
+            }
+        )
+
     db = get_minecraft_db()
     entity = db.entities.find_one({"edition": EDITION, "version": VERSION, "slug": slug}, {"_id": 0})
     if not entity:
         raise HTTPException(status_code=404, detail="Entity not found")
 
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request=request,
         name="minecraft/entity.html",
         context={
             "base_prefix": get_base_prefix(request),
             "user": get_current_user(request),
             "entity": entity
+        },
+        headers={
+            "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+            "X-Cache": "MISS"
         }
     )
+    try:
+        set_page_cache(cache_key, response.body.decode("utf-8"))
+    except Exception:
+        pass
+    return response
 
 
 # ---------------- ENCHANTMENTS & EFFECTS ----------------

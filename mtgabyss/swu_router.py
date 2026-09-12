@@ -12,6 +12,7 @@ from fastapi import APIRouter, Request, HTTPException, Response
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse, FileResponse, RedirectResponse
 from db_mongo import get_mongo_db
 from mtgabyss.shared.helpers import templates
+from mtgabyss.shared.cache import get_page_cache, set_page_cache
 
 def trait_slug_filter(val: str) -> str:
     if not val:
@@ -519,6 +520,20 @@ async def swu_card_xml(slug: str):
 
 @swu_router.get("/card/{slug}", response_class=HTMLResponse)
 async def swu_card_detail(slug: str, request: Request):
+    cache_key = f"swu:card:{slug.lower()}"
+    cached_html = get_page_cache(cache_key)
+    if cached_html:
+        return HTMLResponse(
+            content=cached_html,
+            headers={
+                "Vary": "Accept",
+                "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+                "Link": f'</card/{slug}.md>; rel="alternate"; type="text/markdown", </card/{slug}.json>; rel="alternate"; type="application/json", </card/{slug}.xml>; rel="alternate"; type="application/xml"',
+                "Content-Signal": "ai-train=yes, search=yes, ai-input=yes",
+                "X-Cache": "HIT"
+            }
+        )
+
     db = get_swu_db()
     card = db.cards.find_one({"$or": [{"slug": slug}, {"name_slug": slug}]}, {"_id": 0})
     if not card:
@@ -680,7 +695,7 @@ async def swu_card_detail(slug: str, request: Request):
     for al in alternate_leaders:
         al["synergy_reason"] = determine_swu_synergy_reason(card, al)
 
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request=request,
         name="swu/card.html",
         context={
@@ -695,9 +710,15 @@ async def swu_card_detail(slug: str, request: Request):
             "Vary": "Accept",
             "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
             "Link": f'</card/{card.get("slug", slug)}.md>; rel="alternate"; type="text/markdown", </card/{card.get("slug", slug)}.json>; rel="alternate"; type="application/json", </card/{card.get("slug", slug)}.xml>; rel="alternate"; type="application/xml", </similar/{card.get("slug", slug)}>; rel="related", </similar/{card.get("slug", slug)}.json>; rel="related"',
-            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes"
+            "Content-Signal": "ai-train=yes, search=yes, ai-input=yes",
+            "X-Cache": "MISS"
         }
     )
+    try:
+        set_page_cache(cache_key, response.body.decode("utf-8"))
+    except Exception:
+        pass
+    return response
 
 # ---------------------------------------------------------
 # Feature: Neural Embeddings & Similarity Graph Endpoints
